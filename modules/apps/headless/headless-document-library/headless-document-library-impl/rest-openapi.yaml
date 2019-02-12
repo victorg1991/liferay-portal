@@ -150,11 +150,11 @@ info:
   version: v1.0
 openapi: 3.0.1
 paths:
-  "/creator/{creator-id}":
+  "/creators/{creators-id}":
     get:
       parameters:
         - in: path
-          name: creator-id
+          name: creators-id
           required: true
           schema:
             format: int64
@@ -166,11 +166,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Creator"
           description: ""
-  "/document/{document-id}":
+      tags: ["Creator"]
+  "/documents/{documents-id}":
     delete:
       parameters:
         - in: path
-          name: document-id
+          name: documents-id
           required: true
           schema:
             format: int64
@@ -180,10 +181,11 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["Document"]
     get:
       parameters:
         - in: path
-          name: document-id
+          name: documents-id
           required: true
           schema:
             format: int64
@@ -195,7 +197,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Document"
           description: ""
-  "/document/{document-id}/categories":
+      tags: ["Document"]
+  "/documents/{documents-id}/categories":
     get:
       parameters:
         - in: query
@@ -207,7 +210,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: document-id
+          name: documents-id
           required: true
           schema:
             format: int64
@@ -222,10 +225,11 @@ paths:
                   type: integer
                 type: array
           description: ""
+      tags: ["Document"]
     post:
       parameters:
         - in: path
-          name: document-id
+          name: documents-id
           required: true
           schema:
             format: int64
@@ -244,11 +248,12 @@ paths:
                 format: int64
                 type: integer
           description: ""
-  "/document/{document-id}/categories/batch-create":
+      tags: ["Document"]
+  "/documents/{documents-id}/categories/batch-create":
     post:
       parameters:
         - in: path
-          name: document-id
+          name: documents-id
           required: true
           schema:
             format: int64
@@ -267,7 +272,8 @@ paths:
                 format: int64
                 type: integer
           description: ""
-  "/document/{document-id}/comment":
+      tags: ["Document"]
+  "/documents/{documents-id}/comments":
     get:
       parameters:
         - in: query
@@ -279,7 +285,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: document-id
+          name: documents-id
           required: true
           schema:
             format: int64
@@ -293,11 +299,12 @@ paths:
                   $ref: "#/components/schemas/Comment"
                 type: array
           description: ""
-  "/documents-repository/{id}":
+      tags: ["Comment"]
+  "/documents-repositories/{documents-repositories-id}":
     get:
       parameters:
         - in: path
-          name: id
+          name: documents-repositories-id
           required: true
           schema:
             format: int64
@@ -309,7 +316,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Folder"
           description: ""
-  "/documents-repository/{documents-repository-id}/document":
+      tags: ["Folder"]
+  "/documents-repositories/{documents-repositories-id}/documents":
     get:
       parameters:
         - in: query
@@ -321,7 +329,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: documents-repository-id
+          name: documents-repositories-id
           required: true
           schema:
             format: int64
@@ -335,10 +343,11 @@ paths:
                   $ref: "#/components/schemas/Document"
                 type: array
           description: ""
+      tags: ["Document"]
     post:
       parameters:
         - in: path
-          name: documents-repository-id
+          name: documents-repositories-id
           required: true
           schema:
             format: int64
@@ -355,11 +364,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Document"
           description: ""
-  "/documents-repository/{documents-repository-id}/document/batch-create":
+      tags: ["Document"]
+  "/documents-repositories/{documents-repositories-id}/documents/batch-create":
     post:
       parameters:
         - in: path
-          name: documents-repository-id
+          name: documents-repositories-id
           required: true
           schema:
             format: int64
@@ -376,7 +386,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Document"
           description: ""
-  "/documents-repository/{documents-repository-id}/folder":
+      tags: ["Document"]
+  "/documents-repositories/{documents-repositories-id}/folders":
     get:
       parameters:
         - in: query
@@ -388,7 +399,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: documents-repository-id
+          name: documents-repositories-id
           required: true
           schema:
             format: int64
@@ -402,10 +413,11 @@ paths:
                   $ref: "#/components/schemas/Folder"
                 type: array
           description: ""
+      tags: ["Folder"]
     post:
       parameters:
         - in: path
-          name: documents-repository-id
+          name: documents-repositories-id
           required: true
           schema:
             format: int64
@@ -422,11 +434,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Folder"
           description: ""
-  "/documents-repository/{documents-repository-id}/folder/batch-create":
+      tags: ["Folder"]
+  "/documents-repositories/{documents-repositories-id}/folders/batch-create":
     post:
       parameters:
         - in: path
-          name: documents-repository-id
+          name: documents-repositories-id
           required: true
           schema:
             format: int64
@@ -443,11 +456,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Folder"
           description: ""
-  "/folder/{folder-id}":
+      tags: ["Folder"]
+  "/folders/{folders-id}":
     delete:
       parameters:
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -457,10 +471,11 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["Folder"]
     get:
       parameters:
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -472,10 +487,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/Folder"
           description: ""
+      tags: ["Folder"]
     put:
       parameters:
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -492,7 +508,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Folder"
           description: ""
-  "/folder/{folder-id}/document":
+      tags: ["Folder"]
+  "/folders/{folders-id}/documents":
     get:
       parameters:
         - in: query
@@ -504,7 +521,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -518,10 +535,11 @@ paths:
                   $ref: "#/components/schemas/Document"
                 type: array
           description: ""
+      tags: ["Document"]
     post:
       parameters:
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -544,11 +562,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Document"
           description: ""
-  "/folder/{folder-id}/document/batch-create":
+      tags: ["Document"]
+  "/folders/{folders-id}/documents/batch-create":
     post:
       parameters:
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -571,7 +590,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Document"
           description: ""
-  "/folder/{folder-id}/folder":
+      tags: ["Document"]
+  "/folders/{folders-id}/folders":
     get:
       parameters:
         - in: query
@@ -583,7 +603,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -597,10 +617,11 @@ paths:
                   $ref: "#/components/schemas/Folder"
                 type: array
           description: ""
+      tags: ["Folder"]
     post:
       parameters:
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -617,11 +638,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Folder"
           description: ""
-  "/folder/{folder-id}/folder/batch-create":
+      tags: ["Folder"]
+  "/folders/{folders-id}/folders/batch-create":
     post:
       parameters:
         - in: path
-          name: folder-id
+          name: folders-id
           required: true
           schema:
             format: int64
@@ -638,3 +660,4 @@ paths:
               schema:
                 $ref: "#/components/schemas/Folder"
           description: ""
+      tags: ["Folder"]

@@ -478,6 +478,7 @@ paths:
                   $ref: "#/components/schemas/PostalAddress"
                 type: array
           description: ""
+      tags: ["Address"]
   "/addresses/{addresses-id}":
     get:
       parameters:
@@ -494,6 +495,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/PostalAddress"
           description: ""
+      tags: ["Address"]
   "/categories/{categories-id}":
     delete:
       parameters:
@@ -508,6 +510,7 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["Category"]
     get:
       parameters:
         - in: path
@@ -523,6 +526,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Category"
           description: ""
+      tags: ["Category"]
     put:
       parameters:
         - in: path
@@ -543,6 +547,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Category"
           description: ""
+      tags: ["Category"]
   "/categories/{categories-id}/categories":
     get:
       parameters:
@@ -569,6 +574,7 @@ paths:
                   $ref: "#/components/schemas/Category"
                 type: array
           description: ""
+      tags: ["Category"]
     post:
       parameters:
         - in: path
@@ -589,6 +595,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Category"
           description: ""
+      tags: ["Category"]
   "/categories/{categories-id}/categories/batch-create":
     post:
       parameters:
@@ -610,7 +617,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Category"
           description: ""
-  "/content-space/{content-space-id}/keywords":
+      tags: ["Category"]
+  "/content-spaces/{content-spaces-id}/keywords":
     get:
       parameters:
         - in: query
@@ -622,7 +630,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -636,10 +644,11 @@ paths:
                   $ref: "#/components/schemas/Keyword"
                 type: array
           description: ""
+      tags: ["Keyword"]
     post:
       parameters:
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -656,11 +665,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Keyword"
           description: ""
-  "/content-space/{content-space-id}/keywords/batch-create":
+      tags: ["Keyword"]
+  "/content-spaces/{content-spaces-id}/keywords/batch-create":
     post:
       parameters:
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -677,7 +687,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Keyword"
           description: ""
-  "/content-space/{content-space-id}/vocabularies":
+      tags: ["Keyword"]
+  "/content-spaces/{content-spaces-id}/vocabularies":
     get:
       parameters:
         - in: query
@@ -689,7 +700,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -703,10 +714,11 @@ paths:
                   $ref: "#/components/schemas/Vocabulary"
                 type: array
           description: ""
+      tags: ["Vocabulary"]
     post:
       parameters:
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -723,11 +735,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Vocabulary"
           description: ""
-  "/content-space/{content-space-id}/vocabularies/batch-create":
+      tags: ["Vocabulary"]
+  "/content-spaces/{content-spaces-id}/vocabularies/batch-create":
     post:
       parameters:
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -744,6 +757,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Vocabulary"
           description: ""
+      tags: ["Vocabulary"]
   "/emails":
     get:
       parameters:
@@ -769,6 +783,7 @@ paths:
                   $ref: "#/components/schemas/Email"
                 type: array
           description: ""
+      tags: ["Email"]
   "/emails/{emails-id}":
     get:
       parameters:
@@ -785,6 +800,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Email"
           description: ""
+      tags: ["Email"]
   "/keywords/{keywords-id}":
     delete:
       parameters:
@@ -799,6 +815,7 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["Keyword"]
     get:
       parameters:
         - in: path
@@ -814,6 +831,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Keyword"
           description: ""
+      tags: ["Keyword"]
     put:
       parameters:
         - in: path
@@ -834,7 +852,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Keyword"
           description: ""
-  "/my-user-account":
+      tags: ["Keyword"]
+  "/my-user-accounts":
     get:
       parameters:
         - in: query
@@ -854,11 +873,12 @@ paths:
                   $ref: "#/components/schemas/UserAccount"
                 type: array
           description: ""
-  "/my-user-account/{my-user-account-id}":
+      tags: ["UserAccount"]
+  "/my-user-accounts/{my-user-accounts-id}":
     get:
       parameters:
         - in: path
-          name: my-user-account-id
+          name: my-user-accounts-id
           required: true
           schema:
             format: int64
@@ -870,7 +890,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserAccount"
           description: ""
-  "/my-user-account/{my-user-account-id}/organization":
+      tags: ["UserAccount"]
+  "/my-user-accounts/{my-user-accounts-id}/organizations":
     get:
       parameters:
         - in: query
@@ -882,7 +903,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: my-user-account-id
+          name: my-user-accounts-id
           required: true
           schema:
             format: int64
@@ -896,7 +917,8 @@ paths:
                   $ref: "#/components/schemas/Organization"
                 type: array
           description: ""
-  "/my-user-account/{my-user-account-id}/roles":
+      tags: ["Organization"]
+  "/my-user-accounts/{my-user-accounts-id}/roles":
     get:
       parameters:
         - in: query
@@ -908,7 +930,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: my-user-account-id
+          name: my-user-accounts-id
           required: true
           schema:
             format: int64
@@ -922,7 +944,8 @@ paths:
                   $ref: "#/components/schemas/Role"
                 type: array
           description: ""
-  "/organization":
+      tags: ["Role"]
+  "/organizations":
     get:
       parameters:
         - in: query
@@ -942,11 +965,12 @@ paths:
                   $ref: "#/components/schemas/Organization"
                 type: array
           description: ""
-  "/organization/{organization-id}":
+      tags: ["Organization"]
+  "/organizations/{organizations-id}":
     get:
       parameters:
         - in: path
-          name: organization-id
+          name: organizations-id
           required: true
           schema:
             format: int64
@@ -958,7 +982,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Organization"
           description: ""
-  "/organization/{organization-id}/organization":
+      tags: ["Organization"]
+  "/organizations/{organizations-id}/organizations":
     get:
       parameters:
         - in: query
@@ -970,7 +995,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: organization-id
+          name: organizations-id
           required: true
           schema:
             format: int64
@@ -984,7 +1009,8 @@ paths:
                   $ref: "#/components/schemas/Organization"
                 type: array
           description: ""
-  "/organization/{organization-id}/user-account":
+      tags: ["Organization"]
+  "/organizations/{organizations-id}/user-accounts":
     get:
       parameters:
         - in: query
@@ -996,7 +1022,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: organization-id
+          name: organizations-id
           required: true
           schema:
             format: int64
@@ -1010,6 +1036,7 @@ paths:
                   $ref: "#/components/schemas/UserAccount"
                 type: array
           description: ""
+      tags: ["UserAccount"]
   "/phones":
     get:
       parameters:
@@ -1035,6 +1062,7 @@ paths:
                   $ref: "#/components/schemas/Phone"
                 type: array
           description: ""
+      tags: ["Phone"]
   "/phones/{phones-id}":
     get:
       parameters:
@@ -1051,6 +1079,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Phone"
           description: ""
+      tags: ["Phone"]
   "/roles":
     get:
       parameters:
@@ -1071,6 +1100,7 @@ paths:
                   $ref: "#/components/schemas/Role"
                 type: array
           description: ""
+      tags: ["Role"]
   "/roles/{roles-id}":
     get:
       parameters:
@@ -1087,7 +1117,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Role"
           description: ""
-  "/user-account":
+      tags: ["Role"]
+  "/user-accounts":
     get:
       parameters:
         - in: query
@@ -1111,6 +1142,7 @@ paths:
                   $ref: "#/components/schemas/UserAccount"
                 type: array
           description: ""
+      tags: ["UserAccount"]
     post:
       parameters: []
       requestBody:
@@ -1125,7 +1157,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserAccount"
           description: ""
-  "/user-account/batch-create":
+      tags: ["UserAccount"]
+  "/user-accounts/batch-create":
     post:
       parameters: []
       requestBody:
@@ -1140,11 +1173,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserAccount"
           description: ""
-  "/user-account/{user-account-id}":
+      tags: ["UserAccount"]
+  "/user-accounts/{user-accounts-id}":
     delete:
       parameters:
         - in: path
-          name: user-account-id
+          name: user-accounts-id
           required: true
           schema:
             format: int64
@@ -1154,10 +1188,11 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["UserAccount"]
     get:
       parameters:
         - in: path
-          name: user-account-id
+          name: user-accounts-id
           required: true
           schema:
             format: int64
@@ -1169,10 +1204,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserAccount"
           description: ""
+      tags: ["UserAccount"]
     put:
       parameters:
         - in: path
-          name: user-account-id
+          name: user-accounts-id
           required: true
           schema:
             format: int64
@@ -1189,7 +1225,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserAccount"
           description: ""
-  "/user-account/{user-account-id}/organization":
+      tags: ["UserAccount"]
+  "/user-accounts/{user-accounts-id}/organizations":
     get:
       parameters:
         - in: query
@@ -1201,7 +1238,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: user-account-id
+          name: user-accounts-id
           required: true
           schema:
             format: int64
@@ -1215,7 +1252,8 @@ paths:
                   $ref: "#/components/schemas/Organization"
                 type: array
           description: ""
-  "/user-account/{user-account-id}/roles":
+      tags: ["Organization"]
+  "/user-accounts/{user-accounts-id}/roles":
     get:
       parameters:
         - in: query
@@ -1227,7 +1265,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: user-account-id
+          name: user-accounts-id
           required: true
           schema:
             format: int64
@@ -1241,6 +1279,7 @@ paths:
                   $ref: "#/components/schemas/Role"
                 type: array
           description: ""
+      tags: ["Role"]
   "/vocabularies/{vocabularies-id}":
     delete:
       parameters:
@@ -1255,6 +1294,7 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["Vocabulary"]
     get:
       parameters:
         - in: path
@@ -1270,6 +1310,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Vocabulary"
           description: ""
+      tags: ["Vocabulary"]
     put:
       parameters:
         - in: path
@@ -1290,6 +1331,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Vocabulary"
           description: ""
+      tags: ["Vocabulary"]
   "/vocabularies/{vocabularies-id}/categories":
     get:
       parameters:
@@ -1316,6 +1358,7 @@ paths:
                   $ref: "#/components/schemas/Category"
                 type: array
           description: ""
+      tags: ["Category"]
     post:
       parameters:
         - in: path
@@ -1336,6 +1379,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Category"
           description: ""
+      tags: ["Category"]
   "/vocabularies/{vocabularies-id}/categories/batch-create":
     post:
       parameters:
@@ -1357,7 +1401,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Category"
           description: ""
-  "/web-site/{web-site-id}/user-account":
+      tags: ["Category"]
+  "/web-site/{web-site-id}/user-accounts":
     get:
       parameters:
         - in: query
@@ -1383,6 +1428,7 @@ paths:
                   $ref: "#/components/schemas/UserAccount"
                 type: array
           description: ""
+      tags: ["UserAccount"]
   "/web-urls":
     get:
       parameters:
@@ -1408,6 +1454,7 @@ paths:
                   $ref: "#/components/schemas/WebUrl"
                 type: array
           description: ""
+      tags: ["WebUrl"]
   "/web-urls/{web-urls-id}":
     get:
       parameters:
@@ -1424,3 +1471,4 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebUrl"
           description: ""
+      tags: ["WebUrl"]

@@ -171,11 +171,11 @@ info:
   version: v1.0
 openapi: 3.0.1
 paths:
-  "/aggregate-rating/{aggregate-rating-id}":
+  "/aggregate-ratings/{aggregate-ratings-id}":
     get:
       parameters:
         - in: path
-          name: aggregate-rating-id
+          name: aggregate-ratings-id
           required: true
           schema:
             format: int64
@@ -187,11 +187,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/AggregateRating"
           description: ""
-  "/blog-posting/{blog-posting-id}":
+      tags: ["AggregateRating"]
+  "/blog-postings/{blog-postings-id}":
     delete:
       parameters:
         - in: path
-          name: blog-posting-id
+          name: blog-postings-id
           required: true
           schema:
             format: int64
@@ -201,10 +202,11 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["BlogPosting"]
     get:
       parameters:
         - in: path
-          name: blog-posting-id
+          name: blog-postings-id
           required: true
           schema:
             format: int64
@@ -216,10 +218,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/BlogPosting"
           description: ""
+      tags: ["BlogPosting"]
     put:
       parameters:
         - in: path
-          name: blog-posting-id
+          name: blog-postings-id
           required: true
           schema:
             format: int64
@@ -236,7 +239,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/BlogPosting"
           description: ""
-  "/blog-posting/{blog-posting-id}/categories":
+      tags: ["BlogPosting"]
+  "/blog-postings/{blog-postings-id}/categories":
     get:
       parameters:
         - in: query
@@ -248,7 +252,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: blog-posting-id
+          name: blog-postings-id
           required: true
           schema:
             format: int64
@@ -263,10 +267,11 @@ paths:
                   type: integer
                 type: array
           description: ""
+      tags: ["BlogPosting"]
     post:
       parameters:
         - in: path
-          name: blog-posting-id
+          name: blog-postings-id
           required: true
           schema:
             format: int64
@@ -285,11 +290,12 @@ paths:
                 format: int64
                 type: integer
           description: ""
-  "/blog-posting/{blog-posting-id}/categories/batch-create":
+      tags: ["BlogPosting"]
+  "/blog-postings/{blog-postings-id}/categories/batch-create":
     post:
       parameters:
         - in: path
-          name: blog-posting-id
+          name: blog-postings-id
           required: true
           schema:
             format: int64
@@ -308,7 +314,8 @@ paths:
                 format: int64
                 type: integer
           description: ""
-  "/blog-posting/{blog-posting-id}/comment":
+      tags: ["BlogPosting"]
+  "/blog-postings/{blog-postings-id}/comments":
     get:
       parameters:
         - in: query
@@ -320,7 +327,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: blog-posting-id
+          name: blog-postings-id
           required: true
           schema:
             format: int64
@@ -334,11 +341,12 @@ paths:
                   $ref: "#/components/schemas/Comment"
                 type: array
           description: ""
-  "/comment/{comment-id}":
+      tags: ["Comment"]
+  "/comments/{comments-id}":
     get:
       parameters:
         - in: path
-          name: comment-id
+          name: comments-id
           required: true
           schema:
             format: int64
@@ -350,7 +358,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/Comment"
           description: ""
-  "/comment/{comment-id}/comment":
+      tags: ["Comment"]
+  "/comments/{comments-id}/comments":
     get:
       parameters:
         - in: query
@@ -362,7 +371,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: comment-id
+          name: comments-id
           required: true
           schema:
             format: int64
@@ -376,7 +385,8 @@ paths:
                   $ref: "#/components/schemas/Comment"
                 type: array
           description: ""
-  "/content-space/{content-space-id}/blog-posting":
+      tags: ["Comment"]
+  "/content-spaces/{content-spaces-id}/blog-postings":
     get:
       parameters:
         - in: query
@@ -388,7 +398,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -402,10 +412,11 @@ paths:
                   $ref: "#/components/schemas/BlogPosting"
                 type: array
           description: ""
+      tags: ["BlogPosting"]
     post:
       parameters:
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -422,11 +433,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/BlogPosting"
           description: ""
-  "/content-space/{content-space-id}/blog-posting/batch-create":
+      tags: ["BlogPosting"]
+  "/content-spaces/{content-spaces-id}/blog-postings/batch-create":
     post:
       parameters:
         - in: path
-          name: content-space-id
+          name: content-spaces-id
           required: true
           schema:
             format: int64
@@ -443,11 +455,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/BlogPosting"
           description: ""
-  "/creator/{creator-id}":
+      tags: ["BlogPosting"]
+  "/creators/{creators-id}":
     get:
       parameters:
         - in: path
-          name: creator-id
+          name: creators-id
           required: true
           schema:
             format: int64
@@ -459,11 +472,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/Creator"
           description: ""
-  "/image-object-repository/{image-object-repository-id}":
+      tags: ["Creator"]
+  "/image-object-repositories/{image-object-repositories-id}":
     get:
       parameters:
         - in: path
-          name: image-object-repository-id
+          name: image-object-repositories-id
           required: true
           schema:
             format: int64
@@ -475,7 +489,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImageObjectRepository"
           description: ""
-  "/image-object-repository/{image-object-repository-id}/image-object":
+      tags: ["ImageObjectRepository"]
+  "/image-object-repositories/{image-object-repositories-id}/image-objects":
     get:
       parameters:
         - in: query
@@ -487,7 +502,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: image-object-repository-id
+          name: image-object-repositories-id
           required: true
           schema:
             format: int64
@@ -501,10 +516,11 @@ paths:
                   $ref: "#/components/schemas/ImageObject"
                 type: array
           description: ""
+      tags: ["ImageObject"]
     post:
       parameters:
         - in: path
-          name: image-object-repository-id
+          name: image-object-repositories-id
           required: true
           schema:
             format: int64
@@ -521,11 +537,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImageObject"
           description: ""
-  "/image-object-repository/{image-object-repository-id}/image-object/batch-create":
+      tags: ["ImageObject"]
+  "/image-object-repositories/{image-object-repositories-id}/image-objects/batch-create":
     post:
       parameters:
         - in: path
-          name: image-object-repository-id
+          name: image-object-repositories-id
           required: true
           schema:
             format: int64
@@ -542,11 +559,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImageObject"
           description: ""
-  "/image-object/{image-object-id}":
+      tags: ["ImageObject"]
+  "/image-objects/{image-objects-id}":
     delete:
       parameters:
         - in: path
-          name: image-object-id
+          name: image-objects-id
           required: true
           schema:
             format: int64
@@ -556,10 +574,11 @@ paths:
           content:
             application/json: {}
           description: ""
+      tags: ["ImageObject"]
     get:
       parameters:
         - in: path
-          name: image-object-id
+          name: image-objects-id
           required: true
           schema:
             format: int64
@@ -571,3 +590,4 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImageObject"
           description: ""
+      tags: ["ImageObject"]
