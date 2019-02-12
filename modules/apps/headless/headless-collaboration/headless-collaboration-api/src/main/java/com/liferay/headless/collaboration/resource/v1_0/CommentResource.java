@@ -60,21 +60,21 @@ import javax.ws.rs.core.Response;
 public interface CommentResource {
 
 	@GET
-	@Path("/blog-posting/{blog-posting-id}/comment")
+	@Path("/blog-postings/{blog-postings-id}/comments")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Comment> getBlogPostingCommentPage( @PathParam("blog-posting-id") Long blogPostingId , @Context Pagination pagination ) throws Exception;
+	public Page<Comment> getBlogPostingsCommentsPage( @PathParam("blog-postings-id") Long blogPostingsId , @Context Pagination pagination ) throws Exception;
 
 	@GET
-	@Path("/comment/{comment-id}")
+	@Path("/comments/{comments-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Comment getComment( @PathParam("comment-id") Long commentId ) throws Exception;
+	public Comment getComment( @PathParam("comments-id") Long commentsId ) throws Exception;
 
 	@GET
-	@Path("/comment/{comment-id}/comment")
+	@Path("/comments/{comments-id}/comments")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Comment> getCommentCommentPage( @PathParam("comment-id") Long commentId , @Context Pagination pagination ) throws Exception;
+	public Page<Comment> getCommentsCommentsPage( @PathParam("comments-id") Long commentsId , @Context Pagination pagination ) throws Exception;
 
 }

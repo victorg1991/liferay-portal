@@ -42,70 +42,75 @@ public abstract class BaseFolderResourceImpl implements FolderResource {
 		"com_liferay_headless_document_library_dto_v1_0_FolderEntityModel";
 
 	@Override
-	public Response deleteFolder(Long folderId) throws Exception {
+	public Response deleteFolders(Long foldersId) throws Exception {
 		Response.ResponseBuilder responseBuilder = Response.ok();
 
 		return responseBuilder.build();
 	}
 
 	@Override
-	public Folder getDocumentsRepository(Long id) throws Exception {
+	public Folder getDocumentsRepositories(Long documentsRepositoriesId)
+		throws Exception {
+
 		return new Folder();
 	}
 
 	@Override
-	public Page<Folder> getDocumentsRepositoryFolderPage(
-			Long documentsRepositoryId, Pagination pagination)
+	public Page<Folder> getDocumentsRepositoriesFoldersPage(
+			Long documentsRepositoriesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Folder getFolder(Long folderId) throws Exception {
+	public Folder getFolder(Long foldersId) throws Exception {
 		return new Folder();
 	}
 
 	@Override
-	public Page<Folder> getFolderFolderPage(
-			Long folderId, Pagination pagination)
+	public Page<Folder> getFoldersFoldersPage(
+			Long foldersId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Folder postDocumentsRepositoryFolder(
-			Long documentsRepositoryId, Folder folder)
+	public Folder postDocumentsRepositoriesFolder(
+			Long documentsRepositoriesId, Folder folderParameter)
 		throws Exception {
 
 		return new Folder();
 	}
 
 	@Override
-	public Folder postDocumentsRepositoryFolderBatchCreate(
-			Long documentsRepositoryId, Folder folder)
+	public Folder postDocumentsRepositoriesFoldersBatchCreate(
+			Long documentsRepositoriesId, Folder folderParameter)
 		throws Exception {
 
 		return new Folder();
 	}
 
 	@Override
-	public Folder postFolderFolder(Long folderId, Folder folder)
+	public Folder postFoldersFolder(Long foldersId, Folder folderParameter)
 		throws Exception {
 
 		return new Folder();
 	}
 
 	@Override
-	public Folder postFolderFolderBatchCreate(Long folderId, Folder folder)
+	public Folder postFoldersFoldersBatchCreate(
+			Long foldersId, Folder folderParameter)
 		throws Exception {
 
 		return new Folder();
 	}
 
 	@Override
-	public Folder putFolder(Long folderId, Folder folder) throws Exception {
+	public Folder putFolder(Long foldersId, Folder folderParameter)
+		throws Exception {
+
 		return new Folder();
 	}
 

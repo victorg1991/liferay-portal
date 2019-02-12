@@ -40,7 +40,7 @@ public abstract class BaseAggregateRatingResourceImpl
 		"com_liferay_headless_web_experience_dto_v1_0_AggregateRatingEntityModel";
 
 	@Override
-	public AggregateRating getAggregateRating(Long aggregateRatingId)
+	public AggregateRating getAggregateRating(Long aggregateRatingsId)
 		throws Exception {
 
 		return new AggregateRating();

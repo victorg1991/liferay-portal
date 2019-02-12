@@ -64,10 +64,10 @@ import javax.ws.rs.core.Response;
 public interface RoleResource {
 
 	@GET
-	@Path("/my-user-account/{my-user-account-id}/roles")
+	@Path("/my-user-accounts/{my-user-accounts-id}/roles")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Role> getMyUserAccountRolesPage( @PathParam("my-user-account-id") Long myUserAccountId , @Context Pagination pagination ) throws Exception;
+	public Page<Role> getMyUserAccountsRolesPage( @PathParam("my-user-accounts-id") Long myUserAccountsId , @Context Pagination pagination ) throws Exception;
 
 	@GET
 	@Path("/roles")
@@ -82,9 +82,9 @@ public interface RoleResource {
 	public Role getRole( @PathParam("roles-id") Long rolesId ) throws Exception;
 
 	@GET
-	@Path("/user-account/{user-account-id}/roles")
+	@Path("/user-accounts/{user-accounts-id}/roles")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Role> getUserAccountRolesPage( @PathParam("user-account-id") Long userAccountId , @Context Pagination pagination ) throws Exception;
+	public Page<Role> getUserAccountsRolesPage( @PathParam("user-accounts-id") Long userAccountsId , @Context Pagination pagination ) throws Exception;
 
 }

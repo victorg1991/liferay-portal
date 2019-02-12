@@ -60,20 +60,20 @@ import javax.ws.rs.core.Response;
 public interface CommentResource {
 
 	@GET
-	@Path("/comment/{comment-id}")
+	@Path("/comments/{comments-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Comment getComment( @PathParam("comment-id") Long commentId ) throws Exception;
+	public Comment getComment( @PathParam("comments-id") Long commentsId ) throws Exception;
 
 	@GET
-	@Path("/comment/{comment-id}/comment")
+	@Path("/comments/{comments-id}/comments")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Comment> getCommentCommentPage( @PathParam("comment-id") Long commentId , @Context Pagination pagination ) throws Exception;
+	public Page<Comment> getCommentsCommentsPage( @PathParam("comments-id") Long commentsId , @Context Pagination pagination ) throws Exception;
 
 	@GET
-	@Path("/structured-content/{structured-content-id}/comment")
+	@Path("/structured-contents/{structured-contents-id}/comments")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Comment> getStructuredContentCommentPage( @PathParam("structured-content-id") Long structuredContentId , @Context Pagination pagination ) throws Exception;
+	public Page<Comment> getStructuredContentsCommentsPage( @PathParam("structured-contents-id") Long structuredContentsId , @Context Pagination pagination ) throws Exception;
 }

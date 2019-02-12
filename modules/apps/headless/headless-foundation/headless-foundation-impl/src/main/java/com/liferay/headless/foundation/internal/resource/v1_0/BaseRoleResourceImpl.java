@@ -42,8 +42,8 @@ public abstract class BaseRoleResourceImpl implements RoleResource {
 		"com_liferay_headless_foundation_dto_v1_0_RoleEntityModel";
 
 	@Override
-	public Page<Role> getMyUserAccountRolesPage(
-			Long myUserAccountId, Pagination pagination)
+	public Page<Role> getMyUserAccountsRolesPage(
+			Long myUserAccountsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
@@ -60,8 +60,8 @@ public abstract class BaseRoleResourceImpl implements RoleResource {
 	}
 
 	@Override
-	public Page<Role> getUserAccountRolesPage(
-			Long userAccountId, Pagination pagination)
+	public Page<Role> getUserAccountsRolesPage(
+			Long userAccountsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());

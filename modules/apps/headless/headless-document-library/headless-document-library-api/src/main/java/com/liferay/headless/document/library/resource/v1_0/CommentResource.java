@@ -58,9 +58,9 @@ import javax.ws.rs.core.Response;
 public interface CommentResource {
 
 	@GET
-	@Path("/document/{document-id}/comment")
+	@Path("/documents/{documents-id}/comments")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Comment> getDocumentCommentPage( @PathParam("document-id") Long documentId , @Context Pagination pagination ) throws Exception;
+	public Page<Comment> getDocumentsCommentsPage( @PathParam("documents-id") Long documentsId , @Context Pagination pagination ) throws Exception;
 
 }

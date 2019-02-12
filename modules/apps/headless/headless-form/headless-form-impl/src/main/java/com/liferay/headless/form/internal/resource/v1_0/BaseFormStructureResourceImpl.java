@@ -43,8 +43,8 @@ public abstract class BaseFormStructureResourceImpl
 		"com_liferay_headless_form_dto_v1_0_FormStructureEntityModel";
 
 	@Override
-	public Page<FormStructure> getContentSpaceFormStructuresPage(
-			Long contentSpaceId, Pagination pagination)
+	public Page<FormStructure> getContentSpacesFormStructuresPage(
+			Long contentSpacesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());

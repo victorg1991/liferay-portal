@@ -42,6 +42,13 @@ public abstract class BaseCategoryResourceImpl implements CategoryResource {
 		"com_liferay_headless_foundation_dto_v1_0_CategoryEntityModel";
 
 	@Override
+	public Response deleteCategories(Long categoriesId) throws Exception {
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
 	public Category getCategories(Long categoriesId) throws Exception {
 		return new Category();
 	}
@@ -64,7 +71,7 @@ public abstract class BaseCategoryResourceImpl implements CategoryResource {
 
 	@Override
 	public Category postCategoriesCategories(
-			Long categoriesId, Category category)
+			Long categoriesId, Category categoryParameter)
 		throws Exception {
 
 		return new Category();
@@ -72,7 +79,7 @@ public abstract class BaseCategoryResourceImpl implements CategoryResource {
 
 	@Override
 	public Category postCategoriesCategoriesBatchCreate(
-			Long categoriesId, Category category)
+			Long categoriesId, Category categoryParameter)
 		throws Exception {
 
 		return new Category();
@@ -80,7 +87,7 @@ public abstract class BaseCategoryResourceImpl implements CategoryResource {
 
 	@Override
 	public Category postVocabulariesCategories(
-			Long vocabulariesId, Category category)
+			Long vocabulariesId, Category categoryParameter)
 		throws Exception {
 
 		return new Category();
@@ -88,14 +95,14 @@ public abstract class BaseCategoryResourceImpl implements CategoryResource {
 
 	@Override
 	public Category postVocabulariesCategoriesBatchCreate(
-			Long vocabulariesId, Category category)
+			Long vocabulariesId, Category categoryParameter)
 		throws Exception {
 
 		return new Category();
 	}
 
 	@Override
-	public Category putCategories(Long categoriesId, Category category)
+	public Category putCategories(Long categoriesId, Category categoryParameter)
 		throws Exception {
 
 		return new Category();

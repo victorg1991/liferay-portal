@@ -40,8 +40,8 @@ public abstract class BaseImageObjectRepositoryResourceImpl
 		"com_liferay_headless_collaboration_dto_v1_0_ImageObjectRepositoryEntityModel";
 
 	@Override
-	public ImageObjectRepository getImageObjectRepository(
-			Long imageObjectRepositoryId)
+	public ImageObjectRepository getImageObjectRepositories(
+			Long imageObjectRepositoriesId)
 		throws Exception {
 
 		return new ImageObjectRepository();

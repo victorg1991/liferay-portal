@@ -43,60 +43,88 @@ public abstract class BaseDocumentResourceImpl implements DocumentResource {
 		"com_liferay_headless_document_library_dto_v1_0_DocumentEntityModel";
 
 	@Override
-	public Response deleteDocument(Long documentId) throws Exception {
+	public Response deleteDocuments(Long documentsId) throws Exception {
 		Response.ResponseBuilder responseBuilder = Response.ok();
 
 		return responseBuilder.build();
 	}
 
 	@Override
-	public Document getDocument(Long documentId) throws Exception {
+	public Document getDocument(Long documentsId) throws Exception {
 		return new Document();
 	}
 
 	@Override
-	public Page<Document> getDocumentsRepositoryDocumentPage(
-			Long documentsRepositoryId, Pagination pagination)
+	public Page<Long> getDocumentsCategoriesPage(
+			Long documentsId, Pagination pagination)
+		throws Exception {
+
+		return new Page<>();
+	}
+
+	@Override
+	public Page<Document> getDocumentsRepositoriesDocumentsPage(
+			Long documentsRepositoriesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Page<Document> getFolderDocumentPage(
-			Long folderId, Pagination pagination)
+	public Page<Document> getFoldersDocumentsPage(
+			Long foldersId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Document postDocumentsRepositoryDocument(
-			Long documentsRepositoryId, Document document)
+	public Response postDocumentsCategories(
+			Long documentsId, Long longParameter)
+		throws Exception {
+
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
+	public Response postDocumentsCategoriesBatchCreate(
+			Long documentsId, Long longParameter)
+		throws Exception {
+
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
+	public Document postDocumentsRepositoriesDocument(
+			Long documentsRepositoriesId, Document documentParameter)
 		throws Exception {
 
 		return new Document();
 	}
 
 	@Override
-	public Document postDocumentsRepositoryDocumentBatchCreate(
-			Long documentsRepositoryId, Document document)
+	public Document postDocumentsRepositoriesDocumentsBatchCreate(
+			Long documentsRepositoriesId, Document documentParameter)
 		throws Exception {
 
 		return new Document();
 	}
 
 	@Override
-	public Document postFolderDocument(
-			Long folderId, MultipartBody multipartBody)
+	public Document postFoldersDocument(
+			Long foldersId, MultipartBody multipartBody)
 		throws Exception {
 
 		return new Document();
 	}
 
 	@Override
-	public Document postFolderDocumentBatchCreate(
-			Long folderId, MultipartBody multipartBody)
+	public Document postFoldersDocumentsBatchCreate(
+			Long foldersId, MultipartBody multipartBody)
 		throws Exception {
 
 		return new Document();

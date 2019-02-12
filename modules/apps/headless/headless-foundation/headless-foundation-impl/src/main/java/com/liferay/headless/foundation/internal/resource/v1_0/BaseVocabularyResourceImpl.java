@@ -42,8 +42,15 @@ public abstract class BaseVocabularyResourceImpl implements VocabularyResource {
 		"com_liferay_headless_foundation_dto_v1_0_VocabularyEntityModel";
 
 	@Override
-	public Page<Vocabulary> getContentSpaceVocabulariesPage(
-			Long contentSpaceId, Pagination pagination)
+	public Response deleteVocabularies(Long vocabulariesId) throws Exception {
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
+	public Page<Vocabulary> getContentSpacesVocabulariesPage(
+			Long contentSpacesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
@@ -55,16 +62,16 @@ public abstract class BaseVocabularyResourceImpl implements VocabularyResource {
 	}
 
 	@Override
-	public Vocabulary postContentSpaceVocabularies(
-			Long contentSpaceId, Vocabulary vocabulary)
+	public Vocabulary postContentSpacesVocabularies(
+			Long contentSpacesId, Vocabulary vocabularyParameter)
 		throws Exception {
 
 		return new Vocabulary();
 	}
 
 	@Override
-	public Vocabulary postContentSpaceVocabulariesBatchCreate(
-			Long contentSpaceId, Vocabulary vocabulary)
+	public Vocabulary postContentSpacesVocabulariesBatchCreate(
+			Long contentSpacesId, Vocabulary vocabularyParameter)
 		throws Exception {
 
 		return new Vocabulary();
@@ -72,7 +79,7 @@ public abstract class BaseVocabularyResourceImpl implements VocabularyResource {
 
 	@Override
 	public Vocabulary putVocabularies(
-			Long vocabulariesId, Vocabulary vocabulary)
+			Long vocabulariesId, Vocabulary vocabularyParameter)
 		throws Exception {
 
 		return new Vocabulary();

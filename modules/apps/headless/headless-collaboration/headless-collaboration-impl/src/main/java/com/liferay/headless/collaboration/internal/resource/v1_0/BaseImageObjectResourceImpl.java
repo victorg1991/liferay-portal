@@ -43,36 +43,36 @@ public abstract class BaseImageObjectResourceImpl
 		"com_liferay_headless_collaboration_dto_v1_0_ImageObjectEntityModel";
 
 	@Override
-	public Response deleteImageObject(Long imageObjectId) throws Exception {
+	public Response deleteImageObjects(Long imageObjectsId) throws Exception {
 		Response.ResponseBuilder responseBuilder = Response.ok();
 
 		return responseBuilder.build();
 	}
 
 	@Override
-	public ImageObject getImageObject(Long imageObjectId) throws Exception {
+	public ImageObject getImageObject(Long imageObjectsId) throws Exception {
 		return new ImageObject();
 	}
 
 	@Override
-	public Page<ImageObject> getImageObjectRepositoryImageObjectPage(
-			Long imageObjectRepositoryId, Pagination pagination)
+	public Page<ImageObject> getImageObjectRepositoriesImageObjectsPage(
+			Long imageObjectRepositoriesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public ImageObject postImageObjectRepositoryImageObject(
-			Long imageObjectRepositoryId, ImageObject imageObject)
+	public ImageObject postImageObjectRepositoriesImageObject(
+			Long imageObjectRepositoriesId, ImageObject imageObjectParameter)
 		throws Exception {
 
 		return new ImageObject();
 	}
 
 	@Override
-	public ImageObject postImageObjectRepositoryImageObjectBatchCreate(
-			Long imageObjectRepositoryId, ImageObject imageObject)
+	public ImageObject postImageObjectRepositoriesImageObjectsBatchCreate(
+			Long imageObjectRepositoriesId, ImageObject imageObjectParameter)
 		throws Exception {
 
 		return new ImageObject();

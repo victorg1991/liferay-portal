@@ -60,10 +60,10 @@ import javax.ws.rs.core.Response;
 public interface ContentStructureResource {
 
 	@GET
-	@Path("/content-space/{content-space-id}/content-structures")
+	@Path("/content-spaces/{content-spaces-id}/content-structures")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<ContentStructure> getContentSpaceContentStructuresPage( @PathParam("content-space-id") Long contentSpaceId , @Context Pagination pagination ) throws Exception;
+	public Page<ContentStructure> getContentSpacesContentStructuresPage( @PathParam("content-spaces-id") Long contentSpacesId , @Context Pagination pagination ) throws Exception;
 
 	@GET
 	@Path("/content-structures/{content-structures-id}")

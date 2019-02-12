@@ -60,34 +60,34 @@ import javax.ws.rs.core.Response;
 public interface ImageObjectResource {
 
 	@GET
-	@Path("/image-object-repository/{image-object-repository-id}/image-object")
+	@Path("/image-object-repositories/{image-object-repositories-id}/image-objects")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<ImageObject> getImageObjectRepositoryImageObjectPage( @PathParam("image-object-repository-id") Long imageObjectRepositoryId , @Context Pagination pagination ) throws Exception;
+	public Page<ImageObject> getImageObjectRepositoriesImageObjectsPage( @PathParam("image-object-repositories-id") Long imageObjectRepositoriesId , @Context Pagination pagination ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/image-object-repository/{image-object-repository-id}/image-object")
+	@Path("/image-object-repositories/{image-object-repositories-id}/image-objects")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public ImageObject postImageObjectRepositoryImageObject( @PathParam("image-object-repository-id") Long imageObjectRepositoryId , ImageObject imageObject ) throws Exception;
+	public ImageObject postImageObjectRepositoriesImageObject( @PathParam("image-object-repositories-id") Long imageObjectRepositoriesId , ImageObject imageObjectParameter ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/image-object-repository/{image-object-repository-id}/image-object/batch-create")
+	@Path("/image-object-repositories/{image-object-repositories-id}/image-objects/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public ImageObject postImageObjectRepositoryImageObjectBatchCreate( @PathParam("image-object-repository-id") Long imageObjectRepositoryId , ImageObject imageObject ) throws Exception;
+	public ImageObject postImageObjectRepositoriesImageObjectsBatchCreate( @PathParam("image-object-repositories-id") Long imageObjectRepositoriesId , ImageObject imageObjectParameter ) throws Exception;
 
 	@DELETE
-	@Path("/image-object/{image-object-id}")
+	@Path("/image-objects/{image-objects-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Response deleteImageObject( @PathParam("image-object-id") Long imageObjectId ) throws Exception;
+	public Response deleteImageObjects( @PathParam("image-objects-id") Long imageObjectsId ) throws Exception;
 
 	@GET
-	@Path("/image-object/{image-object-id}")
+	@Path("/image-objects/{image-objects-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public ImageObject getImageObject( @PathParam("image-object-id") Long imageObjectId ) throws Exception;
+	public ImageObject getImageObject( @PathParam("image-objects-id") Long imageObjectsId ) throws Exception;
 }

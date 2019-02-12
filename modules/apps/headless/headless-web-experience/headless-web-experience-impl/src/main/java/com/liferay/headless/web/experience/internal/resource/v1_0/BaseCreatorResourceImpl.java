@@ -39,7 +39,7 @@ public abstract class BaseCreatorResourceImpl implements CreatorResource {
 		"com_liferay_headless_web_experience_dto_v1_0_CreatorEntityModel";
 
 	@Override
-	public Creator getCreator(Long creatorId) throws Exception {
+	public Creator getCreator(Long creatorsId) throws Exception {
 		return new Creator();
 	}
 

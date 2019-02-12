@@ -58,55 +58,75 @@ import javax.ws.rs.core.Response;
 public interface DocumentResource {
 
 	@DELETE
-	@Path("/document/{document-id}")
+	@Path("/documents/{documents-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Response deleteDocument( @PathParam("document-id") Long documentId ) throws Exception;
+	public Response deleteDocuments( @PathParam("documents-id") Long documentsId ) throws Exception;
 
 	@GET
-	@Path("/document/{document-id}")
+	@Path("/documents/{documents-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Document getDocument( @PathParam("document-id") Long documentId ) throws Exception;
+	public Document getDocument( @PathParam("documents-id") Long documentsId ) throws Exception;
 
 	@GET
-	@Path("/documents-repository/{documents-repository-id}/document")
+	@Path("/documents/{documents-id}/categories")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Document> getDocumentsRepositoryDocumentPage( @PathParam("documents-repository-id") Long documentsRepositoryId , @Context Pagination pagination ) throws Exception;
+	public Page<Long> getDocumentsCategoriesPage( @PathParam("documents-id") Long documentsId , @Context Pagination pagination ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/documents-repository/{documents-repository-id}/document")
+	@Path("/documents/{documents-id}/categories")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Document postDocumentsRepositoryDocument( @PathParam("documents-repository-id") Long documentsRepositoryId , Document document ) throws Exception;
+	public Response postDocumentsCategories( @PathParam("documents-id") Long documentsId , Long longParameter ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/documents-repository/{documents-repository-id}/document/batch-create")
+	@Path("/documents/{documents-id}/categories/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public Document postDocumentsRepositoryDocumentBatchCreate( @PathParam("documents-repository-id") Long documentsRepositoryId , Document document ) throws Exception;
+	public Response postDocumentsCategoriesBatchCreate( @PathParam("documents-id") Long documentsId , Long longParameter ) throws Exception;
 
 	@GET
-	@Path("/folder/{folder-id}/document")
+	@Path("/documents-repositories/{documents-repositories-id}/documents")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Document> getFolderDocumentPage( @PathParam("folder-id") Long folderId , @Context Pagination pagination ) throws Exception;
+	public Page<Document> getDocumentsRepositoriesDocumentsPage( @PathParam("documents-repositories-id") Long documentsRepositoriesId , @Context Pagination pagination ) throws Exception;
 
-	@Consumes("multipart/form-data")
+	@Consumes("application/json")
 	@POST
-	@Path("/folder/{folder-id}/document")
+	@Path("/documents-repositories/{documents-repositories-id}/documents")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Document postFolderDocument( @PathParam("folder-id") Long folderId , MultipartBody multipartBody ) throws Exception;
+	public Document postDocumentsRepositoriesDocument( @PathParam("documents-repositories-id") Long documentsRepositoriesId , Document documentParameter ) throws Exception;
 
-	@Consumes("multipart/form-data")
+	@Consumes("application/json")
 	@POST
-	@Path("/folder/{folder-id}/document/batch-create")
+	@Path("/documents-repositories/{documents-repositories-id}/documents/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public Document postFolderDocumentBatchCreate( @PathParam("folder-id") Long folderId , MultipartBody multipartBody ) throws Exception;
+	public Document postDocumentsRepositoriesDocumentsBatchCreate( @PathParam("documents-repositories-id") Long documentsRepositoriesId , Document documentParameter ) throws Exception;
+
+	@GET
+	@Path("/folders/{folders-id}/documents")
+	@Produces("application/json")
+	@RequiresScope("everything.read")
+	public Page<Document> getFoldersDocumentsPage( @PathParam("folders-id") Long foldersId , @Context Pagination pagination ) throws Exception;
+
+	@Consumes("multipart/form-data")
+	@POST
+	@Path("/folders/{folders-id}/documents")
+	@Produces("application/json")
+	@RequiresScope("everything.read")
+	public Document postFoldersDocument( @PathParam("folders-id") Long foldersId , MultipartBody multipartBody ) throws Exception;
+
+	@Consumes("multipart/form-data")
+	@POST
+	@Path("/folders/{folders-id}/documents/batch-create")
+	@Produces("application/json")
+	@RequiresScope("everything.write")
+	public Document postFoldersDocumentsBatchCreate( @PathParam("folders-id") Long foldersId , MultipartBody multipartBody ) throws Exception;
 
 }

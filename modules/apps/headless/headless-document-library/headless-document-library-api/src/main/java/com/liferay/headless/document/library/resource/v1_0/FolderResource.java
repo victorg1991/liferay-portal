@@ -58,67 +58,67 @@ import javax.ws.rs.core.Response;
 public interface FolderResource {
 
 	@GET
-	@Path("/documents-repository/{id}")
+	@Path("/documents-repositories/{documents-repositories-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Folder getDocumentsRepository( @PathParam("id") Long id ) throws Exception;
+	public Folder getDocumentsRepositories( @PathParam("documents-repositories-id") Long documentsRepositoriesId ) throws Exception;
 
 	@GET
-	@Path("/documents-repository/{documents-repository-id}/folder")
+	@Path("/documents-repositories/{documents-repositories-id}/folders")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Folder> getDocumentsRepositoryFolderPage( @PathParam("documents-repository-id") Long documentsRepositoryId , @Context Pagination pagination ) throws Exception;
+	public Page<Folder> getDocumentsRepositoriesFoldersPage( @PathParam("documents-repositories-id") Long documentsRepositoriesId , @Context Pagination pagination ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/documents-repository/{documents-repository-id}/folder")
+	@Path("/documents-repositories/{documents-repositories-id}/folders")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Folder postDocumentsRepositoryFolder( @PathParam("documents-repository-id") Long documentsRepositoryId , Folder folder ) throws Exception;
+	public Folder postDocumentsRepositoriesFolder( @PathParam("documents-repositories-id") Long documentsRepositoriesId , Folder folderParameter ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/documents-repository/{documents-repository-id}/folder/batch-create")
+	@Path("/documents-repositories/{documents-repositories-id}/folders/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public Folder postDocumentsRepositoryFolderBatchCreate( @PathParam("documents-repository-id") Long documentsRepositoryId , Folder folder ) throws Exception;
+	public Folder postDocumentsRepositoriesFoldersBatchCreate( @PathParam("documents-repositories-id") Long documentsRepositoriesId , Folder folderParameter ) throws Exception;
 
 	@DELETE
-	@Path("/folder/{folder-id}")
+	@Path("/folders/{folders-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Response deleteFolder( @PathParam("folder-id") Long folderId ) throws Exception;
+	public Response deleteFolders( @PathParam("folders-id") Long foldersId ) throws Exception;
 
 	@GET
-	@Path("/folder/{folder-id}")
+	@Path("/folders/{folders-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Folder getFolder( @PathParam("folder-id") Long folderId ) throws Exception;
+	public Folder getFolder( @PathParam("folders-id") Long foldersId ) throws Exception;
 
 	@Consumes("application/json")
 	@PUT
-	@Path("/folder/{folder-id}")
+	@Path("/folders/{folders-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Folder putFolder( @PathParam("folder-id") Long folderId , Folder folder ) throws Exception;
+	public Folder putFolder( @PathParam("folders-id") Long foldersId , Folder folderParameter ) throws Exception;
 
 	@GET
-	@Path("/folder/{folder-id}/folder")
+	@Path("/folders/{folders-id}/folders")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Folder> getFolderFolderPage( @PathParam("folder-id") Long folderId , @Context Pagination pagination ) throws Exception;
+	public Page<Folder> getFoldersFoldersPage( @PathParam("folders-id") Long foldersId , @Context Pagination pagination ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/folder/{folder-id}/folder")
+	@Path("/folders/{folders-id}/folders")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Folder postFolderFolder( @PathParam("folder-id") Long folderId , Folder folder ) throws Exception;
+	public Folder postFoldersFolder( @PathParam("folders-id") Long foldersId , Folder folderParameter ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/folder/{folder-id}/folder/batch-create")
+	@Path("/folders/{folders-id}/folders/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public Folder postFolderFolderBatchCreate( @PathParam("folder-id") Long folderId , Folder folder ) throws Exception;
+	public Folder postFoldersFoldersBatchCreate( @PathParam("folders-id") Long foldersId , Folder folderParameter ) throws Exception;
 }

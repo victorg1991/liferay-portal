@@ -43,36 +43,36 @@ public abstract class BaseOrganizationResourceImpl
 		"com_liferay_headless_foundation_dto_v1_0_OrganizationEntityModel";
 
 	@Override
-	public Page<Organization> getMyUserAccountOrganizationPage(
-			Long myUserAccountId, Pagination pagination)
+	public Page<Organization> getMyUserAccountsOrganizationsPage(
+			Long myUserAccountsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Organization getOrganization(Long organizationId) throws Exception {
+	public Organization getOrganization(Long organizationsId) throws Exception {
 		return new Organization();
 	}
 
 	@Override
-	public Page<Organization> getOrganizationOrganizationPage(
-			Long organizationId, Pagination pagination)
+	public Page<Organization> getOrganizationsOrganizationsPage(
+			Long organizationsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Page<Organization> getOrganizationPage(Pagination pagination)
+	public Page<Organization> getOrganizationsPage(Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Page<Organization> getUserAccountOrganizationPage(
-			Long userAccountId, Pagination pagination)
+	public Page<Organization> getUserAccountsOrganizationsPage(
+			Long userAccountsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());

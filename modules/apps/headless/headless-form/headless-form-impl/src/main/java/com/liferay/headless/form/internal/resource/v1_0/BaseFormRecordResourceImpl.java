@@ -42,35 +42,37 @@ public abstract class BaseFormRecordResourceImpl implements FormRecordResource {
 		"com_liferay_headless_form_dto_v1_0_FormRecordEntityModel";
 
 	@Override
-	public Page<FormRecord> getFormFormRecordPage(
-			Long formId, Pagination pagination)
+	public FormRecord getFormRecord(Long formRecordsId) throws Exception {
+		return new FormRecord();
+	}
+
+	@Override
+	public Page<FormRecord> getFormsFormRecordsPage(
+			Long formsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public FormRecord getFormRecord(Long formRecordId) throws Exception {
-		return new FormRecord();
-	}
-
-	@Override
-	public FormRecord postFormFormRecord(Long formId, FormRecord formRecord)
+	public FormRecord postFormsFormRecord(
+			Long formsId, FormRecord formRecordParameter)
 		throws Exception {
 
 		return new FormRecord();
 	}
 
 	@Override
-	public FormRecord postFormFormRecordBatchCreate(
-			Long formId, FormRecord formRecord)
+	public FormRecord postFormsFormRecordsBatchCreate(
+			Long formsId, FormRecord formRecordParameter)
 		throws Exception {
 
 		return new FormRecord();
 	}
 
 	@Override
-	public FormRecord putFormRecord(Long formRecordId, FormRecord formRecord)
+	public FormRecord putFormRecord(
+			Long formRecordsId, FormRecord formRecordParameter)
 		throws Exception {
 
 		return new FormRecord();

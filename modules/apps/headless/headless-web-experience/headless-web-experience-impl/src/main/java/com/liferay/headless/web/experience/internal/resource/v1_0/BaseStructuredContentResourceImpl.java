@@ -14,6 +14,7 @@
 
 package com.liferay.headless.web.experience.internal.resource.v1_0;
 
+import com.liferay.headless.web.experience.dto.v1_0.ContentStructure;
 import com.liferay.headless.web.experience.dto.v1_0.StructuredContent;
 import com.liferay.headless.web.experience.resource.v1_0.StructuredContentResource;
 import com.liferay.petra.function.UnsafeFunction;
@@ -45,7 +46,7 @@ public abstract class BaseStructuredContentResourceImpl
 		"com_liferay_headless_web_experience_dto_v1_0_StructuredContentEntityModel";
 
 	@Override
-	public Response deleteStructuredContent(Long structuredContentId)
+	public Response deleteStructuredContents(Long structuredContentsId)
 		throws Exception {
 
 		Response.ResponseBuilder responseBuilder = Response.ok();
@@ -54,8 +55,8 @@ public abstract class BaseStructuredContentResourceImpl
 	}
 
 	@Override
-	public Page<StructuredContent> getContentSpaceContentStructureStructuredContentPage(
-			Long contentSpaceId, Long contentStructureId, Filter filter,
+	public Page<StructuredContent> getContentSpacesContentStructureStructuredContentsPage(
+			Long contentSpacesId, Long contentStructureId, Filter filter,
 			Pagination pagination, Sort[] sorts)
 		throws Exception {
 
@@ -63,8 +64,8 @@ public abstract class BaseStructuredContentResourceImpl
 	}
 
 	@Override
-	public Page<StructuredContent> getContentSpaceStructuredContentPage(
-			Long contentSpaceId, Filter filter, Pagination pagination,
+	public Page<StructuredContent> getContentSpacesStructuredContentsPage(
+			Long contentSpacesId, Filter filter, Pagination pagination,
 			Sort[] sorts)
 		throws Exception {
 
@@ -72,39 +73,75 @@ public abstract class BaseStructuredContentResourceImpl
 	}
 
 	@Override
-	public StructuredContent getStructuredContent(Long structuredContentId)
+	public ContentStructure getContentStructures(Long contentStructuresId)
+		throws Exception {
+
+		return new ContentStructure();
+	}
+
+	@Override
+	public StructuredContent getStructuredContent(Long structuredContentsId)
 		throws Exception {
 
 		return new StructuredContent();
 	}
 
 	@Override
-	public StructuredContent patchContentSpaceStructuredContent(
-			Long contentSpaceId, StructuredContent structuredContent)
+	public Page<Long> getStructuredContentsCategoriesPage(
+			Long structuredContentsId, Pagination pagination)
+		throws Exception {
+
+		return new Page<>();
+	}
+
+	@Override
+	public StructuredContent patchContentSpacesStructuredContent(
+			Long contentSpacesId, StructuredContent structuredContentParameter)
 		throws Exception {
 
 		return new StructuredContent();
 	}
 
 	@Override
-	public StructuredContent postContentSpaceStructuredContent(
-			Long contentSpaceId, StructuredContent structuredContent)
+	public StructuredContent postContentSpacesStructuredContent(
+			Long contentSpacesId, StructuredContent structuredContentParameter)
 		throws Exception {
 
 		return new StructuredContent();
 	}
 
 	@Override
-	public StructuredContent postContentSpaceStructuredContentBatchCreate(
-			Long contentSpaceId, StructuredContent structuredContent)
+	public StructuredContent postContentSpacesStructuredContentsBatchCreate(
+			Long contentSpacesId, StructuredContent structuredContentParameter)
 		throws Exception {
 
 		return new StructuredContent();
+	}
+
+	@Override
+	public Response postStructuredContentsCategories(
+			Long structuredContentsId, Long longParameter)
+		throws Exception {
+
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
+	public Response postStructuredContentsCategoriesBatchCreate(
+			Long structuredContentsId, Long longParameter)
+		throws Exception {
+
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
 	}
 
 	@Override
 	public StructuredContent putStructuredContent(
-			Long structuredContentId, StructuredContent structuredContent)
+			Long structuredContentsId,
+			StructuredContent structuredContentParameter)
 		throws Exception {
 
 		return new StructuredContent();

@@ -43,36 +43,64 @@ public abstract class BaseBlogPostingResourceImpl
 		"com_liferay_headless_collaboration_dto_v1_0_BlogPostingEntityModel";
 
 	@Override
-	public Response deleteBlogPosting(Long blogPostingId) throws Exception {
+	public Response deleteBlogPostings(Long blogPostingsId) throws Exception {
 		Response.ResponseBuilder responseBuilder = Response.ok();
 
 		return responseBuilder.build();
 	}
 
 	@Override
-	public BlogPosting getBlogPosting(Long blogPostingId) throws Exception {
+	public BlogPosting getBlogPosting(Long blogPostingsId) throws Exception {
 		return new BlogPosting();
 	}
 
 	@Override
-	public Page<BlogPosting> getContentSpaceBlogPostingPage(
-			Long contentSpaceId, Pagination pagination)
+	public Page<Long> getBlogPostingsCategoriesPage(
+			Long blogPostingsId, Pagination pagination)
+		throws Exception {
+
+		return new Page<>();
+	}
+
+	@Override
+	public Page<BlogPosting> getContentSpacesBlogPostingsPage(
+			Long contentSpacesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public BlogPosting postContentSpaceBlogPosting(
-			Long contentSpaceId, BlogPosting blogPosting)
+	public Response postBlogPostingsCategories(
+			Long blogPostingsId, Long longParameter)
+		throws Exception {
+
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
+	public Response postBlogPostingsCategoriesBatchCreate(
+			Long blogPostingsId, Long longParameter)
+		throws Exception {
+
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
+	public BlogPosting postContentSpacesBlogPosting(
+			Long contentSpacesId, BlogPosting blogPostingParameter)
 		throws Exception {
 
 		return new BlogPosting();
 	}
 
 	@Override
-	public BlogPosting postContentSpaceBlogPostingBatchCreate(
-			Long contentSpaceId, BlogPosting blogPosting)
+	public BlogPosting postContentSpacesBlogPostingsBatchCreate(
+			Long contentSpacesId, BlogPosting blogPostingParameter)
 		throws Exception {
 
 		return new BlogPosting();
@@ -80,7 +108,7 @@ public abstract class BaseBlogPostingResourceImpl
 
 	@Override
 	public BlogPosting putBlogPosting(
-			Long blogPostingId, BlogPosting blogPosting)
+			Long blogPostingsId, BlogPosting blogPostingParameter)
 		throws Exception {
 
 		return new BlogPosting();

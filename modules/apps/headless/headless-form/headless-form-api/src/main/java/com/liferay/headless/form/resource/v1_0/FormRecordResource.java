@@ -59,36 +59,36 @@ import javax.ws.rs.core.Response;
 public interface FormRecordResource {
 
 	@GET
-	@Path("/form-record/{form-record-id}")
+	@Path("/form-records/{form-records-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public FormRecord getFormRecord( @PathParam("form-record-id") Long formRecordId ) throws Exception;
+	public FormRecord getFormRecord( @PathParam("form-records-id") Long formRecordsId ) throws Exception;
 
 	@Consumes("application/json")
 	@PUT
-	@Path("/form-record/{form-record-id}")
+	@Path("/form-records/{form-records-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public FormRecord putFormRecord( @PathParam("form-record-id") Long formRecordId , FormRecord formRecord ) throws Exception;
+	public FormRecord putFormRecord( @PathParam("form-records-id") Long formRecordsId , FormRecord formRecordParameter ) throws Exception;
 
 	@GET
-	@Path("/form/{form-id}/form-record")
+	@Path("/forms/{forms-id}/form-records")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<FormRecord> getFormFormRecordPage( @PathParam("form-id") Long formId , @Context Pagination pagination ) throws Exception;
+	public Page<FormRecord> getFormsFormRecordsPage( @PathParam("forms-id") Long formsId , @Context Pagination pagination ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/form/{form-id}/form-record")
+	@Path("/forms/{forms-id}/form-records")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public FormRecord postFormFormRecord( @PathParam("form-id") Long formId , FormRecord formRecord ) throws Exception;
+	public FormRecord postFormsFormRecord( @PathParam("forms-id") Long formsId , FormRecord formRecordParameter ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/form/{form-id}/form-record/batch-create")
+	@Path("/forms/{forms-id}/form-records/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public FormRecord postFormFormRecordBatchCreate( @PathParam("form-id") Long formId , FormRecord formRecord ) throws Exception;
+	public FormRecord postFormsFormRecordsBatchCreate( @PathParam("forms-id") Long formsId , FormRecord formRecordParameter ) throws Exception;
 
 }

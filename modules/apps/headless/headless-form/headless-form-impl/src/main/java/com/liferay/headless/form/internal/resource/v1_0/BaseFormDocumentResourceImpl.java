@@ -40,14 +40,14 @@ public abstract class BaseFormDocumentResourceImpl
 		"com_liferay_headless_form_dto_v1_0_FormDocumentEntityModel";
 
 	@Override
-	public Response deleteFormDocument(Long formDocumentId) throws Exception {
+	public Response deleteFormDocuments(Long formDocumentsId) throws Exception {
 		Response.ResponseBuilder responseBuilder = Response.ok();
 
 		return responseBuilder.build();
 	}
 
 	@Override
-	public FormDocument getFormDocument(Long formDocumentId) throws Exception {
+	public FormDocument getFormDocument(Long formDocumentsId) throws Exception {
 		return new FormDocument();
 	}
 

@@ -43,8 +43,8 @@ public abstract class BaseContentStructureResourceImpl
 		"com_liferay_headless_web_experience_dto_v1_0_ContentStructureEntityModel";
 
 	@Override
-	public Page<ContentStructure> getContentSpaceContentStructuresPage(
-			Long contentSpaceId, Pagination pagination)
+	public Page<ContentStructure> getContentSpacesContentStructuresPage(
+			Long contentSpacesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());

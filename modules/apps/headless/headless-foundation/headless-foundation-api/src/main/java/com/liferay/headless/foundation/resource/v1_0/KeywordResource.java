@@ -64,24 +64,30 @@ import javax.ws.rs.core.Response;
 public interface KeywordResource {
 
 	@GET
-	@Path("/content-space/{content-space-id}/keywords")
+	@Path("/content-spaces/{content-spaces-id}/keywords")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Keyword> getContentSpaceKeywordsPage( @PathParam("content-space-id") Long contentSpaceId , @Context Pagination pagination ) throws Exception;
+	public Page<Keyword> getContentSpacesKeywordsPage( @PathParam("content-spaces-id") Long contentSpacesId , @Context Pagination pagination ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/content-space/{content-space-id}/keywords")
+	@Path("/content-spaces/{content-spaces-id}/keywords")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Keyword postContentSpaceKeyword( @PathParam("content-space-id") Long contentSpaceId , Keyword keyword ) throws Exception;
+	public Keyword postContentSpacesKeyword( @PathParam("content-spaces-id") Long contentSpacesId , Keyword keywordParameter ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/content-space/{content-space-id}/keywords/batch-create")
+	@Path("/content-spaces/{content-spaces-id}/keywords/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public Keyword postContentSpaceKeywordsBatchCreate( @PathParam("content-space-id") Long contentSpaceId , Keyword keyword ) throws Exception;
+	public Keyword postContentSpacesKeywordsBatchCreate( @PathParam("content-spaces-id") Long contentSpacesId , Keyword keywordParameter ) throws Exception;
+
+	@DELETE
+	@Path("/keywords/{keywords-id}")
+	@Produces("application/json")
+	@RequiresScope("everything.read")
+	public Response deleteKeywords( @PathParam("keywords-id") Long keywordsId ) throws Exception;
 
 	@GET
 	@Path("/keywords/{keywords-id}")
@@ -94,6 +100,6 @@ public interface KeywordResource {
 	@Path("/keywords/{keywords-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Keyword putKeyword( @PathParam("keywords-id") Long keywordsId , Keyword keyword ) throws Exception;
+	public Keyword putKeyword( @PathParam("keywords-id") Long keywordsId , Keyword keywordParameter ) throws Exception;
 
 }

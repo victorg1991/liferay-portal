@@ -42,8 +42,8 @@ public abstract class BaseCommentResourceImpl implements CommentResource {
 		"com_liferay_headless_document_library_dto_v1_0_CommentEntityModel";
 
 	@Override
-	public Page<Comment> getDocumentCommentPage(
-			Long documentId, Pagination pagination)
+	public Page<Comment> getDocumentsCommentsPage(
+			Long documentsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());

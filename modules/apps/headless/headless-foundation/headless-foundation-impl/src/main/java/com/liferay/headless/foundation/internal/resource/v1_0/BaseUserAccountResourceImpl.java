@@ -43,39 +43,41 @@ public abstract class BaseUserAccountResourceImpl
 		"com_liferay_headless_foundation_dto_v1_0_UserAccountEntityModel";
 
 	@Override
-	public Response deleteUserAccount(Long userAccountId) throws Exception {
+	public Response deleteUserAccounts(Long userAccountsId) throws Exception {
 		Response.ResponseBuilder responseBuilder = Response.ok();
 
 		return responseBuilder.build();
 	}
 
 	@Override
-	public UserAccount getMyUserAccount(Long myUserAccountId) throws Exception {
+	public UserAccount getMyUserAccount(Long myUserAccountsId)
+		throws Exception {
+
 		return new UserAccount();
 	}
 
 	@Override
-	public Page<UserAccount> getMyUserAccountPage(Pagination pagination)
+	public Page<UserAccount> getMyUserAccountsPage(Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Page<UserAccount> getOrganizationUserAccountPage(
-			Long organizationId, Pagination pagination)
+	public Page<UserAccount> getOrganizationsUserAccountsPage(
+			Long organizationsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public UserAccount getUserAccount(Long userAccountId) throws Exception {
+	public UserAccount getUserAccount(Long userAccountsId) throws Exception {
 		return new UserAccount();
 	}
 
 	@Override
-	public Page<UserAccount> getUserAccountPage(
+	public Page<UserAccount> getUserAccountsPage(
 			String fullnamequery, Pagination pagination)
 		throws Exception {
 
@@ -83,7 +85,7 @@ public abstract class BaseUserAccountResourceImpl
 	}
 
 	@Override
-	public Page<UserAccount> getWebSiteUserAccountPage(
+	public Page<UserAccount> getWebSiteUserAccountsPage(
 			Long webSiteId, Pagination pagination)
 		throws Exception {
 
@@ -91,14 +93,15 @@ public abstract class BaseUserAccountResourceImpl
 	}
 
 	@Override
-	public UserAccount postUserAccount(UserAccount userAccount)
+	public UserAccount postUserAccount(UserAccount userAccountParameter)
 		throws Exception {
 
 		return new UserAccount();
 	}
 
 	@Override
-	public UserAccount postUserAccountBatchCreate(UserAccount userAccount)
+	public UserAccount postUserAccountsBatchCreate(
+			UserAccount userAccountParameter)
 		throws Exception {
 
 		return new UserAccount();
@@ -106,7 +109,7 @@ public abstract class BaseUserAccountResourceImpl
 
 	@Override
 	public UserAccount putUserAccount(
-			Long userAccountId, UserAccount userAccount)
+			Long userAccountsId, UserAccount userAccountParameter)
 		throws Exception {
 
 		return new UserAccount();

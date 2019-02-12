@@ -64,24 +64,30 @@ import javax.ws.rs.core.Response;
 public interface VocabularyResource {
 
 	@GET
-	@Path("/content-space/{content-space-id}/vocabularies")
+	@Path("/content-spaces/{content-spaces-id}/vocabularies")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Page<Vocabulary> getContentSpaceVocabulariesPage( @PathParam("content-space-id") Long contentSpaceId , @Context Pagination pagination ) throws Exception;
+	public Page<Vocabulary> getContentSpacesVocabulariesPage( @PathParam("content-spaces-id") Long contentSpacesId , @Context Pagination pagination ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/content-space/{content-space-id}/vocabularies")
+	@Path("/content-spaces/{content-spaces-id}/vocabularies")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Vocabulary postContentSpaceVocabularies( @PathParam("content-space-id") Long contentSpaceId , Vocabulary vocabulary ) throws Exception;
+	public Vocabulary postContentSpacesVocabularies( @PathParam("content-spaces-id") Long contentSpacesId , Vocabulary vocabularyParameter ) throws Exception;
 
 	@Consumes("application/json")
 	@POST
-	@Path("/content-space/{content-space-id}/vocabularies/batch-create")
+	@Path("/content-spaces/{content-spaces-id}/vocabularies/batch-create")
 	@Produces("application/json")
 	@RequiresScope("everything.write")
-	public Vocabulary postContentSpaceVocabulariesBatchCreate( @PathParam("content-space-id") Long contentSpaceId , Vocabulary vocabulary ) throws Exception;
+	public Vocabulary postContentSpacesVocabulariesBatchCreate( @PathParam("content-spaces-id") Long contentSpacesId , Vocabulary vocabularyParameter ) throws Exception;
+
+	@DELETE
+	@Path("/vocabularies/{vocabularies-id}")
+	@Produces("application/json")
+	@RequiresScope("everything.read")
+	public Response deleteVocabularies( @PathParam("vocabularies-id") Long vocabulariesId ) throws Exception;
 
 	@GET
 	@Path("/vocabularies/{vocabularies-id}")
@@ -94,6 +100,6 @@ public interface VocabularyResource {
 	@Path("/vocabularies/{vocabularies-id}")
 	@Produces("application/json")
 	@RequiresScope("everything.read")
-	public Vocabulary putVocabularies( @PathParam("vocabularies-id") Long vocabulariesId , Vocabulary vocabulary ) throws Exception;
+	public Vocabulary putVocabularies( @PathParam("vocabularies-id") Long vocabulariesId , Vocabulary vocabularyParameter ) throws Exception;
 
 }

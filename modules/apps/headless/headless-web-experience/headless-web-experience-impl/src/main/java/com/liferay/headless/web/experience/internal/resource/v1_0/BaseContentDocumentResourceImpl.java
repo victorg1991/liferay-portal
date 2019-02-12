@@ -40,7 +40,7 @@ public abstract class BaseContentDocumentResourceImpl
 		"com_liferay_headless_web_experience_dto_v1_0_ContentDocumentEntityModel";
 
 	@Override
-	public Response deleteContentDocument(Long contentDocumentId)
+	public Response deleteContentDocuments(Long contentDocumentsId)
 		throws Exception {
 
 		Response.ResponseBuilder responseBuilder = Response.ok();
@@ -49,7 +49,7 @@ public abstract class BaseContentDocumentResourceImpl
 	}
 
 	@Override
-	public ContentDocument getContentDocument(Long contentDocumentId)
+	public ContentDocument getContentDocument(Long contentDocumentsId)
 		throws Exception {
 
 		return new ContentDocument();

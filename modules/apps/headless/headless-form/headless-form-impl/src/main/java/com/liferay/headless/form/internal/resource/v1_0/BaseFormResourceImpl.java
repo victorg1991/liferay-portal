@@ -42,32 +42,34 @@ public abstract class BaseFormResourceImpl implements FormResource {
 		"com_liferay_headless_form_dto_v1_0_FormEntityModel";
 
 	@Override
-	public Page<Form> getContentSpaceFormPage(
-			Long contentSpaceId, Pagination pagination)
+	public Page<Form> getContentSpacesFormPage(
+			Long contentSpacesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Form getForm(Long formId) throws Exception {
+	public Form getForm(Long formsId) throws Exception {
 		return new Form();
 	}
 
 	@Override
-	public Form getFormFetchLatestDraft(Long formId) throws Exception {
+	public Form getFormsFetchLatestDraft(Long formsId) throws Exception {
 		return new Form();
 	}
 
 	@Override
-	public Form postFormEvaluateContext(Long formId, Form form)
+	public Form postFormsEvaluateContext(Long formsId, Form formParameter)
 		throws Exception {
 
 		return new Form();
 	}
 
 	@Override
-	public Form postFormUploadFile(Long formId, Form form) throws Exception {
+	public Form postFormsUploadFile(Long formsId, Form formParameter)
+		throws Exception {
+
 		return new Form();
 	}
 

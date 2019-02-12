@@ -42,21 +42,21 @@ public abstract class BaseCommentResourceImpl implements CommentResource {
 		"com_liferay_headless_web_experience_dto_v1_0_CommentEntityModel";
 
 	@Override
-	public Comment getComment(Long commentId) throws Exception {
+	public Comment getComment(Long commentsId) throws Exception {
 		return new Comment();
 	}
 
 	@Override
-	public Page<Comment> getCommentCommentPage(
-			Long commentId, Pagination pagination)
+	public Page<Comment> getCommentsCommentsPage(
+			Long commentsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
 	}
 
 	@Override
-	public Page<Comment> getStructuredContentCommentPage(
-			Long structuredContentId, Pagination pagination)
+	public Page<Comment> getStructuredContentsCommentsPage(
+			Long structuredContentsId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());

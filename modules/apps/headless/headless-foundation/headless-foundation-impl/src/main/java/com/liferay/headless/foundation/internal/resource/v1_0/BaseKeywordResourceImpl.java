@@ -42,8 +42,15 @@ public abstract class BaseKeywordResourceImpl implements KeywordResource {
 		"com_liferay_headless_foundation_dto_v1_0_KeywordEntityModel";
 
 	@Override
-	public Page<Keyword> getContentSpaceKeywordsPage(
-			Long contentSpaceId, Pagination pagination)
+	public Response deleteKeywords(Long keywordsId) throws Exception {
+		Response.ResponseBuilder responseBuilder = Response.ok();
+
+		return responseBuilder.build();
+	}
+
+	@Override
+	public Page<Keyword> getContentSpacesKeywordsPage(
+			Long contentSpacesId, Pagination pagination)
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
@@ -55,22 +62,23 @@ public abstract class BaseKeywordResourceImpl implements KeywordResource {
 	}
 
 	@Override
-	public Keyword postContentSpaceKeyword(Long contentSpaceId, Keyword keyword)
+	public Keyword postContentSpacesKeyword(
+			Long contentSpacesId, Keyword keywordParameter)
 		throws Exception {
 
 		return new Keyword();
 	}
 
 	@Override
-	public Keyword postContentSpaceKeywordsBatchCreate(
-			Long contentSpaceId, Keyword keyword)
+	public Keyword postContentSpacesKeywordsBatchCreate(
+			Long contentSpacesId, Keyword keywordParameter)
 		throws Exception {
 
 		return new Keyword();
 	}
 
 	@Override
-	public Keyword putKeyword(Long keywordsId, Keyword keyword)
+	public Keyword putKeyword(Long keywordsId, Keyword keywordParameter)
 		throws Exception {
 
 		return new Keyword();
