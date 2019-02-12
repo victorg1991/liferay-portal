@@ -43,7 +43,7 @@ public abstract class Base${schemaName}ResourceImpl implements ${schemaName}Reso
 			<#list javaTool.getOperations(pathItem) as operation>
 				<#assign javaSignature = javaTool.getJavaSignature(configYAML, openAPIYAML, operation, path, pathItem, schemaName) />
 
-				<#if !stringUtil.equals(javaSignature.returnType, schemaName) && !stringUtil.equals(javaSignature.returnType, "Page<${schemaName}>") && !stringUtil.endsWith(javaSignature.methodName, schemaName)>
+				<#if !stringUtil.equals(javaSignature.returnType, schemaName) && !stringUtil.equals(javaSignature.returnType, "Page<${schemaName}>") && !operation.tags?seq_contains(schemaName)>
 					<#continue>
 				</#if>
 
