@@ -65,7 +65,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator auditPerson;
 
 	public String getCommentLog() {
@@ -171,7 +171,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator person;
 
 	public Creator getPreviousPerson() {
@@ -198,7 +198,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Creator previousPerson;
 
 	public String getPreviousState() {
