@@ -92,7 +92,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String commentLog;
 
 	public Date getDateCreated() {
@@ -119,7 +119,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Date dateCreated;
 
 	public Long getId() {
@@ -144,7 +144,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long id;
 
 	public Creator getPerson() {
@@ -225,7 +225,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String previousState;
 
 	public String getState() {
@@ -252,7 +252,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String state;
 
 	public Long getTaskId() {
@@ -279,7 +279,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Long taskId;
 
 	public String getType() {
@@ -304,7 +304,7 @@ public class WorkflowLog {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String type;
 
 	@Override
