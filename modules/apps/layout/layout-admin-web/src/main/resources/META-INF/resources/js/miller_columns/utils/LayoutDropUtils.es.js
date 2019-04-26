@@ -41,10 +41,18 @@ function dropIsValid(
 		targetEqualsSource = (sourceItem.plid === targetId);
 	}
 
-	const layouColumHasActiveItem = getColumnActiveItem(layoutColumns, sourceItemColumnIndex) !== null;
+	const layouColumHasActiveItem = getColumnActiveItem(
+		layoutColumns,
+		sourceItemColumnIndex
+	) !== null;
 	const targetExists = (targetId !== null);
 
-	return layouColumHasActiveItem && targetExists && !targetEqualsSource && !targetColumnIsChild;
+	return (
+		layouColumHasActiveItem &&
+		targetExists &&
+		!targetEqualsSource &&
+		!targetColumnIsChild
+	);
 }
 
 /**
