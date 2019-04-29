@@ -12,6 +12,7 @@ import {
 import {DROP_TARGET_BORDERS, DROP_TARGET_ITEM_TYPES} from './LayoutDragDrop.es';
 
 /**
+ * @param {object} layoutColumns
  * @param {object} sourceItem
  * @param {string} sourceItemColumnIndex
  * @param {string} targetId
@@ -20,6 +21,7 @@ import {DROP_TARGET_BORDERS, DROP_TARGET_ITEM_TYPES} from './LayoutDragDrop.es';
  * @review
  */
 function dropIsValid(
+	layoutColumns,
 	sourceItem,
 	sourceItemColumnIndex,
 	targetId,
@@ -39,9 +41,18 @@ function dropIsValid(
 		targetEqualsSource = (sourceItem.plid === targetId);
 	}
 
+	const layouColumHasActiveItem = getColumnActiveItem(
+		layoutColumns,
+		sourceItemColumnIndex
+	) !== null;
 	const targetExists = (targetId !== null);
 
-	return targetExists && !targetEqualsSource && !targetColumnIsChild;
+	return (
+		layouColumHasActiveItem &&
+		targetExists &&
+		!targetEqualsSource &&
+		!targetColumnIsChild
+	);
 }
 
 /**
