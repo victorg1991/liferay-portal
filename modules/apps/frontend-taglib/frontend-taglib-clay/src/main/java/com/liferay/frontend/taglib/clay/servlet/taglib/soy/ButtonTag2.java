@@ -16,10 +16,13 @@ package com.liferay.frontend.taglib.clay.servlet.taglib.soy;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.soy.base.BaseClayTag;
 
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 /**
  * @author Chema Balsas
  */
-public class ButtonTag extends BaseClayTag {
+public class ButtonTag2 extends BaseClayTag {
 
 	@Override
 	public int doStartTag() {
@@ -65,15 +68,13 @@ public class ButtonTag extends BaseClayTag {
 		putValue("size", size);
 	}
 
-	/**
-	 * @deprecated As of Mueller (7.2.x)
-	 */
-	public void setStyle(Boolean style) {
-		putValue("style", style);
-	}
-
 	public void setStyle(String style) {
-		putValue("style", style);
+		if (Validator.isBoolean(style)) {
+            putValue("style", GetterUtil.getBoolean(style));
+        }
+        else {
+            putValue("style", style);
+        }
 	}
 
 	public void setTitle(String title) {

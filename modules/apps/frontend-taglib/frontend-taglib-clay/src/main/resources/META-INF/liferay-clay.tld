@@ -156,7 +156,7 @@
 	<tag>
 		<description></description>
 		<name>button</name>
-		<tag-class>com.liferay.frontend.taglib.clay.servlet.taglib.soy.ButtonTag</tag-class>
+		<tag-class>com.liferay.frontend.taglib.clay.servlet.taglib.soy.ButtonTag2</tag-class>
 		<body-content>empty</body-content>
 		<attribute>
 			<description></description>
@@ -259,6 +259,7 @@
 			<name>style</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
+			<type>java.lang.String</type>
 		</attribute>
 		<attribute>
 			<description></description>
