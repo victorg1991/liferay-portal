@@ -256,6 +256,14 @@ function enableFragmentEditorReducer(state, action) {
 }
 
 /**
+ * @param {object} state
+ * @param {object} action
+ * @return {object}
+ * @review
+ */
+function updateFragmentEntryLinkContentReducer(state, action) {}
+
+/**
  * @param {string} renderFragmentEntryURL
  * @param {{fragmentEntryLinkId: string}} fragmentEntryLink
  * @param {string} portletNamespace
@@ -740,5 +748,6 @@ export {
 	moveFragmentEntryLinkReducer,
 	removeFragmentEntryLinkReducer,
 	updateEditableValueReducer,
-	updateFragmentEntryLinkConfigReducer
+	updateFragmentEntryLinkConfigReducer,
+	updateFragmentEntryLinkContentReducer
 };
