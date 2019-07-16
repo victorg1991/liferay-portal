@@ -1,0 +1,9 @@
+.fragments-editor__textarea {
+	max-height: 5rem;
+	transition: max-height ease 0.3s;
+	will-change: max-height;
+
+	&--empty:not(:focus) {
+		max-height: 2.5rem;
+	}
+}
