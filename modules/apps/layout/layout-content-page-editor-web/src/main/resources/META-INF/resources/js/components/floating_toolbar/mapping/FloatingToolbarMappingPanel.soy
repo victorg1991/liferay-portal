@@ -17,6 +17,7 @@
 	{@param? _handleAssetEntryLinkClick: any}
 	{@param? _handleFieldOptionChange: any}
 	{@param? _handleSourceTypeChange: any}
+	{@param? _handleTest: any}
 	{@param? _selectedSourceTypeId: string}
 	{@param? _sourceTypeIds: [
 		content: string,
@@ -59,6 +60,7 @@
 				{call .assetSelect}
 					{param handleAssetBrowserLinkClick: $_handleAssetBrowserLinkClick /}
 					{param handleAssetEntryLinkClick: $_handleAssetEntryLinkClick /}
+					{param handleTest: $_handleTest /}
 					{param mappedAssetEntries: $mappedAssetEntries /}
 					{param selectedAssetEntryTitle: $item.editableValues.title /}
 					{param assetBrowserLinks: $assetBrowserLinks /}
@@ -93,6 +95,7 @@
 	]>}
 	{@param? handleAssetBrowserLinkClick: any}
 	{@param? handleAssetEntryLinkClick: any}
+	{@param? handleTest: any}
 	{@param? selectedAssetEntryTitle: string}
 	{@param? spritemap: string}
 
@@ -112,8 +115,9 @@
 			<button
 				aria-expanded="false"
 				aria-haspopup="true"
-				class="btn btn-monospaced btn-secondary btn-sm dropdown-toggle"
-				data-toggle="dropdown"
+				class="btn btn-monospaced btn-secondary btn-sm"
+				data-onclick="{$handleTest}"
+				id="mybutton"
 				type="button"
 			>
 				<svg class="lexicon-icon">
@@ -123,7 +127,7 @@
 
 			{call com.liferay.layout.content.page.editor.web.FloatingToolbarDropdown.render}
 				{param body kind="html"}
-					<div class="dropdown-menu">
+					<div class="dropdown-menu" id="victor">
 						{if $assetBrowserLinks}
 							{foreach $assetBrowserLink in $assetBrowserLinks}
 								<button
