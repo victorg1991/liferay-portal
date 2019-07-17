@@ -20,11 +20,11 @@ import React from 'react';
 
 const Button = props => (
 	<ClayButton {...props}>
-		<span className='d-inline-flex fragments-editor__button'>
+		<span className="d-inline-flex fragments-editor__button">
 			{props.loading && (
 				<span
-					aria-hidden='true'
-					className='loading-animation loading-animation-sm m-0 mr-1'
+					aria-hidden="true"
+					className="loading-animation loading-animation-sm m-0 mr-1"
 				/>
 			)}
 

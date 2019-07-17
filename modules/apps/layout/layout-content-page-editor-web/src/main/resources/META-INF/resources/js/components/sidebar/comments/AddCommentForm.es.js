@@ -64,8 +64,8 @@ const AddCommentForm = props => {
 	return (
 		<form onFocus={_handleFormFocus}>
 			<InvisibleFieldset disabled={addingComment}>
-				<div className='form-group form-group-sm'>
-					<label className='sr-only' htmlFor={newCommentId}>
+				<div className="form-group form-group-sm">
+					<label className="sr-only" htmlFor={newCommentId}>
 						{Liferay.Language.get('add-comment')}
 					</label>
 
@@ -82,8 +82,8 @@ const AddCommentForm = props => {
 				{showButtons && (
 					<ClayButton.Group spaced>
 						<Button
+							displayType="primary"
 							loading={addingComment}
-							displayType='primary'
 							onClick={_handleCommentButtonClick}
 							small
 						>
@@ -91,10 +91,10 @@ const AddCommentForm = props => {
 						</Button>
 
 						<Button
-							displayType='secondary'
+							displayType="secondary"
 							onClick={_handleCancelButtonClick}
 							small
-							type='button'
+							type="button"
 						>
 							{Liferay.Language.get('cancel')}
 						</Button>
