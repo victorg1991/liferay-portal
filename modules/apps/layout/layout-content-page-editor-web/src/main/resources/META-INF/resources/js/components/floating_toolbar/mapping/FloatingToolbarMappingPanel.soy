@@ -17,6 +17,7 @@
 	{@param? _handleAssetEntryLinkClick: any}
 	{@param? _handleFieldOptionChange: any}
 	{@param? _handleSourceTypeChange: any}
+	{@param? _handleTest: any}
 	{@param? _selectedSourceTypeId: string}
 	{@param? _sourceTypeIds: [
 		content: string,
@@ -59,6 +60,7 @@
 				{call .assetSelect}
 					{param handleAssetBrowserLinkClick: $_handleAssetBrowserLinkClick /}
 					{param handleAssetEntryLinkClick: $_handleAssetEntryLinkClick /}
+					{param handleTest: $_handleTest /}
 					{param mappedAssetEntries: $mappedAssetEntries /}
 					{param selectedAssetEntryTitle: $item.editableValues.title /}
 					{param assetBrowserLinks: $assetBrowserLinks /}
@@ -93,6 +95,7 @@
 	]>}
 	{@param? handleAssetBrowserLinkClick: any}
 	{@param? handleAssetEntryLinkClick: any}
+	{@param? handleTest: any}
 	{@param? selectedAssetEntryTitle: string}
 	{@param? spritemap: string}
 
@@ -112,8 +115,9 @@
 			<button
 				aria-expanded="false"
 				aria-haspopup="true"
-				class="btn btn-monospaced btn-secondary btn-sm dropdown-toggle"
-				data-toggle="dropdown"
+				class="btn btn-monospaced btn-secondary btn-sm"
+				data-onclick="{$handleTest}"
+				id="mybutton"
 				type="button"
 			>
 				<svg class="lexicon-icon">
@@ -121,42 +125,48 @@
 				</svg>
 			</button>
 
-			<div class="dropdown-menu">
-				{if $assetBrowserLinks}
-					{foreach $assetBrowserLink in $assetBrowserLinks}
-						<button
-							class="dropdown-item"
-							data-onclick="{$handleAssetBrowserLinkClick}"
-							data-asset-browser-url="{$assetBrowserLink.href}"
-							data-asset-browser-window-title="{$assetBrowserLink.typeName}"
-							key="{$assetBrowserLink.href}"
-							type="button"
-						>
-							{$assetBrowserLink.typeName}
-						</button>
-					{/foreach}
-				{/if}
-				{if $mappedAssetEntries and length($mappedAssetEntries) > 0}
-					<div
-						aria-hidden="true"
-						class="dropdown-divider"
-						role="presentation"
-					></div>
+			{call com.liferay.layout.content.page.editor.web.FloatingToolbarDropdown.render}
+				{param body kind="html"}
+					<div class="dropdown-menu" id="victor">
+						{if $assetBrowserLinks}
+							{foreach $assetBrowserLink in $assetBrowserLinks}
+								<button
+									class="dropdown-item"
+									data-onclick="{$handleAssetBrowserLinkClick}"
+									data-asset-browser-url="{$assetBrowserLink.href}"
+									data-asset-browser-window-title="{$assetBrowserLink.typeName}"
+									key="{$assetBrowserLink.href}"
+									type="button"
+								>
+									{$assetBrowserLink.typeName}
+								</button>
+							{/foreach}
+						{/if}
+						{if $mappedAssetEntries and length($mappedAssetEntries) > 0}
+							<div
+								aria-hidden="true"
+								class="dropdown-divider"
+								role="presentation"
+							></div>
 
-					{foreach $mappedAssetField in $mappedAssetEntries}
-						<button
-							class="dropdown-item"
-							data-class-name-id="{$mappedAssetField.classNameId}"
-							data-class-pk="{$mappedAssetField.classPK}"
-							data-onclick="{$handleAssetEntryLinkClick}"
-							key="{$mappedAssetField.encodedId}"
-							type="button"
-						>
-							{$mappedAssetField.title}
-						</button>
-					{/foreach}
-				{/if}
-			</div>
+							{foreach $mappedAssetField in $mappedAssetEntries}
+								<button
+									class="dropdown-item"
+									data-class-name-id="{$mappedAssetField.classNameId}"
+									data-class-pk="{$mappedAssetField.classPK}"
+									data-onclick="{$handleAssetEntryLinkClick}"
+									key="{$mappedAssetField.encodedId}"
+									type="button"
+								>
+									{$mappedAssetField.title}
+								</button>
+							{/foreach}
+						{/if}
+					</div>
+				{/param}
+				{param portalElement: 'body' /}
+			{/call}
+
 		</div>
 	</div>
 {/template}

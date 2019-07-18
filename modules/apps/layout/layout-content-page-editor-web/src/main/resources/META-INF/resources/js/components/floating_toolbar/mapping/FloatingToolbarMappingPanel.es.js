@@ -13,9 +13,11 @@
  */
 
 import 'clay-dropdown';
+import {Align} from 'metal-position';
 import {PortletBase} from 'frontend-js-web';
 import Soy, {Config} from 'metal-soy';
 
+import '../common/FloatingToolbarDropdown.es';
 import './FloatingToolbarMappingPanelDelegateTemplate.soy';
 import {ADD_MAPPED_ASSET_ENTRY} from '../../../actions/actions.es';
 import {COMPATIBLE_TYPES} from '../../../utils/constants';
@@ -56,6 +58,15 @@ class FloatingToolbarMappingPanel extends PortletBase {
 				label: Liferay.Language.get('specific-content')
 			}
 		];
+	}
+
+	_handleTest() {
+		const dropdown = document.querySelector('#victor');
+		const button = document.querySelector('#mybutton');
+
+		dropdown.classList.add('show');
+
+		Align.align(dropdown, button, Align.BottomRight, false);
 	}
 
 	/**
