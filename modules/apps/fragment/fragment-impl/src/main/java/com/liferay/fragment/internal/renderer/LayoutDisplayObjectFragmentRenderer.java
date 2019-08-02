@@ -72,6 +72,8 @@ public class LayoutDisplayObjectFragmentRenderer implements FragmentRenderer {
 					"fields",
 					JSONUtil.putAll(
 						JSONUtil.put(
+							"hola", "quetal"
+						).put(
 							"label", "select-content"
 						).put(
 							"name", "itemSelector"

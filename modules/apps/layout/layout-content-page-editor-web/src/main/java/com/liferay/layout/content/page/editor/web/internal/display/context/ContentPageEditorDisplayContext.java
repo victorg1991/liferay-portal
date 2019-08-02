@@ -306,6 +306,8 @@ public class ContentPageEditorDisplayContext {
 			"sections",
 			_getFragmentCollectionsSoyContexts(FragmentConstants.TYPE_SECTION)
 		).put(
+			"hola", "put"
+		).put(
 			"spritemap",
 			themeDisplay.getPathThemeImages() + "/lexicon/icons.svg"
 		).put(

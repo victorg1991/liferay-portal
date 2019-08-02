@@ -25,6 +25,7 @@ FileEntry fileEntry = (FileEntry)request.getAttribute(WebKeys.DOCUMENT_LIBRARY_F
 FileVersion fileVersion = (FileVersion)request.getAttribute(WebKeys.DOCUMENT_LIBRARY_FILE_VERSION);
 %>
 
+<div></div>
 <c:if test="<%= fileVersion.isApproved() %>">
 	<div class="asset-summary">
 
