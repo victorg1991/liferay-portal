@@ -34,7 +34,7 @@ public interface InheritedFragmentsConfiguration {
 	/**
 	 * Enables child sites to use fragments from ancestor sites
 	 */
-	@Meta.AD(deflt = "false", name = "enabled", required = false)
+	@Meta.AD(deflt = "true", name = "enabled", required = false)
 	public boolean enabled();
 
 }
