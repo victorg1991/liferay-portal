@@ -59,7 +59,7 @@ class FragmentEntryLinkListRow extends Component {
 
 		buttons.push(FLOATING_TOOLBAR_BUTTONS.backgroundColor);
 
-		const layouttBackgroundImageButton = {
+		const layoutBackgroundImageButton = {
 			...FLOATING_TOOLBAR_BUTTONS.layoutBackgroundImage
 		};
 
@@ -68,11 +68,11 @@ class FragmentEntryLinkListRow extends Component {
 			(config.backgroundImage.mappedField ||
 				config.backgroundImage.fieldId)
 		) {
-			layouttBackgroundImageButton.cssClass =
+			layoutBackgroundImageButton.cssClass =
 				'fragments-editor__floating-toolbar--mapped-field';
 		}
 
-		buttons.push(layouttBackgroundImageButton);
+		buttons.push(layoutBackgroundImageButton);
 
 		buttons.push(FLOATING_TOOLBAR_BUTTONS.spacing);
 
