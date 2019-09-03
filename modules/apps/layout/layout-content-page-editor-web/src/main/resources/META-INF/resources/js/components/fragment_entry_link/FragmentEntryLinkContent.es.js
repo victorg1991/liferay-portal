@@ -67,12 +67,14 @@ class FragmentEntryLinkContent extends Component {
 	/**
 	 * @inheritDoc
 	 */
-	rendered() {
-		requestAnimationFrame(() => {
-			if (this.content) {
-				this._renderContent(this.content, {evaluateJs: true});
-			}
-		});
+	rendered(firstRender) {
+		if (!firstRender) {
+			requestAnimationFrame(() => {
+				if (this.content) {
+					this._renderContent(this.content, {evaluateJs: true});
+				}
+			});
+		}
 	}
 
 	/**
