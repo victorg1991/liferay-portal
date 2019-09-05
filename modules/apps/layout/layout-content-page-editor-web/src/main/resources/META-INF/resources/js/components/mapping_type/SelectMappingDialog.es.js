@@ -18,7 +18,6 @@ import Soy from 'metal-soy';
 import {Config} from 'metal-state';
 
 import {HIDE_MAPPING_DIALOG} from '../../actions/actions.es';
-import {updateEditableValueAction} from '../../actions/updateEditableValue.es';
 import {Store} from '../../store/store.es';
 import {setIn} from '../../utils/FragmentsEditorUpdateUtils.es';
 import {
@@ -26,6 +25,7 @@ import {
 	EDITABLE_FRAGMENT_ENTRY_PROCESSOR
 } from '../../utils/constants';
 import templates from './SelectMappingDialog.soy';
+import {updateEditableValueMappedFieldAction} from '../../actions/updateEditableValue.es';
 
 /**
  * SelectMappingDialog
@@ -76,13 +76,12 @@ class SelectMappingDialog extends PortletBase {
 	_handleMappeableFieldSelected(key = '') {
 		this.store
 			.dispatch(
-				updateEditableValueAction({
-					editableId: this.editableId,
-					editableValueContent: key,
-					editableValueId: 'mappedField',
-					fragmentEntryLinkId: this.fragmentEntryLinkId,
-					processor: EDITABLE_FRAGMENT_ENTRY_PROCESSOR
-				})
+				updateEditableValueMappedFieldAction(
+					this.fragmentEntryLinkId,
+					EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+					this.editableId,
+					key
+				)
 			)
 			.dispatch({
 				type: HIDE_MAPPING_DIALOG
