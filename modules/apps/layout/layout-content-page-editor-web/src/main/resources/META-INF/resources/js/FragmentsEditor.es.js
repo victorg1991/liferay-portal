@@ -85,8 +85,6 @@ class FragmentsEditor extends Component {
 		if (
 			!newActiveItemId ||
 			!newActiveItemType ||
-			newActiveItemType !==
-				FRAGMENTS_EDITOR_ITEM_TYPES.backgroundImageEditable ||
 			(newActiveItemId === oldActiveItemId &&
 				newActiveItemType === oldActiveItemType)
 		) {
