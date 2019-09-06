@@ -152,6 +152,17 @@ function getDropRowPosition(structure, targetRowId, targetBorder) {
 }
 
 /**
+ * Get HTML element from itemId and itemType
+ * @param {string} itemId
+ * @param {string} itemType
+ */
+function getElement(itemId, itemType) {
+	return document.querySelector(
+		`[data-fragments-editor-item-id="${itemId}"][data-fragments-editor-item-type="${itemType}"]`
+	);
+}
+
+/**
  * Returns the column that contains the fragment
  * with the given fragmentEntryLinkId.
  *
@@ -446,6 +457,7 @@ export {
 	editableShouldBeHighlighted,
 	getColumn,
 	getDropRowPosition,
+	getElement,
 	getItemPath,
 	getFragmentColumn,
 	getFragmentRowIndex,
