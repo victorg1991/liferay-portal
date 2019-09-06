@@ -27,6 +27,10 @@ import {
 	CLEAR_HOVERED_ITEM,
 	UPDATE_HOVERED_ITEM
 } from './actions/actions.es';
+import {
+	editableShouldBeHighlighted,
+	getElement
+} from './utils/FragmentsEditorGetUtils.es';
 import {INITIAL_STATE} from './store/state.es';
 import {
 	startListeningWidgetConfigurationChange,
@@ -241,16 +245,53 @@ class FragmentsEditor extends Component {
 		} = FragmentsEditor._getItemTarget(event);
 
 		if (fragmentsEditorItemId && fragmentsEditorItemType && this.store) {
-			this.store.dispatch({
-				hoveredItemId: fragmentsEditorItemId,
-				hoveredItemType: fragmentsEditorItemType,
-				type: UPDATE_HOVERED_ITEM
-			});
+			this._hoverItem(fragmentsEditorItemId, fragmentsEditorItemType);
 		} else if (this.store) {
 			this.store.dispatch({
 				type: CLEAR_HOVERED_ITEM
 			});
 		}
+	}
+
+	/**
+	 * Hover the correct item depending on current state
+	 * @param {string} itemId
+	 * @param {string} itemType
+	 */
+	_hoverItem(itemId, itemType) {
+		let hoveredItemId = itemId;
+		let hoveredItemType = itemType;
+
+		const itemIsEditable =
+			itemType === FRAGMENTS_EDITOR_ITEM_TYPES.editable ||
+			itemType === FRAGMENTS_EDITOR_ITEM_TYPES.backgroundImageEditable;
+
+		if (itemIsEditable) {
+			const editable = getElement(itemId, itemType);
+
+			const fragment = getElement(
+				editable.dataset.fragmentEntryLinkId,
+				FRAGMENTS_EDITOR_ITEM_TYPES.fragment
+			);
+
+			if (
+				!editableShouldBeHighlighted(
+					this.activeItemId,
+					this.activeItemType,
+					editable.dataset.fragmentEntryLinkId,
+					this.layoutData.structure
+				)
+			) {
+				hoveredItemId = fragment.dataset.fragmentsEditorItemId;
+				hoveredItemType = FRAGMENTS_EDITOR_ITEM_TYPES.fragment;
+			}
+		}
+
+		this.store.dispatch({
+			hoveredItemId,
+			hoveredItemType,
+			type: UPDATE_HOVERED_ITEM
+		});
 	}
 
 	/**
