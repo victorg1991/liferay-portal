@@ -93,8 +93,6 @@ function editableShouldBeHighlighted(
 	activeItemId,
 	activeItemType,
 	fragmentEntryLinkId,
-	hoveredItemId,
-	hoveredItemType,
 	structure
 ) {
 	const fragmentInActivePath =
@@ -104,13 +102,17 @@ function editableShouldBeHighlighted(
 			FRAGMENTS_EDITOR_ITEM_TYPES.fragment
 		) && activeItemType !== FRAGMENTS_EDITOR_ITEM_TYPES.editable;
 
-	const fragmentInHoveredPath = itemIsInPath(
-		getItemPath(hoveredItemId, hoveredItemType, structure),
-		fragmentEntryLinkId,
-		FRAGMENTS_EDITOR_ITEM_TYPES.fragment
-	);
+	const activeItem = getElement(activeItemId, activeItemType);
 
-	return fragmentInActivePath || fragmentInHoveredPath;
+	const activeItemIsEditable =
+		activeItemType === FRAGMENTS_EDITOR_ITEM_TYPES.editable ||
+		activeItemType === FRAGMENTS_EDITOR_ITEM_TYPES.backgroundImageEditable;
+
+	const activeItemIsSibling =
+		activeItemIsEditable &&
+		activeItem.dataset.fragmentEntryLinkId === fragmentEntryLinkId;
+
+	return fragmentInActivePath || activeItemIsSibling;
 }
 
 /**
