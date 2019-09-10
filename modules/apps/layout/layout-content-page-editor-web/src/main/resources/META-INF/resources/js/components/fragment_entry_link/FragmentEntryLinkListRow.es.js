@@ -332,6 +332,12 @@ class FragmentEntryLinkListRow extends Component {
 			typeof this.row.config.backgroundImage === 'string'
 		) {
 			return this.row.config.backgroundImage;
+		} else if (
+			this.row.config &&
+			this.row.config.backgroundImage &&
+			this.row.config.backgroundImage.url
+		) {
+			return this.row.config.backgroundImage.url;
 		}
 
 		return '';

@@ -57,6 +57,9 @@ public class RenderFragmentLayoutDisplayContext {
 			return rowConfigJSONObject.getString(
 				"backgroundImage", StringPool.BLANK);
 		}
+		else if (backgroundImageJSONObject.has("url")) {
+			return backgroundImageJSONObject.getString("url", StringPool.BLANK);
+		}
 
 		String mappedField = backgroundImageJSONObject.getString("mappedField");
 
