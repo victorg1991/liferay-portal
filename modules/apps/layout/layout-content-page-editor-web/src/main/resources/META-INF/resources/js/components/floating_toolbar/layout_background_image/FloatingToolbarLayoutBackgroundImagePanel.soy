@@ -204,7 +204,7 @@
 
 		{let $inputValue kind="text"}
 			{if $item.config and $item.config.backgroundImage}
-				{$item.config.backgroundImage}
+				{$item.config.backgroundImage.title ?: $item.config.backgroundImage.url ?: $item.config.backgroundImage.url}
 			{/if}
 		{/let}
 
