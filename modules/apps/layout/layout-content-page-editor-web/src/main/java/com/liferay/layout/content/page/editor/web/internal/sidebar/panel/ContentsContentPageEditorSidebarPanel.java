@@ -64,10 +64,6 @@ public class ContentsContentPageEditorSidebarPanel
 
 	@Override
 	public boolean isVisible(boolean pageIsDisplayPage) {
-		if (!_contentsContentPageEditorSidebarPanelConfiguration.enabled()) {
-			return false;
-		}
-
 		return !pageIsDisplayPage;
 	}
 
