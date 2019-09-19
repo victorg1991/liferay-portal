@@ -168,6 +168,48 @@ public class ExpandoInfoDisplayFieldProviderTest {
 	}
 
 	@Test
+	public void testGetLocalizedStringExpandoInfoDisplayFieldValue()
+		throws Exception {
+
+		ExpandoColumn expandoColumn = ExpandoTestUtil.addColumn(
+			_expandoTable, "test-localized-string",
+			ExpandoColumnConstants.STRING_LOCALIZED);
+
+		Map<Locale, String> values = new HashMap<>();
+
+		values.put(LocaleUtil.ENGLISH, "en-value-1");
+		values.put(LocaleUtil.FRENCH, "fr-value-1");
+
+		ExpandoValue expandoValue = _addExpandoValue(expandoColumn, values);
+
+		List<InfoDisplayField> infoDisplayFields = _getInfoDisplayFields(
+			expandoColumn.getName());
+
+		Assert.assertEquals(
+			infoDisplayFields.toString(), 1, infoDisplayFields.size());
+
+		InfoDisplayField infoDisplayField = infoDisplayFields.get(0);
+
+		Map<String, Object> enInfoDisplayFieldsValues =
+			_expandoInfoDisplayFieldProvider.
+				getContributorExpandoInfoDisplayFieldsValues(
+					User.class.getName(), _user, LocaleUtil.ENGLISH);
+
+		Map<String, Object> frInfoDisplayFieldsValues =
+			_expandoInfoDisplayFieldProvider.
+				getContributorExpandoInfoDisplayFieldsValues(
+					User.class.getName(), _user, LocaleUtil.FRENCH);
+
+		Assert.assertEquals(
+			expandoValue.getString(LocaleUtil.ENGLISH),
+			enInfoDisplayFieldsValues.get(infoDisplayField.getKey()));
+
+		Assert.assertEquals(
+			expandoValue.getString(LocaleUtil.FRENCH),
+			frInfoDisplayFieldsValues.get(infoDisplayField.getKey()));
+	}
+
+	@Test
 	public void testGetStringArrayExpandoInfoDisplayFieldValue()
 		throws Exception {
 
