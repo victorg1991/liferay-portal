@@ -173,9 +173,11 @@ public class ExpandoInfoDisplayContributorField
 			attributeValue = values.getOrDefault(
 				locale, defaultValues.get(locale));
 
-			return StringUtil.merge(
-				ArrayUtil.toStringArray((Object[])attributeValue),
-				StringPool.COMMA_AND_SPACE);
+			if (attributeValue == null) {
+				return StringPool.BLANK;
+			}
+
+			return attributeValue;
 		}
 
 		return ExpandoConverterUtil.getStringFromAttribute(
