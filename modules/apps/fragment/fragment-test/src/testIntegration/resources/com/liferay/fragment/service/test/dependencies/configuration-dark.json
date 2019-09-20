@@ -6,7 +6,7 @@
 					"dataType": "string",
 					"defaultValue": "dark",
 					"label": "applied-style",
-					"name": "appliedStyle",
+					"name": "appliedStyleTop",
 					"type": "select",
 					"typeOptions": {
 						"validValues": [
@@ -27,7 +27,7 @@
 					"dataType": "string",
 					"defaultValue": "dark",
 					"label": "applied-style",
-					"name": "appliedStyle",
+					"name": "appliedStyleBottom",
 					"type": "select",
 					"typeOptions": {
 						"validValues": [
