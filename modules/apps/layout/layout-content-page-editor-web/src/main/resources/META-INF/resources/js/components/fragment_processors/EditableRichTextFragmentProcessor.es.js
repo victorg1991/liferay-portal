@@ -178,6 +178,10 @@ function init(
  * @return {string} Transformed content
  */
 function render(content, value) {
+	if (typeof value === 'object') {
+		value = JSON.stringify(value);
+	}
+
 	return value;
 }
 

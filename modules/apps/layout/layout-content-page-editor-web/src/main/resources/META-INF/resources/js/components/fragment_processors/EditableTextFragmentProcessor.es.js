@@ -62,6 +62,10 @@ function getFloatingToolbarButtons(editableValues) {
  * @return {string} Transformed content
  */
 function render(content, value, editableValues) {
+	if (typeof value === 'object') {
+		value = JSON.stringify(value);
+	}
+
 	if (editableValues && editableValues.config && editableValues.config.href) {
 		const link = document.createElement('a');
 		const {config} = editableValues;
