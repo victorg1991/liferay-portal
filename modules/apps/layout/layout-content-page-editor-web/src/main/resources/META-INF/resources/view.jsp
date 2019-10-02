@@ -15,7 +15,7 @@
 --%>
 
 <%@ include file="/init.jsp" %>
-
+<h1>Test</h1>
 <%
 String portletNamespace = PortalUtil.getPortletNamespace(ContentPageEditorPortletKeys.CONTENT_PAGE_EDITOR_PORTLET);
 
