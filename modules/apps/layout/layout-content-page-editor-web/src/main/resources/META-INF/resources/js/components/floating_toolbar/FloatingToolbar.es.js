@@ -302,7 +302,7 @@ class FloatingToolbar extends Component {
 		AUI().use('portal-available-languages', () => {
 			if (this.refs.buttons && this.anchorElement) {
 				const buttonsAlign = FloatingToolbar._getElementAlign(
-					this.refs.panel || this.refs.buttons,
+					this.refs.buttons,
 					this.anchorElement
 				);
 
