@@ -70,29 +70,20 @@ class FragmentEntryLink extends Component {
 	 * @inheritdoc
 	 */
 	created() {
+		this._handleFloatingToolbarButtonClicked = this._handleFloatingToolbarButtonClicked.bind(
+			this
+		);
+
 		onPropertiesChanged(
 			this,
-			[
-				'hasUpdatePermissions',
-				'fragmentEntryLinkId',
-				'activeItemId',
-				'activeItemType'
-			],
+			['_isActive', 'hasUpdatePermissions', 'fragmentEntryLinkId'],
 			() => {
-				if (
-					this.hasUpdatePermissions &&
-					this.fragmentEntryLinkId === this.activeItemId &&
-					this.activeItemType === FRAGMENTS_EDITOR_ITEM_TYPES.fragment
-				) {
+				if (this._isActive && this._hasUpdatePermissions) {
 					this._createFloatingToolbar();
 				} else {
 					this._disposeFloatingToolbar();
 				}
 			}
-		);
-
-		this._handleFloatingToolbarButtonClicked = this._handleFloatingToolbarButtonClicked.bind(
-			this
 		);
 	}
 
@@ -110,28 +101,9 @@ class FragmentEntryLink extends Component {
 	 * @review
 	 */
 	prepareStateForRender(state) {
-		const hoveredPath = getItemPath(
-			state.hoveredItemId,
-			state.hoveredItemType,
-			state.layoutData.structure
-		);
-
 		return {
 			...state,
-
-			_fragmentEntryLinkRowType: state.rowType,
-			_fragmentsEditorItemTypes: FRAGMENTS_EDITOR_ITEM_TYPES,
-			_fragmentsEditorRowTypes: FRAGMENTS_EDITOR_ROW_TYPES,
-
-			_hovered: itemIsInPath(
-				hoveredPath,
-				state.fragmentEntryLinkId,
-				FRAGMENTS_EDITOR_ITEM_TYPES.fragment
-			),
-
-			_showComments: state.sidebarPanels.some(
-				sidebarPanel => sidebarPanel.sidebarPanelId === 'comments'
-			)
+			itemType: FRAGMENTS_EDITOR_ITEM_TYPES.fragment
 		};
 	}
 
@@ -141,39 +113,11 @@ class FragmentEntryLink extends Component {
 	 * @review
 	 */
 	shouldUpdate(changes) {
+		delete changes._configuration;
+		delete changes._configurationValues;
+		delete changes._defaultConfigurationValues;
+
 		return shouldUpdatePureComponent(changes);
-	}
-
-	/**
-	 * @inheritDoc
-	 * @review
-	 */
-	syncFragmentEntryLinks() {
-		if (this.fragmentEntryLinks[this.fragmentEntryLinkId]) {
-			const configurationValues = this.fragmentEntryLinks[
-				this.fragmentEntryLinkId
-			].editableValues[FREEMARKER_FRAGMENT_ENTRY_PROCESSOR];
-
-			this._configuration = this.fragmentEntryLinks[
-				this.fragmentEntryLinkId
-			].configuration;
-
-			this._defaultConfigurationValues = this.fragmentEntryLinks[
-				this.fragmentEntryLinkId
-			].defaultConfigurationValues;
-
-			if (configurationValues) {
-				const segmentedConfigurationValues = computeConfigurationEditableValue(
-					configurationValues,
-					{selectedExperienceId: this.segmentsExperienceId}
-				);
-
-				this._configurationValues = {
-					...this._defaultConfigurationValues,
-					...segmentedConfigurationValues
-				};
-			}
-		}
 	}
 
 	/**
@@ -243,15 +187,14 @@ class FragmentEntryLink extends Component {
 	_getFloatingToolbarButtons() {
 		const buttons = [];
 
-		const fragmentEntryLink = this.fragmentEntryLinks[
-			this.fragmentEntryLinkId
-		];
-
 		const widget =
-			fragmentEntryLink.portletId &&
-			getWidget(this.widgets, fragmentEntryLink.portletId);
+			this._fragmentEntryLink.portletId &&
+			getWidget(this.widgets, this._fragmentEntryLink.portletId);
 
-		if (!isDropZone(fragmentEntryLink) || (widget && widget.instanceable)) {
+		if (
+			!isDropZone(this._fragmentEntryLink) ||
+			(widget && widget.instanceable)
+		) {
 			buttons.push(FLOATING_TOOLBAR_BUTTONS.duplicateFragment);
 		}
 
@@ -377,11 +320,7 @@ class FragmentEntryLink extends Component {
 			Array.isArray(this._configuration.fieldSets) &&
 			this._configuration.fieldSets.length > 0;
 
-		const fragmentIsActive =
-			this.fragmentEntryLinkId === this.activeItemId &&
-			this.activeItemType === FRAGMENTS_EDITOR_ITEM_TYPES.fragment;
-
-		return fieldSetsExist && fragmentIsActive;
+		return fieldSetsExist && this._isActive;
 	}
 }
 
@@ -392,114 +331,124 @@ class FragmentEntryLink extends Component {
  * @type {!Object}
  */
 FragmentEntryLink.STATE = {
-	/**
-	 * Fragment Entry Configuration
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @type {object}
-	 */
-	_configuration: Config.object().internal(),
+	_configuration: Config.object()
+		.internal()
+		.value(null),
+	_configurationValues: Config.object()
+		.internal()
+		.value(null),
+	_defaultConfigurationValues: Config.object()
+		.internal()
+		.value(null),
+	_dropTargetBorder: Config.string()
+		.internal()
+		.value(null),
+	_floatingToolbar: Config.object()
+		.internal()
+		.value(null),
+	_fragmentEntryLink: Config.object()
+		.internal()
+		.value({}),
+	_hasUpdatePermissions: Config.bool()
+		.internal()
+		.value(true),
+	_isActive: Config.bool()
+		.internal()
+		.value(false),
+	_isComponentRow: Config.bool()
+		.internal()
+		.value(false),
+	_isHovered: Config.bool()
+		.internal()
+		.value(false),
+	_showComments: Config.bool()
+		.internal()
+		.value(false),
+	_spritemap: Config.string()
+		.internal()
+		.value(''),
 
-	/**
-	 * Fragment Entry Link Configuration values
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @type {object}
-	 */
-	_configurationValues: Config.object().internal(),
-
-	/**
-	 * Fragment Entry Link Default configuration values
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @type {object}
-	 */
-	_defaultConfigurationValues: Config.object().internal(),
-
-	/**
-	 * Floating toolbar instance for internal use.
-	 * @default null
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @type {object|null}
-	 */
-	_floatingToolbar: Config.internal().value(null),
-
-	/**
-	 * FragmentEntryLink id
-	 * @default undefined
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @review
-	 * @type {!string}
-	 */
 	fragmentEntryLinkId: Config.string().required(),
-
-	/**
-	 * Fragment name
-	 * @default ''
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @review
-	 * @type {string}
-	 */
 	name: Config.string().value(''),
-
-	/**
-	 * Row type
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @review
-	 * @type {string}
-	 */
-	rowType: Config.string(),
-
-	/**
-	 * Shows FragmentEntryLink control toolbar
-	 * @default true
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @review
-	 * @type {!bool}
-	 */
+	rowType: Config.string().required(),
 	showControlBar: Config.bool().value(true),
-
-	/**
-	 * CSS class to modify style
-	 * @default undefined
-	 * @instance
-	 * @memberOf FragmentEntryLink
-	 * @review
-	 * @type {!string}
-	 */
-	styleModifier: Config.string()
+	styleModifier: Config.string().value('')
 };
 
-const ConnectedFragmentEntryLink = getConnectedComponent(FragmentEntryLink, [
-	'activeItemId',
-	'activeItemType',
-	'defaultEditorConfigurations',
-	'defaultLanguageId',
-	'defaultSegmentsExperienceId',
-	'dropTargetItemId',
-	'dropTargetItemType',
-	'dropTargetBorder',
-	'duplicateFragmentEntryLinkURL',
-	'fragmentEntryLinks',
-	'hasUpdatePermissions',
-	'hoveredItemId',
-	'hoveredItemType',
-	'imageSelectorURL',
-	'languageId',
-	'layoutData',
-	'portletNamespace',
-	'segmentsExperienceId',
-	'selectedMappingTypes',
-	'selectedSidebarPanelId',
-	'sidebarPanels',
-	'spritemap',
-	'widgets'
-]);
+const ConnectedFragmentEntryLink = getConnectedComponent(
+	FragmentEntryLink,
+	[
+		'activeItemId',
+		'activeItemType',
+		'dropTargetItemId',
+		'dropTargetItemType',
+		'dropTargetBorder',
+		'fragmentEntryLinks',
+		'hasUpdatePermissions',
+		'hoveredItemId',
+		'hoveredItemType',
+		'layoutData',
+		'segmentsExperienceId',
+		'sidebarPanels',
+		'spritemap',
+		'widgets'
+	],
+	(state, props) => {
+		const fragmentEntryLink =
+			state.fragmentEntryLinks[props.fragmentEntryLinkId];
+
+		let configurationValues =
+			fragmentEntryLink.editableValues[
+				FREEMARKER_FRAGMENT_ENTRY_PROCESSOR
+			];
+
+		const {configuration, defaultConfigurationValues} = fragmentEntryLink;
+
+		if (configurationValues) {
+			const segmentedConfigurationValues = computeConfigurationEditableValue(
+				configurationValues,
+				{selectedExperienceId: state.segmentsExperienceId}
+			);
+
+			configurationValues = {
+				...defaultConfigurationValues,
+				...segmentedConfigurationValues
+			};
+		}
+
+		return {
+			_configuration: configuration,
+			_configurationValues: configurationValues,
+			_defaultConfigurationValues: defaultConfigurationValues,
+			_dropTargetBorder:
+				state.dropTargetItemId === props.fragmentEntryLinkId &&
+				state.dropTargetItemType ===
+					FRAGMENTS_EDITOR_ITEM_TYPES.fragment
+					? state.dropTargetBorder
+					: null,
+			_fragmentEntryLink: fragmentEntryLink,
+			_hasUpdatePermissions: state.hasUpdatePermissions,
+			_isActive:
+				state.activeItemId === props.fragmentEntryLinkId &&
+				state.activeItemType === FRAGMENTS_EDITOR_ITEM_TYPES.fragment,
+			_isComponentRow:
+				props.rowType === FRAGMENTS_EDITOR_ROW_TYPES.componentRow,
+			_isHovered: itemIsInPath(
+				getItemPath(
+					state.hoveredItemId,
+					state.hoveredItemType,
+					state.layoutData.structure
+				),
+				props.fragmentEntryLinkId,
+				FRAGMENTS_EDITOR_ITEM_TYPES.fragment
+			),
+			_showComments: state.sidebarPanels.some(
+				sidebarPanel => sidebarPanel.sidebarPanelId === 'comments'
+			),
+			_spritemap: state.spritemap
+		};
+	}
+);
 
 Soy.register(ConnectedFragmentEntryLink, templates);
 
