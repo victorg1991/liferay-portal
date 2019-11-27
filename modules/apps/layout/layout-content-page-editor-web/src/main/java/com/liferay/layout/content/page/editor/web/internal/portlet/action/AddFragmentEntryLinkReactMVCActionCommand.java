@@ -45,7 +45,6 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
-import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -147,6 +146,20 @@ public class AddFragmentEntryLinkReactMVCActionCommand
 		return fragmentEntries.get(fragmentEntryKey);
 	}
 
+	private DefaultFragmentRendererContext _getDefaultFragmentRendererContext(
+		FragmentEntryLink fragmentEntryLink, ThemeDisplay themeDisplay) {
+
+		DefaultFragmentRendererContext defaultFragmentRendererContext =
+			new DefaultFragmentRendererContext(fragmentEntryLink);
+
+		defaultFragmentRendererContext.setLocale(themeDisplay.getLocale());
+		defaultFragmentRendererContext.setMode(FragmentEntryLinkConstants.EDIT);
+		defaultFragmentRendererContext.setSegmentsExperienceIds(
+			new long[] {SegmentsExperienceConstants.ID_DEFAULT});
+
+		return defaultFragmentRendererContext;
+	}
+
 	private FragmentEntry _getFragmentEntry(
 		long groupId, String fragmentEntryKey, ServiceContext serviceContext) {
 
@@ -174,17 +187,12 @@ public class AddFragmentEntryLinkReactMVCActionCommand
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
 		try {
-			FragmentEntryLink fragmentEntryLink = TransactionInvokerUtil.invoke(
-				_transactionConfig, callable);
+			FragmentEntryLink fragmentEntryLink = _addFragmentEntryLink(
+				actionRequest);
 
 			DefaultFragmentRendererContext defaultFragmentRendererContext =
-				new DefaultFragmentRendererContext(fragmentEntryLink);
-
-			defaultFragmentRendererContext.setLocale(themeDisplay.getLocale());
-			defaultFragmentRendererContext.setMode(
-				FragmentEntryLinkConstants.EDIT);
-			defaultFragmentRendererContext.setSegmentsExperienceIds(
-				new long[] {SegmentsExperienceConstants.ID_DEFAULT});
+				_getDefaultFragmentRendererContext(
+					fragmentEntryLink, themeDisplay);
 
 			String configuration = _fragmentRendererController.getConfiguration(
 				defaultFragmentRendererContext);
