@@ -23,16 +23,21 @@ import com.liferay.fragment.renderer.DefaultFragmentRendererContext;
 import com.liferay.fragment.renderer.FragmentRenderer;
 import com.liferay.fragment.renderer.FragmentRendererController;
 import com.liferay.fragment.renderer.FragmentRendererTracker;
+import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLinkService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.fragment.util.FragmentEntryConfigUtil;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
 import com.liferay.layout.content.page.editor.web.internal.util.FragmentEntryLinkItemSelectorUtil;
+import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
+import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
+import com.liferay.layout.page.template.service.LayoutPageTemplateStructureService;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -47,11 +52,13 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import javax.portlet.ActionRequest;
@@ -181,9 +188,6 @@ public class AddFragmentEntryLinkReactMVCActionCommand
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		Callable<FragmentEntryLink> callable = new AddFragmentEntryLinkCallable(
-			actionRequest);
-
 		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
 		try {
@@ -205,6 +209,12 @@ public class AddFragmentEntryLinkReactMVCActionCommand
 					_itemSelector, _portal.getHttpServletRequest(actionRequest),
 					_portal.getLiferayPortletResponse(actionResponse),
 					configurationJSONObject);
+
+			LayoutPageTemplateStructure layoutPageTemplateStructure =
+				_layoutPageTemplateStructureService.
+
+
+
 
 			jsonObject.put(
 				"configuration", configurationJSONObject
@@ -248,6 +258,57 @@ public class AddFragmentEntryLinkReactMVCActionCommand
 		return jsonObject;
 	}
 
+	private JSONObject updateLayoutPageTemplateData(ActionRequest actionRequest)
+		throws PortalException {
+
+		long classNameId = ParamUtil.getLong(actionRequest, "classNameId");
+		long classPK = ParamUtil.getLong(actionRequest, "classPK");
+		long segmentsExperienceId = ParamUtil.getLong(
+			actionRequest, "segmentsExperienceId",
+			SegmentsExperienceConstants.ID_DEFAULT);
+
+		ServiceContext serviceContext = ServiceContextFactory.getInstance(
+			actionRequest);
+
+		LayoutPageTemplateStructure layoutPageTemplateStructure =
+			_layoutPageTemplateStructureLocalService.
+				fetchLayoutPageTemplateStructure(
+					serviceContext.getScopeGroupId(), classNameId, classPK);
+
+		JSONObject data = JSONFactoryUtil.createJSONObject(
+			layoutPageTemplateStructure.getData(segmentsExperienceId));
+
+		String fragmentEntryLinkIdsString = ParamUtil.getString(
+			actionRequest, "fragmentEntryLinkIds");
+
+		if (Validator.isNotNull(fragmentEntryLinkIdsString)) {
+			long[] toFragmentEntryLinkIds = JSONUtil.toLongArray(
+				JSONFactoryUtil.createJSONArray(fragmentEntryLinkIdsString));
+
+			_fragmentEntryLinkLocalService.deleteFragmentEntryLinks(
+				toFragmentEntryLinkIds);
+		}
+	}
+
+	private JSONObject getItemJSONObject(ActionRequest actionRequest) {
+
+		UUID randomUUID = UUID.randomUUID();
+
+		String uuidString = randomUUID.toString();
+
+
+		/*items: { // JSONObject with all layoutData items
+			'u1982-sample-item': {
+				children: [],
+				config: { fragmentEntryLinkId: '1231' },
+				itemId: 'u1982-sample-item',
+					parentId: null,
+					type: 'fragment'
+			}
+		}*/
+
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		AddFragmentEntryLinkReactMVCActionCommand.class);
 
@@ -260,10 +321,17 @@ public class AddFragmentEntryLinkReactMVCActionCommand
 		_fragmentCollectionContributorTracker;
 
 	@Reference
+	private LayoutPageTemplateStructureLocalService
+		_layoutPageTemplateStructureLocalService;
+
+	@Reference
 	private FragmentEntryLinkService _fragmentEntryLinkService;
 
 	@Reference
 	private FragmentEntryLocalService _fragmentEntryLocalService;
+
+	@Reference
+	private FragmentEntryLinkLocalService _fragmentEntryLinkLocalService;
 
 	@Reference
 	private FragmentRendererController _fragmentRendererController;
