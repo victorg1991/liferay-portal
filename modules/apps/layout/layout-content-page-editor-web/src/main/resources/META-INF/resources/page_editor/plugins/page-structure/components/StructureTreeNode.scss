@@ -1,8 +1,15 @@
+@import './variables';
+
 .page-editor__page-structure__tree-node {
+	color: $pageStructureGrayColor;
+	font-size: 14px;
+	height: 28px;
+	line-height: 28px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 
 	button {
+		color: $pageStructureGrayColor;
 		float: right;
 	}
 }
