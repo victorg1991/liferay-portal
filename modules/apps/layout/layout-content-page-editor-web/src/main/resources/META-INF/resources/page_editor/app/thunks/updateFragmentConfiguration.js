@@ -12,10 +12,10 @@
  * details.
  */
 
+import {FREEMARKER_FRAGMENT_ENTRY_PROCESSOR} from '../../../js/utils/constants';
 import updateEditableValues from '../actions/updateEditableValues';
 import updateFragmentEntryLinkContent from '../actions/updateFragmentEntryLinkContent';
 import FragmentService from '../services/FragmentService';
-import {FREEMARKER_FRAGMENT_ENTRY_PROCESSOR} from '../../../js/utils/constants';
 
 export default function updateFragmentConfiguration({
 	config,
@@ -23,7 +23,7 @@ export default function updateFragmentConfiguration({
 	fragmentEntryLink,
 	segmentsExperienceId
 }) {
-	const {fragmentEntryLinkId, editableValues} = fragmentEntryLink;
+	const {editableValues, fragmentEntryLinkId} = fragmentEntryLink;
 
 	const nextEditableValues = {
 		...editableValues,
@@ -36,8 +36,8 @@ export default function updateFragmentConfiguration({
 	return dispatch => {
 		return FragmentService.updateEditableValues({
 			config,
-			fragmentEntryLinkId,
-			editableValues: nextEditableValues
+			editableValues: nextEditableValues,
+			fragmentEntryLinkId
 		})
 			.then(() => {
 				return FragmentService.renderFragmentEntryLinkContent({
@@ -49,15 +49,15 @@ export default function updateFragmentConfiguration({
 			.then(({content}) => {
 				dispatch(
 					updateEditableValues({
-						fragmentEntryLinkId,
-						editableValues
+						editableValues,
+						fragmentEntryLinkId
 					})
 				);
 
 				dispatch(
 					updateFragmentEntryLinkContent({
-						fragmentEntryLinkId,
-						content
+						content,
+						fragmentEntryLinkId
 					})
 				);
 			});
