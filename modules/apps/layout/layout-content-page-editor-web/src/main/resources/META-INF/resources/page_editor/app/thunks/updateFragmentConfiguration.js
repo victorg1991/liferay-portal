@@ -49,14 +49,8 @@ export default function updateFragmentConfiguration({
 			.then(({content}) => {
 				dispatch(
 					updateEditableValues({
-						editableValues,
-						fragmentEntryLinkId
-					})
-				);
-
-				dispatch(
-					updateFragmentEntryLinkContent({
 						content,
+						editableValues,
 						fragmentEntryLinkId
 					})
 				);

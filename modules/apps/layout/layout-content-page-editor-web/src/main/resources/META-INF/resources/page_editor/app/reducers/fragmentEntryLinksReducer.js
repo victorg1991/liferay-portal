@@ -164,6 +164,7 @@ export default function fragmentEntryLinksReducer(state, action) {
 							...nextState.fragmentEntryLinks[
 								action.fragmentEntryLinkId
 							],
+							content: action.content,
 							editableValues: action.editableValues
 						}
 					}
