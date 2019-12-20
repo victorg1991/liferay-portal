@@ -38,7 +38,9 @@ const resolveEditableValue = (state, config, fragmentEntryLinkId, editableId) =>
 
 function FragmentContent({fragmentEntryLink}, ref) {
 	const config = useContext(ConfigContext);
-	const defaultContent = fragmentEntryLink.content.value.content;
+	const defaultContent = fragmentEntryLink.content.value
+		? fragmentEntryLink.content.value.content
+		: '';
 	const {fragmentEntryLinkId} = fragmentEntryLink;
 	const isMounted = useIsMounted();
 	const state = useContext(StoreContext);
