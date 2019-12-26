@@ -12,16 +12,122 @@
  * details.
  */
 
-import React from 'react';
+import ClayForm from '@clayui/form';
+import {useIsMounted} from 'frontend-js-react-web';
+import React, {useContext, useState, useEffect} from 'react';
 
 import ItemSelector from '../../common/components/ItemSelector';
+import {ConfigContext} from '../config/index';
+import AssetService from '../services/AssetService';
 
 export const ItemSelectorField = ({field, onValueSelect, value}) => (
-	<ItemSelector
-		label={field.label}
-		onItemSelect={item => {
-			onValueSelect(field.name, item);
-		}}
-		selectedItem={value}
-	/>
+	<>
+		<ClayForm.Group>
+			<ItemSelector
+				label={field.label}
+				onItemSelect={item => {
+					onValueSelect(field.name, item);
+				}}
+				selectedItem={value}
+			/>
+		</ClayForm.Group>
+
+		{value.className && (
+			<ClayForm.Group>
+				<TemplateSelector
+					item={value}
+					onTemplateSelect={template => {
+						onValueSelect(field.name, {...value, template});
+					}}
+					selectedTemplate={value.template}
+				/>
+			</ClayForm.Group>
+		)}
+	</>
 );
+
+const TemplateSelector = ({item, onTemplateSelect, selectedTemplate}) => {
+	const config = useContext(ConfigContext);
+	const [availableTemplates, setAvailableTemplates] = useState([]);
+	const isMounted = useIsMounted();
+
+	useEffect(() => {
+		if (isMounted()) {
+			AssetService.getAvailableTemplates({
+				className: item.className,
+				classPK: item.classPK,
+				config
+			}).then(response => {
+				setAvailableTemplates(response);
+			});
+		}
+	}, [config, isMounted, item.className, item.classPK]);
+
+	return (
+		<>
+			<div className="form-group">
+				<label htmlFor="template">
+					{Liferay.Language.get('template')}
+				</label>
+
+				<select
+					className="form-control form-control-sm"
+					id="itemSelectorTemplateSelect"
+					onChange={event => {
+						onTemplateSelect(
+							event.target.options[event.target.selectedIndex]
+								.dataset
+						);
+					}}
+				>
+					{availableTemplates.map(entry => {
+						if (entry.templates) {
+							return (
+								<optgroup key={entry.label} label={entry.label}>
+									{entry.templates.map(template => (
+										<option
+											data-info-item-renderer-key={
+												template.infoItemRendererKey
+											}
+											data-template-key={
+												template.templateKey
+											}
+											key={template.label}
+											selected={
+												selectedTemplate &&
+												selectedTemplate.infoItemRendererKey ===
+													template.infoItemRendererKey &&
+												(!selectedTemplate.templateKey ||
+													(selectedTemplate.templateKey &&
+														selectedTemplate.templateKey ===
+															template.templateKey))
+											}
+										>
+											{template.label}
+										</option>
+									))}
+								</optgroup>
+							);
+						} else {
+							return (
+								<option
+									data-info-item-renderer-key={
+										entry.infoItemRendererKey
+									}
+									key={entry.label}
+									selected={
+										selectedTemplate &&
+										selectedTemplate.infoItemRendererKey ===
+											entry.infoItemRendererKey
+									}
+								>
+									{entry.label}
+								</option>
+							);
+						}
+					})}
+				</select>
+			</div>
+		</>
+	);
+};

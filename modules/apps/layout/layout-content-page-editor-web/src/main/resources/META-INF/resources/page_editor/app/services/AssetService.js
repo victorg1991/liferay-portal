@@ -12,26 +12,22 @@
  * details.
  */
 
-import ClayForm, {ClaySelectWithOption} from '@clayui/form';
-import React from 'react';
+import serviceFetch from './serviceFetch';
 
-export const SelectField = ({field, onValueSelect, value}) => (
-	<ClayForm.Group>
-		<label htmlFor={field.name}>{field.label}</label>
+export default {
+	/**
+	 * Get available templates for an asset
+	 * @param {object} options
+	 * @param {object} options.config Application config
+	 * @param {string} options.className Asset's className
+	 * @param {string} options.classPK Asset's classPK
+	 */
+	getAvailableTemplates({className, classPK, config}) {
+		const {getAvailableTemplatesURL} = config;
 
-		<ClaySelectWithOption
-			aria-label={field.label}
-			className="form-control-sm"
-			defaultValue={field.defaultValue}
-			id={field.name}
-			onChange={event => {
-				onValueSelect(
-					field.name,
-					event.target.options[event.target.selectedIndex].value
-				);
-			}}
-			options={field.typeOptions.validValues}
-			value={value}
-		/>
-	</ClayForm.Group>
-);
+		return serviceFetch(config, getAvailableTemplatesURL, {
+			className,
+			classPK
+		});
+	}
+};
