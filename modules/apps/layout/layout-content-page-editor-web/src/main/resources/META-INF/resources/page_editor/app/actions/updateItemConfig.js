@@ -20,14 +20,12 @@ const ACTION = {type};
  * @param {object} options
  * @param {object} [options.config={}]
  * @param {string} options.itemId
- * @param {string} options.itemType
  * @return {object}
  */
-export default function updateItem({config = {}, itemId, itemType}) {
+export default function updateItemConfig({config = {}, itemId}) {
 	return {
 		...ACTION,
 		config,
-		itemId,
-		itemType
+		itemId
 	};
 }
