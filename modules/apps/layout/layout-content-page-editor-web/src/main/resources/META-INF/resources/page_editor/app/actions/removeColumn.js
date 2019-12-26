@@ -12,22 +12,20 @@
  * details.
  */
 
-/**
- * Action creators.
- */
+import {REMOVE_COLUMN as type} from './types';
 
-export {default as createColumn} from './createColumn';
-export {default as discard} from './discard';
-export {default as loadReducer} from './loadReducer';
-export {default as publish} from './publish';
-export {default as removeColumn} from './removeColumn';
-export {default as switchSidebarPanel} from './switchSidebarPanel';
-export {default as unloadReducer} from './unloadReducer';
-export {default as updateItemConfig} from './updateItemConfig';
-export {default as updateLanguageId} from './updateLanguageId';
+const ACTION = {type};
 
 /**
- * Action types.
+ * @param {object} options
+ * @param {number} options.newNumberOfColumns
+ * @param {string} options.rowItemId
+ * @return {object}
  */
-
-export * as TYPES from './types';
+export default function removeColumn({newNumberOfColumns, rowItemId}) {
+	return {
+		...ACTION,
+		newNumberOfColumns,
+		rowItemId
+	};
+}
