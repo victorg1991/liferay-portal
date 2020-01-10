@@ -12,18 +12,26 @@
  * details.
  */
 
-import {UPDATE_ITEM_CONFIG} from './types';
+import updateLayoutData from '../actions/updateLayoutData';
+import LayoutService from '../services/LayoutService';
 
-/**
- * @param {object} options
- * @param {object} [options.config={}]
- * @param {string} options.itemId
- * @return {object}
- */
-export default function updateItemConfig({config = {}, itemId}) {
-	return {
-		config,
-		itemId,
-		type: UPDATE_ITEM_CONFIG
-	};
+export default function updateItemConfig({
+	config,
+	itemConfig,
+	itemId,
+	segmentsExperienceId
+}) {
+	/**
+	 * An updated `layoutData` must be returned from BE.
+	 */
+	return dispatch =>
+		LayoutService.updateItemConfig({
+			config,
+			itemConfig,
+			itemId,
+			segmentsExperienceId
+		}).then(layoutData => {
+			console.log(layoutData);
+			dispatch(updateLayoutData(layoutData));
+		});
 }

@@ -12,18 +12,20 @@
  * details.
  */
 
-import {UPDATE_ITEM_CONFIG} from './types';
+import {REMOVE_COLUMN as type} from './types';
+
+const ACTION = {type};
 
 /**
  * @param {object} options
- * @param {object} [options.config={}]
- * @param {string} options.itemId
+ * @param {number} options.newNumberOfColumns
+ * @param {string} options.rowItemId
  * @return {object}
  */
-export default function updateItemConfig({config = {}, itemId}) {
+export default function removeColumn({newNumberOfColumns, rowItemId}) {
 	return {
-		config,
-		itemId,
-		type: UPDATE_ITEM_CONFIG
+		...ACTION,
+		newNumberOfColumns,
+		rowItemId
 	};
 }

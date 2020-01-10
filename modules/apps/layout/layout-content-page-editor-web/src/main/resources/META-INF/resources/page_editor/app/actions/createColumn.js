@@ -12,18 +12,32 @@
  * details.
  */
 
-import {UPDATE_ITEM_CONFIG} from './types';
+import {CREATE_COLUMN as type} from './types';
+
+const ACTION = {type};
 
 /**
  * @param {object} options
  * @param {object} [options.config={}]
  * @param {string} options.itemId
+ * @param {string} options.itemType
+ * @param {number} options.newNumberOfColumns
+ * @param {string} options.rowItemId
  * @return {object}
  */
-export default function updateItemConfig({config = {}, itemId}) {
+export default function createColumn({
+	config = {},
+	itemId,
+	itemType,
+	newNumberOfColumns,
+	rowItemId
+}) {
 	return {
+		...ACTION,
 		config,
 		itemId,
-		type: UPDATE_ITEM_CONFIG
+		itemType,
+		newNumberOfColumns,
+		rowItemId
 	};
 }
