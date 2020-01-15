@@ -34,6 +34,7 @@ import com.liferay.segments.service.SegmentsExperienceLocalService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -140,6 +141,16 @@ public class LayoutPageTemplateStructureDataHandlerUtil {
 
 				for (int k = 0; k < fragmentEntryLinkIdsJSONArray.length();
 					 k++) {
+
+					if (Objects.equals(
+							fragmentEntryLinkIdsJSONArray.getString(k),
+							"drop-zone")) {
+
+						newFragmentEntryLinkIdsJSONArray.put(
+							fragmentEntryLinkIdsJSONArray.getString(k));
+
+						continue;
+					}
 
 					long fragmentEntryLinkId = MapUtil.getLong(
 						fragmentEntryLinkIds,
