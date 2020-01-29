@@ -38,19 +38,19 @@ const getNestedFieldIndexes = (context, fieldName) => {
 	let indexes = [];
 
 	const mapper = (field, fieldIndex, columnIndex, rowIndex, pageIndex) => {
-		let indexesRef = [...indexes];
+		const indexesRef = [...indexes];
 
 		if (field.fieldName !== fieldName && field.rows) {
 			const visitor = new PagesVisitor([field]);
 
 			visitor.mapFields(mapper);
 		}
-		
-		if (field.fieldName === fieldName || indexesRef.length !== indexes.length) {
-			indexes = [
-				{columnIndex, pageIndex, rowIndex},
-				...indexes
-			];
+
+		if (
+			field.fieldName === fieldName ||
+			indexesRef.length !== indexes.length
+		) {
+			indexes = [{columnIndex, pageIndex, rowIndex}, ...indexes];
 		}
 	};
 
@@ -62,13 +62,10 @@ const getNestedFieldIndexes = (context, fieldName) => {
 };
 
 const getFieldContainer = (pages, fieldName) => {
-	const nestedFieldIndexes = getNestedFieldIndexes(
-		pages,
-		fieldName
-	);
+	const nestedFieldIndexes = getNestedFieldIndexes(pages, fieldName);
 
-	let selector = ''
-	
+	let selector = '';
+
 	nestedFieldIndexes.forEach((fieldIndexes, i) => {
 		const {columnIndex, pageIndex, rowIndex} = fieldIndexes;
 
@@ -362,19 +359,20 @@ const withActionableFields = ChildComponent => {
 
 			let column;
 			let context = pages;
-		
+
 			nestedIndexes.forEach(indexes => {
 				const {columnIndex, pageIndex, rowIndex} = indexes;
-		
+
 				column = FormSupport.getColumn(
 					context,
 					column ? 0 : pageIndex,
 					rowIndex,
-					columnIndex);
-		
+					columnIndex
+				);
+
 				context = column.fields;
-			})
-		
+			});
+
 			return column.fields[0];
 		}
 
@@ -413,9 +411,15 @@ const withActionableFields = ChildComponent => {
 		}
 
 		_handleMouseLeaveField(event) {
-			const delegateTarget = dom.closest(event.delegateTarget.parentElement, '.ddm-field-container');
+			const delegateTarget = dom.closest(
+				event.delegateTarget.parentElement,
+				'.ddm-field-container'
+			);
 
-			if (delegateTarget && !delegateTarget.classList.contains('selected')) {
+			if (
+				delegateTarget &&
+				!delegateTarget.classList.contains('selected')
+			) {
 				const {hoveredFieldActions} = this.refs;
 				const indexes = FormSupport.getNestedIndexes(
 					dom.closest(delegateTarget, '.col-ddm')
