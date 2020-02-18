@@ -277,7 +277,7 @@ class LayoutProvider extends Component {
 				label: Liferay.Language.get('duplicate')
 			},
 			{
-				action: indexes => this.dispatch('fieldDeleted', {indexes}),
+				action: fieldName => this.dispatch('fieldDeleted', {fieldName}),
 				label: Liferay.Language.get('delete')
 			}
 		];
@@ -355,7 +355,7 @@ class LayoutProvider extends Component {
 	}
 
 	_handleFieldDeleted(event) {
-		this.setState(handleFieldDeleted(this.state, event));
+		this.setState(handleFieldDeleted(this.props, this.state, event));
 	}
 
 	_handleFieldDuplicated(event) {
