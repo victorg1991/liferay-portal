@@ -16,7 +16,7 @@ import {PagesVisitor} from 'dynamic-data-mapping-form-renderer/js/util/visitors.
 
 import {updateRulesReferences} from '../util/rules.es';
 import {
-	updateFocusedField,
+	updateField,
 	updateSettingsContextProperty
 } from '../util/settingsContext.es';
 
@@ -42,7 +42,13 @@ export const updatePages = (
 					...field,
 					fieldName: newFieldName,
 					name: newFieldName,
-					[propertyName]: propertyValue
+					[propertyName]: propertyValue,
+					settingsContext: updateSettingsContextProperty(
+						editingLanguageId,
+						field.settingsContext,
+						propertyName,
+						propertyValue
+					)
 				};
 			}
 
@@ -97,13 +103,13 @@ export const updatePages = (
 	return newPages;
 };
 
-export const updateField = (props, state, propertyName, propertyValue) => {
+export const updateState = (props, state, propertyName, propertyValue) => {
 	const {editingLanguageId} = props;
 	const {focusedField, pages, rules} = state;
 	const {fieldName: previousFieldName} = focusedField;
-	const newFocusedField = updateFocusedField(
+	const newFocusedField = updateField(
 		props,
-		state,
+		focusedField,
 		propertyName,
 		propertyValue
 	);
@@ -130,7 +136,7 @@ export const handleFieldEdited = (props, state, event) => {
 	let newState = {};
 
 	if (propertyName !== 'name' || propertyValue !== '') {
-		newState = updateField(props, state, propertyName, propertyValue);
+		newState = updateState(props, state, propertyName, propertyValue);
 	}
 
 	return newState;

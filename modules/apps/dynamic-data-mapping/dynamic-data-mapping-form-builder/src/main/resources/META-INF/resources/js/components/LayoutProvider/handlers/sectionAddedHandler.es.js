@@ -17,7 +17,7 @@ import {PagesVisitor} from 'dynamic-data-mapping-form-renderer/js/util/visitors.
 import dom from 'metal-dom';
 
 import {createField} from '../../../util/fieldSupport.es';
-import {updateFocusedField} from '../util/settingsContext.es';
+import {updateField} from '../util/settingsContext.es';
 
 const removeNestedField = ({field, nestedField, props}) => {
 	let layout = [{rows: field.rows}];
@@ -42,18 +42,14 @@ const removeNestedField = ({field, nestedField, props}) => {
 		({fieldName}) => fieldName !== nestedField.fieldName
 	);
 
-	let focusedField = updateFocusedField(
-		props,
-		{focusedField: field},
-		'nestedFields',
-		nestedFields
-	);
+	field = updateField(props, field, 'nestedFields', nestedFields);
+
 	const {rows} = layout[0];
 
-	focusedField = updateFocusedField(props, {focusedField}, 'rows', rows);
+	field = updateField(props, field, 'rows', rows);
 
 	return {
-		...focusedField,
+		...field,
 		nestedFields,
 		rows
 	};
@@ -69,18 +65,13 @@ const addNestedField = ({field, indexes, nestedField, props}) => {
 	);
 	const nestedFields = [...field.nestedFields, nestedField];
 
-	let focusedField = updateFocusedField(
-		props,
-		{focusedField: field},
-		'nestedFields',
-		nestedFields
-	);
+	field = updateField(props, field, 'nestedFields', nestedFields);
 	const {rows} = layout[indexes.pageIndex];
 
-	focusedField = updateFocusedField(props, {focusedField}, 'rows', rows);
+	field = updateField(props, field, 'rows', rows);
 
 	return {
-		...focusedField,
+		...field,
 		nestedFields,
 		rows
 	};
@@ -115,16 +106,12 @@ const addNestedFields = ({field, indexes, nestedFields, props}) => {
 		);
 	});
 
-	const focusedField = updateFocusedField(
-		props,
-		{focusedField: field},
-		'nestedFields',
-		nestedFields
-	);
+	field = updateField(props, field, 'nestedFields', nestedFields);
+
 	const {rows} = layout[indexes.pageIndex];
 
 	return {
-		...updateFocusedField(props, {focusedField}, 'rows', rows),
+		...updateField(props, field, 'rows', rows),
 		nestedFields,
 		rows
 	};
@@ -176,8 +163,7 @@ export default (props, state, event) => {
 
 	const newState = {
 		focusedField: {
-			...newField,
-			...indexes
+			...newField
 		},
 		pages: visitor.mapFields(
 			field => {
