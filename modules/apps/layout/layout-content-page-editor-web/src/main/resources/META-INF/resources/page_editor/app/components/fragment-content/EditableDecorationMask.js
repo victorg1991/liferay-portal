@@ -61,8 +61,8 @@ function EditableDecorationMask({classNames: elementsClassNames, elements}) {
 		});
 
 		setRects(newRects);
-		setShowMask(true);
-	}, [elements]);
+		setShowMask(editableProcessorUniqueId ? false : true);
+	}, [editableProcessorUniqueId, elements]);
 
 	const requestComputeRects = useMemo(() => {
 		const debouncedComputeRects = debounce(() => {
