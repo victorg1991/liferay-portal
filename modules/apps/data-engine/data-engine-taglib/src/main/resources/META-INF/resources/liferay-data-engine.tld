@@ -9,6 +9,12 @@
 		<tag-class>com.liferay.data.engine.taglib.servlet.taglib.DataLayoutBuilderTag</tag-class>
 		<body-content>JSP</body-content>
 		<attribute>
+			<name>additionalPanels</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>java.util.List</type>
+		</attribute>
+		<attribute>
 			<name>componentId</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
@@ -29,6 +35,12 @@
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 			<type>java.lang.Long</type>
+		</attribute>
+		<attribute>
+			<name>enableSuccessPage</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>boolean</type>
 		</attribute>
 		<attribute>
 			<name>groupId</name>

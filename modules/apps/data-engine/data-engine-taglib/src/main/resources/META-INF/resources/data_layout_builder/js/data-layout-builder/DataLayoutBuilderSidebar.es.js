@@ -31,6 +31,7 @@ import {
 } from '../actions.es';
 import Button from '../components/button/Button.es';
 import FieldTypeList from '../components/field-types/FieldTypeList.es';
+import FieldSets from '../components/fieldsets/Fieldsets.es';
 import Sidebar from '../components/sidebar/Sidebar.es';
 import {useSidebarContent} from '../hooks/index.es';
 import isClickOutside from '../utils/clickOutside.es';
@@ -66,19 +67,34 @@ const DefaultSidebarBody = ({keywords}) => {
 
 	fieldTypes.sort(({displayOrder: a}, {displayOrder: b}) => a - b);
 
+	const tabNames = {
+		fields: 'fields',
+		fieldsets: 'fieldsets',
+	};
+
 	return (
 		<>
-			<Sidebar.Tab
-				tabs={[{active: true, label: Liferay.Language.get('fields')}]}
-			/>
-
-			<Sidebar.TabContent>
+			<Sidebar.Tabs
+				initialSelectedTab={tabNames.fields}
+				tabs={[
+					{
+						label: Liferay.Language.get('fields'),
+						name: tabNames.fields,
+					},
+					{
+						label: Liferay.Language.get('fieldsets'),
+						name: tabNames.fieldsets,
+					},
+				]}
+			>
 				<FieldTypeList
 					fieldTypes={fieldTypes}
 					keywords={keywords}
+					name={tabNames.fields}
 					onDoubleClick={onDoubleClick}
 				/>
-			</Sidebar.TabContent>
+				<FieldSets name={tabNames.fieldsets} />
+			</Sidebar.Tabs>
 		</>
 	);
 };

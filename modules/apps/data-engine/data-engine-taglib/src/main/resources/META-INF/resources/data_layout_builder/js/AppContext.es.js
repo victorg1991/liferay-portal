@@ -20,10 +20,12 @@ import {
 	DELETE_DATA_DEFINITION_FIELD,
 	DELETE_DATA_LAYOUT_FIELD,
 	EDIT_CUSTOM_OBJECT_FIELD,
+	SWITCH_SIDEBAR_PANEL,
 	UPDATE_DATA_DEFINITION,
 	UPDATE_DATA_LAYOUT,
 	UPDATE_DATA_LAYOUT_NAME,
 	UPDATE_EDITING_LANGUAGE_ID,
+	UPDATE_FIELDSETS,
 	UPDATE_FIELD_TYPES,
 	UPDATE_FOCUSED_CUSTOM_OBJECT_FIELD,
 	UPDATE_FOCUSED_FIELD,
@@ -49,8 +51,11 @@ const initialState = {
 	dataLayoutId: 0,
 	editingLanguageId: themeDisplay.getLanguageId(),
 	fieldTypes: [],
+	fieldsets: [],
 	focusedCustomObjectField: {},
 	focusedField: {},
+	sidebarOpen: false,
+	sidebarPanelId: 'fields',
 };
 
 const addCustomObjectField = ({
@@ -254,6 +259,15 @@ const createReducer = dataLayoutBuilder => {
 					},
 				};
 			}
+			case SWITCH_SIDEBAR_PANEL: {
+				const {sidebarOpen, sidebarPanelId} = action.payload;
+
+				return {
+					...state,
+					sidebarOpen,
+					sidebarPanelId,
+				};
+			}
 			case UPDATE_DATA_DEFINITION: {
 				const {dataDefinition} = action.payload;
 
@@ -299,6 +313,14 @@ const createReducer = dataLayoutBuilder => {
 				return {
 					...state,
 					fieldTypes: fieldTypes.filter(({system}) => !system),
+				};
+			}
+			case UPDATE_FIELDSETS: {
+				const {fieldsets} = action.payload;
+
+				return {
+					...state,
+					fieldsets,
 				};
 			}
 			case UPDATE_FOCUSED_CUSTOM_OBJECT_FIELD: {
