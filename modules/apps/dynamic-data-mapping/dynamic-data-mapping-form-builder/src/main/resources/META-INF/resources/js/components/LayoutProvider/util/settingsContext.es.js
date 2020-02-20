@@ -13,8 +13,8 @@
  */
 
 import {
-	normalizeFieldName,
-	PagesVisitor
+	PagesVisitor,
+	normalizeFieldName
 } from 'dynamic-data-mapping-form-renderer';
 
 import {updateFieldValidationProperty} from './fields.es';
