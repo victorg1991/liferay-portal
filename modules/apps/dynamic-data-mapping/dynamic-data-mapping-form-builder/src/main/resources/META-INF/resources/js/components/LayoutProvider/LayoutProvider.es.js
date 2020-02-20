@@ -162,7 +162,7 @@ class LayoutProvider extends Component {
 					selected: focusedField.fieldName === field.fieldName,
 					settingsContext: {
 						...settingsContext,
-						availableLanguageIds: [editingLanguageId],
+						availableLanguageIds,
 						defaultLanguageId,
 						pages: this.getLocalizedPages(settingsContext.pages)
 					}
