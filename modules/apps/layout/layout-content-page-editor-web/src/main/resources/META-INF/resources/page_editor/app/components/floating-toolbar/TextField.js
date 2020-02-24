@@ -14,26 +14,63 @@
 
 import ClayForm, {ClayInput} from '@clayui/form';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useState} from 'react';
 
 import {ConfigurationFieldPropTypes} from '../../../prop-types/index';
 
-export const TextField = ({field, onValueSelect}) => (
-	<ClayForm.Group>
-		<label htmlFor={field.name}>{field.label}</label>
+export const TextField = ({field, onValueSelect}) => {
+	const [errorMessage, setErrorMessage] = useState('');
 
-		<ClayInput
-			defaultValue={field.defaultValue}
-			id={field.name}
-			onChange={event => {
-				onValueSelect(field.name, event.target.value);
-			}}
-			placeholder={field.typeOptions ? field.typeOptions.placeholder : ''}
-			sizing="sm"
-			type="text"
-		/>
-	</ClayForm.Group>
-);
+	return (
+		<ClayForm.Group className={errorMessage ? 'has-error' : ''}>
+			<label htmlFor={field.name}>{field.label}</label>
+
+			<ClayInput
+				defaultValue={field.defaultValue}
+				id={field.name}
+				onChange={event => {
+					if (field.typeOptions && field.typeOptions.validation) {
+						const regexp = new RegExp(
+							field.typeOptions.validation.regexp,
+							'g'
+						);
+
+						if (regexp.test(event.target.value)) {
+							setErrorMessage('');
+
+							onValueSelect(field.name, event.target.value);
+						}
+						else {
+							setErrorMessage(
+								field.typeOptions.validation.errorMessage ||
+									Liferay.Language.get(
+										'you-have-entered-invalid-data'
+									)
+							);
+						}
+					}
+					else {
+						onValueSelect(field.name, event.target.value);
+					}
+				}}
+				placeholder={
+					field.typeOptions ? field.typeOptions.placeholder : ''
+				}
+				sizing="sm"
+				type="text"
+			/>
+
+			{errorMessage && (
+				<ClayForm.FeedbackGroup>
+					<ClayForm.FeedbackItem>
+						<ClayForm.FeedbackIndicator symbol="check-circle-full" />
+						{errorMessage}
+					</ClayForm.FeedbackItem>
+				</ClayForm.FeedbackGroup>
+			)}
+		</ClayForm.Group>
+	);
+};
 
 TextField.propTypes = {
 	field: PropTypes.shape(ConfigurationFieldPropTypes).isRequired,
