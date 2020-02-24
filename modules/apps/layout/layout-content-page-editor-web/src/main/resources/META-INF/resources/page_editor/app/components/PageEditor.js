@@ -174,6 +174,9 @@ export default function PageEditor({withinMasterPage = false}) {
 		isPageConversion &&
 		config.layoutConversionWarningMessages &&
 		config.layoutConversionWarningMessages.length > 0;
+	const productMenuOpen = Liferay.SideNavigation.instance(
+		document.querySelector('.product-menu-toggle')
+	).visible();
 
 	return (
 		<>
@@ -210,7 +213,7 @@ export default function PageEditor({withinMasterPage = false}) {
 				className={classNames('page-editor', {
 					'page-editor--with-sidebar': !withinMasterPage,
 					'page-editor--with-sidebar-open':
-						sidebarOpen && !withinMasterPage,
+						!productMenuOpen && sidebarOpen && !withinMasterPage,
 					'pt-4': !withinMasterPage
 				})}
 				id="page-editor"

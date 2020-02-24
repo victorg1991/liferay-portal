@@ -25,7 +25,10 @@ export default function sidebarReducer(sidebarStatus = INITIAL_STATE, action) {
 	if (action.type === SWITCH_SIDEBAR_PANEL) {
 		return {
 			open: action.sidebarOpen,
-			panelId: action.sidebarPanelId
+			panelId:
+				action.sidebarPanelId === undefined
+					? sidebarStatus.panelId
+					: action.sidebarPanelId
 		};
 	}
 

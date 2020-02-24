@@ -72,9 +72,12 @@ const DisabledArea = () => {
 		const element = document.querySelector(
 			`.${DEFAULT_DISABLED_AREA_CLASS}`
 		);
+		const productMenuOpen = Liferay.SideNavigation.instance(
+			document.querySelector('.product-menu-toggle')
+		).visible();
 
 		if (element) {
-			if (sidebarOpen) {
+			if (!productMenuOpen && sidebarOpen) {
 				element.classList.add('collapsed');
 			}
 			else {

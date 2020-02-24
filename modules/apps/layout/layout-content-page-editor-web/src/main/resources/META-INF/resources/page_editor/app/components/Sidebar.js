@@ -49,10 +49,13 @@ export default function Sidebar() {
 	const {getInstance, register} = usePlugins();
 
 	const panels = useSelector(selectAvailablePanels(config.panels));
+	const productMenuOpen = Liferay.SideNavigation.instance(
+		document.querySelector('.product-menu-toggle')
+	).visible();
 	const sidebarPanels = useSelector(
 		selectAvailableSidebarPanels(config.sidebarPanels)
 	);
-	const sidebarOpen = store.sidebar.open;
+	const sidebarOpen = !productMenuOpen && store.sidebar.open;
 	const sidebarPanelId = store.sidebar.panelId;
 
 	const panel = sidebarPanels[sidebarPanelId];
@@ -92,7 +95,6 @@ export default function Sidebar() {
 	);
 
 	useEffect(() => {
-		const productMenuOpen = document.querySelector('.product-menu-open');
 		const sideNavigation = Liferay.SideNavigation.instance(
 			document.querySelector('.product-menu-toggle')
 		);
@@ -100,13 +102,12 @@ export default function Sidebar() {
 		const onCloseSidebar = () => {
 			dispatch(
 				Actions.switchSidebarPanel({
-					sidebarOpen: false,
-					sidebarPanelId: null
+					sidebarOpen: false
 				})
 			);
 		};
 
-		if (productMenuOpen && sidebarOpen) {
+		if (sideNavigation.visible()) {
 			onCloseSidebar();
 		}
 

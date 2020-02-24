@@ -45,6 +45,9 @@ const LAYOUT_DATA_ITEMS = {
 export default function MasterPage() {
 	const fragmentEntryLinks = useSelector(state => state.fragmentEntryLinks);
 	const masterLayoutData = useSelector(state => state.masterLayoutData);
+	const productMenuOpen = Liferay.SideNavigation.instance(
+		document.querySelector('.product-menu-toggle')
+	).visible();
 	const sidebarOpen = useSelector(
 		state => state.sidebar.panelId && state.sidebar.open
 	);
@@ -54,7 +57,8 @@ export default function MasterPage() {
 	return (
 		<div
 			className={classNames('master-page', 'master-page--with-sidebar', {
-				'master-page--with-sidebar-open': sidebarOpen
+				'master-page--with-sidebar-open':
+					!productMenuOpen && sidebarOpen
 			})}
 			id="master-layout"
 		>
