@@ -34,6 +34,7 @@ import handleFieldEdited from './handlers/fieldEditedHandler.es';
 import handleFieldMoved from './handlers/fieldMovedHandler.es';
 import handleFieldSetAdded from './handlers/fieldSetAddedHandler.es';
 import handleLanguageIdDeleted from './handlers/languageIdDeletedHandler.es';
+import handleSectionAdded from './handlers/sectionAddedHandler.es';
 import {generateFieldName} from './util/fields.es';
 
 /**
@@ -98,6 +99,7 @@ class LayoutProvider extends Component {
 			ruleAdded: this._handleRuleAdded.bind(this),
 			ruleDeleted: this._handleRuleDeleted.bind(this),
 			ruleSaved: this._handleRuleSaved.bind(this),
+			sectionAdded: this._handleSectionAdded.bind(this),
 			sidebarFieldBlurred: this._handleSidebarFieldBlurred.bind(this),
 			successPageChanged: this._handleSuccessPageChanged.bind(this)
 		};
@@ -146,25 +148,29 @@ class LayoutProvider extends Component {
 
 		const visitor = new PagesVisitor(pages);
 
-		pages = visitor.mapFields(field => {
-			const {options, settingsContext} = field;
+		pages = visitor.mapFields(
+			field => {
+				const {options, settingsContext} = field;
 
-			return {
-				...getFieldProperties(
-					settingsContext,
-					defaultLanguageId,
-					editingLanguageId
-				),
-				options,
-				selected: focusedField.fieldName === field.fieldName,
-				settingsContext: {
-					...settingsContext,
-					availableLanguageIds,
-					defaultLanguageId,
-					pages: this.getLocalizedPages(settingsContext.pages)
-				}
-			};
-		});
+				return {
+					...getFieldProperties(
+						settingsContext,
+						defaultLanguageId,
+						editingLanguageId
+					),
+					options,
+					selected: focusedField.fieldName === field.fieldName,
+					settingsContext: {
+						...settingsContext,
+						availableLanguageIds,
+						defaultLanguageId,
+						pages: this.getLocalizedPages(settingsContext.pages)
+					}
+				};
+			},
+			true,
+			true
+		);
 
 		visitor.setPages(pages);
 
@@ -266,11 +272,12 @@ class LayoutProvider extends Component {
 	_fieldActionsValueFn() {
 		return [
 			{
-				action: indexes => this.dispatch('fieldDuplicated', {indexes}),
+				action: fieldName =>
+					this.dispatch('fieldDuplicated', {fieldName}),
 				label: Liferay.Language.get('duplicate')
 			},
 			{
-				action: indexes => this.dispatch('fieldDeleted', {indexes}),
+				action: fieldName => this.dispatch('fieldDeleted', {fieldName}),
 				label: Liferay.Language.get('delete')
 			}
 		];
@@ -290,10 +297,19 @@ class LayoutProvider extends Component {
 		});
 	}
 
-	_handleColumnResized({column, direction, source}) {
+	_handleColumnResized({column, container, direction, source}) {
 		const {state} = this;
 
-		this.setState(handleColumnResized(state, source, column, direction));
+		this.setState(
+			handleColumnResized(
+				this.props,
+				state,
+				source,
+				container,
+				column,
+				direction
+			)
+		);
 	}
 
 	_handleFieldAdded(event) {
@@ -339,7 +355,7 @@ class LayoutProvider extends Component {
 	}
 
 	_handleFieldDeleted(event) {
-		this.setState(handleFieldDeleted(this.state, event));
+		this.setState(handleFieldDeleted(this.props, this.state, event));
 	}
 
 	_handleFieldDuplicated(event) {
@@ -477,6 +493,10 @@ class LayoutProvider extends Component {
 		});
 
 		this.emit('rulesModified');
+	}
+
+	_handleSectionAdded(event) {
+		this.setState(handleSectionAdded(this.props, this.state, event));
 	}
 
 	_handleSidebarFieldBlurred() {

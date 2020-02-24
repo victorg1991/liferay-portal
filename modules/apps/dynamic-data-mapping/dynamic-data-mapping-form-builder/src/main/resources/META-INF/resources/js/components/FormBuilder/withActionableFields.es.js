@@ -12,196 +12,17 @@
  * details.
  */
 
-import {ClayActionsDropdown} from 'clay-dropdown';
-import {FormSupport, PagesVisitor} from 'dynamic-data-mapping-form-renderer';
+import {FormSupport} from 'dynamic-data-mapping-form-renderer';
 import dom from 'metal-dom';
 import {EventHandler} from 'metal-events';
 import Component from 'metal-jsx';
-import {Config} from 'metal-state';
 
-import {focusedFieldStructure, pageStructure} from '../../util/config.es';
+import FieldActionsDropDown, {
+	getFieldContainer
+} from './FieldActionsDropDown.es';
+import formBuilderProps from './props.es';
 
-const getFieldIndexes = (pages, fieldName) => {
-	const visitor = new PagesVisitor(pages);
-	let indexes = {};
-
-	visitor.mapFields((field, fieldIndex, columnIndex, rowIndex, pageIndex) => {
-		if (field.fieldName === fieldName) {
-			indexes = {columnIndex, pageIndex, rowIndex};
-		}
-	});
-
-	return indexes;
-};
-
-const getFieldContainer = (pages, fieldName) => {
-	const {columnIndex, pageIndex, rowIndex} = getFieldIndexes(
-		pages,
-		fieldName
-	);
-
-	return document.querySelector(
-		[
-			'.col-ddm',
-			`[data-ddm-field-column="${columnIndex}"]`,
-			`[data-ddm-field-page="${pageIndex}"]`,
-			`[data-ddm-field-row="${rowIndex}"]`,
-			' .ddm-field-container'
-		].join('')
-	);
-};
-
-class Actions extends Component {
-	created() {
-		this.on('fieldNameChanged', this._handleFieldNameChanged);
-
-		this.expanded = false;
-	}
-
-	render() {
-		const {expanded} = this;
-		const {disabled, items, label, spritemap} = this.props;
-
-		return (
-			<div
-				class="ddm-field-actions-container"
-				onMouseDown={this._handleElementClicked.bind(this)}
-			>
-				<span class="actions-label">{label}</span>
-
-				<ClayActionsDropdown
-					disabled={disabled}
-					events={{
-						expandedChanged: this._handleExpandedChanged.bind(this),
-						itemClicked: this._handleItemClicked.bind(this)
-					}}
-					expanded={expanded}
-					items={items}
-					ref="dropdown"
-					spritemap={spritemap}
-				/>
-			</div>
-		);
-	}
-
-	syncExpanded(expanded) {
-		const {pages} = this.props;
-		const {fieldName} = this.state;
-		const fieldContainer = getFieldContainer(pages, fieldName);
-
-		if (!fieldContainer) {
-			return;
-		}
-
-		if (expanded) {
-			fieldContainer.classList.add('expanded');
-		}
-		else {
-			fieldContainer.classList.remove('expanded');
-		}
-	}
-
-	_handleElementClicked({target}) {
-		const {disabled} = this.props;
-		const {dropdown} = this.refs;
-
-		if (!dropdown.element.contains(target)) {
-			const {dispatch} = this.context;
-			const {fieldName} = this.state;
-			const {pages} = this.props;
-			const indexes = getFieldIndexes(pages, fieldName);
-
-			dispatch('fieldClicked', indexes);
-		}
-		else if (!this.expanded && !disabled) {
-			this.expanded = true;
-		}
-	}
-
-	_handleExpandedChanged({newVal}) {
-		this.expanded = newVal;
-
-		this.syncExpanded(newVal);
-	}
-
-	_handleFieldNameChanged({newVal, prevVal}) {
-		const {pages} = this.props;
-		const {expanded} = this.state;
-		const newFieldContainer = getFieldContainer(pages, newVal);
-		const prevFieldContainer = getFieldContainer(pages, prevVal);
-
-		if (prevFieldContainer && newFieldContainer !== prevFieldContainer) {
-			prevFieldContainer.classList.remove('expanded');
-
-			if (expanded && newFieldContainer) {
-				newFieldContainer.classList.add('expanded');
-			}
-		}
-	}
-
-	_handleItemClicked({
-		data: {
-			item: {action}
-		}
-	}) {
-		const {fieldName} = this.state;
-		const {pages} = this.props;
-		const indexes = getFieldIndexes(pages, fieldName);
-
-		action(indexes);
-
-		this.refs.dropdown.expanded = false;
-	}
-}
-
-Actions.PROPS = {
-	/**
-	 * @default false
-	 * @instance
-	 * @memberof Actions
-	 * @type {!boolean}
-	 */
-
-	disabled: Config.bool().value(false),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Actions
-	 * @type {!string}
-	 */
-
-	label: Config.string(),
-
-	/**
-	 * @default []
-	 * @instance
-	 * @memberof Actions
-	 * @type {?array<object>}
-	 */
-
-	pages: Config.arrayOf(pageStructure).value([]),
-
-	/**
-	 * @default undefined
-	 * @instance
-	 * @memberof Actions
-	 * @type {!string}
-	 */
-
-	spritemap: Config.string().required()
-};
-
-Actions.STATE = {
-	/**
-	 * @default {}
-	 * @instance
-	 * @memberof Actions
-	 * @type {!Object}
-	 */
-
-	fieldName: Config.string()
-};
+const _CSS_HOVERED = 'hovered';
 
 const withActionableFields = ChildComponent => {
 	class ActionableFields extends Component {
@@ -213,6 +34,14 @@ const withActionableFields = ChildComponent => {
 					'mouseenter',
 					'.ddm-field-container',
 					this._handleMouseEnterField.bind(this)
+				)
+			);
+
+			this._eventHandler.add(
+				this.delegate(
+					'mouseleave',
+					'.ddm-field-container',
+					this._handleMouseLeaveField.bind(this)
 				)
 			);
 		}
@@ -236,7 +65,7 @@ const withActionableFields = ChildComponent => {
 				<div>
 					<ChildComponent {...this.props} />
 
-					<Actions
+					<FieldActionsDropDown
 						disabled={!this.isActionsEnabled()}
 						items={fieldActions}
 						pages={pages}
@@ -246,7 +75,7 @@ const withActionableFields = ChildComponent => {
 						visible={false}
 					/>
 
-					<Actions
+					<FieldActionsDropDown
 						disabled={!this.isActionsEnabled()}
 						items={fieldActions}
 						pages={pages}
@@ -280,8 +109,8 @@ const withActionableFields = ChildComponent => {
 			}
 		}
 
-		showActions(actions, fieldName) {
-			actions.props.label = this._getFieldType(fieldName);
+		showActions(actions, fieldName, field) {
+			actions.props.label = this._getFieldType(fieldName, field);
 			actions.props.visible = true;
 
 			if (fieldName !== actions.state.fieldName) {
@@ -302,38 +131,16 @@ const withActionableFields = ChildComponent => {
 			});
 		}
 
-		_getColumnField(indexes) {
-			const {pages} = this.props;
-			const visitor = new PagesVisitor(pages);
-			let field;
-
-			visitor.mapFields(
-				(
-					currentField,
-					fieldIndex,
-					columnIndex,
-					rowIndex,
-					pageIndex
-				) => {
-					if (
-						indexes.pageIndex === pageIndex &&
-						indexes.rowIndex === rowIndex &&
-						indexes.columnIndex === columnIndex
-					) {
-						field = currentField;
-					}
-				}
-			);
-
-			return field;
+		_getClosestParent(node) {
+			return dom.closest(node.parentElement, `.ddm-field-container`);
 		}
 
-		_getFieldType(fieldName) {
+		_getFieldType(fieldName, field) {
 			const {fieldTypes, pages} = this.props;
-			const visitor = new PagesVisitor(pages);
-			const field = visitor.findField(
-				field => field.fieldName === fieldName
-			);
+
+			if (!field) {
+				field = FormSupport.findFieldByName(pages, fieldName);
+			}
 
 			return (
 				field &&
@@ -343,146 +150,84 @@ const withActionableFields = ChildComponent => {
 			);
 		}
 
-		_handleMouseEnterField({delegateTarget}) {
-			if (!delegateTarget.classList.contains('selected')) {
-				const {hoveredFieldActions} = this.refs;
-				const indexes = FormSupport.getIndexes(
-					dom.closest(delegateTarget, '.col-ddm')
-				);
-				const {fieldName} = this._getColumnField(indexes);
+		_handleMouseEnterField(event) {
+			event.stopPropagation();
 
-				this.showActions(hoveredFieldActions, fieldName);
+			const {delegateTarget} = event;
+
+			this._handleActionsMouseEnter(delegateTarget);
+			this._handleHoverMouseEnter(delegateTarget);
+
+			event.stopPropagation();
+		}
+
+		_handleMouseLeaveField(event) {
+			const {delegateTarget} = event;
+
+			this._handleActionsMouseLeave(delegateTarget);
+			this._handleHoverMouseLeave(delegateTarget);
+
+			event.stopPropagation();
+		}
+
+		_handleActionsMouseEnter(delegateTarget) {
+			if (!delegateTarget.classList.contains('selected')) {
+				const {fieldName} = delegateTarget.dataset;
+				const {hoveredFieldActions} = this.refs;
+				const {pages} = this.props;
+
+				const field = FormSupport.findFieldByName(pages, fieldName);
+
+				if (field) {
+					this.showActions(hoveredFieldActions, fieldName, field);
+				}
 			}
+		}
+
+		_handleActionsMouseLeave(delegateTarget) {
+			const closestParent = this._getClosestParent(delegateTarget);
+
+			if (
+				closestParent &&
+				!closestParent.classList.contains('selected')
+			) {
+				const {fieldName} = closestParent.dataset;
+				const {hoveredFieldActions} = this.refs;
+				const {pages} = this.props;
+
+				const field = FormSupport.findFieldByName(pages, fieldName);
+
+				if (field) {
+					this.showActions(hoveredFieldActions, fieldName, field);
+				}
+			}
+		}
+
+		_handleHoverMouseEnter(delegateTarget) {
+			let closestParent = this._getClosestParent(delegateTarget);
+
+			while (closestParent) {
+				closestParent.classList.remove(_CSS_HOVERED);
+
+				closestParent = this._getClosestParent(closestParent);
+			}
+
+			delegateTarget.classList.add(_CSS_HOVERED);
+		}
+
+		_handleHoverMouseLeave(delegateTarget) {
+			const closestParent = this._getClosestParent(delegateTarget);
+
+			if (closestParent) {
+				closestParent.classList.add(_CSS_HOVERED);
+			}
+
+			delegateTarget.classList.remove(_CSS_HOVERED);
 		}
 	}
 
 	ActionableFields.PROPS = {
-		/**
-		 * @default
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?number}
-		 */
-
-		activePage: Config.number().value(0),
-
-		/**
-		 * @default undefined
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?string}
-		 */
-
-		defaultLanguageId: Config.string(),
-
-		/**
-		 * @default undefined
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?string}
-		 */
-
-		editingLanguageId: Config.string(),
-
-		/**
-		 * @default []
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?(array|undefined)}
-		 */
-
-		fieldActions: Config.array().value([]),
-
-		/**
-		 * @default undefined
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?string}
-		 */
-
-		fieldSetDefinitionURL: Config.string(),
-
-		/**
-		 * @default []
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?(array|undefined)}
-		 */
-
-		fieldSets: Config.array().value([]),
-
-		/**
-		 * @default []
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?(array|undefined)}
-		 */
-
-		fieldTypes: Config.array().value([]),
-
-		/**
-		 * @default {}
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?object}
-		 */
-
-		focusedField: focusedFieldStructure.value({}),
-
-		/**
-		 * @default []
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?array<object>}
-		 */
-
-		pages: Config.arrayOf(pageStructure).value([]),
-
-		/**
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {string}
-		 */
-
-		paginationMode: Config.string().required(),
-
-		/**
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {string}
-		 */
-
-		portletNamespace: Config.string().required(),
-
-		/**
-		 * @default undefined
-		 * @instance
-		 * @memberof FormRenderer
-		 * @type {!string}
-		 */
-
-		spritemap: Config.string().required(),
-
-		/**
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {object}
-		 */
-
-		successPageSettings: Config.shapeOf({
-			body: Config.object(),
-			enabled: Config.bool(),
-			title: Config.object()
-		}).value({}),
-
-		/**
-		 * @default undefined
-		 * @instance
-		 * @memberof FormBuilder
-		 * @type {?string}
-		 */
-
-		view: Config.string()
+		...formBuilderProps
 	};
 
 	return ActionableFields;

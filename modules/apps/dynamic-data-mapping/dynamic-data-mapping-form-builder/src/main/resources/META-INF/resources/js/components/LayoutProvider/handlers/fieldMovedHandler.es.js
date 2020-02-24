@@ -14,44 +14,51 @@
 
 import {FormSupport} from 'dynamic-data-mapping-form-renderer';
 
-export default (props, state, {addedToPlaceholder, source, target}) => {
-	let {pages} = state;
-	const {columnIndex, pageIndex, rowIndex} = source;
+import {addField} from './fieldAddedHandler.es';
+import handleFieldDeleted from './fieldDeletedHandler.es';
+import handleSectionAdded from './sectionAddedHandler.es';
 
-	const column = FormSupport.getColumn(
-		pages,
-		pageIndex,
-		rowIndex,
-		columnIndex
+export default (props, state, event) => {
+	const {
+		sourceFieldName,
+		targetFieldName,
+		targetIndexes,
+		targetParentFieldName
+	} = event;
+	const deletedState = handleFieldDeleted(props, state, {
+		fieldName: sourceFieldName
+	});
+	const sourceField = FormSupport.findFieldByName(
+		state.pages,
+		sourceFieldName
 	);
-	const {fields} = column;
 
-	pages = FormSupport.removeFields(pages, pageIndex, rowIndex, columnIndex);
-
-	if (
-		target.rowIndex > pages[pageIndex].rows.length - 1 ||
-		addedToPlaceholder
-	) {
-		pages = FormSupport.addRow(
-			pages,
-			target.rowIndex,
-			target.pageIndex,
-			FormSupport.implAddRow(12, fields)
-		);
+	if (targetFieldName) {
+		return {
+			...handleSectionAdded(
+				props,
+				{
+					...state,
+					pages: deletedState.pages
+				},
+				{
+					data: {
+						fieldName: targetFieldName,
+						parentFieldName: targetParentFieldName
+					},
+					indexes: targetIndexes,
+					newField: sourceField
+				}
+			)
+		};
 	}
-	else {
-		pages = FormSupport.addFieldToColumn(
-			pages,
-			target.pageIndex,
-			target.rowIndex,
-			target.columnIndex,
-			fields[0]
-		);
-	}
-
-	pages[pageIndex].rows = FormSupport.removeEmptyRows(pages, pageIndex);
 
 	return {
-		pages
+		...addField(props, {
+			indexes: targetIndexes,
+			newField: sourceField,
+			pages: deletedState.pages,
+			parentFieldName: targetParentFieldName
+		})
 	};
 };

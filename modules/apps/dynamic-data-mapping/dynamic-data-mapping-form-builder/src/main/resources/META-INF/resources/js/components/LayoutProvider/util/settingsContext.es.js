@@ -12,10 +12,55 @@
  * details.
  */
 
-import {normalizeFieldName} from 'dynamic-data-mapping-form-renderer';
+import {
+	PagesVisitor,
+	normalizeFieldName
+} from 'dynamic-data-mapping-form-renderer';
 
 import {updateFieldValidationProperty} from './fields.es';
-import {updateSettingsContextProperty} from './settings.es';
+
+export const getSettingsContextProperty = (settingsContext, propertyName) => {
+	let propertyValue;
+	const visitor = new PagesVisitor(settingsContext.pages);
+
+	visitor.mapFields(field => {
+		if (propertyName === field.fieldName) {
+			propertyValue = field.value;
+		}
+	});
+
+	return propertyValue;
+};
+
+export const updateSettingsContextProperty = (
+	editingLanguageId,
+	settingsContext,
+	propertyName,
+	propertyValue
+) => {
+	const visitor = new PagesVisitor(settingsContext.pages);
+
+	return {
+		...settingsContext,
+		pages: visitor.mapFields(field => {
+			if (propertyName === field.fieldName) {
+				field = {
+					...field,
+					value: propertyValue
+				};
+
+				if (field.localizable) {
+					field.localizedValue = {
+						...field.localizedValue,
+						[editingLanguageId]: propertyValue
+					};
+				}
+			}
+
+			return field;
+		})
+	};
+};
 
 const shouldAutoGenerateName = (
 	defaultLanguageId,
@@ -30,7 +75,7 @@ const shouldAutoGenerateName = (
 	);
 };
 
-export const updateFocusedFieldName = (
+export const updateFieldName = (
 	editingLanguageId,
 	fieldNameGenerator,
 	focusedField,
@@ -64,6 +109,7 @@ export const updateFocusedFieldName = (
 		focusedField = {
 			...focusedField,
 			fieldName: newFieldName,
+			name: newFieldName,
 			settingsContext: updateSettingsContextProperty(
 				editingLanguageId,
 				settingsContext,
@@ -76,11 +122,7 @@ export const updateFocusedFieldName = (
 	return focusedField;
 };
 
-export const updateFocusedFieldDataType = (
-	editingLanguageId,
-	focusedField,
-	value
-) => {
+export const updateFieldDataType = (editingLanguageId, focusedField, value) => {
 	let {settingsContext} = focusedField;
 
 	settingsContext = {
@@ -105,7 +147,7 @@ export const updateFocusedFieldDataType = (
 	};
 };
 
-export const updateFocusedFieldLabel = (
+export const updateFieldLabel = (
 	defaultLanguageId,
 	editingLanguageId,
 	fieldNameGenerator,
@@ -121,7 +163,7 @@ export const updateFocusedFieldLabel = (
 			focusedField
 		)
 	) {
-		const updates = updateFocusedFieldName(
+		const updates = updateFieldName(
 			editingLanguageId,
 			fieldNameGenerator,
 			focusedField,
@@ -145,7 +187,7 @@ export const updateFocusedFieldLabel = (
 	};
 };
 
-export const updateFocusedFieldProperty = (
+export const updateFieldProperty = (
 	editingLanguageId,
 	focusedField,
 	propertyName,
@@ -163,11 +205,7 @@ export const updateFocusedFieldProperty = (
 	};
 };
 
-export const updateFocusedFieldOptions = (
-	editingLanguageId,
-	focusedField,
-	value
-) => {
+export const updateFieldOptions = (editingLanguageId, focusedField, value) => {
 	const options = value[editingLanguageId];
 
 	return {
@@ -182,64 +220,58 @@ export const updateFocusedFieldOptions = (
 	};
 };
 
-export const updateFocusedField = (
+export const updateField = (
 	{defaultLanguageId, editingLanguageId, fieldNameGenerator},
-	state,
-	fieldName,
-	value
+	field,
+	propertyName,
+	propertyValue
 ) => {
-	let {focusedField} = state;
-
-	if (fieldName === 'dataType') {
-		focusedField = {
-			...focusedField,
-			...updateFocusedFieldDataType(
-				editingLanguageId,
-				focusedField,
-				value
-			)
+	if (propertyName === 'dataType') {
+		field = {
+			...field,
+			...updateFieldDataType(editingLanguageId, field, propertyValue)
 		};
 	}
-	else if (fieldName === 'label') {
-		focusedField = {
-			...focusedField,
-			...updateFocusedFieldLabel(
+	else if (propertyName === 'label') {
+		field = {
+			...field,
+			...updateFieldLabel(
 				defaultLanguageId,
 				editingLanguageId,
 				fieldNameGenerator,
-				focusedField,
-				value
+				field,
+				propertyValue
 			)
 		};
 	}
-	else if (fieldName === 'name') {
-		focusedField = {
-			...focusedField,
-			...updateFocusedFieldName(
+	else if (propertyName === 'name') {
+		field = {
+			...field,
+			...updateFieldName(
 				editingLanguageId,
 				fieldNameGenerator,
-				focusedField,
-				value
+				field,
+				propertyValue
 			)
 		};
 	}
-	else if (fieldName === 'options') {
-		focusedField = {
-			...focusedField,
-			...updateFocusedFieldOptions(editingLanguageId, focusedField, value)
+	else if (propertyName === 'options') {
+		field = {
+			...field,
+			...updateFieldOptions(editingLanguageId, field, propertyValue)
 		};
 	}
 	else {
-		focusedField = {
-			...focusedField,
-			...updateFocusedFieldProperty(
+		field = {
+			...field,
+			...updateFieldProperty(
 				editingLanguageId,
-				focusedField,
-				fieldName,
-				value
+				field,
+				propertyName,
+				propertyValue
 			)
 		};
 	}
 
-	return focusedField;
+	return field;
 };
