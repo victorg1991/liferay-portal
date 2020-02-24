@@ -292,6 +292,23 @@
 						"placeholder": {
 							"title": "The Placeholder Schema",
 							"type": "string"
+						},
+						"validation": {
+							"properties": {
+								"errorMessage": {
+									"title": "The ErrorMessage Schema",
+									"type": "string"
+								},
+								"regexp": {
+									"title": "The RegExP Schema",
+									"type": "string"
+								}
+							},
+							"required": [
+								"regexp"
+							],
+							"title": "The ValidationRegexp Schema",
+							"type": "object"
 						}
 					},
 					"title": "The Typeoptions Schema",
