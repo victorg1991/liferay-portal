@@ -25,12 +25,14 @@ import com.liferay.item.selector.criteria.InfoListItemSelectorReturnType;
 import com.liferay.item.selector.criteria.info.item.criterion.InfoListItemSelectorCriterion;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.JavaConstants;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -46,6 +48,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletURL;
@@ -89,15 +93,16 @@ public class AssetListItemSelectorView
 	@Override
 	public void renderHTML(
 			ServletRequest servletRequest, ServletResponse servletResponse,
-			InfoListItemSelectorCriterion itemSelectorCriterion,
+			InfoListItemSelectorCriterion infoListItemSelectorCriterion,
 			PortletURL portletURL, String itemSelectedEventName, boolean search)
 		throws IOException, ServletException {
 
 		_itemSelectorViewDescriptorRenderer.renderHTML(
-			servletRequest, servletResponse, itemSelectorCriterion, portletURL,
-			itemSelectedEventName, search,
+			servletRequest, servletResponse, infoListItemSelectorCriterion,
+			portletURL, itemSelectedEventName, search,
 			new AssetListItemSelectorViewDescriptor(
-				(HttpServletRequest)servletRequest, portletURL));
+				(HttpServletRequest)servletRequest,
+				infoListItemSelectorCriterion, portletURL));
 	}
 
 	private static final List<ItemSelectorReturnType>
@@ -129,9 +134,12 @@ public class AssetListItemSelectorView
 		implements ItemSelectorViewDescriptor<AssetListEntry> {
 
 		public AssetListItemSelectorViewDescriptor(
-			HttpServletRequest httpServletRequest, PortletURL portletURL) {
+			HttpServletRequest httpServletRequest,
+			InfoListItemSelectorCriterion infoListItemSelectorCriterion,
+			PortletURL portletURL) {
 
 			_httpServletRequest = httpServletRequest;
+			_infoListItemSelectorCriterion = infoListItemSelectorCriterion;
 			_portletURL = portletURL;
 		}
 
@@ -245,37 +253,37 @@ public class AssetListItemSelectorView
 				_httpServletRequest, "keywords");
 
 			List<AssetListEntry> assetListEntries = null;
-			int assetListEntriesCount = 0;
 
 			if (Validator.isNotNull(keywords)) {
 				assetListEntries = _assetListEntryService.getAssetListEntries(
 					PortalUtil.getCurrentAndAncestorSiteGroupIds(
 						themeDisplay.getScopeGroupId()),
-					keywords, searchContainer.getStart(),
-					searchContainer.getEnd(),
+					keywords, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 					searchContainer.getOrderByComparator());
-
-				assetListEntriesCount =
-					_assetListEntryService.getAssetListEntriesCount(
-						PortalUtil.getCurrentAndAncestorSiteGroupIds(
-							themeDisplay.getScopeGroupId()),
-						keywords);
 			}
 			else {
 				assetListEntries = _assetListEntryService.getAssetListEntries(
 					PortalUtil.getCurrentAndAncestorSiteGroupIds(
 						themeDisplay.getScopeGroupId()),
-					searchContainer.getStart(), searchContainer.getEnd(),
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS,
 					searchContainer.getOrderByComparator());
-
-				assetListEntriesCount =
-					_assetListEntryService.getAssetListEntriesCount(
-						PortalUtil.getCurrentAndAncestorSiteGroupIds(
-							themeDisplay.getScopeGroupId()));
 			}
 
-			searchContainer.setResults(assetListEntries);
-			searchContainer.setTotal(assetListEntriesCount);
+			if (Validator.isNotNull(
+					_infoListItemSelectorCriterion.getItemType())) {
+
+				Stream<AssetListEntry> assetListEntriesStream =
+					assetListEntries.stream();
+
+				assetListEntries = assetListEntriesStream.collect(
+					Collectors.toList());
+			}
+
+			searchContainer.setResults(
+				ListUtil.subList(
+					assetListEntries, searchContainer.getStart(),
+					searchContainer.getEnd()));
+			searchContainer.setTotal(assetListEntries.size());
 
 			return searchContainer;
 		}
@@ -296,6 +304,8 @@ public class AssetListItemSelectorView
 		}
 
 		private final HttpServletRequest _httpServletRequest;
+		private final InfoListItemSelectorCriterion
+			_infoListItemSelectorCriterion;
 		private final PortletURL _portletURL;
 
 	}
