@@ -14,20 +14,12 @@
 
 import React from 'react';
 
-const NotMappedMessage = () => (
-	<div className="page-editor__collection__not-mapped-message">
-		{Liferay.Language.get('not-mapped')}
-	</div>
-);
-
-const Collection = React.forwardRef(({children}, ref) => {
+export const CollectionConfigurationPanel = () => {
 	return (
-		<div className="page-editor__collection" ref={ref}>
-			<NotMappedMessage></NotMappedMessage>
-
-			{children}
-		</div>
+		<>
+			<p className="mb-3 sheet-subtitle">
+				{Liferay.Language.get('collection')}
+			</p>
+		</>
 	);
-});
-
-export default Collection;
+};
