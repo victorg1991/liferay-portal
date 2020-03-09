@@ -16,33 +16,24 @@ import ClayForm from '@clayui/form';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import ItemSelector from '../../../common/components/ItemSelector';
+import CollectionSelector from '../../../common/components/CollectionSelector';
 import {ConfigurationFieldPropTypes} from '../../../prop-types/index';
-import {config} from '../../config/index';
 
-export const ItemCollectionSelectorField = ({field, onValueSelect, value}) => {
-	const {typeOptions = {}} = field;
-	const eventName = `${config.portletNamespace}selectInfoList`;
-
+export const CollectionSelectorField = ({field, onValueSelect, value}) => {
 	return (
 		<ClayForm.Group small>
-			<ItemSelector
-				eventName={eventName}
-				itemSelectorURL={
-					typeOptions.infoListSelectorURL ||
-					config.infoListSelectorURL
-				}
+			<CollectionSelector
+				collectionTitle={value.title}
 				label={field.label}
-				onItemSelect={item => {
-					onValueSelect(field.name, item);
+				onCollectionSelect={collection => {
+					onValueSelect(field.name, collection);
 				}}
-				selectedItemTitle={value.title}
-			/>
+			></CollectionSelector>
 		</ClayForm.Group>
 	);
 };
 
-ItemCollectionSelectorField.propTypes = {
+CollectionSelectorField.propTypes = {
 	field: PropTypes.shape(ConfigurationFieldPropTypes).isRequired,
 	onValueSelect: PropTypes.func.isRequired,
 	value: PropTypes.object,

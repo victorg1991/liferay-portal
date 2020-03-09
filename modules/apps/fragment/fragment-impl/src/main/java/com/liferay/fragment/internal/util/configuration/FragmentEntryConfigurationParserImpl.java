@@ -14,6 +14,8 @@
 
 package com.liferay.fragment.internal.util.configuration;
 
+import com.liferay.fragment.internal.list.retriever.LayoutListRetriever;
+import com.liferay.fragment.internal.list.retriever.LayoutListRetrieverTracker;
 import com.liferay.fragment.util.configuration.FragmentConfigurationField;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
 import com.liferay.info.display.contributor.InfoDisplayContributor;
@@ -395,6 +397,10 @@ public class FragmentEntryConfigurationParserImpl
 			return _getInfoDisplayObjectEntry(value);
 		}
 
+		if (StringUtil.equalsIgnoreCase(type, "collectionSelector")) {
+			return _getInfoListObjectEntry(value);
+		}
+
 		return null;
 	}
 
@@ -529,6 +535,30 @@ public class FragmentEntryConfigurationParserImpl
 		return null;
 	}
 
+	private Object _getInfoListObjectEntry(String value) {
+		if (Validator.isNull(value)) {
+			return Collections.emptyList();
+		}
+
+		try {
+			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(value);
+
+			String type = jsonObject.getString("type");
+
+			LayoutListRetriever layoutListRetriever =
+				_layoutListRetrieverTracker.getLayoutListRetriever(type);
+
+			return layoutListRetriever.getList(jsonObject);
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unable to get collection: " + value, exception);
+			}
+		}
+
+		return Collections.emptyList();
+	}
+
 	private static final String _CONTEXT_OBJECT_SUFFIX = "Object";
 
 	private static final String _KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR =
@@ -540,5 +570,8 @@ public class FragmentEntryConfigurationParserImpl
 
 	@Reference
 	private InfoDisplayContributorTracker _infoDisplayContributorTracker;
+
+	@Reference
+	private LayoutListRetrieverTracker _layoutListRetrieverTracker;
 
 }
