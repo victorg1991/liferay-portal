@@ -92,6 +92,9 @@ function getName(item, fragmentEntryLinks) {
 	if (item.type === LAYOUT_DATA_ITEM_TYPES.fragment) {
 		name = fragmentEntryLinks[item.config.fragmentEntryLinkId].name;
 	}
+	else if (item.type === LAYOUT_DATA_ITEM_TYPES.collection) {
+		name = LAYOUT_DATA_ITEM_TYPE_LABELS.collection;
+	}
 	else if (item.type === LAYOUT_DATA_ITEM_TYPES.container) {
 		name = LAYOUT_DATA_ITEM_TYPE_LABELS.container;
 	}
