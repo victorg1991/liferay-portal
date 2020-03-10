@@ -226,6 +226,7 @@ export default function useDragAndDrop({
 					dispatch({
 						dropTargetItemId:
 							parent.type !== LAYOUT_DATA_ITEM_TYPES.row &&
+							parent.type !== LAYOUT_DATA_ITEM_TYPES.container &&
 							parent.children.length
 								? parent.parentId || item.parentId
 								: item.parentId,
