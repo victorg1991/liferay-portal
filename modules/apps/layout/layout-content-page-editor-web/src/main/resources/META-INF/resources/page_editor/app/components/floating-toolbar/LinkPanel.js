@@ -20,9 +20,9 @@ import {useDebounceCallback} from '../../../core/hooks/useDebounceCallback';
 import {getEditableItemPropTypes} from '../../../prop-types/index';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/editableFragmentEntryProcessor';
 import {EDITABLE_TYPES} from '../../config/constants/editableTypes';
-import InfoItemService from '../../services/InfoItemService';
 import {useDispatch, useSelector} from '../../store/index';
 import updateEditableValues from '../../thunks/updateEditableValues';
+import {useGetFieldValue} from '../ControlsIdConverterContext';
 import MappingSelector from './MappingSelector';
 
 const SOURCE_TYPES = {
@@ -77,13 +77,18 @@ export default function LinkPanel({item}) {
 
 	const editableConfig = editableValue.config || {};
 
-	const isMapped = editableConfig.mappedField || editableConfig.fieldId;
+	const isMapped =
+		editableConfig.mappedField ||
+		editableConfig.fieldId ||
+		editableConfig.collectionFieldId;
 
 	const [sourceType, setSourceType] = useState(
 		isMapped ? SOURCE_TYPES.fromContentField : SOURCE_TYPES.manual
 	);
 
 	const [href, setHref] = useState(editableConfig.href);
+
+	const getFieldValue = useGetFieldValue();
 
 	useEffect(() => {
 		updateMappedHrefValue({
@@ -97,6 +102,7 @@ export default function LinkPanel({item}) {
 		editableConfig.classPK,
 		editableConfig.fieldId,
 		languageId,
+		updateMappedHrefValue,
 	]);
 
 	const updateRowConfig = useCallback(
@@ -143,28 +149,24 @@ export default function LinkPanel({item}) {
 
 	const [debounceUpdateRowConfig] = useDebounceCallback(updateRowConfig, 500);
 
-	const updateMappedHrefValue = ({
-		classNameId,
-		classPK,
-		fieldId,
-		languageId,
-	}) => {
-		if (!classNameId || !classPK || !fieldId) {
-			return;
-		}
+	const updateMappedHrefValue = useCallback(
+		({classNameId, classPK, fieldId, languageId}) => {
+			if (!classNameId || !classPK || !fieldId) {
+				return;
+			}
 
-		InfoItemService.getAssetFieldValue({
-			classNameId,
-			classPK,
-			fieldId,
-			languageId,
-			onNetworkStatus: () => {},
-		}).then(response => {
-			const {fieldValue = ''} = response;
-
-			setHref(fieldValue);
-		});
-	};
+			getFieldValue({
+				classNameId,
+				classPK,
+				fieldId,
+				languageId,
+				onNetworkStatus: () => {},
+			}).then(fieldValue => {
+				setHref(fieldValue);
+			});
+		},
+		[getFieldValue]
+	);
 
 	return (
 		<>

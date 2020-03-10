@@ -25,6 +25,7 @@ import Processors from '../../processors/index';
 import selectCanUpdateLayoutContent from '../../selectors/selectCanUpdateLayoutContent';
 import selectPrefixedSegmentsExperienceId from '../../selectors/selectPrefixedSegmentsExperienceId';
 import {useSelector} from '../../store/index';
+import {useGetFieldValue} from '../ControlsIdConverterContext';
 import UnsafeHTML from '../UnsafeHTML';
 import {
 	useEditableProcessorUniqueId,
@@ -48,6 +49,8 @@ const FragmentContent = React.forwardRef(
 		const canUpdateLayoutContent = useSelector(
 			selectCanUpdateLayoutContent
 		);
+
+		const getFieldValue = useGetFieldValue();
 
 		const [editableElements, setEditableElements] = useState([]);
 
@@ -94,7 +97,8 @@ const FragmentContent = React.forwardRef(
 						editable.dataset.lfrBackgroundImageId,
 						BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR,
 						languageId,
-						segmentsExperienceId
+						segmentsExperienceId,
+						getFieldValue
 					).then(([value, _editableConfig]) => {
 						const processor = Processors['background-image'];
 
@@ -112,7 +116,8 @@ const FragmentContent = React.forwardRef(
 							editable.getAttribute('id'),
 							EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
 							languageId,
-							segmentsExperienceId
+							segmentsExperienceId,
+							getFieldValue
 						).then(([value, editableConfig]) => {
 							const processor =
 								Processors[editable.getAttribute('type')] ||
@@ -133,6 +138,7 @@ const FragmentContent = React.forwardRef(
 			defaultContent,
 			editableProcessorUniqueId,
 			editableValues,
+			getFieldValue,
 			isMounted,
 			languageId,
 			segmentsExperienceId,
