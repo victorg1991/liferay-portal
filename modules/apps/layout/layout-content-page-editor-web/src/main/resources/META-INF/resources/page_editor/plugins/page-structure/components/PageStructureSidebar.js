@@ -140,7 +140,12 @@ function visit(item, items, {activeItemId, isMasterPage, state}) {
 		});
 	}
 	else {
-		item.children.forEach(childId => {
+		const itemChildren =
+			item.type === LAYOUT_DATA_ITEM_TYPES.collection
+				? items[item.children[0]].children
+				: item.children;
+
+		itemChildren.forEach(childId => {
 			const childItem = items[childId];
 
 			if (
