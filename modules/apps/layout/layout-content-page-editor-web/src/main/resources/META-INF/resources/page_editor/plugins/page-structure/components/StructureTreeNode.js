@@ -39,9 +39,8 @@ export default function StructureTreeNode({node}) {
 	return (
 		<div
 			className={classNames('page-editor__page-structure__tree-node', {
-				'page-editor__page-structure__tree-node--active': isSelected(
-					node.id
-				),
+				'page-editor__page-structure__tree-node--active':
+					node.activable && isSelected(node.id),
 			})}
 			onMouseLeave={event => {
 				event.stopPropagation();
@@ -71,7 +70,12 @@ export default function StructureTreeNode({node}) {
 				}}
 			/>
 
-			<NameLabel disabled={node.disabled} id={node.id} name={node.name} />
+			<NameLabel
+				activable={node.activable}
+				disabled={node.disabled}
+				id={node.id}
+				name={node.name}
+			/>
 
 			{canUpdateLayoutContent &&
 				node.removable &&
@@ -90,7 +94,7 @@ StructureTreeNode.propTypes = {
 	}).isRequired,
 };
 
-const NameLabel = ({disabled, id, name}) => {
+const NameLabel = ({activable, disabled, id, name}) => {
 	const isSelected = useIsSelected();
 
 	return (
@@ -98,9 +102,8 @@ const NameLabel = ({disabled, id, name}) => {
 			className={classNames(
 				'page-editor__page-structure__tree-node__name',
 				{
-					'page-editor__page-structure__tree-node__name--active': isSelected(
-						id
-					),
+					'page-editor__page-structure__tree-node__name--active':
+						activable && isSelected(id),
 					'page-editor__page-structure__tree-node__name--disabled': disabled,
 				}
 			)}
