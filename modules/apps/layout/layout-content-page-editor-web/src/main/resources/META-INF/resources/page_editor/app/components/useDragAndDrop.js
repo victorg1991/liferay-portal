@@ -18,6 +18,7 @@ import {useDrag, useDrop} from 'react-dnd';
 import {getEmptyImage} from 'react-dnd-html5-backend';
 
 import {LAYOUT_DATA_ITEM_TYPES} from '../config/constants/layoutDataItemTypes';
+import {useFromControlsId, useToControlsId} from './ControlsIdConverterContext';
 
 const LAYOUT_DATA_ALLOWED_CHILDREN_TYPES = {
 	[LAYOUT_DATA_ITEM_TYPES.root]: [
@@ -120,6 +121,9 @@ export default function useDragAndDrop({
 		store: {dropTargetItemId, targetPosition},
 	} = useContext(DragDropManagerImpl);
 
+	const fromControlsId = useFromControlsId();
+	const toControlsId = useToControlsId();
+
 	const [dragOptions, drag, preview] = useDrag({
 		collect: _monitor => ({
 			isDragging: _monitor.isDragging(),
@@ -155,7 +159,7 @@ export default function useDragAndDrop({
 				const {parentId, position} = getParentItemIdAndPositon({
 					item: _item,
 					items: layoutData.items,
-					siblingOrParentId: dropTargetItemId,
+					siblingOrParentId: fromControlsId(dropTargetItemId),
 					targetPosition,
 				});
 
@@ -220,19 +224,21 @@ export default function useDragAndDrop({
 			switch (result) {
 				case RULES_TYPE.MIDDLE:
 					dispatch({
-						dropTargetItemId: item.itemId,
+						dropTargetItemId: toControlsId(item.itemId),
 						targetPosition: TARGET_POSITION.MIDDLE,
 					});
 					break;
 				case RULES_TYPE.ELEVATE:
 					dispatch({
-						dropTargetItemId: item.parentId || item.itemId,
+						dropTargetItemId:
+							toControlsId(item.parentId) ||
+							toControlsId(item.itemId),
 						targetPosition: newTargetPosition,
 					});
 					break;
 				case RULES_TYPE.VALID_MOVE:
 					dispatch({
-						dropTargetItemId: item.itemId,
+						dropTargetItemId: toControlsId(item.itemId),
 						targetPosition: newTargetPosition,
 					});
 					break;
