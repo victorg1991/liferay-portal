@@ -164,23 +164,16 @@ const Collection = React.forwardRef(({children, item}, ref) => {
 		});
 	}, [dispatch, item.config.collection, store]);
 
-	const [collectionFields, setCollectionFields] = useState('');
-
-	if (item.config.collection) {
-		useEffect(() => {
+		if (item.config.collection) {
 			InfoItemService.getAvailableStructureMappingFields({
 				classNameId: item.config.collection.itemType,
 				classTypeId: item.config.collection.itemSubtype,
 				onNetworkStatus: dispatch,
-			}).then(response => {
-				setCollectionFields(response);
+			}).then(({infoDisplayFields}) => {
+				setCollectionFields(infoDisplayFields);
 			});
-		}, [
-			dispatch,
-			item.config.collection.itemType,
-			item.config.collection.itemSubtype,
-		]);
-	}
+		}
+	}, [dispatch, item.config.collection]);
 
 	return (
 		<div className="page-editor__collection" ref={ref}>
