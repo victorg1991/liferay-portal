@@ -166,17 +166,16 @@ public class FragmentsImporterImpl implements FragmentsImporter {
 								locale, _DEFAULT_FRAGMENT_COLLECTION_KEY),
 							StringPool.BLANK,
 							ServiceContextThreadLocal.getServiceContext());
-
-					fragmentCollectionId =
-						fragmentCollection.getFragmentCollectionId();
 				}
 
 				_importFragmentCompositions(
-					userId, groupId, zipFile, fragmentCollectionId,
+					userId, groupId, zipFile,
+					fragmentCollection.getFragmentCollectionId(),
 					orphanFragmentCompositions, overwrite);
 
 				_importFragmentEntries(
-					userId, groupId, zipFile, fragmentCollectionId,
+					userId, groupId, zipFile,
+					fragmentCollection.getFragmentCollectionId(),
 					orphanFragmentEntries, overwrite);
 			}
 		}
