@@ -49,6 +49,12 @@ export function fromControlsId(controlsItemId) {
 	return itemId || controlsItemId;
 }
 
+const NoItemsMessage = () => (
+	<div className="page-editor__collection__no-items-message">
+		{Liferay.Language.get('you-dont-have-any-item-yet-in-this-collection')}
+	</div>
+);
+
 const NotCollectionSelectedMessage = () => (
 	<div className="page-editor__collection__not-collection-selected-message">
 		{Liferay.Language.get('not-collection-selected-yet')}
@@ -211,7 +217,8 @@ const Collection = React.forwardRef(({children, item}, ref) => {
 
 	return (
 		<div className="page-editor__collection" ref={ref}>
-			{collectionIsMapped(collectionConfig) ? (
+			{collectionIsMapped(collectionConfig) &&
+			collection.items.length > 0 ? (
 				<ContentComponent
 					child={child}
 					collection={collection.items}
@@ -221,6 +228,8 @@ const Collection = React.forwardRef(({children, item}, ref) => {
 					numberOfColumns={collectionConfig.numberOfColumns}
 					numberOfItems={collectionConfig.numberOfItems}
 				/>
+			) : collectionIsMapped(collectionConfig) ? (
+				<NoItemsMessage />
 			) : (
 				<NotCollectionSelectedMessage />
 			)}
