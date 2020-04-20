@@ -27,6 +27,8 @@ import {
 } from '../../../prop-types/index';
 import {EDITABLE_FLOATING_TOOLBAR_CLASSNAMES} from '../../config/constants/editableFloatingToolbarClassNames';
 import {FLOATING_TOOLBAR_CONFIGURATIONS} from '../../config/constants/floatingToolbarConfigurations';
+import {config} from '../../config/index';
+import {useSelector} from '../../store/index';
 import {useHoverItem, useIsActive} from '../Controls';
 
 export default function FloatingToolbar({
@@ -43,6 +45,8 @@ export default function FloatingToolbar({
 	const [hidden, setHidden] = useState(false);
 	const [windowScrollPosition, setWindowScrollPosition] = useState(0);
 	const [windowWidth, setWindowWidth] = useState(0);
+
+	const languageId = useSelector(state => state.languageId);
 
 	const itemElement = itemRef.current;
 
@@ -65,7 +69,11 @@ export default function FloatingToolbar({
 					Align.align(
 						elementRef.current,
 						anchorRef.current,
-						getElementAlign(elementRef.current, anchorRef.current),
+						getElementAlign(
+							elementRef.current,
+							anchorRef.current,
+							config.languageDirection[languageId] === 'rtl'
+						),
 						false
 					);
 				}
@@ -80,7 +88,7 @@ export default function FloatingToolbar({
 				}
 			}
 		},
-		[isMounted, show]
+		[isMounted, languageId, show]
 	);
 
 	const handleButtonClick = useCallback(
@@ -122,14 +130,21 @@ export default function FloatingToolbar({
 			return;
 		}
 
-		const {marginRight: itemRefMarginRight} = getComputedStyle(
-			itemRef.current
-		);
+		const {
+			marginLeft: itemRefMarginLeft,
+			marginRight: itemRefMarginRight,
+		} = getComputedStyle(itemRef.current);
 
-		if (show && parseInt(itemRefMarginRight, 10) < 0) {
-			toolbarRef.current.style.transform = `translate(${itemRefMarginRight})`;
+		const rtl = config.languageDirection[languageId] === 'rtl';
+
+		const marginValue = rtl
+			? Math.abs(parseInt(itemRefMarginLeft, 10))
+			: parseInt(itemRefMarginRight, 10);
+
+		if (show && marginValue) {
+			toolbarRef.current.style.transform = `translate(${marginValue}px)`;
 		}
-	}, [itemRef, show]);
+	}, [itemRef, languageId, show]);
 
 	useEffect(() => {
 		alignElement(toolbarRef, itemRef, () => {
@@ -380,7 +395,7 @@ const ELEMENT_POSITION = {
  * @return {number} Selected align
  * @review
  */
-const getElementAlign = (element, anchor) => {
+const getElementAlign = (element, anchor, rtl) => {
 	const alignFits = (align, availableAlign) => {
 		try {
 			return availableAlign.includes(
@@ -407,14 +422,21 @@ const getElementAlign = (element, anchor) => {
 		.getBoundingClientRect().width;
 
 	try {
-		const {right: anchorRight} = anchor.getBoundingClientRect();
+		const {
+			left: anchorLeft,
+			right: anchorRight,
+		} = anchor.getBoundingClientRect();
 		const {width: elementWidth} = element.getBoundingClientRect();
 
 		if (productMenuOpen && anchorRight - elementWidth < wrapperWidth / 2) {
 			horizontal = 'left';
 		}
 		else {
-			horizontal = anchorRight - elementWidth > 0 ? 'right' : 'left';
+			const elementFits = rtl
+				? anchorLeft + elementWidth < window.innerWidth
+				: anchorRight - elementWidth > 0;
+
+			horizontal = elementFits ? 'right' : 'left';
 		}
 	}
 	catch (error) {}
@@ -432,5 +454,13 @@ const getElementAlign = (element, anchor) => {
 		vertical = fallbackVertical;
 	}
 
+	if (rtl) {
+		horizontal = reverseHorizontalPosition(horizontal);
+	}
+
 	return ELEMENT_POSITION[vertical][horizontal];
+};
+
+const reverseHorizontalPosition = position => {
+	return position === 'left' ? 'right' : 'left';
 };
