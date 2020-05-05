@@ -322,7 +322,9 @@ export default function useDragAndDrop({
 						dropItem,
 						dropTargetItemId: toControlsId(dropTargetItem.itemId),
 						droppable: true,
-						targetPositionWithMiddle: newTargetPositionWithMiddle,
+						targetPositionWithMiddle: dropTargetItem.children.length
+							? newTargetPositionWithMiddle
+							: TARGET_POSITION.MIDDLE,
 						targetPositionWithoutMiddle: newTargetPositionWithoutMiddle,
 					});
 					break;
