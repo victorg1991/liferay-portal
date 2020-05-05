@@ -18,8 +18,24 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import {Z_KEYCODE} from '../../config/constants/keycodes';
+import {useSelector} from '../../store/index';
 
 export default function Undo({onRedo = () => {}, onUndo = () => {}}) {
+	const undoHistory = useSelector((state) => state.undoHistory);
+
+	useEventListener(
+		'beforeunload',
+		(event) => {
+			if (undoHistory && undoHistory.length) {
+				event.returnValue = Liferay.Language.get(
+					'are-you-sure-you-want-to-reload-the-page-editor-you-won-t-be-able-to-undo-past-actions-after-the-reload'
+				);
+			}
+		},
+		false,
+		window
+	);
+
 	useEventListener(
 		'keydown',
 		(event) => {
