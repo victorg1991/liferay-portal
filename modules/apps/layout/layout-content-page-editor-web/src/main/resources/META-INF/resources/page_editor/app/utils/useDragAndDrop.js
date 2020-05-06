@@ -13,16 +13,18 @@
  */
 
 import {throttle} from 'frontend-js-web';
-import React, {useContext, useEffect, useMemo, useReducer} from 'react';
+import React, {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useReducer,
+	useRef,
+} from 'react';
 import {useDrag, useDrop} from 'react-dnd';
 import {getEmptyImage} from 'react-dnd-html5-backend';
 
 import {LAYOUT_DATA_ITEM_TYPES} from '../config/constants/layoutDataItemTypes';
-import {
-	useCanElevate,
-	useFromControlsId,
-	useToControlsId,
-} from './../components/CollectionItemContext';
 
 const LAYOUT_DATA_ALLOWED_CHILDREN_TYPES = {
 	[LAYOUT_DATA_ITEM_TYPES.root]: [
@@ -61,55 +63,309 @@ const LAYOUT_DATA_ALLOWED_CHILDREN_TYPES = {
 	],
 };
 
-const DISTANCE = 0.2;
-const MAX_DIFFERENCE = 50;
+const BORDER_SIZE = 40;
 
 export const TARGET_POSITION = {
-	BOTTOM: 0,
-	MIDDLE: 1,
-	TOP: 2,
+	BOTTOM: 'bottom',
+	MIDDLE: 'middle',
+	TOP: 'top',
 };
 
-const RULES_TYPE = {
-	ELEVATE: 3,
-	INVALID_MOVE_WITH_FEEDBACK: 5,
-	MIDDLE: 1,
-	VALID_MOVE: 4,
-};
-
-const RULES = {
-	[RULES_TYPE.MIDDLE]: ({hoverClientY, hoverMiddleY, ...args}) =>
-		isValidMoveToMiddle(args) && isMiddle(hoverClientY, hoverMiddleY),
-	[RULES_TYPE.ELEVATE]: checkElevate,
-	[RULES_TYPE.VALID_MOVE]: isValidMoveToTargetPosition,
-	[RULES_TYPE.INVALID_MOVE_WITH_FEEDBACK]: isInvalidMoveWithFeedback,
+const DRAG_DROP_TARGET_TYPE = {
+	DRAGGING_TO_ITSELF: 'itself',
+	ELEVATE: 'elevate',
+	INITIAL: 'initial',
+	INSIDE: 'inside',
 };
 
 const initialDragDrop = {
 	dispatch: null,
+
 	state: {
+
+		/**
+		 * Item that is being dragged
+		 */
 		dropItem: null,
-		dropTargetItemId: null,
+
+		/**
+		 * Target item where the item is being dragged true.
+		 * If elevate is true, dropTargetItem is the sibling
+		 * of drop item, otherwise is it's parent.
+		 */
+		dropTargetItem: null,
+
+		/**
+		 * When false, an "invalid drop" advise should be shown
+		 * to users.
+		 */
 		droppable: true,
+
+		/**
+		 * If true, dropTargetItem is the sibling of dropItem
+		 * and targetPosition determines the item index.
+		 */
+		elevate: false,
+
+		/**
+		 * Vertical position relative to dropTargetItem
+		 * (bottom, middle, top)
+		 */
 		targetPositionWithMiddle: null,
+
+		/**
+		 * Vertical position relative to dropTargetItem
+		 * (bottom, top)
+		 */
 		targetPositionWithoutMiddle: null,
+
+		/**
+		 * Source of the Drag and Drop status
+		 * (where the drag and drop status have been generated)
+		 */
+		type: DRAG_DROP_TARGET_TYPE.INITIAL,
 	},
 };
 
-const getAncestorId = (parent, toControlsId) => {
-	const ancestorId =
-		parent.type === LAYOUT_DATA_ITEM_TYPES.column ||
-		parent.type === LAYOUT_DATA_ITEM_TYPES.collectionItem
-			? parent.parentId
-			: parent.itemId;
+const DragAndDropContext = React.createContext(initialDragDrop);
 
-	return parent.type === LAYOUT_DATA_ITEM_TYPES.collectionItem ||
-		parent.type === LAYOUT_DATA_ITEM_TYPES.collection
-		? ancestorId
-		: toControlsId(ancestorId);
+export function useDragItem(sourceItem, onDragEnd) {
+	const getSourceItem = useCallback(() => sourceItem, [sourceItem]);
+	const {dispatch, layoutData, state} = useContext(DragAndDropContext);
+	const sourceRef = useRef(null);
+
+	const [{isDraggingSource}, handlerRef, previewRef] = useDrag({
+		collect: (monitor) => ({
+			isDraggingSource: monitor.isDragging(),
+		}),
+
+		end() {
+			computeDrop({dispatch, layoutData, onDragEnd, state});
+		},
+
+		item: {
+			getSourceItem,
+			id: sourceItem.itemId,
+			type: sourceItem.type,
+		},
+	});
+
+	useEffect(() => {
+		previewRef(getEmptyImage(), {captureDraggingState: true});
+	}, [previewRef]);
+
+	return {
+		handlerRef,
+		isDraggingSource,
+		sourceRef,
+	};
+}
+
+export function useDragSymbol({label, type}, onDragEnd) {
+	const sourceItem = useMemo(() => ({isSymbol: true, itemId: label, type}), [
+		label,
+		type,
+	]);
+
+	const {handlerRef, isDraggingSource, sourceRef} = useDragItem(
+		sourceItem,
+		onDragEnd
+	);
+
+	const symbolRef = (element) => {
+		sourceRef.current = element;
+		handlerRef(element);
+	};
+
+	return {
+		isDraggingSource,
+		sourceRef: symbolRef,
+	};
+}
+
+export function useDropTarget(targetItem) {
+	const {dispatch, layoutData, state} = useContext(DragAndDropContext);
+	const isOverTarget = state.dropTargetItem === targetItem;
+	const targetRef = useRef(null);
+
+	const [, setDropTargetRef] = useDrop({
+		accept: Object.values(LAYOUT_DATA_ITEM_TYPES),
+
+		hover({getSourceItem}, monitor) {
+			computeHover({
+				dispatch,
+				layoutData,
+				monitor,
+				sourceItem: getSourceItem(),
+				targetItem,
+				targetRef,
+			});
+		},
+	});
+
+	useEffect(() => {
+		if (!isOverTarget) {
+			dispatch(initialDragDrop.state);
+		}
+	}, [dispatch, isOverTarget]);
+
+	const setTargetRef = useCallback(
+		(element) => {
+			setDropTargetRef(element);
+
+			targetRef.current = element;
+		},
+		[setDropTargetRef]
+	);
+
+	return {
+		canDropOverTarget: state.droppable,
+		isOverTarget,
+		sourceItem: state.dropItem,
+		targetPosition: state.targetPositionWithMiddle,
+		targetRef: setTargetRef,
+	};
+}
+
+export const DragAndDropContextProvider = ({children, layoutData}) => {
+	const [state, reducerDispatch] = useReducer(
+		(state, nextState) =>
+			Object.keys(state).some((key) => state[key] !== nextState[key])
+				? nextState
+				: state,
+		initialDragDrop.state
+	);
+
+	const dispatch = useMemo(() => {
+		return throttle(reducerDispatch, 100);
+	}, [reducerDispatch]);
+
+	return (
+		<DragAndDropContext.Provider value={{dispatch, layoutData, state}}>
+			{children}
+		</DragAndDropContext.Provider>
+	);
 };
 
-const dropTargetIsAncestor = (dropItem, layoutData, dropTargetId) => {
+function computeDrop({dispatch, layoutData, onDragEnd, state}) {
+	if (state.droppable && state.dropItem && state.dropTargetItem) {
+		if (state.elevate) {
+			const parentItem = layoutData.items[state.dropTargetItem.parentId];
+
+			const siblingPosition = parentItem.children.indexOf(
+				state.dropTargetItem.itemId
+			);
+
+			const position = Math.min(
+				parentItem.children.includes(state.dropItem.itemId)
+					? parentItem.children.length - 1
+					: parentItem.children.length,
+				state.targetPositionWithoutMiddle === TARGET_POSITION.BOTTOM
+					? siblingPosition + 1
+					: siblingPosition
+			);
+
+			onDragEnd(parentItem.itemId, position);
+		}
+		else {
+			onDragEnd(
+				state.dropTargetItem.itemId,
+				state.dropTargetItem.children.length
+			);
+		}
+	}
+
+	dispatch(initialDragDrop.state);
+}
+
+function computeHover({
+	dispatch,
+	layoutData,
+	monitor,
+	siblingItem = null,
+	sourceItem,
+	targetItem,
+	targetRef,
+}) {
+
+	// Not dragging over direct child
+	// We do not want to alter state here,
+	// as dnd generate extra hover events when
+	// items are being dragged over nested children
+
+	if (!monitor.isOver({shallow: true})) {
+		return;
+	}
+
+	// Dragging over itself or a descendant
+
+	if (dropTargetIsAncestor(sourceItem, layoutData, targetItem.itemId)) {
+		return dispatch({
+			...initialDragDrop.state,
+			type: DRAG_DROP_TARGET_TYPE.DRAGGING_TO_ITSELF,
+		});
+	}
+
+	// Apparently valid drag, calculate vertical position and
+	// nesting validation
+
+	const [
+		targetPositionWithMiddle,
+		targetPositionWithoutMiddle,
+	] = getTargetPosition(monitor, targetRef);
+
+	const isAllowedChild = LAYOUT_DATA_ALLOWED_CHILDREN_TYPES[
+		targetItem.type
+	].includes(sourceItem.type);
+
+	// Drop inside target
+
+	if (targetPositionWithMiddle === TARGET_POSITION.MIDDLE) {
+		return dispatch({
+			dropItem: sourceItem,
+			dropTargetItem: targetItem,
+			droppable: isAllowedChild,
+			elevate: null,
+			targetPositionWithMiddle,
+			targetPositionWithoutMiddle,
+			type: DRAG_DROP_TARGET_TYPE.INSIDE,
+		});
+	}
+
+	// Valid elevation
+	// dropItem should be child of dropTargetItem
+	// dropItem should be sibling of siblingItem
+
+	if (siblingItem && isAllowedChild) {
+		return dispatch({
+			dropItem: sourceItem,
+			dropTargetItem: siblingItem,
+			droppable: true,
+			elevate: true,
+			targetPositionWithMiddle,
+			targetPositionWithoutMiddle,
+			type: DRAG_DROP_TARGET_TYPE.ELEVATE,
+		});
+	}
+
+	// Try to elevate to some valid ancestor
+	// using dropTargetItem parent as target and
+	// dropTargetItem as sibling
+
+	if (targetItem.parentId) {
+		return computeHover({
+			dispatch,
+			layoutData,
+			monitor,
+			siblingItem: targetItem,
+			sourceItem,
+			targetItem: layoutData.items[targetItem.parentId],
+			targetRef,
+		});
+	}
+}
+
+function dropTargetIsAncestor(dropItem, layoutData, dropTargetId) {
 	const dropTarget = layoutData.items[dropTargetId];
 
 	if (dropTarget) {
@@ -119,617 +375,36 @@ const dropTargetIsAncestor = (dropItem, layoutData, dropTargetId) => {
 	}
 
 	return false;
-};
-
-const DragAndDropContext = React.createContext(initialDragDrop);
-
-export const DragAndDropContextProvider = ({children}) => {
-	const [state, reducerDispatch] = useReducer((prevState, nextState) => {
-		if (
-			prevState.dropTargetItemId !== nextState.dropTargetItemId ||
-			prevState.targetPositionWithMiddle !==
-				nextState.targetPositionWithMiddle ||
-			prevState.targetPositionWithoutMiddle !==
-				nextState.targetPositionWithoutMiddle
-		) {
-			return nextState;
-		}
-
-		return prevState;
-	}, initialDragDrop.state);
-
-	const dispatch = useMemo(() => throttle(reducerDispatch, 100), [
-		reducerDispatch,
-	]);
-
-	return (
-		<DragAndDropContext.Provider value={{dispatch, state}}>
-			{children}
-		</DragAndDropContext.Provider>
-	);
-};
-
-export default function useDragAndDrop({
-	containerRef,
-	dropTargetItem,
-	layoutData,
-	onDragEnd,
-}) {
-	const {dispatch, state} = useContext(DragAndDropContext);
-
-	const {
-		dropTargetItemId,
-		droppable,
-		targetPositionWithMiddle,
-		targetPositionWithoutMiddle,
-	} = state;
-
-	const collectionItemCanElevate = useCanElevate();
-	const fromControlsId = useFromControlsId();
-	const toControlsId = useToControlsId();
-
-	const [dragOptions, drag, preview] = useDrag({
-		collect: (_monitor) => {
-			return {
-				isDragging: _monitor.isDragging(),
-			};
-		},
-
-		end(dropItem, _monitor) {
-			const result = _monitor.getDropResult();
-
-			if (!result) {
-				return;
-			}
-
-			const {itemId, parentId, position} = result;
-
-			if (itemId !== parentId) {
-				onDragEnd({
-					itemId,
-					parentItemId: parentId,
-					position,
-				});
-			}
-		},
-
-		item: dropTargetItem,
-	});
-
-	const [dropOptions, drop] = useDrop({
-		accept: Object.values(LAYOUT_DATA_ITEM_TYPES),
-
-		collect(_monitor) {
-			return {
-				canDrop: _monitor.canDrop(),
-				isOver: _monitor.isOver({shallow: true}),
-			};
-		},
-
-		drop(dropItem, _monitor) {
-			if (!droppable) {
-				return;
-			}
-
-			if (!_monitor.didDrop() && dropTargetItemId) {
-				const {parentId, position} = getParentItemIdAndPositon({
-					dropItem,
-					dropTargetItemId: fromControlsId(dropTargetItemId),
-					items: layoutData.items,
-					targetPositionWithMiddle,
-				});
-
-				return {
-					itemId: dropItem.itemId,
-					itemType: _monitor.getItemType(),
-					parentId,
-					position,
-				};
-			}
-		},
-
-		hover(dropItem, _monitor) {
-			if (
-				!_monitor.isOver({shallow: true}) ||
-				dropItem.itemId === dropTargetItem.itemId
-			) {
-				return;
-			}
-
-			if (rootVoid(dropTargetItem)) {
-				dispatch({
-					dropTargetItemId: dropTargetItem.itemId,
-					droppable: true,
-					targetPositionWithMiddle: TARGET_POSITION.MIDDLE,
-					targetPositionWithoutMiddle,
-				});
-
-				return;
-			}
-
-			if (
-				dropTargetIsAncestor(
-					dropItem,
-					layoutData,
-					dropTargetItem.itemId
-				)
-			) {
-				return;
-			}
-
-			// Determine rectangle on screen
-
-			const hoverBoundingRect = containerRef.current.getBoundingClientRect();
-
-			// Get vertical middle
-
-			const hoverMiddleY =
-				(hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-
-			// Determine mouse position
-
-			const clientOffset = _monitor.getClientOffset();
-
-			// Get pixels to the top
-
-			const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-
-			const [
-				newTargetPositionWithMiddle,
-				newTargetPositionWithoutMiddle,
-			] = getTargetPosition(hoverClientY, hoverMiddleY);
-
-			const result = checkRules(RULES, {
-				clientOffset,
-				collectionItemCanElevate,
-				dropItem,
-				dropTargetItem,
-				hoverBoundingRect,
-				hoverClientY,
-				hoverMiddleY,
-				items: layoutData.items,
-				targetPositionWithMiddle: newTargetPositionWithMiddle,
-				targetPositionWithoutMiddle: newTargetPositionWithoutMiddle,
-				toControlsId,
-			});
-
-			switch (result) {
-				case RULES_TYPE.MIDDLE:
-					dispatch({
-						dropItem,
-						dropTargetItemId: toControlsId(dropTargetItem.itemId),
-						droppable: true,
-						targetPositionWithMiddle: TARGET_POSITION.MIDDLE,
-						targetPositionWithoutMiddle: newTargetPositionWithoutMiddle,
-					});
-					break;
-				case RULES_TYPE.ELEVATE: {
-					dispatch({
-						dropItem,
-						dropTargetItemId:
-							getAncestorId(
-								layoutData.items[dropTargetItem.parentId],
-								toControlsId
-							) || toControlsId(dropTargetItem.itemId),
-						droppable: true,
-						targetPositionWithMiddle: newTargetPositionWithMiddle,
-						targetPositionWithoutMiddle: newTargetPositionWithoutMiddle,
-					});
-					break;
-				}
-				case RULES_TYPE.VALID_MOVE:
-					dispatch({
-						dropItem,
-						dropTargetItemId: toControlsId(dropTargetItem.itemId),
-						droppable: true,
-						targetPositionWithMiddle: dropTargetItem.children.length
-							? newTargetPositionWithMiddle
-							: TARGET_POSITION.MIDDLE,
-						targetPositionWithoutMiddle: newTargetPositionWithoutMiddle,
-					});
-					break;
-				case RULES_TYPE.INVALID_MOVE_WITH_FEEDBACK:
-					dispatch({
-						dropItem,
-						dropTargetItemId:
-							dropTargetItem.type ===
-							LAYOUT_DATA_ITEM_TYPES.fragment
-								? toControlsId(dropTargetItem.parentId)
-								: dropTargetItem.itemId !== dropItem.parentId &&
-								  toControlsId(dropTargetItem.itemId),
-						droppable:
-							(dropItem.type !==
-								LAYOUT_DATA_ITEM_TYPES.container &&
-								dropItem.parentId ===
-									dropTargetItem.parentId) ||
-							(isNestingSupported(
-								dropItem.type,
-								dropTargetItem.type
-							) &&
-								!draggingCollectionInCollection(
-									dropItem,
-									dropTargetItem,
-									layoutData.items
-								)),
-						targetPositionWithMiddle: TARGET_POSITION.MIDDLE,
-						targetPositionWithoutMiddle: newTargetPositionWithoutMiddle,
-					});
-					break;
-				default:
-					break;
-			}
-		},
-	});
-
-	useEffect(() => {
-		if (!dropOptions.isOver) {
-			dispatch({
-				dropTargetItemId: null,
-				droppable: true,
-				targetPositionWithMiddle: null,
-				targetPositionWithoutMiddle: null,
-			});
-		}
-	}, [dispatch, dropOptions.isOver]);
-
-	useEffect(() => {
-		preview(getEmptyImage(), {captureDraggingState: true});
-	}, [preview]);
-
-	return {
-		...dragOptions,
-		...dropOptions,
-		drag,
-		drop,
-		state,
-	};
-}
-
-function checkRules(rules, args) {
-	const rulesType = Object.keys(rules);
-	let passed = null;
-
-	for (let index = 0; index < rulesType.length; index++) {
-		const key = rulesType[index];
-		const rule = rules[key];
-
-		if (passed) {
-			break;
-		}
-
-		if (rule(args)) {
-			passed = Number(key);
-		}
-	}
-
-	return passed;
-}
-
-/**
- * The closer you get to the edge of the element, the elevate will trigger,
- * which will move the interaction to the parent element. The calculation subtracts the
- * DISTANCE percentage from the edges to create the elevation area.
- */
-function checkElevate({
-	clientOffset,
-	collectionItemCanElevate,
-	dropItem,
-	dropTargetItem,
-	hoverBoundingRect,
-	items,
-	targetPositionWithoutMiddle,
-	toControlsId,
-}) {
-	const parent = items[dropTargetItem.parentId];
-
-	let isElevate = false;
-
-	if (parent) {
-		if (parent.type === LAYOUT_DATA_ITEM_TYPES.root) {
-			return false;
-		}
-
-		if (
-			!isValidCollectionItemElevate(
-				collectionItemCanElevate,
-				targetPositionWithoutMiddle
-			)
-		) {
-			return false;
-		}
-
-		if (draggingCollectionInCollection(dropItem, dropTargetItem, items)) {
-			return false;
-		}
-
-		const difference = Math.min(
-			hoverBoundingRect.height * DISTANCE,
-			MAX_DIFFERENCE
-		);
-
-		const parentIsRow = parent.type === LAYOUT_DATA_ITEM_TYPES.row;
-
-		if (
-			!isElevate &&
-			(parentIsRow || isFirstItem(parent.children, dropTargetItem))
-		) {
-			isElevate = clientOffset.y < difference + hoverBoundingRect.top;
-		}
-
-		if (
-			!isElevate &&
-			(parentIsRow || isLastItem(parent.children, dropTargetItem))
-		) {
-			isElevate = clientOffset.y > hoverBoundingRect.bottom - difference;
-		}
-
-		if (dropItem.type === LAYOUT_DATA_ITEM_TYPES.container) {
-			const ancestor =
-				items[getAncestorId(parent, toControlsId)] || parent;
-
-			return (
-				isElevate &&
-				(ancestor.type === LAYOUT_DATA_ITEM_TYPES.root ||
-					(items[ancestor.parentId] &&
-						items[ancestor.parentId].type ===
-							LAYOUT_DATA_ITEM_TYPES.root))
-			);
-		}
-	}
-
-	return isElevate;
-}
-
-function isValidCollectionItemElevate(
-	collectionItemCanElevate,
-	targetPosition
-) {
-	return (
-		!collectionItemCanElevate ||
-		(collectionItemCanElevate.top &&
-			targetPosition === TARGET_POSITION.TOP) ||
-		(collectionItemCanElevate.bottom &&
-			targetPosition === TARGET_POSITION.BOTTOM)
-	);
-}
-
-function isValidMoveToMiddle({dropItem, dropTargetItem, items}) {
-	return (
-		!dropTargetItem.children.length &&
-		!draggingCollectionInCollection(dropItem, dropTargetItem, items) &&
-		isNestingSupported(dropItem.type, dropTargetItem.type)
-	);
-}
-
-function isValidMoveToTargetPosition({
-	dropItem,
-	dropTargetItem,
-	items,
-	targetPositionWithMiddle,
-	targetPositionWithoutMiddle,
-	toControlsId,
-}) {
-	const {children} = items[
-		dropTargetItem.parentId !== ''
-			? dropTargetItem.parentId
-			: dropTargetItem.itemId
-	];
-
-	if (
-		typeof targetPositionWithMiddle !== 'number' &&
-		!rootVoid(dropTargetItem)
-	) {
-		return false;
-	}
-
-	if (
-		dropItem.type === LAYOUT_DATA_ITEM_TYPES.container &&
-		dropTargetItem.type === LAYOUT_DATA_ITEM_TYPES.container &&
-		targetPositionWithMiddle === TARGET_POSITION.MIDDLE
-	) {
-		return false;
-	}
-
-	if (dropItem.type === LAYOUT_DATA_ITEM_TYPES.container) {
-		const parent = items[dropTargetItem.parentId];
-
-		if (parent) {
-			const ancestor =
-				items[getAncestorId(parent, toControlsId)] || parent;
-
-			if (!ancestor || ancestor.type !== LAYOUT_DATA_ITEM_TYPES.root) {
-				return false;
-			}
-		}
-	}
-
-	if (draggingCollectionInCollection(dropItem, dropTargetItem, items)) {
-		return false;
-	}
-
-	if (children.includes(dropItem.itemId)) {
-		return !droppingInSamePosition({
-			children,
-			dropItem,
-			dropTargetItem,
-			targetPositionWithoutMiddle,
-		});
-	}
-
-	return true;
-}
-
-function droppingInSamePosition({
-	children,
-	dropItem,
-	dropTargetItem,
-	targetPositionWithoutMiddle,
-}) {
-	const itemIndex = children.findIndex((id) => id === dropItem.itemId);
-	const hoverId = dropTargetItem.itemId;
-
-	return (
-		(children[itemIndex + 1] === hoverId &&
-			targetPositionWithoutMiddle === TARGET_POSITION.TOP) ||
-		(children[itemIndex - 1] === hoverId &&
-			targetPositionWithoutMiddle === TARGET_POSITION.BOTTOM) ||
-		(isFirstItem(children, dropItem) &&
-			targetPositionWithoutMiddle === TARGET_POSITION.TOP) ||
-		(isLastItem(children, dropItem) &&
-			targetPositionWithoutMiddle === TARGET_POSITION.BOTTOM)
-	);
-}
-
-function isInvalidMoveWithFeedback({
-	dropItem,
-	dropTargetItem,
-	items,
-	targetPositionWithoutMiddle,
-}) {
-	const {children} = items[
-		dropTargetItem.parentId !== ''
-			? dropTargetItem.parentId
-			: dropTargetItem.itemId
-	];
-
-	if (children.includes(dropItem.itemId)) {
-		return !droppingInSamePosition({
-			children,
-			dropItem,
-			dropTargetItem,
-			targetPositionWithoutMiddle,
-		});
-	}
-
-	return true;
-}
-
-/**
- * The calculation to identify when the mouse position is over the middle of the element,
- * the middle region is evaluated according to the MIDDLE_PERCENTAGE constant multiplied
- * by two, creating the region from the middle.
- */
-function isMiddle(hoverClientY, hoverMiddleY) {
-	const difference = Math.min(MAX_DIFFERENCE, hoverMiddleY * DISTANCE);
-
-	return (
-		hoverClientY > hoverMiddleY - difference &&
-		hoverClientY < hoverMiddleY + difference
-	);
 }
 
 /**
  * When dragging downwards, only move when the cursor is below 50%
  * When dragging upwards, only move when the cursor is above 50%
+ *
+ * Checking if is dragging over middle:
+ * The calculation to identify when the mouse position is over the middle of the element,
+ * the middle region is evaluated according to BORDER_SIZE
  */
-function getTargetPosition(hoverClientY, hoverMiddleY) {
+function getTargetPosition(monitor, targetRef) {
+	if (!targetRef.current) {
+		return [null, null];
+	}
+
+	const hoverBoundingRect = targetRef.current.getBoundingClientRect();
+
+	const clientOffsetY = monitor.getClientOffset().y;
+	const hoverMiddleY = hoverBoundingRect.top + hoverBoundingRect.height / 2;
+
 	const targetPositionWithoutMiddle =
-		hoverClientY < hoverMiddleY
+		clientOffsetY < hoverMiddleY
 			? TARGET_POSITION.TOP
 			: TARGET_POSITION.BOTTOM;
 
-	const targetPositionWithMiddle = isMiddle(hoverClientY, hoverMiddleY)
-		? TARGET_POSITION.MIDDLE
-		: targetPositionWithoutMiddle;
+	const targetPositionWithMiddle =
+		clientOffsetY < hoverBoundingRect.bottom - BORDER_SIZE &&
+		clientOffsetY > hoverBoundingRect.top + BORDER_SIZE
+			? TARGET_POSITION.MIDDLE
+			: targetPositionWithoutMiddle;
 
 	return [targetPositionWithMiddle, targetPositionWithoutMiddle];
-}
-
-function isLastItem(children, item) {
-	return item.itemId === children[children.length - 1];
-}
-
-function isFirstItem(children, item) {
-	return item.itemId === children[0];
-}
-
-function rootVoid(item) {
-	return (
-		item.type === LAYOUT_DATA_ITEM_TYPES.root && item.children.length === 0
-	);
-}
-
-function getParentItemIdAndPositon({
-	dropItem,
-	dropTargetItemId,
-	items,
-	targetPositionWithMiddle,
-}) {
-	const dropTargetItem = items[dropTargetItemId];
-
-	if (
-		(dropTargetItem.type === LAYOUT_DATA_ITEM_TYPES.column ||
-			dropTargetItem.type === LAYOUT_DATA_ITEM_TYPES.collectionItem) &&
-		targetPositionWithMiddle !== TARGET_POSITION.MIDDLE
-	) {
-		targetPositionWithMiddle = TARGET_POSITION.MIDDLE;
-	}
-
-	if (
-		(dropTargetItem.type === LAYOUT_DATA_ITEM_TYPES.root ||
-			targetPositionWithMiddle === TARGET_POSITION.MIDDLE) &&
-		isNestingSupported(dropItem.type, dropTargetItem.type)
-	) {
-		return {
-			parentId: dropTargetItem.itemId,
-			position:
-				targetPositionWithMiddle !== TARGET_POSITION.TOP
-					? dropTargetItem.children.length
-					: 0,
-		};
-	}
-
-	const parent = items[dropTargetItem.parentId];
-
-	if (parent) {
-		const dropTargetItemIndex = parent.children.indexOf(
-			dropTargetItem.itemId
-		);
-
-		let position =
-			targetPositionWithMiddle === TARGET_POSITION.TOP
-				? dropTargetItemIndex
-				: dropTargetItemIndex + 1;
-
-		// Moving an item in the same parent
-
-		if (parent.children.includes(dropItem.itemId)) {
-			const itemIndex = parent.children.indexOf(dropItem.itemId);
-
-			if (parent.children.length === 1) {
-				position = 0;
-			}
-			else {
-				position =
-					itemIndex < dropTargetItemIndex ? position - 1 : position;
-			}
-		}
-
-		return {
-			parentId: parent.itemId,
-			position,
-		};
-	}
-}
-
-function isNestingSupported(itemType, parentType) {
-	return LAYOUT_DATA_ALLOWED_CHILDREN_TYPES[parentType].includes(itemType);
-}
-
-function draggingCollectionInCollection(item, dropTargetItem, items) {
-	return (
-		item.type === LAYOUT_DATA_ITEM_TYPES.collection &&
-		hasCollectionItemAncestor(dropTargetItem, items)
-	);
-}
-
-function hasCollectionItemAncestor(parent, items) {
-	if (!parent) {
-		return false;
-	}
-
-	return (
-		parent.type === LAYOUT_DATA_ITEM_TYPES.collectionItem ||
-		hasCollectionItemAncestor(items[parent.parentId], items)
-	);
 }
