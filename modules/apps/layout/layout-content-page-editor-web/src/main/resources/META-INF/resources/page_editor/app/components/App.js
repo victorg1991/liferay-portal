@@ -17,6 +17,7 @@ import {createPortal} from 'react-dom';
 
 import {config} from '../config/index';
 import {useSelector} from '../store/index';
+import {DragAndDropContextProvider} from '../utils/useDragAndDrop';
 import DisabledArea from './DisabledArea';
 import DragPreview from './DragPreview';
 import LayoutViewport from './LayoutViewport';
@@ -27,6 +28,7 @@ export default function App() {
 	const mainItemId = useSelector((state) => state.layoutData.rootItems.main);
 	const masterLayoutData = useSelector((state) => state.masterLayoutData);
 	const languageId = useSelector((state) => state.languageId);
+	const layoutData = useSelector((state) => state.layoutData);
 
 	useEffect(() => {
 		const currentLanguageDirection = config.languageDirection[languageId];
@@ -43,11 +45,13 @@ export default function App() {
 			<DisabledArea />
 			<DragPreview />
 			<Toolbar />
-			<LayoutViewport
-				mainItemId={mainItemId}
-				useMasterLayout={masterLayoutData.items}
-			/>
-			{createPortal(<Sidebar />, document.body)}
+			<DragAndDropContextProvider layoutData={layoutData}>
+				<LayoutViewport
+					mainItemId={mainItemId}
+					useMasterLayout={masterLayoutData.items}
+				/>
+				{createPortal(<Sidebar />, document.body)}
+			</DragAndDropContextProvider>
 		</>
 	);
 }

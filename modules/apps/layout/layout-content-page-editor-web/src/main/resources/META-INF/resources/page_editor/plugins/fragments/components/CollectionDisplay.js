@@ -20,7 +20,7 @@ import {useSelectItem} from '../../../app/components/Controls';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../app/config/constants/layoutDataItemTypes';
 import {useDispatch, useSelector} from '../../../app/store/index';
 import addItem from '../../../app/thunks/addItem';
-import {useItemDrag} from '../../../app/utils/useItemDrag';
+import {useDragSymbol} from '../../../app/utils/useDragAndDrop';
 import Collapse from '../../../common/components/Collapse';
 
 const CollectionDisplayCard = () => {
@@ -28,9 +28,12 @@ const CollectionDisplayCard = () => {
 	const store = useSelector((state) => state);
 	const selectItem = useSelectItem();
 
-	const dragRef = useItemDrag({
-		name: Liferay.Language.get('collection-display'),
-		onDragEnd: (parentId, position) => {
+	const {sourceRef} = useDragSymbol(
+		{
+			label: Liferay.Language.get('collection-display'),
+			type: LAYOUT_DATA_ITEM_TYPES.collection,
+		},
+		(parentId, position) => {
 			dispatch(
 				addItem({
 					itemType: LAYOUT_DATA_ITEM_TYPES.collection,
@@ -40,9 +43,8 @@ const CollectionDisplayCard = () => {
 					store,
 				})
 			);
-		},
-		type: LAYOUT_DATA_ITEM_TYPES.collection,
-	});
+		}
+	);
 
 	return (
 		<div
@@ -54,7 +56,7 @@ const CollectionDisplayCard = () => {
 				'selector-button',
 				'overflow-hidden'
 			)}
-			ref={dragRef}
+			ref={sourceRef}
 		>
 			<div className="page-editor__fragments__fragment-card-no-preview">
 				<ClayIcon symbol="list" />
