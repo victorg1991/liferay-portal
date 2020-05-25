@@ -1,3 +1,5 @@
+<#include "${templatesPath}/NAVIGATION-MACRO-FTL" />
+
 <#if !entries?has_content>
 	<#if themeDisplay.isSignedIn()>
 		<div class="alert alert-info">
@@ -34,7 +36,7 @@
 							<@liferay.language key="toggle" />
 						</#assign>
 
-						<#assign nav_item_caret = "<button aria-expanded='false' aria-haspopup='true' class='${nav_item_css_class} btn btn-secondary dropdown-toggle' data-toggle='dropdown' type='button'><span class='caret'></span><span class='sr-only'>${toggle_text}</span></button>" />
+						<#assign nav_item_caret = "<button aria-expanded='false' aria-haspopup='true' class='${nav_item_css_class} btn btn-secondary dropdown-toggle' data-toggle='liferay-dropdown' type='button'><span class='caret'></span><span class='sr-only'>${toggle_text}</span></button>" />
 					</#if>
 
 					<#if navItem.isBrowsable()>
@@ -45,22 +47,11 @@
 						<a aria-labelledby="layout_${portletDisplay.getId()}_${navItem.getLayoutId()}" class="${nav_item_css_class} btn btn-secondary" ${nav_item_href_link}><span>${navItem.getName()}</span></a>${nav_item_caret}
 
 						<#if showChildren>
-							<ul class="child-menu dropdown-menu" role="menu">
-								<#list navItem.getBrowsableChildren() as childNavigationItem>
-									<#assign
-										nav_child_css_class = ""
-									/>
-
-									<#if childNavigationItem.isSelected()>
-										<#assign
-											nav_child_css_class = "active"
-										/>
-									</#if>
-
-									<li class="${nav_child_css_class}" id="layout_${portletDisplay.getId()}_${childNavigationItem.getLayoutId()}" role="presentation">
-										<a aria-labelledby="layout_${portletDisplay.getId()}_${childNavigationItem.getLayoutId()}" href="${childNavigationItem.getURL()}" ${childNavigationItem.getTarget()} role="menuitem">${childNavigationItem.getName()}</a>
-									</li>
-								</#list>
+							<ul aria-expanded="false" class="child-menu dropdown-menu" role="menu">
+								<@buildChildren
+									displayDepth=displayDepth
+									navItem=navItem
+								/>
 							</ul>
 						</#if>
 					</li>
