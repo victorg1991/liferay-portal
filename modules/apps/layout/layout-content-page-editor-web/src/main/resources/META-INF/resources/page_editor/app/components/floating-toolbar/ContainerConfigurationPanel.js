@@ -24,17 +24,16 @@ import {
 	BackgroundImagePropTypes,
 	getLayoutDataItemPropTypes,
 } from '../../../prop-types/index';
+import updateItemConfig from '../../actions/updateItemConfig';
 import {config} from '../../config/index';
-import selectSegmentsExperienceId from '../../selectors/selectSegmentsExperienceId';
 import {useDispatch, useSelector} from '../../store/index';
-import updateItemConfig from '../../thunks/updateItemConfig';
 import {ColorPaletteField} from '../fragment-configuration-fields/ColorPaletteField';
 import {SelectField} from '../fragment-configuration-fields/SelectField';
 import {TextField} from '../fragment-configuration-fields/TextField';
 
 export const ContainerConfigurationPanel = ({item}) => {
 	const dispatch = useDispatch();
-	const segmentsExperienceId = useSelector(selectSegmentsExperienceId);
+	const layoutData = useSelector((state) => state.layoutData);
 
 	const restoreConfig = () => {
 		dispatch(
@@ -69,9 +68,20 @@ export const ContainerConfigurationPanel = ({item}) => {
 
 		dispatch(
 			updateItemConfig({
-				itemConfig: {...item.config, ...config},
 				itemId: item.itemId,
-				segmentsExperienceId,
+				layoutData: {
+					...layoutData,
+					items: {
+						...layoutData.items,
+						[item.itemId]: {
+							...item,
+							config: {
+								...item.config,
+								...config,
+							},
+						},
+					},
+				},
 			})
 		);
 	};
