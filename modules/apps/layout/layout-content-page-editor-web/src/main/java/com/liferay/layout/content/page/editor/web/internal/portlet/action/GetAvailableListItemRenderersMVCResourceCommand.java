@@ -14,7 +14,9 @@
 
 package com.liferay.layout.content.page.editor.web.internal.portlet.action;
 
-import com.liferay.info.list.renderer.InfoListItemStyle;
+import com.liferay.info.item.renderer.InfoItemRenderer;
+import com.liferay.info.item.renderer.InfoItemTemplatedRenderer;
+import com.liferay.info.item.renderer.template.InfoItemRendererTemplate;
 import com.liferay.info.list.renderer.InfoListRenderer;
 import com.liferay.info.list.renderer.InfoListRendererTracker;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
@@ -28,6 +30,8 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.portlet.ResourceRequest;
@@ -43,11 +47,11 @@ import org.osgi.service.component.annotations.Reference;
 	immediate = true,
 	property = {
 		"javax.portlet.name=" + ContentPageEditorPortletKeys.CONTENT_PAGE_EDITOR_PORTLET,
-		"mvc.command.name=/content_layout/get_available_list_item_styles"
+		"mvc.command.name=/content_layout/get_available_list_item_renderers"
 	},
 	service = MVCResourceCommand.class
 )
-public class GetAvailableListItemStylesMVCResourceCommand
+public class GetAvailableListItemRenderersMVCResourceCommand
 	extends BaseMVCResourceCommand {
 
 	@Override
@@ -57,25 +61,72 @@ public class GetAvailableListItemStylesMVCResourceCommand
 
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
+		String itemType = ParamUtil.getString(resourceRequest, "itemType");
+		String itemSubtype = ParamUtil.getString(
+			resourceRequest, "itemSubtype");
+
 		String listStyle = ParamUtil.getString(resourceRequest, "listStyle");
 
 		InfoListRenderer infoListRenderer =
 			_infoListRendererTracker.getInfoListRenderer(listStyle);
 
-		List<InfoListItemStyle> infoListItemStyles =
-			infoListRenderer.getAvailableInfoListItemStyles();
+		List<InfoItemRenderer> infoItemRenderers =
+			infoListRenderer.getAvailableInfoItemRenderers();
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		for (InfoListItemStyle infoListItemStyle : infoListItemStyles) {
-			jsonArray.put(
-				JSONUtil.put(
-					"label",
-					infoListItemStyle.getLabel(themeDisplay.getLocale())
-				).put(
-					"value", infoListItemStyle.getKey()
-				));
+		for (InfoItemRenderer infoItemRenderer : infoItemRenderers) {
+			if (infoItemRenderer instanceof InfoItemTemplatedRenderer) {
+				JSONArray templatesJSONArray =
+					JSONFactoryUtil.createJSONArray();
+
+				InfoItemTemplatedRenderer infoItemTemplatedRenderer =
+					(InfoItemTemplatedRenderer)infoItemRenderer;
+
+				List<InfoItemRendererTemplate> infoItemRendererTemplates =
+					infoItemTemplatedRenderer.getInfoItemRendererTemplates(
+						itemType, itemSubtype, themeDisplay.getLocale());
+
+				Collections.sort(
+					infoItemRendererTemplates,
+					Comparator.comparing(InfoItemRendererTemplate::getLabel));
+
+				for (InfoItemRendererTemplate infoItemRendererTemplate :
+						infoItemRendererTemplates) {
+
+					templatesJSONArray.put(
+						JSONUtil.put(
+							"key", infoItemRenderer.getKey()
+						).put(
+							"label", infoItemRendererTemplate.getLabel()
+						).put(
+							"templateKey",
+							infoItemRendererTemplate.getTemplateKey()
+						));
+				}
+
+				jsonArray.put(
+					JSONUtil.put(
+						"key", infoItemRenderer.getKey()
+					).put(
+						"label",
+						infoItemTemplatedRenderer.
+							getInfoItemRendererTemplatesGroupLabel(
+								itemType, itemSubtype, themeDisplay.getLocale())
+					).put(
+						"templates", templatesJSONArray
+					));
+			}
+			else {
+				jsonArray.put(
+					JSONUtil.put(
+						"key", infoItemRenderer.getKey()
+					).put(
+						"label",
+						infoItemRenderer.getLabel(themeDisplay.getLocale())
+					));
+			}
 		}
 
 		JSONPortletResponseUtil.writeJSON(

@@ -12,17 +12,19 @@
  * details.
  */
 
-package com.liferay.info.list.renderer;
+package com.liferay.blogs.web.internal.info.list.renderer;
 
-import java.util.Locale;
+import com.liferay.blogs.model.BlogsEntry;
+import com.liferay.info.list.renderer.InfoListRenderer;
+import com.liferay.info.taglib.list.renderer.InlineBasicInfoListRenderer;
+
+import org.osgi.service.component.annotations.Component;
 
 /**
  * @author Pavel Savinov
  */
-public interface InfoListItemStyle {
-
-	public String getKey();
-
-	public String getLabel(Locale locale);
-
+@Component(immediate = true, service = InfoListRenderer.class)
+public class InlineBlogsEntryBasicListInfoListRenderer
+	extends BlogsEntryBasicListInfoListRenderer
+	implements InlineBasicInfoListRenderer<BlogsEntry> {
 }
