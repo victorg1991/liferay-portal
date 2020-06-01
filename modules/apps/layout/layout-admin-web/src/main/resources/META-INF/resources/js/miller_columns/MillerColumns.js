@@ -67,6 +67,7 @@ const MillerColumns = ({
 	onColumnsChange = noop,
 	onItemMove = noop,
 	onItemStayHover,
+	searchContainer,
 }) => {
 	const ref = useRef();
 
@@ -126,6 +127,31 @@ const MillerColumns = ({
 			ref.current.scrollLeft = ref.current.scrollWidth;
 		}
 	}, []);
+
+	useEffect(() => {
+		if (searchContainer) {
+			searchContainer.on('rowToggled', (event) => {
+				setItems((oldItems) => {
+					const newItems = new Map(oldItems);
+
+					newItems.forEach((item) => {
+						const itemNode = event.elements.allElements._nodes.find(
+							(node) => node.value === item.id
+						);
+
+						if (itemNode) {
+							newItems.set(item.id, {
+								...newItems.get(item.id),
+								checked: itemNode.checked,
+							});
+						}
+					});
+
+					return newItems;
+				});
+			});
+		}
+	}, [searchContainer]);
 
 	const onItemDrop = (sourceId, newParentId, newIndex) => {
 		const newItems = new Map();

@@ -34,6 +34,7 @@ const Layout = ({
 		initialBreadcrumbEntries
 	);
 	const [layoutColumns, setLayoutColumns] = useState(initialLayoutColumns);
+	const [searchContainerElement, setSearchContainerElement] = useState();
 
 	useEffect(() => {
 		const A = new AUI();
@@ -60,6 +61,8 @@ const Layout = ({
 					id: `${namespace}${searchContainerId}`,
 					plugins,
 				});
+
+				setSearchContainerElement(searchContainer.current);
 			}
 		);
 	}, [namespace, searchContainerId]);
@@ -156,6 +159,7 @@ const Layout = ({
 				onColumnsChange={updateBreadcrumbs}
 				onItemMove={saveData}
 				onItemStayHover={getItemChildren}
+				searchContainer={searchContainerElement}
 			/>
 		</div>
 	);
