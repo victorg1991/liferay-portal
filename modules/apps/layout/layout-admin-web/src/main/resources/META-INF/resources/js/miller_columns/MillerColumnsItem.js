@@ -286,11 +286,11 @@ const MillerColumnsItem = ({
 			className={classNames(
 				'autofit-row autofit-row-center list-group-item-flex miller-columns-item',
 				{
-					active,
 					dragging: isDragging,
 					'drop-bottom': isOver && dropZone === DROP_ZONES.BOTTOM,
 					'drop-element': isOver && dropZone === DROP_ZONES.ELEMENT,
 					'drop-top': isOver && dropZone === DROP_ZONES.TOP,
+					'miller-columns-item--active': active,
 				}
 			)}
 			data-actions={bulkActions}

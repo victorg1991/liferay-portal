@@ -34,10 +34,10 @@
 	padding: 1rem;
 	position: relative;
 
-	&.active {
+	&--active {
 		background-color: $light-l1;
 
-		&.autofit-row {
+		&.miller-columns-item.autofit-row {
 			margin-top: 1px;
 		}
 	}
