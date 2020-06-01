@@ -38,23 +38,49 @@ const ITEM_STATES_COLORS = {
 	pending: 'info',
 };
 
-const isValidTarget = (source, target, dropZone) => {
-	return !!(
-		source.id !== target.id &&
-		((target.parentId && target.columnIndex <= source.columnIndex) ||
-			(target.columnIndex > source.columnIndex && !source.active)) &&
-		((dropZone === DROP_ZONES.TOP &&
-			(target.columnIndex !== source.columnIndex ||
-				target.itemIndex < source.itemIndex ||
-				target.itemIndex > source.itemIndex + 1)) ||
-			(dropZone === DROP_ZONES.BOTTOM &&
-				(target.columnIndex !== source.columnIndex ||
+const isValidTarget = (sources, target, dropZone) => {
+	if (sources.some((item) => item.id === target.id)) {
+		return false;
+	}
+
+	if (
+		sources.some(
+			(source) =>
+				!(
+					(target.parentId &&
+						target.columnIndex <= source.columnIndex) ||
+					(target.columnIndex > source.columnIndex && !source.active)
+				)
+		)
+	) {
+		return false;
+	}
+
+	if (dropZone === DROP_ZONES.TOP) {
+		return !sources.some(
+			(source) =>
+				!(
+					target.columnIndex !== source.columnIndex ||
+					target.itemIndex < source.itemIndex ||
+					target.itemIndex > source.itemIndex + 1
+				)
+		);
+	}
+	else if (dropZone === DROP_ZONES.BOTTOM) {
+		return !sources.some(
+			(source) =>
+				!(
+					target.columnIndex !== source.columnIndex ||
 					target.itemIndex > source.itemIndex ||
-					target.itemIndex < source.itemIndex - 1)) ||
-			(dropZone === DROP_ZONES.ELEMENT &&
-				target.id !== source.parentId &&
-				target.parentable))
-	);
+					target.itemIndex < source.itemIndex - 1
+				)
+		);
+	}
+	else if (dropZone === DROP_ZONES.ELEMENT) {
+		return !sources.some(
+			(source) => !(target.id !== source.parentId && target.parentable)
+		);
+	}
 };
 
 const getDropZone = (ref, monitor) => {
@@ -81,6 +107,14 @@ const getDropZone = (ref, monitor) => {
 	return dropZone;
 };
 
+const getItemIndex = (item = {}, items) => {
+	const siblings = Array.from(items.values()).filter(
+		(_item) => _item.columnIndex === item.columnIndex
+	);
+
+	return siblings.indexOf(item);
+};
+
 const noop = () => {};
 
 const MillerColumnsItem = ({
@@ -103,6 +137,7 @@ const MillerColumnsItem = ({
 		url,
 		viewUrl,
 	},
+	items,
 	actionHandlers = {},
 	namespace,
 	onItemDrop = noop,
@@ -158,12 +193,28 @@ const MillerColumnsItem = ({
 		collect: (monitor) => ({
 			isDragging: !!monitor.isDragging(),
 		}),
+		isDragging: (monitor) => {
+			const movedItems = monitor.getItem().items;
+
+			return (
+				(movedItems.some((item) => item.checked) && checked) ||
+				movedItems.some((item) => item.id === itemId)
+			);
+		},
 		item: {
-			active,
-			columnIndex,
-			id: itemId,
-			itemIndex,
-			parentId,
+			items: checked
+				? Array.from(items.values())
+						.filter((item) => item.checked)
+						.map((item) => ({
+							...item,
+							itemIndex: getItemIndex(item, items),
+						}))
+				: [
+						{
+							...items.get(itemId),
+							itemIndex: getItemIndex(items.get(itemId), items),
+						},
+				  ],
 			type: ACCEPTING_TYPES.ITEM,
 		},
 	});
@@ -174,7 +225,7 @@ const MillerColumnsItem = ({
 			const dropZone = getDropZone(ref, monitor);
 
 			return isValidTarget(
-				source,
+				source.items,
 				{columnIndex, id: itemId, itemIndex, parentId, parentable},
 				dropZone
 			);
@@ -185,7 +236,7 @@ const MillerColumnsItem = ({
 		drop(source, monitor) {
 			if (monitor.canDrop()) {
 				if (dropZone === DROP_ZONES.ELEMENT) {
-					onItemDrop(source.id, itemId);
+					onItemDrop(source.items, itemId);
 				}
 				else {
 					let newIndex = itemIndex;
@@ -194,7 +245,7 @@ const MillerColumnsItem = ({
 						newIndex = itemIndex + 1;
 					}
 
-					onItemDrop(source.id, parentId, newIndex);
+					onItemDrop(source.items, parentId, newIndex);
 				}
 			}
 		},

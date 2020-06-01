@@ -116,20 +116,29 @@ const Layout = ({
 			.catch();
 	};
 
-	const saveData = (sourceItemId, parentItemId, position) => {
+	const saveData = (movedItems, parentItemId) => {
 		const formData = new FormData();
 
-		formData.append(`${namespace}plid`, sourceItemId);
+		const [, mainColumn] = layoutColumns;
+		const activeItem = mainColumn.find((item) => item.active);
+
+		formData.append(`${namespace}plids`, JSON.stringify(movedItems));
 		formData.append(`${namespace}parentPlid`, parentItemId);
 
-		if (Number.isInteger(position)) {
-			formData.append(`${namespace}priority`, position);
+		if (activeItem) {
+			formData.append(`${namespace}selPlid`, activeItem.id);
 		}
 
 		fetch(moveItemURL, {
 			body: formData,
 			method: 'POST',
-		});
+		})
+			.then((response) => response.json())
+			.then(({layoutColumns: updatedLayoutColumns}) => {
+				if (updatedLayoutColumns) {
+					setLayoutColumns(updatedLayoutColumns);
+				}
+			});
 	};
 
 	const updateBreadcrumbs = (columns) => {
