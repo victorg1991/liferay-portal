@@ -19,7 +19,7 @@ import HTML5Backend from 'react-dnd-html5-backend';
 
 import MillerColumnsColumn from './MillerColumnsColumn';
 
-const getItemsMap = (columns) => {
+const getItemsMap = (columns, oldItems = []) => {
 	const map = new Map();
 
 	let parentId, parentKey;
@@ -31,8 +31,13 @@ const getItemsMap = (columns) => {
 		column.forEach((item) => {
 			childrenCount++;
 
+			const oldItem = Array.from(oldItems.values()).find(
+				(oldItem) => oldItem.id === item.id
+			);
+
 			map.set(item.key, {
 				...item,
+				checked: oldItem ? oldItem.checked : false,
 				columnIndex,
 				parentId,
 				parentKey,
@@ -112,9 +117,9 @@ const MillerColumns = ({
 
 	useEffect(() => {
 		if (previousInitialColumnsValue !== initialColumns) {
-			setItems(getItemsMap(initialColumns));
+			setItems(getItemsMap(initialColumns, items));
 		}
-	}, [initialColumns, previousInitialColumnsValue]);
+	}, [initialColumns, items, previousInitialColumnsValue]);
 
 	useEffect(() => {
 		if (previousColumnsValue !== columns) {
