@@ -44,7 +44,7 @@ export default function UndoHistory() {
 					<ClayButtonWithIcon
 						aria-label={Liferay.Language.get('undo-history')}
 						className="btn-monospaced"
-						disabled={!undoHistory}
+						disabled={!undoHistory?.length && !redoHistory?.length}
 						displayType="secondary"
 						small
 						symbol="time"
