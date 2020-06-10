@@ -112,9 +112,57 @@ export const useDispatch = () => {
 };
 
 /**
+ * Default compare function used inside useSelector, supports comparing:
+ * - Primitive types
+ * - Array elements
+ * - Object properties
+ * Both array and object properties are compared only to first level.
+ * @param a
+ * @param b
+ * @returns {boolean}
+ */
+const defaultCompareEqual = (a, b) => {
+	if (a === b) {
+		return true;
+	}
+
+	if (a instanceof Array && b instanceof Array) {
+		if (a.length !== b.length) {
+			return false;
+		}
+
+		return a.every((item, index) => {
+			return item === b[index];
+		});
+	}
+
+	if (a && b && typeof a === 'object' && typeof b === 'object') {
+		if (Object.keys(a).length !== Object.keys(b).length) {
+			return false;
+		}
+
+		return Object.entries(a).every(([key, value]) => {
+			return b[key] === value;
+		});
+	}
+
+	return false;
+}
+
+/**
+ * @param {function} selector Pure function that receives state and returns
+ *  any content generated from it.
+ * @param {Array} [dependencies=[]] List of external dependencies that are
+ *  being used inside selector, so it refresh when these change.
+ * @param {function} [compareEqual=defaultCompareEqual] Function to check if
+ *  the generated content is equals or not.
  * @see https://react-redux.js.org/api/hooks#useselector
  */
-export const useSelector = (selector, compareEqual = (a, b) => a === b) => {
+export const useSelector = (
+	selector,
+	dependencies = [],
+	compareEqual = defaultCompareEqual
+) => {
 	const storeRef = useContext(StoreContext);
 
 	if (process.env.NODE_ENV === 'test' && !storeRef) {
@@ -131,25 +179,31 @@ export const useSelector = (selector, compareEqual = (a, b) => a === b) => {
 		[]
 	);
 
+	const selectorCallback = useCallback(selector, dependencies);
 	const [selectorState, setSelectorState] = useState(initialState);
 
 	useEffect(() => {
 		const store = storeRef.current;
 
-		const onStoreChange = () => {
-			const nextState = selector(storeRef.current.getState());
+		const updateSelectorState = () => {
+			const nextState = selectorCallback(storeRef.current.getState());
 
 			if (!compareEqual(selectorState, nextState)) {
 				setSelectorState(nextState);
 			}
+		}
+
+		const onStoreChange = () => {
+			updateSelectorState();
 		};
 
 		store.subscribe(onStoreChange);
+		updateSelectorState();
 
 		return () => {
 			store.unsubscribe(onStoreChange);
 		};
-	}, [selectorState, storeRef, selector, compareEqual]);
+	}, [selectorState, storeRef, selectorCallback, compareEqual]);
 
 	return selectorState;
 };
