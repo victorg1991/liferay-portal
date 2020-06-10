@@ -21,6 +21,7 @@ import ClayLink from '@clayui/link';
 import classNames from 'classnames';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useDrag, useDrop} from 'react-dnd';
+import {getEmptyImage} from 'react-dnd-html5-backend';
 
 import {ACCEPTING_TYPES, ITEM_HOVER_BORDER_LIMIT} from './constants';
 
@@ -189,7 +190,7 @@ const MillerColumnsItem = ({
 		return quickActions;
 	}, [actions, actionHandlers]);
 
-	const [{isDragging}, drag] = useDrag({
+	const [{isDragging}, drag, previewRef] = useDrag({
 		collect: (monitor) => ({
 			isDragging: !!monitor.isDragging(),
 		}),
@@ -263,6 +264,10 @@ const MillerColumnsItem = ({
 	useEffect(() => {
 		drag(drop(ref));
 	}, [drag, drop]);
+
+	useEffect(() => {
+		previewRef(getEmptyImage(), {captureDraggingState: true});
+	}, [previewRef]);
 
 	useEffect(() => {
 		if (!active && dropZone === DROP_ZONES.ELEMENT && !timeoutRef.current) {
