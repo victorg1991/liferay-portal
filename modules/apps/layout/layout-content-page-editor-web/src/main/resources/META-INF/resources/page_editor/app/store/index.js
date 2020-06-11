@@ -112,9 +112,42 @@ export const useDispatch = () => {
 };
 
 /**
+ * @param a
+ * @param b
+ * @returns {boolean}
+ */
+const defaultCompareEqual = (a, b) => {
+	if (Object.is(a, b)) {
+		return true;
+	}
+
+	if (Array.isArray(a) && Array.isArray(b)) {
+		return a.every((value, index) => defaultCompareEqual(value, b[index]));
+	}
+
+	if (a && typeof a === 'object' && b && typeof b === 'object') {
+		return Object.entries(a).every(([key, value]) =>
+			defaultCompareEqual(b[key], value)
+		);
+	}
+
+	return false;
+};
+
+/**
+ * @param {function} selector Pure function that receives state and returns
+ *  any content generated from it.
+ * @param {Array} [dependencies=[]] List of external dependencies that are
+ *  being used inside selector, so it refresh when these change.
+ * @param {function} [compareEqual=defaultCompareEqual] Function to check if
+ *  the generated content is equals or not.
  * @see https://react-redux.js.org/api/hooks#useselector
  */
-export const useSelector = (selector, compareEqual = (a, b) => a === b) => {
+export const useSelector = (
+	selector,
+	dependencies = [],
+	compareEqual = defaultCompareEqual
+) => {
 	const storeRef = useContext(StoreContext);
 
 	if (process.env.NODE_ENV === 'test' && !storeRef) {
@@ -131,25 +164,27 @@ export const useSelector = (selector, compareEqual = (a, b) => a === b) => {
 		[]
 	);
 
+	const selectorCallback = useCallback(selector, dependencies);
 	const [selectorState, setSelectorState] = useState(initialState);
 
 	useEffect(() => {
 		const store = storeRef.current;
 
-		const onStoreChange = () => {
-			const nextState = selector(storeRef.current.getState());
+		const updateSelectorState = () => {
+			const nextState = selectorCallback(storeRef.current.getState());
 
 			if (!compareEqual(selectorState, nextState)) {
 				setSelectorState(nextState);
 			}
 		};
 
-		store.subscribe(onStoreChange);
+		store.subscribe(updateSelectorState);
+		updateSelectorState();
 
 		return () => {
-			store.unsubscribe(onStoreChange);
+			store.unsubscribe(updateSelectorState);
 		};
-	}, [selectorState, storeRef, selector, compareEqual]);
+	}, [selectorState, storeRef, selectorCallback, compareEqual]);
 
 	return selectorState;
 };
