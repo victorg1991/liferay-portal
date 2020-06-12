@@ -12,7 +12,7 @@
  * details.
  */
 
-import {fetch} from 'frontend-js-web';
+import {fetch, openToast} from 'frontend-js-web';
 import React, {useEffect, useRef, useState} from 'react';
 
 import Breadcrumbs from '../breadcrumbs/Breadcrumbs';
@@ -132,7 +132,14 @@ const Layout = ({
 			method: 'POST',
 		})
 			.then((response) => response.json())
-			.then(({layoutColumns: updatedLayoutColumns}) => {
+			.then(({errorMessage, layoutColumns: updatedLayoutColumns}) => {
+				if (errorMessage) {
+					openToast({
+						message: errorMessage,
+						title: Liferay.Language.get('error'),
+						type: 'danger',
+					});
+				}
 				if (updatedLayoutColumns) {
 					setLayoutColumns(updatedLayoutColumns);
 				}
