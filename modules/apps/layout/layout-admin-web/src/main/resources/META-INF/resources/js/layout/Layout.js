@@ -82,34 +82,32 @@ const Layout = ({
 
 				for (let i = 0; i < layoutColumns.length; i++) {
 					const column = layoutColumns[i];
-					const newColumn = [];
 
-					let parent;
-
-					for (let j = 0; j < column.length; j++) {
-						const newItem = {...column[j]};
-
-						if (!parent && newItem.id === parentId) {
-							parent = newItem;
-						}
-
-						newColumn.push(newItem);
+					if (!column.some((item) => item.id === parentId)) {
+						newLayoutColumns.push(column);
 					}
+					else {
+						const newColumn = [];
 
-					newLayoutColumns.push(newColumn);
+						column.forEach((item) => {
+							if (item.active) {
+								newColumn.push({...item, active: false});
+							}
+							else if (item.id === parentId) {
+								newColumn.push({...item, active: true});
+							}
+							else {
+								newColumn.push({...item});
+							}
+						});
 
-					if (parent) {
-						const oldParent = newColumn.find((item) => item.active);
+						newLayoutColumns.push(newColumn);
 
-						if (oldParent) {
-							oldParent.active = false;
-						}
-
-						parent.active = true;
-						newLayoutColumns.push(children);
 						break;
 					}
 				}
+
+				newLayoutColumns.push(children);
 
 				setLayoutColumns(newLayoutColumns);
 			})
