@@ -57,7 +57,7 @@ const MillerColumnsColumn = ({
 		}),
 		drop(source) {
 			if (canDrop) {
-				onItemDrop(source.items, parent.id);
+				onItemDrop(source.items, parent.id, columnItems.length);
 			}
 		},
 	});

@@ -237,7 +237,11 @@ const MillerColumnsItem = ({
 		drop(source, monitor) {
 			if (monitor.canDrop()) {
 				if (dropZone === DROP_ZONES.ELEMENT) {
-					onItemDrop(source.items, itemId);
+					const newIndex = Array.from(items.values()).filter(
+						(item) => item.columnIndex === columnIndex
+					).length;
+
+					onItemDrop(source.items, itemId, newIndex);
 				}
 				else {
 					let newIndex = itemIndex;
