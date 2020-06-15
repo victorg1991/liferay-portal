@@ -160,6 +160,20 @@ const MillerColumns = ({
 	}, [searchContainer]);
 
 	const onItemDrop = (sources, newParentId, newIndex) => {
+
+		// Update checked items to keep them selected after updating items
+		// with server response
+
+		const newItems = new Map(items);
+
+		sources.forEach((source) => {
+			if (source.checked) {
+				newItems.set(source.id, source);
+			}
+		});
+
+		setItems(newItems);
+
 		let position = newIndex;
 
 		onItemMove(
