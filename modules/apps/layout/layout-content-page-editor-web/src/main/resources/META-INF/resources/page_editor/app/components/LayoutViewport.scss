@@ -17,6 +17,15 @@
 	}
 
 	&--size {
+		&-tablet,
+		&-landscapeMobile,
+		&-portraitMobile {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+		}
+
 		&-desktop .page-editor__layout-viewport__resizer {
 			flex-grow: 1;
 		}
