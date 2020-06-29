@@ -198,10 +198,16 @@ function Topper({children, item, itemElement, layoutData}) {
 			  )
 			: null;
 
+	const fixedWidth =
+		item.type === LAYOUT_DATA_ITEM_TYPES.container &&
+		item.config &&
+		item.config.widthType === 'fixed';
+
 	return (
 		<div
 			className={classNames('page-editor__topper', {
 				active: isActive(item.itemId),
+				container: fixedWidth,
 				'drag-over-bottom':
 					isOverTarget && targetPosition === TARGET_POSITION.BOTTOM,
 				'drag-over-middle':
@@ -211,6 +217,7 @@ function Topper({children, item, itemElement, layoutData}) {
 				dragged: isDraggingSource,
 				hovered: isHovered(item.itemId) || fragmentShouldBeHovered(),
 				'not-droppable': !!notDroppableMessage,
+				'p-0': fixedWidth,
 				'page-editor__topper--mapped': itemIsMappedCollection(item),
 			})}
 			onClick={(event) => {
