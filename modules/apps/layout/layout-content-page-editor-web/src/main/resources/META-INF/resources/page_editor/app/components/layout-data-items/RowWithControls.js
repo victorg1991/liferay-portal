@@ -108,6 +108,7 @@ const RowWithControls = React.forwardRef(
 		}
 
 		if (selectCanUpdateItemConfiguration) {
+			buttons.push(LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.rowStyles);
 			buttons.push(LAYOUT_DATA_FLOATING_TOOLBAR_BUTTONS.rowConfiguration);
 		}
 
