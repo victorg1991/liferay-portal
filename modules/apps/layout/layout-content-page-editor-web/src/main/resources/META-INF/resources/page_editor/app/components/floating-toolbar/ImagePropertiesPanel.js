@@ -21,6 +21,9 @@ import {BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/editableFragmentEntryProcessor';
 import {EDITABLE_TYPES} from '../../config/constants/editableTypes';
 import selectEditableValueContent from '../../selectors/selectEditableValueContent';
+import selectEditableValues from '../../selectors/selectEditableValues';
+import selectLanguageId from '../../selectors/selectLanguageId';
+import selectSegmentsExperienceId from '../../selectors/selectSegmentsExperienceId';
 import {useDispatch, useSelector} from '../../store/index';
 import updateEditableValuesThunk from '../../thunks/updateEditableValues';
 import {useId} from '../../utils/useId';
@@ -29,15 +32,18 @@ export function ImagePropertiesPanel({item}) {
 	const {editableId, editableType, fragmentEntryLinkId} = item;
 	const dispatch = useDispatch();
 	const imageDescriptionId = useId();
-	const state = useSelector((state) => state);
+	const languageId = useSelector(selectLanguageId);
+	const segmentsExperienceId = useSelector(selectSegmentsExperienceId);
 
 	const processorKey =
 		editableType === EDITABLE_TYPES.backgroundImage
 			? BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR
 			: EDITABLE_FRAGMENT_ENTRY_PROCESSOR;
 
-	const editableValues =
-		state.fragmentEntryLinks[fragmentEntryLinkId].editableValues;
+	const editableValues = useSelector(
+		(state) => selectEditableValues(state, fragmentEntryLinkId),
+		[fragmentEntryLinkId]
+	);
 
 	const editableValue = editableValues[processorKey][editableId];
 
@@ -59,16 +65,19 @@ export function ImagePropertiesPanel({item}) {
 		});
 	}, [editableValue]);
 
-	const imageUrl = useSelector((state) => {
-		const url = selectEditableValueContent(
-			state,
-			fragmentEntryLinkId,
-			editableId,
-			processorKey
-		);
+	const imageUrl = useSelector(
+		(state) => {
+			const url = selectEditableValueContent(
+				state,
+				fragmentEntryLinkId,
+				editableId,
+				processorKey
+			);
 
-		return url === editableValue.defaultValue ? '' : url;
-	});
+			return url === editableValue.defaultValue ? '' : url;
+		},
+		[fragmentEntryLinkId, editableId, processorKey]
+	);
 
 	const updateEditableValues = (
 		alt,
@@ -100,14 +109,12 @@ export function ImagePropertiesPanel({item}) {
 			updateEditableValuesThunk({
 				editableValues: nextEditableValues,
 				fragmentEntryLinkId,
-				segmentsExperienceId: state.segmentsExperienceId,
+				segmentsExperienceId,
 			})
 		);
 	};
 
 	const onImageChange = (imageTitle, imageUrl) => {
-		const {editableValues} = state.fragmentEntryLinks[fragmentEntryLinkId];
-
 		const editableProcessorValues = editableValues[processorKey];
 
 		const editableValue = editableProcessorValues[editableId];
@@ -129,7 +136,7 @@ export function ImagePropertiesPanel({item}) {
 		nextEditableValue = {
 			...editableValue,
 			config: nextEditableValueConfig,
-			[state.languageId]: imageUrl,
+			[languageId]: imageUrl,
 		};
 
 		const nextEditableValues = {
@@ -147,7 +154,7 @@ export function ImagePropertiesPanel({item}) {
 			updateEditableValuesThunk({
 				editableValues: nextEditableValues,
 				fragmentEntryLinkId,
-				segmentsExperienceId: state.segmentsExperienceId,
+				segmentsExperienceId,
 			})
 		);
 	};
