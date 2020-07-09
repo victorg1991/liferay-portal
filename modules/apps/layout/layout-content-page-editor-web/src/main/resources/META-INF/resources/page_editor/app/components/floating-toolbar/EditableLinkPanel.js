@@ -29,19 +29,22 @@ import LinkField, {
 
 export default function EditableLinkPanel({item}) {
 	const dispatch = useDispatch();
-	const state = useSelector((state) => state);
 	const segmentsExperienceId = useSelector(selectSegmentsExperienceId);
 
-	const editableValues = selectEditableValues(
-		state,
-		item.fragmentEntryLinkId
+	const editableValues = useSelector(
+		(state) => selectEditableValues(state, item.fragmentEntryLinkId),
+		[item.fragmentEntryLinkId]
 	);
 
-	const editableValue = selectEditableValue(
-		state,
-		item.fragmentEntryLinkId,
-		item.editableId,
-		EDITABLE_FRAGMENT_ENTRY_PROCESSOR
+	const editableValue = useSelector(
+		(state) =>
+			selectEditableValue(
+				state,
+				item.fragmentEntryLinkId,
+				item.editableId,
+				EDITABLE_FRAGMENT_ENTRY_PROCESSOR
+			),
+		[item.fragmentEntryLinkId, item.editableId]
 	);
 
 	const handleValueSelect = (_, nextConfig) => {
