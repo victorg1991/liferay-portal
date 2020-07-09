@@ -57,13 +57,15 @@ export default function FragmentContentFloatingToolbar({
 		return activeEditable;
 	}, [editables, fragmentEntryLinkId, isActive]);
 
-	const state = useSelector((state) => state);
-
-	const editableValue = selectEditableValue(
-		state,
-		fragmentEntryLinkId,
-		editable.editableId,
-		editable.editableValueNamespace
+	const editableValue = useSelector(
+		(state) =>
+			selectEditableValue(
+				state,
+				fragmentEntryLinkId,
+				editable.editableId,
+				editable.editableValueNamespace
+			),
+		[editable.editableId, editable.editableValueNamespace]
 	);
 
 	const editableHasActiveProcessor = !isProccessorEnabled(
