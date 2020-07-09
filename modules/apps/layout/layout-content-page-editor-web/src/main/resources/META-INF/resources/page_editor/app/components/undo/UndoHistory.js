@@ -29,7 +29,6 @@ import getActionLabel from './getActionLabel';
 
 export default function UndoHistory() {
 	const dispatch = useDispatch();
-	const store = useSelector((state) => state);
 	const redoHistory = useSelector((state) => state.redoHistory || []);
 	const undoHistory = useSelector((state) => state.undoHistory || []);
 
@@ -46,7 +45,6 @@ export default function UndoHistory() {
 		dispatch(
 			multipleUndo({
 				numberOfActions,
-				store,
 				type,
 			})
 		).finally(() => {
@@ -130,8 +128,11 @@ const Overlay = () => {
 		></div>
 	);
 };
+
 const History = ({actions = [], type, onHistoryItemClick}) => {
-	const store = useSelector((state) => state);
+	const availableSegmentsExperiences = useSelector(
+		(state) => state.availableSegmentsExperiences
+	);
 
 	const isSelectedAction = (index) => type === UNDO_TYPES.undo && index === 0;
 
@@ -153,8 +154,7 @@ const History = ({actions = [], type, onHistoryItemClick}) => {
 			symbolRight={isSelectedAction(index) ? 'check' : ''}
 		>
 			{getActionLabel(action, type, {
-				availableSegmentsExperiences:
-					store.availableSegmentsExperiences,
+				availableSegmentsExperiences,
 			})}
 
 			{action.type !== SELECT_SEGMENTS_EXPERIENCE &&
@@ -164,7 +164,7 @@ const History = ({actions = [], type, onHistoryItemClick}) => {
 					<span>
 						{getSegmentsExperienceName(
 							action.segmentsExperienceId,
-							store.availableSegmentsExperiences
+							availableSegmentsExperiences
 						)}
 					</span>
 				)}

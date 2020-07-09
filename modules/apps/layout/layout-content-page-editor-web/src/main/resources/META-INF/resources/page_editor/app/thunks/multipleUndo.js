@@ -25,13 +25,14 @@ import {UNDO_TYPES} from '../config/constants/undoTypes';
 import {reducer} from '../reducers/index';
 import {canUndoAction} from './../components/undo/undoActions';
 
-export default function multipleUndo({numberOfActions, store, type}) {
-	return (dispatch) => {
+export default function multipleUndo({numberOfActions, type}) {
+	return (dispatch, getState) => {
+		const store = getState();
+		let updatedStore = store;
+
 		if (!store.undoHistory && !store.redoHistory) {
 			return;
 		}
-
-		let updatedStore = store;
 
 		const multipleUndoDispatch = (originalType) => (action) => {
 			if (canUndoAction(action)) {
