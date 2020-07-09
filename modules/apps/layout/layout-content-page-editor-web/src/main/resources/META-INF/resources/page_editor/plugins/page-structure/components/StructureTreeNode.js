@@ -140,7 +140,6 @@ const NameLabel = ({activable, disabled, id, name}) => {
 const RemoveButton = ({node, visible}) => {
 	const dispatch = useDispatch();
 	const selectItem = useSelectItem();
-	const store = useSelector((state) => state);
 
 	return (
 		<ClayButton
@@ -156,8 +155,7 @@ const RemoveButton = ({node, visible}) => {
 			displayType="unstyled"
 			onClick={(event) => {
 				event.stopPropagation();
-
-				dispatch(deleteItem({itemId: node.id, selectItem, store}));
+				dispatch(deleteItem({itemId: node.id, selectItem}));
 			}}
 		>
 			<ClayIcon symbol="times-circle" />

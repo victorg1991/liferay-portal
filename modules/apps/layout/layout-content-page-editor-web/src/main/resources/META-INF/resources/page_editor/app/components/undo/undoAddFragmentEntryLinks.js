@@ -14,8 +14,8 @@
 
 import deleteItem from '../../thunks/deleteItem';
 
-function undoAction({action, store}) {
-	return deleteItem({...action, store});
+function undoAction({action}) {
+	return deleteItem({itemId: action.itemId});
 }
 
 function getDerivedStateForUndo({action}) {
