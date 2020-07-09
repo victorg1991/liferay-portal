@@ -20,6 +20,8 @@ import {BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/editableFragmentEntryProcessor';
 import {EDITABLE_TYPES} from '../../config/constants/editableTypes';
 import selectEditableValue from '../../selectors/selectEditableValue';
+import selectEditableValues from '../../selectors/selectEditableValues';
+import selectSegmentsExperienceId from '../../selectors/selectSegmentsExperienceId';
 import {useDispatch, useSelector} from '../../store/index';
 import updateEditableValues from '../../thunks/updateEditableValues';
 import isMapped from '../fragment-content/isMapped';
@@ -28,27 +30,34 @@ export function MappingPanel({item}) {
 	const {editableId, editableType, fragmentEntryLinkId} = item;
 
 	const dispatch = useDispatch();
-	const state = useSelector((state) => state);
+	const segmentsExperienceId = useSelector(selectSegmentsExperienceId);
 
-	const fragmentEntryLink = state.fragmentEntryLinks[fragmentEntryLinkId];
+	const editableValue = useSelector(
+		(state) =>
+			selectEditableValue(
+				state,
+				fragmentEntryLinkId,
+				editableId,
+				processoryKey
+			),
+		[fragmentEntryLinkId, editableId, processoryKey]
+	);
+
+	const editableValues = useSelector(
+		(state) => selectEditableValues(state, fragmentEntryLinkId),
+		[fragmentEntryLinkId]
+	);
 
 	const processoryKey =
 		editableType === EDITABLE_TYPES.backgroundImage
 			? BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR
 			: EDITABLE_FRAGMENT_ENTRY_PROCESSOR;
 
-	const editableValue = selectEditableValue(
-		state,
-		fragmentEntryLinkId,
-		editableId,
-		processoryKey
-	);
-
 	const updateEditableValue = (newEditableValue) => {
 		const nextEditableValues = {
-			...fragmentEntryLink.editableValues,
+			...editableValues,
 			[processoryKey]: {
-				...fragmentEntryLink.editableValues[processoryKey],
+				...editableValues[processoryKey],
 				[editableId]: {
 					config: isMapped(newEditableValue)
 						? {...editableValue.config, alt: ''}
@@ -63,7 +72,7 @@ export function MappingPanel({item}) {
 			updateEditableValues({
 				editableValues: nextEditableValues,
 				fragmentEntryLinkId,
-				segmentsExperienceId: state.segmentsExperienceId,
+				segmentsExperienceId,
 			})
 		);
 	};
