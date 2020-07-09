@@ -15,7 +15,7 @@
 import {useIsMounted} from 'frontend-js-react-web';
 import React from 'react';
 
-const {useRef} = React;
+const {useCallback, useRef} = React;
 
 /**
  * "Middleware" hook intended to wrap `useReducer` that enables you to dispatch
@@ -24,6 +24,10 @@ const {useRef} = React;
  */
 export default function useThunk([state, dispatch]) {
 	const isMounted = useIsMounted();
+	const stateRef = useRef(state);
+	const getState = useCallback(() => stateRef.current, []);
+
+	stateRef.current = state;
 
 	// Use a ref to ensure our `dispatch` is stable across renders, just
 	// like the React-provided `dispatch` that we're wrapping.
@@ -35,7 +39,7 @@ export default function useThunk([state, dispatch]) {
 					if (isMounted()) {
 						dispatch(payload);
 					}
-				});
+				}, getState);
 			}
 			else {
 				dispatch(action);
