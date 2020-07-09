@@ -29,7 +29,26 @@ const StoreDispatchContext = React.createContext(() => {});
 const StoreGetStateContext = React.createContext(null);
 const StoreSubscriptionContext = React.createContext([() => {}, () => {}]);
 
-const DEFAULT_COMPARE_EQUAL = (a, b) => a === b;
+const DEFAULT_COMPARE_EQUAL = (a, b) => {
+	if (Array.isArray(a) && Array.isArray(b)) {
+		return (
+			a.length === b.length &&
+			a.every((item, index) => DEFAULT_COMPARE_EQUAL(item, b[index]))
+		);
+	}
+
+	if (a && b && typeof a === 'object' && typeof b === 'object') {
+		const keys = Object.keys(a);
+
+		return (
+			keys.length === Object.keys(b).length &&
+			keys.every((key) => DEFAULT_COMPARE_EQUAL(a[key], b[key]))
+		);
+	}
+
+	return a === b;
+};
+
 const DEFAULT_DISPATCH = () => {};
 const DEFAULT_GET_STATE = () => ({});
 
@@ -104,7 +123,11 @@ export const useDispatch = () => useContext(StoreDispatchContext);
 /**
  * @see https://react-redux.js.org/api/hooks#useselector
  */
-export const useSelector = (selector, compareEqual = DEFAULT_COMPARE_EQUAL) => {
+export const useSelector = (
+	selector,
+	dependencies = [],
+	compareEqual = DEFAULT_COMPARE_EQUAL
+) => {
 	const getState = useContext(StoreGetStateContext);
 	const [subscribe, unsubscribe] = useContext(StoreSubscriptionContext);
 
@@ -118,17 +141,19 @@ export const useSelector = (selector, compareEqual = DEFAULT_COMPARE_EQUAL) => {
 		[]
 	);
 
+	const selectorCallback = useCallback(selector, dependencies);
 	const [selectorState, setSelectorState] = useState(initialState);
 
 	useEffect(() => {
 		const onStoreChange = () => {
-			const nextState = selector(getState());
+			const nextState = selectorCallback(getState());
 
 			if (!compareEqual(selectorState, nextState)) {
 				setSelectorState(nextState);
 			}
 		};
 
+		onStoreChange();
 		subscribe(onStoreChange);
 
 		return () => {
@@ -137,7 +162,7 @@ export const useSelector = (selector, compareEqual = DEFAULT_COMPARE_EQUAL) => {
 	}, [
 		compareEqual,
 		getState,
-		selector,
+		selectorCallback,
 		selectorState,
 		subscribe,
 		unsubscribe,
