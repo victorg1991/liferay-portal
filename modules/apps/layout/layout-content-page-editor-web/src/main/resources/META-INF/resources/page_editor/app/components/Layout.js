@@ -55,7 +55,6 @@ const LAYOUT_DATA_ITEMS = {
 };
 
 export default function Layout({mainItemId}) {
-	const fragmentEntryLinks = useSelector((state) => state.fragmentEntryLinks);
 	const layoutData = useSelector((state) => state.layoutData);
 	const mainItem = layoutData.items[mainItemId];
 	const layoutRef = useRef(null);
@@ -142,11 +141,7 @@ export default function Layout({mainItemId}) {
 				ref={layoutRef}
 			>
 				<EditableProcessorContextProvider>
-					<LayoutDataItem
-						fragmentEntryLinks={fragmentEntryLinks}
-						item={mainItem}
-						layoutData={layoutData}
-					/>
+					<LayoutDataItem item={mainItem} layoutData={layoutData} />
 				</EditableProcessorContextProvider>
 			</div>
 		</>
@@ -187,17 +182,11 @@ class LayoutDataItem extends React.PureComponent {
 }
 
 LayoutDataItem.propTypes = {
-	fragmentEntryLinks: PropTypes.object.isRequired,
 	item: getLayoutDataItemPropTypes().isRequired,
 	layoutData: LayoutDataPropTypes.isRequired,
 };
 
-function LayoutDataItemContent({
-	fragmentEntryLinks,
-	item,
-	layoutData,
-	...otherProps
-}) {
+function LayoutDataItemContent({item, layoutData, ...otherProps}) {
 	const Component = LAYOUT_DATA_ITEMS[item.type];
 	const activationOrigin = useActivationOrigin();
 	const isActive = useIsActive()(item.itemId);
@@ -225,7 +214,6 @@ function LayoutDataItemContent({
 				return (
 					<LayoutDataItem
 						{...otherProps}
-						fragmentEntryLinks={fragmentEntryLinks}
 						item={layoutData.items[childId]}
 						key={childId}
 						layoutData={layoutData}
@@ -237,7 +225,6 @@ function LayoutDataItemContent({
 }
 
 LayoutDataItemContent.propTypes = {
-	fragmentEntryLinks: PropTypes.object.isRequired,
 	item: getLayoutDataItemPropTypes().isRequired,
 	layoutData: LayoutDataPropTypes.isRequired,
 };
