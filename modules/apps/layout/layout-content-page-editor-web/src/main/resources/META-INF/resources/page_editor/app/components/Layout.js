@@ -186,7 +186,7 @@ LayoutDataItem.propTypes = {
 	layoutData: LayoutDataPropTypes.isRequired,
 };
 
-function LayoutDataItemContent({item, layoutData, ...otherProps}) {
+function LayoutDataItemContent({item, layoutData}) {
 	const Component = LAYOUT_DATA_ITEMS[item.type];
 	const activationOrigin = useActivationOrigin();
 	const isActive = useIsActive()(item.itemId);
@@ -213,7 +213,6 @@ function LayoutDataItemContent({item, layoutData, ...otherProps}) {
 			{item.children.map((childId) => {
 				return (
 					<LayoutDataItem
-						{...otherProps}
 						item={layoutData.items[childId]}
 						key={childId}
 						layoutData={layoutData}
