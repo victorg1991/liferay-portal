@@ -14,10 +14,14 @@
 
 package com.liferay.style.book.web.internal.display.context;
 
+import com.liferay.frontend.token.definition.TokenDefinition;
+import com.liferay.frontend.token.definition.TokenDefinitionRegistry;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.model.LayoutSet;
+import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
@@ -59,11 +63,14 @@ public class EditStyleBookEntryDisplayContext {
 			GroupURLProvider.class.getName());
 		_themeDisplay = (ThemeDisplay)_httpServletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
+		_tokenDefinitionRegistry =
+			(TokenDefinitionRegistry)_renderRequest.getAttribute(
+				TokenDefinitionRegistry.class.getName());
 
 		_setViewAttributes();
 	}
 
-	public Map<String, Object> getStyleBookEditorData() {
+	public Map<String, Object> getStyleBookEditorData() throws Exception {
 		return HashMapBuilder.<String, Object>put(
 			"namespace", _renderResponse.getNamespace()
 		).put(
@@ -155,7 +162,7 @@ public class EditStyleBookEntryDisplayContext {
 		return styleBookEntry.getName();
 	}
 
-	private JSONArray _getTokenCategories() {
+	private JSONArray _getTokenCategories() throws Exception {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		JSONObject tokenDefinitionJSONObject = _getTokenDefinitionJSONObject();
@@ -183,77 +190,16 @@ public class EditStyleBookEntryDisplayContext {
 		return jsonArray;
 	}
 
-	private JSONObject _getTokenDefinitionJSONObject() {
-		return JSONUtil.put(
-			"tokenCategories",
-			JSONUtil.putAll(
-				JSONUtil.put(
-					"label", "general"
-				).put(
-					"name", "general"
-				),
-				JSONUtil.put(
-					"label", "colors"
-				).put(
-					"name", "colors"
-				))
-		).put(
-			"tokens",
-			JSONUtil.putAll(
-				JSONUtil.put(
-					"editorType", "ColorPicker"
-				).put(
-					"label", "body-bg"
-				).put(
-					"mappings",
-					JSONUtil.putAll(
-						JSONUtil.put(
-							"type", "cssVariable"
-						).put(
-							"value", "body-bg"
-						))
-				).put(
-					"name", "bodyBgColor"
-				).put(
-					"tokenCategoryName", "colors"
-				).put(
-					"tokenSetName", "layout"
-				).put(
-					"type", "String"
-				),
-				JSONUtil.put(
-					"label", "box-shadow-lg"
-				).put(
-					"mappings",
-					JSONUtil.putAll(
-						JSONUtil.put(
-							"type", "cssVariable"
-						).put(
-							"value", "box-shadow-lg"
-						))
-				).put(
-					"name", "boxShadowLg"
-				).put(
-					"tokenCategoryName", "general"
-				).put(
-					"tokenSetName", "utility"
-				).put(
-					"type", "String"
-				))
-		).put(
-			"tokenSets",
-			JSONUtil.putAll(
-				JSONUtil.put(
-					"label", "layout"
-				).put(
-					"name", "layout"
-				),
-				JSONUtil.put(
-					"label", "utility"
-				).put(
-					"name", "utility"
-				))
-		);
+	private JSONObject _getTokenDefinitionJSONObject() throws Exception {
+		LayoutSet layoutSet = LayoutSetLocalServiceUtil.fetchLayoutSet(
+			_themeDisplay.getSiteGroupId(), false);
+
+		TokenDefinition tokenDefinition =
+			_tokenDefinitionRegistry.getThemeTokenDefinition(
+				layoutSet.getThemeId());
+
+		return JSONFactoryUtil.createJSONObject(
+			tokenDefinition.getRawTokenDefinition());
 	}
 
 	private JSONObject _getTokenSetJSONObject(
@@ -370,5 +316,6 @@ public class EditStyleBookEntryDisplayContext {
 	private StyleBookEntry _styleBookEntry;
 	private Long _styleBookEntryId;
 	private final ThemeDisplay _themeDisplay;
+	private final TokenDefinitionRegistry _tokenDefinitionRegistry;
 
 }

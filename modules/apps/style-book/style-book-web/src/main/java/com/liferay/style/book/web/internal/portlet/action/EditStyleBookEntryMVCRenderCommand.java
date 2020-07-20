@@ -14,6 +14,7 @@
 
 package com.liferay.style.book.web.internal.portlet.action;
 
+import com.liferay.frontend.token.definition.TokenDefinitionRegistry;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCRenderCommand;
 import com.liferay.site.util.GroupURLProvider;
 import com.liferay.style.book.constants.StyleBookPortletKeys;
@@ -43,11 +44,16 @@ public class EditStyleBookEntryMVCRenderCommand implements MVCRenderCommand {
 
 		renderRequest.setAttribute(
 			GroupURLProvider.class.getName(), _groupURLProvider);
+		renderRequest.setAttribute(
+			TokenDefinitionRegistry.class.getName(), _tokenDefinitionRegistry);
 
 		return "/edit_style_book_entry.jsp";
 	}
 
 	@Reference
 	private GroupURLProvider _groupURLProvider;
+
+	@Reference
+	private TokenDefinitionRegistry _tokenDefinitionRegistry;
 
 }
