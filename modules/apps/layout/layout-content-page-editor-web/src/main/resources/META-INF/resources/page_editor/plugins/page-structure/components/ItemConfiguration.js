@@ -61,7 +61,7 @@ export default function ItemConfiguration() {
 	}
 
 	return (
-		<PageStructureSidebarSection>
+		<PageStructureSidebarSection resizable>
 			<div className="page-editor__page-structure__item-configuration">
 				<ClayTabs className="border-bottom" modern>
 					{panels.map((panel) => (
