@@ -17,7 +17,7 @@ import ClayIcon from '@clayui/icon';
 import ClayLink from '@clayui/link';
 import ClayTabs from '@clayui/tabs';
 import classNames from 'classnames';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 
 import {LAYOUT_TYPES} from '../../../app/config/constants/layoutTypes';
 import {config} from '../../../app/config/index';
@@ -27,6 +27,7 @@ import changeMasterLayout from '../../../app/thunks/changeMasterLayout';
 import {useId} from '../../../app/utils/useId';
 import SidebarPanelContent from '../../../common/components/SidebarPanelContent';
 import SidebarPanelHeader from '../../../common/components/SidebarPanelHeader';
+import {useSetStyleBook, useStyleBookEntryId} from './StyleBookContext';
 
 const OPTIONS_TYPES = {
 	master: 'master',
@@ -34,37 +35,28 @@ const OPTIONS_TYPES = {
 };
 
 export default function PageDesignOptionsSidebar() {
+	const styleBookEntryId = useStyleBookEntryId();
+	const setStyleBook = useSetStyleBook();
+
 	const masterLayoutPlid = useSelector(
 		(state) => state.masterLayout?.masterLayoutPlid
 	);
 
-	const [styleBookEntryId, setStyleBookEntryId] = useState(
-		config.styleBookEntryId
-	);
-	const [selectedStyleBook, setSelectedStyleBook] = useState(null);
-
-	const onSelectStyleBook = useCallback((styleBook) => {
-		LayoutService.changeStyleBookEntry({
-			onNetworkStatus: () => {},
-			styleBookEntryId: styleBook.styleBookEntryId,
-		}).then((styleBookWithTokens) => {
-			setStyleBookEntryId(styleBook.styleBookEntryId);
-			setSelectedStyleBook(styleBookWithTokens);
-		});
-	}, []);
-
-	useEffect(() => {
-		const wrapper = document.getElementById('wrapper');
-
-		if (selectedStyleBook && wrapper) {
-			selectedStyleBook.tokenValues.forEach((token) => {
-				wrapper.style.setProperty(
-					`--${token.cssVariable}`,
-					token.value
-				);
+	const onSelectStyleBook = useCallback(
+		(styleBook) => {
+			LayoutService.changeStyleBookEntry({
+				onNetworkStatus: () => {},
+				styleBookEntryId: styleBook.styleBookEntryId,
+			}).then((styleBookWithTokens) => {
+				setStyleBook({
+					frontendTokens: styleBookWithTokens.tokenValues,
+					label: styleBook.name,
+					styleBookEntryId: styleBook.styleBookEntryId,
+				});
 			});
-		}
-	}, [selectedStyleBook]);
+		},
+		[setStyleBook]
+	);
 
 	const tabs = useMemo(
 		() => getTabs(masterLayoutPlid, styleBookEntryId, onSelectStyleBook),

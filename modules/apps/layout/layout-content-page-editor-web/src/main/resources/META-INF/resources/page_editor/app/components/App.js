@@ -16,6 +16,8 @@ import PropTypes from 'prop-types';
 import React, {useEffect} from 'react';
 
 import useAutoExtendSession from '../../core/hooks/useAutoExtendSession';
+import {StyleBookContextProvider} from '../../plugins/page-design-options/components/StyleBookContext';
+import {StyleBookRenderer} from '../../plugins/page-design-options/components/StyleBookRenderer';
 import {INIT} from '../actions/types';
 import {config} from '../config/index';
 import {reducer} from '../reducers/index';
@@ -40,12 +42,15 @@ export default function App({state}) {
 			<URLParser />
 			<ControlsProvider>
 				<CollectionActiveItemContextProvider>
-					<DragAndDropContextProvider>
-						<DragPreview />
-						<Toolbar />
-						<LayoutViewport />
-						<Sidebar />
-					</DragAndDropContextProvider>
+					<StyleBookContextProvider>
+						<DragAndDropContextProvider>
+							<DragPreview />
+							<StyleBookRenderer />
+							<Toolbar />
+							<LayoutViewport />
+							<Sidebar />
+						</DragAndDropContextProvider>
+					</StyleBookContextProvider>
 				</CollectionActiveItemContextProvider>
 			</ControlsProvider>
 		</StoreContextProvider>
