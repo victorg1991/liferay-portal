@@ -334,8 +334,7 @@ public abstract class StyledLayoutStructureItem extends LayoutStructureItem {
 				property);
 
 			return configColorJSONObject.getString(
-				"color",
-				configColorJSONObject.getString("rgbValue", StringPool.BLANK));
+				"rgbValue", StringPool.BLANK);
 		}
 
 		if ((styleColorObject != null) &&
@@ -349,9 +348,7 @@ public abstract class StyledLayoutStructureItem extends LayoutStructureItem {
 			JSONObject styleColorJSONObject = stylesJSONObject.getJSONObject(
 				property);
 
-			return styleColorJSONObject.getString(
-				"color",
-				styleColorJSONObject.getString("rgbValue", StringPool.BLANK));
+			return styleColorJSONObject.getString("rgbValue", StringPool.BLANK);
 		}
 
 		return StringPool.BLANK;
@@ -371,13 +368,16 @@ public abstract class StyledLayoutStructureItem extends LayoutStructureItem {
 			(configColorJSONObject != null)) {
 
 			return configColorJSONObject.getString(
-				"cssClass", StringPool.BLANK);
+				"cssClass",
+				configColorJSONObject.getString("color", StringPool.BLANK));
 		}
 		else if (styleColorJSONObject == null) {
 			return StringPool.BLANK;
 		}
 
-		return styleColorJSONObject.getString("cssClass", StringPool.BLANK);
+		return styleColorJSONObject.getString(
+			"cssClass",
+			styleColorJSONObject.getString("color", StringPool.BLANK));
 	}
 
 	private Object _getStyleProperty(String propertyKey) {
