@@ -619,13 +619,11 @@ public class RenderLayoutStructureDisplayContext {
 			styleSB.append(StringPool.SEMICOLON);
 		}
 
-		if (Validator.isNotNull(
-				styledLayoutStructureItem.getFontWeightCssClass())) {
-
+		if (Validator.isNotNull(styledLayoutStructureItem.getFontWeight())) {
 			styleSB.append("font-weight: ");
 			styleSB.append(
 				getStyleFromStyleBookEntry(
-					styledLayoutStructureItem.getFontWeightCssClass()));
+					styledLayoutStructureItem.getFontWeight()));
 			styleSB.append(StringPool.SEMICOLON);
 		}
 
