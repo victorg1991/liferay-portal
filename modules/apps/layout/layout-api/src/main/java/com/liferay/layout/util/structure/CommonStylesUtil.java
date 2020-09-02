@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
@@ -33,6 +34,17 @@ import java.util.ResourceBundle;
  * @author Pavel Savinov
  */
 public class CommonStylesUtil {
+
+	public static final Map<String, String> commonStylesAliases =
+		HashMapBuilder.put(
+			"boxShadow", "shadow"
+		).put(
+			"buttonAlign", "textAlign"
+		).put(
+			"contentAlign", "textAlign"
+		).put(
+			"imageAlign", "textAlign"
+		).build();
 
 	public static List<String> getAvailableStyleNames() throws Exception {
 		if (_availableStyleNames != null) {
