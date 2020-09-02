@@ -110,8 +110,17 @@ public abstract class StyledLayoutStructureItem extends LayoutStructureItem {
 		return GetterUtil.getString(_getStyleProperty("fontSize"));
 	}
 
-	public String getFontWeightCssClass() {
+	public String getFontWeight() {
 		return GetterUtil.getString(_getStyleProperty("fontWeight"));
+	}
+
+	/**
+	 * @deprecated As of Athanasius (7.3.x), replaced by {@link
+	 *             #getFontWeight()}
+	 */
+	@Deprecated
+	public String getFontWeightCssClass() {
+		return StringPool.BLANK;
 	}
 
 	public String getHeight() {
