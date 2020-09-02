@@ -76,8 +76,13 @@ public class FragmentStyledLayoutStructureItem
 			for (String key : _fragmentConfigurationJSONObject.keySet()) {
 				jsonObject.put(key, _fragmentConfigurationJSONObject.get(key));
 
-				stylesJSONObject.put(
-					key, _fragmentConfigurationJSONObject.get(key));
+				key = CommonStylesUtil.commonStylesAliases.getOrDefault(
+					key, key);
+
+				if (!stylesJSONObject.has(key)) {
+					stylesJSONObject.put(
+						key, _fragmentConfigurationJSONObject.get(key));
+				}
 			}
 		}
 
