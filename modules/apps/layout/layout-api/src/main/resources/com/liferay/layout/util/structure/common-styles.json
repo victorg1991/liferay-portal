@@ -707,19 +707,19 @@
 					},
 					{
 						"label": "left",
-						"value": "text-left"
+						"value": "left"
 					},
 					{
 						"label": "center",
-						"value": "text-center"
+						"value": "center"
 					},
 					{
 						"label": "right",
-						"value": "text-right"
+						"value": "right"
 					},
 					{
 						"label": "justify",
-						"value": "text-justify"
+						"value": "justify"
 					}
 				]
 			}

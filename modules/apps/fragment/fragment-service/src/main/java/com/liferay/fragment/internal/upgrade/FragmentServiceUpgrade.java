@@ -22,6 +22,7 @@ import com.liferay.fragment.internal.upgrade.v2_1_0.UpgradeSchema;
 import com.liferay.fragment.internal.upgrade.v2_2_1.UpgradeFragmentEntry;
 import com.liferay.fragment.internal.upgrade.v2_4_0.UpgradeFragmentEntryLink;
 import com.liferay.fragment.internal.upgrade.v2_6_0.UpgradeFragmentEntryVersion;
+import com.liferay.fragment.internal.upgrade.v2_7_0.UpgradeFragmentEntryLinkEditableValues;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.upgrade.BaseUpgradeSQLServerDatetime;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
@@ -121,6 +122,7 @@ public class FragmentServiceUpgrade implements UpgradeStepRegistrator {
 			new UpgradeCTModel(
 				"FragmentCollection", "FragmentComposition", "FragmentEntry",
 				"FragmentEntryLink", "FragmentEntryVersion"),
+			new UpgradeFragmentEntryLinkEditableValues(),
 			new UpgradeMVCCVersion() {
 
 				@Override
