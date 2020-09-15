@@ -14,6 +14,7 @@
 
 import {config} from '../../config/index';
 import InfoItemService from '../../services/InfoItemService';
+import isMapped from '../../utils/isMapped';
 
 export default function (
 	editableValues,
@@ -26,7 +27,7 @@ export default function (
 
 	let valuePromise;
 
-	if (editableIsMappedToInfoItem(editableValue)) {
+	if (isMapped(editableValue)) {
 		valuePromise = getFieldValue({
 			classNameId: editableValue.classNameId,
 			classPK: editableValue.classPK,
@@ -45,7 +46,7 @@ export default function (
 
 	let configPromise;
 
-	if (editableIsMappedToInfoItem(editableValue.config)) {
+	if (isMapped(editableValue.config)) {
 		configPromise = getFieldValue({
 			classNameId: editableValue.config.classNameId,
 			classPK: editableValue.config.classPK,
@@ -86,14 +87,4 @@ function selectEditableValueContent(editableValue, languageId) {
 	}
 
 	return content;
-}
-
-function editableIsMappedToInfoItem(editableValue) {
-	return (
-		editableValue &&
-		((editableValue.classNameId &&
-			editableValue.classPK &&
-			editableValue.fieldId) ||
-			editableValue.collectionFieldId)
-	);
 }
