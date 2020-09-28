@@ -13,8 +13,10 @@
  */
 
 import ClayForm, {ClayInput} from '@clayui/form';
+import {match} from 'metal-dom';
 import React, {useEffect, useState} from 'react';
 
+import {getEditableElementById} from '../../../../app/components/fragment-content/getEditableElement';
 import {BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR} from '../../../../app/config/constants/backgroundImageFragmentEntryProcessor';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../../../app/config/constants/editableFragmentEntryProcessor';
 import {EDITABLE_TYPES} from '../../../../app/config/constants/editableTypes';
@@ -31,6 +33,10 @@ export function ImagePropertiesPanel({item}) {
 	const imageDescriptionId = useId();
 	const state = useSelector((state) => state);
 
+	const selectedViewportSize = useSelector(
+		(state) => state.selectedViewportSize
+	);
+
 	const processorKey =
 		type === EDITABLE_TYPES.backgroundImage
 			? BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR
@@ -46,6 +52,20 @@ export function ImagePropertiesPanel({item}) {
 	const [imageDescription, setImageDescription] = useState(
 		editableConfig.alt || ''
 	);
+
+	const editableElement = getEditableElementById(editableId);
+
+	const imageElement = match(editableElement, 'img')
+		? editableElement
+		: editableElement.querySelector('img');
+
+	const [imageHeight, setImageHeight] = useState(imageElement.naturalHeight);
+	const [imageWidth, setImageWidth] = useState(imageElement.naturalWidth);
+
+	useEffect(() => {
+		setImageHeight(imageElement.naturalHeight);
+		setImageWidth(imageElement.naturalWidth);
+	}, [imageElement, selectedViewportSize]);
 
 	useEffect(() => {
 		const editableConfig = editableValue ? editableValue.config || {} : {};
@@ -105,7 +125,7 @@ export function ImagePropertiesPanel({item}) {
 		);
 	};
 
-	const onImageChange = (imageTitle, imageUrl) => {
+	const onImageChange = (imageTitle, imageUrl, fileEntryId) => {
 		const {editableValues} = state.fragmentEntryLinks[fragmentEntryLinkId];
 
 		const editableProcessorValues = editableValues[processorKey];
@@ -129,7 +149,10 @@ export function ImagePropertiesPanel({item}) {
 		nextEditableValue = {
 			...editableValue,
 			config: nextEditableValueConfig,
-			[state.languageId]: imageUrl,
+			[state.languageId]: {
+				fileEntryId,
+				url: imageUrl,
+			},
 		};
 
 		const nextEditableValues = {
@@ -159,9 +182,16 @@ export function ImagePropertiesPanel({item}) {
 				label={Liferay.Language.get('image')}
 				onClearButtonPressed={() => onImageChange('', '')}
 				onImageSelected={(image) =>
-					onImageChange(image.title, image.url)
+					onImageChange(image.title, image.url, image.fileEntryId)
 				}
 			/>
+
+			<div className="mb-2 small">
+				<b>{Liferay.Language.get('resolution')}:</b>
+				<span className="ml-2">
+					{imageWidth}x{imageHeight} px
+				</span>
+			</div>
 
 			{type === EDITABLE_TYPES.image && (
 				<ClayForm.Group>
