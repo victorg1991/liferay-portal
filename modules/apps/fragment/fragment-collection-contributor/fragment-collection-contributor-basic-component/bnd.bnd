@@ -1,5 +1,9 @@
 Bundle-Name: Liferay Fragment Collection Contributor Basic Component
 Bundle-SymbolicName: com.liferay.fragment.collection.contributor.basic.component
 Bundle-Version: 3.0.0
+Provide-Capability:\
+	liferay.resource.bundle;\
+		exclude.portal.resources="true";\
+		resource.bundle.base.name="content.Language"
 Web-ContextPath: /fragment-collection-contributor-basic-component
 -dsannotations-options: inherit

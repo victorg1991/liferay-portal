@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader;
 import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
 import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoaderUtil;
 import com.liferay.portal.kernel.util.FileUtil;
@@ -142,11 +143,17 @@ public abstract class BaseFragmentCollectionContributor
 	public ResourceBundleLoader getResourceBundleLoader() {
 		ServletContext servletContext = getServletContext();
 
-		return Optional.ofNullable(
+		ResourceBundleLoader resourceBundleLoader =
 			ResourceBundleLoaderUtil.
 				getResourceBundleLoaderByServletContextName(
-					servletContext.getServletContextName())
-		).orElse(
+					servletContext.getServletContextName());
+
+		if (resourceBundleLoader == null) {
+			return ResourceBundleLoaderUtil.getPortalResourceBundleLoader();
+		}
+
+		return new AggregateResourceBundleLoader(
+			resourceBundleLoader,
 			ResourceBundleLoaderUtil.getPortalResourceBundleLoader()
 		);
 	}
