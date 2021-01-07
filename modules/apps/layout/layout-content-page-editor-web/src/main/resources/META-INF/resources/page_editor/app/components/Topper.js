@@ -190,6 +190,7 @@ function TopperContent({
 				hoverItem(item.itemId);
 			}}
 			style={style}
+			ref={canUpdatePageStructure ? handlerRef : null}
 		>
 			<TopperLabel
 				isActive={isActive}
@@ -200,7 +201,7 @@ function TopperContent({
 					{canUpdatePageStructure && (
 						<TopperListItem
 							className="page-editor__topper__drag-handler"
-							ref={handlerRef}
+
 						>
 							<ClayIcon
 								className="page-editor__topper__drag-icon page-editor__topper__icon"
