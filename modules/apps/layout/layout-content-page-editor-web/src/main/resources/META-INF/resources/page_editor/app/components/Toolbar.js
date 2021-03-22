@@ -37,6 +37,7 @@ import PreviewModal from './PreviewModal';
 import Translation from './Translation';
 import UnsafeHTML from './UnsafeHTML';
 import ViewportSizeSelector from './ViewportSizeSelector';
+import {useEditableProcessorUniqueId} from './fragment-content/EditableProcessorContext';
 import Undo from './undo/Undo';
 
 const {Suspense, useCallback, useRef} = React;
@@ -44,6 +45,7 @@ const {Suspense, useCallback, useRef} = React;
 function ToolbarBody() {
 	const dispatch = useDispatch();
 	const dropClearRef = useDropClear();
+	const editableProcessorUniqueId = useEditableProcessorUniqueId();
 	const {getInstance, register} = usePlugins();
 	const isMounted = useIsMounted();
 	const load = useLoad();
@@ -293,7 +295,9 @@ function ToolbarBody() {
 						/>
 
 						<ClayButton
-							disabled={config.pending}
+							disabled={
+								config.pending || editableProcessorUniqueId
+							}
 							displayType="primary"
 							onClick={handleSubmit}
 							small
