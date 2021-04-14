@@ -179,6 +179,23 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 	const [fieldSets, setFieldSets] = useState(null);
 	const [selectedItem, setSelectedItem] = useState(mappedItem);
 
+	const [typeLabel, setTypeLabel] = useState(null);
+	const [subtypeLabel, setSubtypeLabel] = useState(null);
+
+	useEffect(() => {
+		const mappedInfoItem = mappedInfoItems.find(
+			(infoItem) =>
+				infoItem.classNameId === selectedItem.classNameId &&
+				infoItem.classPK === selectedItem.classPK
+		);
+
+		const type = selectedItem?.itemType || mappedInfoItem?.type;
+		const subtype = selectedItem?.itemSubtype || mappedInfoItem?.subtype;
+
+		setTypeLabel(type);
+		setSubtypeLabel(subtype);
+	}, [selectedItem, mappedInfoItems]);
+
 	const [selectedSourceTypeId, setSelectedSourceTypeId] = useState(
 		!isMappedToInfoItem(mappedItem) &&
 			(isMappedToStructure(mappedItem) ||
@@ -323,6 +340,24 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 					selectedItemTitle={selectedItem.title}
 					transformValueCallback={itemSelectorValueToInfoItem}
 				/>
+			)}
+
+			{typeLabel && (
+				<p className="mb-2 page-editor__mapping-panel__type-label">
+					<span className="mr-1">
+						{Liferay.Language.get('item-type')}:
+					</span>
+					{typeLabel}
+				</p>
+			)}
+
+			{subtypeLabel && (
+				<p className="mb-2 page-editor__mapping-panel__type-label">
+					<span className="mr-1">
+						{Liferay.Language.get('item-subtype')}:
+					</span>
+					{subtypeLabel}
+				</p>
 			)}
 
 			<ClayForm.Group small>
