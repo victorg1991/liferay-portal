@@ -88,7 +88,7 @@ export default function MappingSelectorWrapper({
 	onMappingSelect,
 }) {
 	const collectionConfig = useCollectionConfig();
-	const [collectionFieldSets, setCollectionFieldSets] = useState([]);
+	const [collectionFields, setCollectionFields] = useState([]);
 	const [
 		collectionItemSubtypeLabel,
 		setCollectionItemSubtypeLabel,
@@ -97,7 +97,7 @@ export default function MappingSelectorWrapper({
 
 	useEffect(() => {
 		if (!collectionConfig) {
-			setCollectionFieldSets([]);
+			setCollectionFields([]);
 
 			return;
 		}
@@ -109,7 +109,7 @@ export default function MappingSelectorWrapper({
 			onNetworkStatus: () => {},
 		})
 			.then((response) => {
-				setCollectionFieldSets(response.mappingFields);
+				setCollectionFields(response.mappingFields);
 				setCollectionItemSubtypeLabel(response.itemSubtypeLabel);
 				setCollectionItemTypeLabel(response.itemTypeLabel);
 			})
@@ -141,8 +141,8 @@ export default function MappingSelectorWrapper({
 			)}
 
 			<MappingFieldSelect
-				fieldSets={collectionFieldSets}
 				fieldType={fieldType}
+				fields={collectionFields}
 				onValueSelect={(event) => {
 					if (event.target.value === UNMAPPED_OPTION.value) {
 						onMappingSelect({collectionFieldId: ''});
@@ -172,7 +172,7 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 
 	const {selectedMappingTypes} = config;
 
-	const [fieldSets, setFieldSets] = useState(null);
+	const [itemFields, setItemFields] = useState(null);
 	const [selectedItem, setSelectedItem] = useState(mappedItem);
 
 	const [typeLabel, setTypeLabel] = useState(null);
@@ -267,8 +267,8 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 			fieldType,
 			item: selectedItem,
 			sourceType: selectedSourceType,
-		}).then((newFieldSets) => {
-			setFieldSets(newFieldSets);
+		}).then((newFields) => {
+			setItemFields(newFields);
 		});
 	}, [
 		dispatch,
@@ -348,8 +348,8 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 
 			<ClayForm.Group small>
 				<MappingFieldSelect
-					fieldSets={fieldSets}
 					fieldType={fieldType}
+					fields={itemFields}
 					onValueSelect={onFieldSelect}
 					value={selectedItem.mappedField || selectedItem.fieldId}
 				/>
@@ -358,10 +358,10 @@ function MappingSelector({fieldType, mappedItem, onMappingSelect}) {
 	);
 }
 
-function MappingFieldSelect({fieldSets, fieldType, onValueSelect, value}) {
+function MappingFieldSelect({fieldType, fields, onValueSelect, value}) {
 	const mappingSelectorFieldSelectId = useId();
 
-	const hasWarnings = fieldSets && fieldSets.length === 0;
+	const hasWarnings = fields && fields.length === 0;
 
 	return (
 		<ClayForm.Group
@@ -374,19 +374,19 @@ function MappingFieldSelect({fieldSets, fieldType, onValueSelect, value}) {
 
 			<ClaySelect
 				aria-label={Liferay.Language.get('field')}
-				disabled={!(fieldSets && fieldSets.length)}
+				disabled={!(fields && fields.length)}
 				id={mappingSelectorFieldSelectId}
 				onChange={onValueSelect}
 				value={value}
 			>
-				{fieldSets && fieldSets.length && (
+				{fields && fields.length && (
 					<>
 						<ClaySelect.Option
 							label={UNMAPPED_OPTION.label}
 							value={UNMAPPED_OPTION.value}
 						/>
 
-						{fieldSets.map((fieldSet, index) => {
+						{fields.map((fieldSet, index) => {
 							const key = `${fieldSet.label || ''}${index}`;
 
 							const Wrapper = ({children, ...props}) =>
