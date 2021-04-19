@@ -176,6 +176,8 @@ public class JournalArticleItemSelectorViewDisplayContext {
 			).put(
 				"classPK", journalArticle.getResourcePrimKey()
 			).put(
+				"classTypeId", _getClassTypeId(journalArticle)
+			).put(
 				"subtype", _getSubtype(journalArticle)
 			).put(
 				"title",
@@ -544,6 +546,19 @@ public class JournalArticleItemSelectorViewDisplayContext {
 		searchContext.setStart(start);
 
 		return searchContext;
+	}
+
+	private Long _getClassTypeId(JournalArticle journalArticle) {
+		DDMStructure ddmStructure = DDMStructureLocalServiceUtil.fetchStructure(
+			journalArticle.getGroupId(),
+			PortalUtil.getClassNameId(JournalArticle.class),
+			journalArticle.getDDMStructureKey(), true);
+
+		if (ddmStructure == null) {
+			return null;
+		}
+
+		return ddmStructure.getStructureId();
 	}
 
 	private JournalFolder _getFolder() {

@@ -70,6 +70,8 @@ public class FileEntryInfoItemItemSelectorReturnTypeResolver
 		).put(
 			"classPK", String.valueOf(fileEntry.getFileEntryId())
 		).put(
+			"classTypeId", _getClassTypeId(fileEntry)
+		).put(
 			"subtype", _getSubtype(fileEntry, themeDisplay.getLocale())
 		).put(
 			"title", fileEntry.getTitle()
@@ -80,6 +82,32 @@ public class FileEntryInfoItemItemSelectorReturnTypeResolver
 		);
 
 		return fileEntryJSONObject.toString();
+	}
+
+	private Long _getClassTypeId(FileEntry fileEntry) {
+		AssetRendererFactory<?> assetRendererFactory =
+			AssetRendererFactoryRegistryUtil.
+				getAssetRendererFactoryByClassNameId(
+					_portal.getClassNameId(DLFileEntry.class));
+
+		if (assetRendererFactory == null) {
+			return null;
+		}
+
+		try {
+			AssetRenderer<?> assetRenderer =
+				assetRendererFactory.getAssetRenderer(
+					fileEntry.getFileEntryId());
+
+			AssetEntry assetEntry = assetRendererFactory.getAssetEntry(
+				DLFileEntryConstants.getClassName(),
+				assetRenderer.getClassPK());
+
+			return assetEntry.getClassTypeId();
+		}
+		catch (Exception exception) {
+			return null;
+		}
 	}
 
 	private String _getSubtype(FileEntry fileEntry, Locale locale) {
