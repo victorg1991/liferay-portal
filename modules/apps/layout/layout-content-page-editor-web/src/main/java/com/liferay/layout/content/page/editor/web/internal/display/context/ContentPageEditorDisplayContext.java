@@ -1806,6 +1806,9 @@ public class ContentPageEditorDisplayContext {
 				).put(
 					"classPK", layoutDisplayPageObjectProvider.getClassPK()
 				).put(
+					"classTypeId",
+					layoutDisplayPageObjectProvider.getClassTypeId()
+				).put(
 					"title",
 					layoutDisplayPageObjectProvider.getTitle(
 						themeDisplay.getLocale())
