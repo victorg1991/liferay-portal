@@ -13,7 +13,7 @@
  */
 
 import PropTypes from 'prop-types';
-import React, {useEffect, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {BACKGROUND_IMAGE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/backgroundImageFragmentEntryProcessor';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../config/constants/editableFragmentEntryProcessor';
@@ -33,7 +33,7 @@ import {
 	useIsHovered,
 	useSelectItem,
 } from '../../contexts/ControlsContext';
-import {useSetEditableProcessorUniqueId} from '../../contexts/EditableProcessorContext';
+import {useEditableProcessorUniqueId, useSetEditableProcessorUniqueId} from '../../contexts/EditableProcessorContext';
 import {useSelector, useSelectorCallback} from '../../contexts/StoreContext';
 import selectCanUpdateEditables from '../../selectors/selectCanUpdateEditables';
 import selectCanUpdatePageStructure from '../../selectors/selectCanUpdatePageStructure';
@@ -75,7 +75,24 @@ function FragmentContentInteractionsFilter({
 		(state) => state.selectedViewportSize
 	);
 	const setEditableProcessorUniqueId = useSetEditableProcessorUniqueId();
+	const editableProcessorUniqueId = useEditableProcessorUniqueId();
+
 	const toControlsId = useToControlsId();
+	const [nextProcessorUniqueId, setNextProcessorUniqueId] = useState(null);
+
+	useEffect(() => {
+		if (!nextProcessorUniqueId) {
+			return;
+		}
+
+		if (editableProcessorUniqueId) {
+			return;
+		} 
+
+		setEditableProcessorUniqueId(nextProcessorUniqueId);
+		setNextProcessorUniqueId(null);
+
+	}, [editableProcessorUniqueId, nextProcessorUniqueId, setEditableProcessorUniqueId])
 
 	const editables = useSelectorCallback(
 		(state) => Object.values(state.editables?.[toControlsId(itemId)] || {}),
@@ -239,20 +256,23 @@ function FragmentContentInteractionsFilter({
 					canUpdateEditables &&
 					selectedViewportSize === VIEWPORT_SIZES.desktop
 				) {
-					requestAnimationFrame(() => {
-						activeEditable.element.addEventListener(
-							'dblclick',
-							enableProcessor
-						);
-					});
-				}
 
-				if (activationOrigin === ITEM_ACTIVATION_ORIGINS.sidebar) {
-					activeEditable.element.scrollIntoView({
-						behavior: 'smooth',
-						block: 'center',
-						inline: 'nearest',
-					});
+					if (activationOrigin === ITEM_ACTIVATION_ORIGINS.sidebar) {
+						setNextProcessorUniqueId(toControlsId(activeEditable.itemId));				
+					
+						activeEditable.element.scrollIntoView({
+							behavior: 'smooth',
+							block: 'center',
+							inline: 'nearest',
+						});
+					} else {
+						requestAnimationFrame(() => {
+							activeEditable.element.addEventListener(
+								'dblclick',
+								enableProcessor
+							);
+						});
+					}
 				}
 			}
 		}
