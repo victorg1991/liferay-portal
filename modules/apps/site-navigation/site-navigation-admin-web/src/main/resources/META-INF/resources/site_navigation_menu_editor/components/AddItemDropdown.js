@@ -35,14 +35,29 @@ export const AddItemDropDown = ({trigger}) => {
 						<ClayDropDown.Item
 							key={label}
 							onClick={() => {
-								Liferay.Util.openWindow({
-									dialog: {
-										destroyOnHide: true,
-									},
-									id: `${portletNamespace}addMenuItem`,
-									title: label,
-									uri: data.href,
-								});
+								if (data.itemSelector) {
+									Liferay.Util.openSelectionModal({
+										title: label,
+										onSelect: (selectedItems) => {
+											console.log(selectedItems);
+											if (!selectedItems) {
+												return;
+											}
+										},
+										selectEventName: `${portletNamespace}selectItem`,
+										url: data.href,
+									});
+								}
+								else {
+									Liferay.Util.openWindow({
+										dialog: {
+											destroyOnHide: true,
+										},
+										id: `${portletNamespace}addMenuItem`,
+										title: label,
+										uri: data.href,
+									});
+								}
 							}}
 						>
 							{label}

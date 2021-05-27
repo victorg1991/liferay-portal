@@ -55,7 +55,6 @@ import com.liferay.site.navigation.type.SiteNavigationMenuItemTypeRegistry;
 import com.liferay.staging.StagingGroupHelper;
 import com.liferay.staging.StagingGroupHelperUtil;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -110,9 +109,13 @@ public class SiteNavigationAdminDisplayContext {
 					add(
 						dropdownItem -> {
 							dropdownItem.setData(
-								Collections.singletonMap(
+								HashMapBuilder.<String, Object>put(
 									"href",
-									_getAddURL(siteNavigationMenuItemType)));
+									_getAddURL(siteNavigationMenuItemType)
+								).put(
+									"itemSelector",
+									siteNavigationMenuItemType.isItemSelector()
+								).build());
 							dropdownItem.setLabel(
 								siteNavigationMenuItemType.getLabel(
 									themeDisplay.getLocale()));
@@ -393,6 +396,16 @@ public class SiteNavigationAdminDisplayContext {
 
 	private String _getAddURL(
 		SiteNavigationMenuItemType siteNavigationMenuItemType) {
+
+		if (siteNavigationMenuItemType.isItemSelector()) {
+			String itemSelectorURL =
+				siteNavigationMenuItemType.getItemSelectorURL(
+					_httpServletRequest);
+
+			if (Validator.isNotNull(itemSelectorURL)) {
+				return itemSelectorURL;
+			}
+		}
 
 		PortletURL addURL = PortletURLBuilder.createRenderURL(
 			_liferayPortletResponse
