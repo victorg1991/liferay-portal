@@ -25,7 +25,7 @@ const ISSUE_TYPES = {
 	metaDescription: 'missing-meta-description',
 	pageIndexing: 'page-blocked-from-indexing',
 	tapTarget: 'small-tap-targets',
-	titleElement: 'missing-title-element',
+	titleElemesdsdsdsnt: 'missing-title-element',
 };
 
 export default function normalizeFailingElements(failingElements, issueType) {
