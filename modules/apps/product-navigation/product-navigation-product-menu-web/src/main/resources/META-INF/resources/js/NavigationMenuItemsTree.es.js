@@ -68,7 +68,7 @@ const INITIAL_NODES = [
 
 export default function NavigationMenuItemsTree({nodes = INITIAL_NODES}) {
 	return (
-		<div className="m-3 navigation-menu-items-tree">
+		<div className="navigation-menu-items-tree">
 			<Treeview
 				NodeComponent={NavigationMenuItemsTreeNode}
 				nodes={nodes}

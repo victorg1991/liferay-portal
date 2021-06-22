@@ -17,7 +17,7 @@ import React from 'react';
 export default function NavigationMenuItemsTreeNode({node}) {
 	return (
 		<div>
-			<p>{node.name}</p>
+			<p className="m-0">{node.name}</p>
 		</div>
 	);
 }
