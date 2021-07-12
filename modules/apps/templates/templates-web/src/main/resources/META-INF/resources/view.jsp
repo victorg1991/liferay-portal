@@ -27,6 +27,7 @@ TemplatesManagementToolbarDisplayContext templatesManagementToolbarDisplayContex
 
 <clay:management-toolbar
 	managementToolbarDisplayContext="<%= templatesManagementToolbarDisplayContext %>"
+	propsTransformer="js/propTransformers/TemplateManagementToolbarPropsTransformer"
 />
 
 <portlet:actionURL name="/templates/delete_template" var="deleteTemplateURL" />
