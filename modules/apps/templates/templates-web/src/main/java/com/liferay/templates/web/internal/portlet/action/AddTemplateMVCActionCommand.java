@@ -40,6 +40,8 @@ public class AddTemplateMVCActionCommand extends BaseMVCActionCommand {
 	protected void doProcessAction(
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
+
+		System.out.println("");
 	}
 
 }

@@ -26,6 +26,7 @@ TemplatesManagementToolbarDisplayContext templatesManagementToolbarDisplayContex
 %>
 
 <clay:management-toolbar
+	additionalProps="<%= templatesManagementToolbarDisplayContext.getAdditionalProps() %>"
 	managementToolbarDisplayContext="<%= templatesManagementToolbarDisplayContext %>"
 	propsTransformer="js/propTransformers/TemplateManagementToolbarPropsTransformer"
 />
@@ -84,7 +85,6 @@ TemplatesManagementToolbarDisplayContext templatesManagementToolbarDisplayContex
 			</liferay-ui:search-container-row>
 
 			<liferay-ui:search-iterator
-				displayStyle="icon"
 				markupView="lexicon"
 			/>
 		</liferay-ui:search-container>

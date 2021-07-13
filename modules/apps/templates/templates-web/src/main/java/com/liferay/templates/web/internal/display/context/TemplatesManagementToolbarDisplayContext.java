@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.templates.web.internal.util.TemplatesUtil;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.portlet.PortletURL;
 
@@ -72,6 +73,26 @@ public class TemplatesManagementToolbarDisplayContext
 		).build();
 	}
 
+	public Map<String, Object> getAdditionalProps() {
+		return HashMapBuilder.<String, Object>put(
+			"addTemplateURL",
+			PortletURLBuilder.createActionURL(
+				liferayPortletResponse
+			).setActionName(
+				"/templates/add_template"
+			).setBackURL(
+				_themeDisplay.getURLCurrent()
+			).setParameter(
+				"_tabs1", _tabs1
+			).buildString()
+		).put(
+			"itemTypes",
+			TemplatesUtil.getMappingTypesJSONArray(
+				_tabs1, _themeDisplay.getScopeGroupId(),
+				_themeDisplay.getLocale())
+		).build();
+	}
+
 	public String getAvailableActions(DDMTemplate ddmTemplate) {
 		return _DELETE_SELECTED_TEMPLATES;
 	}
@@ -99,29 +120,12 @@ public class TemplatesManagementToolbarDisplayContext
 				dropdownItem.setData(
 					HashMapBuilder.<String, Object>put(
 						"action", "addTemplate"
-					).put(
-						"addTemplatsURL",
-						PortletURLBuilder.createActionURL(
-							liferayPortletResponse
-						).setActionName(
-							"/templates/add_template"
-						).setBackURL(
-							_themeDisplay.getURLCurrent()
-						).setParameter(
-							"_tabs1", _tabs1
-						).buildString()
 					).build());
 
 				dropdownItem.setLabel(
 					LanguageUtil.get(httpServletRequest, "add"));
 			}
 		).build();
-
-		creationMenu.put(
-			"mappingTypes",
-			TemplatesUtil.getMappingTypesJSONArray(
-				_tabs1, _themeDisplay.getScopeGroupId(),
-				_themeDisplay.getLocale()));
 
 		return creationMenu;
 	}

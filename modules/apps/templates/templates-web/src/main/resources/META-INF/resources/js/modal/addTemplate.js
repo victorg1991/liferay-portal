@@ -12,20 +12,13 @@
  * details.
  */
 
-import openTemplateModal from '../modal/openTemplateModal';
+import {fetch, objectToFormData} from 'frontend-js-web';
 
-export default function propsTransformer({
-	additionalProps: {addTemplateURL, itemTypes},
-	...otherProps
-}) {
-	return {
-		...otherProps,
-		onCreateButtonClick() {
-			openTemplateModal({
-				addTemplateURL,
-				itemTypes,
-				namespace: otherProps.portletNamespace,
-			});
-		},
-	};
+export default function addTemplate({addTemplateURL, body, namespace}) {
+	const namespacedBody = Liferay.Util.ns(namespace, body);
+
+	return fetch(addTemplateURL, {
+		body: objectToFormData(namespacedBody),
+		method: 'POST',
+	}).then((response) => response.json());
 }
