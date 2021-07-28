@@ -14,7 +14,6 @@
 
 package com.liferay.template.web.internal.display.context;
 
-import com.liferay.dynamic.data.mapping.constants.DDMTemplateConstants;
 import com.liferay.dynamic.data.mapping.model.DDMTemplate;
 import com.liferay.frontend.taglib.clay.servlet.taglib.display.context.SearchContainerManagementToolbarDisplayContext;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
@@ -24,25 +23,15 @@ import com.liferay.petra.portlet.url.builder.PortletURLBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
-import com.liferay.portal.kernel.template.TemplateHandler;
-import com.liferay.portal.kernel.template.TemplateHandlerRegistryUtil;
-import com.liferay.portal.kernel.template.comparator.TemplateHandlerComparator;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.liferay.template.web.internal.security.permissions.resource.DDMTemplatePermission;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
 import javax.portlet.PortletURL;
 
@@ -83,6 +72,10 @@ public class TemplateManagementToolbarDisplayContext
 		).build();
 	}
 
+	public Map<String, Object> getAdditionalProps() {
+		return _templateDisplayContext.getAdditionalProps();
+	}
+
 	public String getAvailableActions(DDMTemplate ddmTemplate)
 		throws PortalException {
 
@@ -112,54 +105,7 @@ public class TemplateManagementToolbarDisplayContext
 
 	@Override
 	public CreationMenu getCreationMenu() {
-		if (!_templateDisplayContext.isAddDDMTemplateEnabled()) {
-			return null;
-		}
-
-		List<TemplateHandler> templateHandlers =
-			_getPortletDisplayTemplateHandlers(_themeDisplay.getLocale());
-
-		if (templateHandlers.isEmpty()) {
-			return null;
-		}
-
-		CreationMenu creationMenu = new CreationMenu();
-
-		PortletURL addDDMTemplateURL = PortletURLBuilder.createRenderURL(
-			liferayPortletResponse
-		).setMVCPath(
-			"/edit_ddm_template.jsp"
-		).setRedirect(
-			_themeDisplay.getURLCurrent()
-		).setParameter(
-			"groupId", _themeDisplay.getScopeGroupId()
-		).setParameter(
-			"type", DDMTemplateConstants.TEMPLATE_TYPE_DISPLAY
-		).buildPortletURL();
-
-		for (TemplateHandler templateHandler : templateHandlers) {
-			addDDMTemplateURL.setParameter(
-				"classNameId",
-				String.valueOf(
-					PortalUtil.getClassNameId(templateHandler.getClassName())));
-			addDDMTemplateURL.setParameter("classPK", "0");
-			addDDMTemplateURL.setParameter(
-				"resourceClassNameId",
-				String.valueOf(
-					PortalUtil.getClassNameId(PortletDisplayTemplate.class)));
-
-			creationMenu.addPrimaryDropdownItem(
-				dropdownItem -> {
-					dropdownItem.setHref(addDDMTemplateURL);
-					dropdownItem.setLabel(
-						LanguageUtil.get(
-							httpServletRequest,
-							templateHandler.getName(
-								_themeDisplay.getLocale())));
-				});
-		}
-
-		return creationMenu;
+		return _templateDisplayContext.getCreationMenu();
 	}
 
 	@Override
@@ -183,52 +129,6 @@ public class TemplateManagementToolbarDisplayContext
 	protected String[] getOrderByKeys() {
 		return new String[] {"modified-date", "id"};
 	}
-
-	private boolean _containsAddPortletDisplayTemplatePermission(
-		String resourceName) {
-
-		try {
-			return PortletPermissionUtil.contains(
-				_themeDisplay.getPermissionChecker(),
-				_themeDisplay.getScopeGroupId(), _themeDisplay.getLayout(),
-				resourceName, ActionKeys.ADD_PORTLET_DISPLAY_TEMPLATE, false,
-				false);
-		}
-		catch (PortalException portalException) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(
-					"Unable to check permission for resource name " +
-						resourceName,
-					portalException);
-			}
-		}
-
-		return false;
-	}
-
-	private List<TemplateHandler> _getPortletDisplayTemplateHandlers(
-		Locale locale) {
-
-		List<TemplateHandler> templateHandlersList = new ArrayList<>();
-
-		for (TemplateHandler templateHandler :
-				TemplateHandlerRegistryUtil.getTemplateHandlers()) {
-
-			if (_containsAddPortletDisplayTemplatePermission(
-					templateHandler.getResourceName())) {
-
-				templateHandlersList.add(templateHandler);
-			}
-		}
-
-		ListUtil.sort(
-			templateHandlersList, new TemplateHandlerComparator(locale));
-
-		return templateHandlersList;
-	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		TemplateManagementToolbarDisplayContext.class);
 
 	private final TemplateDisplayContext _templateDisplayContext;
 	private final ThemeDisplay _themeDisplay;
