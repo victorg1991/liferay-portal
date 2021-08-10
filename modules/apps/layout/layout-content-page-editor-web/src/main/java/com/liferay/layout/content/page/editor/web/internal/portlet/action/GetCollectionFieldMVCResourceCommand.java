@@ -43,6 +43,7 @@ import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.InfoListItemSelectorReturnType;
 import com.liferay.item.selector.criteria.info.item.criterion.InfoListItemSelectorCriterion;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
+import com.liferay.layout.content.page.editor.web.internal.util.LayoutObjectReferenceUtil;
 import com.liferay.layout.list.retriever.DefaultLayoutListRetrieverContext;
 import com.liferay.layout.list.retriever.LayoutListRetriever;
 import com.liferay.layout.list.retriever.LayoutListRetrieverTracker;
@@ -72,10 +73,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 
 import javax.portlet.PortletURL;
@@ -188,7 +187,8 @@ public class GetCollectionFieldMVCResourceCommand
 						new DefaultLayoutListRetrieverContext();
 
 				defaultLayoutListRetrieverContext.setConfiguration(
-					_getConfiguration(layoutObjectReferenceJSONObject));
+					LayoutObjectReferenceUtil.getConfiguration(
+						layoutObjectReferenceJSONObject));
 
 				Object infoItem = _getInfoItem(httpServletRequest);
 
@@ -307,40 +307,6 @@ public class GetCollectionFieldMVCResourceCommand
 		}
 
 		return jsonObject;
-	}
-
-	private Map<String, String[]> _getConfiguration(
-		JSONObject layoutObjectReferenceJSONObject) {
-
-		JSONObject configurationJSONObject =
-			layoutObjectReferenceJSONObject.getJSONObject("config");
-
-		if (configurationJSONObject == null) {
-			return null;
-		}
-
-		Map<String, String[]> configuration = new HashMap<>();
-
-		for (String key : configurationJSONObject.keySet()) {
-			List<String> values = new ArrayList<>();
-
-			Object object = configurationJSONObject.get(key);
-
-			if (object instanceof JSONArray) {
-				JSONArray jsonArray = configurationJSONObject.getJSONArray(key);
-
-				for (int i = 0; i < jsonArray.length(); i++) {
-					values.add(jsonArray.getString(i));
-				}
-			}
-			else {
-				values.add(String.valueOf(object));
-			}
-
-			configuration.put(key, values.toArray(new String[0]));
-		}
-
-		return configuration;
 	}
 
 	private String _getCustomCollectionSelectorURL(

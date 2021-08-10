@@ -19,6 +19,7 @@ import com.liferay.info.item.ClassPKInfoItemIdentifier;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
+import com.liferay.layout.content.page.editor.web.internal.util.LayoutObjectReferenceUtil;
 import com.liferay.layout.list.retriever.DefaultLayoutListRetrieverContext;
 import com.liferay.layout.list.retriever.LayoutListRetriever;
 import com.liferay.layout.list.retriever.LayoutListRetrieverTracker;
@@ -115,6 +116,10 @@ public class GetCollectionItemCountMVCResourceCommand
 				DefaultLayoutListRetrieverContext
 					defaultLayoutListRetrieverContext =
 						new DefaultLayoutListRetrieverContext();
+
+				defaultLayoutListRetrieverContext.setConfiguration(
+					LayoutObjectReferenceUtil.getConfiguration(
+						layoutObjectReferenceJSONObject));
 
 				Object infoItem = _getInfoItem(httpServletRequest);
 
