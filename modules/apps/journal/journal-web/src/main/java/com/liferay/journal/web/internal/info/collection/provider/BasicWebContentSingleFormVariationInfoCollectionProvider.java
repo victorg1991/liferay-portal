@@ -34,7 +34,6 @@ import com.liferay.info.sort.Sort;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.web.internal.search.JournalSearcher;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -241,9 +240,6 @@ public class BasicWebContentSingleFormVariationInfoCollectionProvider
 
 		assetTags.sort(new AssetTagNameComparator(true));
 
-		options.add(
-			new SelectInfoFieldType.Option(StringPool.BLANK, StringPool.BLANK));
-
 		for (AssetTag assetTag : assetTags) {
 			options.add(
 				new SelectInfoFieldType.Option(
@@ -255,6 +251,8 @@ public class BasicWebContentSingleFormVariationInfoCollectionProvider
 			SelectInfoFieldType.INSTANCE
 		).name(
 			Field.ASSET_TAG_NAMES
+		).attribute(
+			SelectInfoFieldType.MULTIPLE, true
 		).attribute(
 			SelectInfoFieldType.OPTIONS, options
 		).labelInfoLocalizedValue(
