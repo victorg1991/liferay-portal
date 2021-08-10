@@ -133,19 +133,22 @@ public class InfoFormUtil {
 			List<SelectInfoFieldType.Option> options = optionsOptional.orElse(
 				Collections.emptyList());
 
+			Optional<Boolean> multipleOptional = infoField.getAttributeOptional(
+				SelectInfoFieldType.MULTIPLE);
+
+			Boolean multiple = multipleOptional.orElse(false);
+
+			JSONArray validValuesJSONArray = JSONFactoryUtil.createJSONArray();
+
 			if (ListUtil.isNotEmpty(options)) {
 				try {
-					JSONArray validValuesJSONArray = JSONUtil.toJSONArray(
+					validValuesJSONArray = JSONUtil.toJSONArray(
 						options,
 						option -> JSONUtil.put(
 							"label", String.valueOf(option.getLabel())
 						).put(
 							"value", String.valueOf(option.getValue())
 						));
-
-					jsonObject.put(
-						"typeOptions",
-						JSONUtil.put("validValues", validValuesJSONArray));
 				}
 				catch (Exception exception) {
 					if (_log.isDebugEnabled()) {
@@ -153,6 +156,14 @@ public class InfoFormUtil {
 					}
 				}
 			}
+
+			jsonObject.put(
+				"typeOptions",
+				JSONUtil.put(
+					"multiSelect", multiple
+				).put(
+					"validValues", validValuesJSONArray
+				));
 		}
 
 		return jsonObject;
