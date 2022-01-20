@@ -12,49 +12,35 @@
  * details.
  */
 
-import {delegate, fetch, toggleDisabled} from 'frontend-js-web';
+import {
+	delegate,
+	fetch,
+	objectToFormData,
+	runScriptsInElement,
+} from 'frontend-js-web';
 
-export default function ({assetClassName, eventName, namespace}) {
-	const structureFormContainer = document.getElementById(
-		`${namespace}selectDDMStructureFieldForm`
+export default function ({
+	assetClassName,
+	eventName,
+	getFieldItemURL,
+	namespace,
+}) {
+	const fieldNameSelector = document.getElementById(
+		`${namespace}fieldName`
 	);
-
-	const selectorButtons = structureFormContainer.querySelectorAll(
-		'.selector-button'
+	const selectDDMStructureFieldForm = document.getElementById(
+		`${namespace}selectDDMStructureFieldForm`
 	);
 
 	const eventDelegates = [];
 
-	selectorButtons.forEach((button) => {
-		const fieldsnamespace = button.dataset.fieldsnamespace;
-		const value = JSON.parse(button.dataset.value);
-
-		const componentId = `${namespace}${fieldsnamespace}ddmForm`;
-
-		Liferay.componentReady(componentId).then(() => {
-			const initialDDMForm = Liferay.component(componentId);
-
-			initialDDMForm.get('fields').forEach((field) => {
-				if (field.get('name') === value.ddmStructureFieldName) {
-					field.setValue(value.ddmStructureFieldValue);
-				}
-			});
-		});
-	});
-
 	const onSubmitForm = function (event) {
 		event.preventDefault();
-		const selectorButton = event.target.closest('.selector-button');
-
-		const dataset = selectorButton.dataset;
-
-		const ddmForm = Liferay.component(
-			`${namespace}${dataset.fieldsnamespace}ddmForm`
-		);
+		const ddmForm = Liferay.component(`${namespace}ddmForm`);
 
 		ddmForm.updateDDMFormInputValue();
 
-		const form = document.getElementById(dataset.form);
+		const form = document.getElementById(`${namespace}fieldForm`);
 
 		fetch(form.action, {
 			body: new FormData(form),
@@ -65,13 +51,17 @@ export default function ({assetClassName, eventName, namespace}) {
 				const message = document.getElementById(`${namespace}message`);
 
 				if (response.success) {
-					dataset.className = assetClassName;
-					dataset.displayValue = response.displayValue;
-					dataset.value = response.value;
-
 					message.classList.add('hide');
 
-					Liferay.Util.getOpener().Liferay.fire(eventName, dataset);
+					Liferay.Util.getOpener().Liferay.fire(eventName, {
+						data: {
+							className: assetClassName,
+							displayValue: response.displayValue,
+							label: fieldNameSelector.options[fieldNameSelector.selectedIndex].label,
+							name: fieldNameSelector.value,
+							value: response.value,
+						},
+					});
 
 					Liferay.Util.getWindow().destroy();
 				}
@@ -82,7 +72,7 @@ export default function ({assetClassName, eventName, namespace}) {
 	};
 
 	const clickSubmitForm = delegate(
-		structureFormContainer,
+		selectDDMStructureFieldForm,
 		'click',
 		'.selector-button',
 		onSubmitForm
@@ -90,47 +80,38 @@ export default function ({assetClassName, eventName, namespace}) {
 
 	eventDelegates.push(clickSubmitForm);
 
-	const classTypeFieldsSearchContainerId = `${namespace}classTypeFieldsSearchContainer`;
-	const fieldSubtypeForms = structureFormContainer.querySelectorAll('form');
+	const selectDDMStructureFieldContainer = document.getElementById(
+		`${namespace}selectDDMStructureFieldContainer`
+	);
 
-	Liferay.componentReady(classTypeFieldsSearchContainerId).then(() => {
-		const classTypeFieldsSearchContainer = document.getElementById(
-			classTypeFieldsSearchContainerId
-		);
+	const onChangeField = () => {
+		if (fieldNameSelector.value !== '') {
+			fetch(getFieldItemURL, {
+				body: objectToFormData({
+					[`${namespace}name`]: fieldNameSelector.value,
+				}),
+				method: 'POST',
+			})
+				.then((response) => response.text())
+				.then((response) => {
+					selectDDMStructureFieldContainer.innerHTML = response;
 
-		const toggleDisabledFormFields = (form, state) => {
-			toggleDisabled(
-				form.querySelectorAll('input, select, textarea'),
-				state
-			);
-		};
+					runScriptsInElement(selectDDMStructureFieldContainer);
+				});
+		}
+		else {
+			selectDDMStructureFieldContainer.innerHTML = '';
+		}
+	};
 
-		const onToggleDisabled = ({target}) => {
-			const {buttonId, formId} = target.dataset;
+	const changeField = delegate(
+		selectDDMStructureFieldForm,
+		'change',
+		`select#${namespace}fieldName`,
+		onChangeField
+	);
 
-			toggleDisabled(selectorButtons, true);
-
-			fieldSubtypeForms.forEach((fieldSubtypeForm) => {
-				toggleDisabledFormFields(fieldSubtypeForm, true);
-			});
-
-			toggleDisabled(`#${buttonId}`, false);
-
-			toggleDisabledFormFields(
-				document.querySelector(`#${formId}`),
-				false
-			);
-		};
-
-		const clickToggleDisabled = delegate(
-			classTypeFieldsSearchContainer,
-			'click',
-			`input[name=${namespace}selectStructureFieldSubtype]`,
-			onToggleDisabled
-		);
-
-		eventDelegates.push(clickToggleDisabled);
-	});
+	eventDelegates.push(changeField);
 
 	return {
 		dispose() {
