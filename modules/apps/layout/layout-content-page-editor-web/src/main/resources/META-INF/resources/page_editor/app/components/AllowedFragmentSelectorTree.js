@@ -137,7 +137,7 @@ const AllowedFragmentSelectorTree = ({dropZoneConfig, onSelectedFragment}) => {
 		onSelectedFragment,
 	]);
 
-	// NEW
+	// LPS-144630 
 	const nodeByName = (items, name) => {
 		return items.reduce(function reducer(acc, item) {
 			if (item.name.match(new RegExp(name, 'i'))) {
@@ -152,15 +152,10 @@ const AllowedFragmentSelectorTree = ({dropZoneConfig, onSelectedFragment}) => {
 		}, []);
 	};
 
-
 	const [items, setItems] = useState(nodes);
 	const initialItemsRef = useRef(items);
 	const [selectedKeys, setSelectedKeys] = useState(new Set(fragmentEntryKeys));
 	const expandedKeys = new Set(['lfr-all-fragments-id'].concat(fragmentEntryKeys));
-
-	// console.log('expandedKeys', expandedKeys);
-	// console.log('initialFragmentEntryKeys', initialFragmentEntryKeys);
-	// console.log('selectedKeys', selectedKeys);
 
 	const handleInputChange = (event) => {
 		const value = event.target.value;
@@ -173,7 +168,6 @@ const AllowedFragmentSelectorTree = ({dropZoneConfig, onSelectedFragment}) => {
 		const newItems = nodeByName(items, value);
 
 		if (newItems.length) {
-			console.log('setting items to', newItems);
 			setItems(newItems);
 		}
 	};
@@ -207,20 +201,24 @@ const AllowedFragmentSelectorTree = ({dropZoneConfig, onSelectedFragment}) => {
 							open: <ClayIcon symbol="plus" />,
 						}}
 						expandedKeys={expandedKeys}
-						items={nodes}
+						items={items}
 						onItemsChange={noop}
-						onSelectionChange={()=>{
-							console.log('onSelectionChange dude');
-						}}
 						nestedKey="children"
 						selectedKeys={selectedKeys}
+						onSelectionChange={(newSelectedKeys) => {
+							setSelectedKeys(selection);
+							debugger;
+						}}
 						selectionMode="multiple-recursive"
 						showExpanderOnHover={false}
 					>
 						{(item) => (
 							<ClayTreeView.Item>
 								<ClayTreeView.ItemStack>
-									<ClayCheckbox />
+									<ClayCheckbox onChange={(event) => {
+										debugger;
+									}} />
+
 									{item.name}
 								</ClayTreeView.ItemStack>
 								<ClayTreeView.Group items={item.children}>
