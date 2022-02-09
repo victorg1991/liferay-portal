@@ -21,6 +21,7 @@ import {config} from '../config/index';
 import {useDispatch} from '../contexts/StoreContext';
 import updateItemConfig from '../thunks/updateItemConfig';
 import AllowedFragmentSelector from './AllowedFragmentSelector';
+import AllowedFragmentSelectorTree from './AllowedFragmentSelectorTree';
 
 const ManageAllowedFragmentModal = ({item, observer, onClose}) => {
 	const dispatch = useDispatch();
@@ -75,10 +76,16 @@ const ManageAllowedFragmentModal = ({item, observer, onClose}) => {
 					)}
 				</p>
 
-				<AllowedFragmentSelector
-					dropZoneConfig={item.config}
-					onSelectedFragment={onSelectedFragment}
-				/>
+				{window.TEST 
+					? (<AllowedFragmentSelectorTree
+						dropZoneConfig={item.config}
+						onSelectedFragment={onSelectedFragment}
+					/>) 
+					: (<AllowedFragmentSelector
+						dropZoneConfig={item.config}
+						onSelectedFragment={onSelectedFragment}
+					/>) 
+				}
 			</ClayModal.Body>
 
 			<ClayModal.Footer

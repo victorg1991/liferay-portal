@@ -87,7 +87,7 @@ const getSelectedNodeIds = (
 
 function noop() {}
 
-const AllowedFragmentSelector = ({dropZoneConfig, onSelectedFragment}) => {
+const AllowedFragmentSelectorTree = ({dropZoneConfig, onSelectedFragment}) => {
 	const fragments = useSelector((state) => state.fragments);
 
 	const fragmentEntryKeysArray = useMemo(
@@ -119,7 +119,6 @@ const AllowedFragmentSelector = ({dropZoneConfig, onSelectedFragment}) => {
 		)
 	);
 
-
 	useEffect(() => {
 		const newFragmentEntryKeys = getSelectedNodeIds(
 			allowNewFragmentEntries,
@@ -138,18 +137,60 @@ const AllowedFragmentSelector = ({dropZoneConfig, onSelectedFragment}) => {
 		onSelectedFragment,
 	]);
 
+	// NEW
+	const nodeByName = (items, name) => {
+		return items.reduce(function reducer(acc, item) {
+			if (item.name.match(new RegExp(name, 'i'))) {
+				acc.push(item);
+			}
+
+			if (item.children) {
+				acc.concat(item.children.reduce(reducer, acc));
+			}
+
+			return acc;
+		}, []);
+	};
+
+
+	const [items, setItems] = useState(nodes);
+	const initialItemsRef = useRef(items);
+	const [selectedKeys, setSelectedKeys] = useState(new Set(fragmentEntryKeys));
+	const expandedKeys = new Set(['lfr-all-fragments-id'].concat(fragmentEntryKeys));
+
+	// console.log('expandedKeys', expandedKeys);
+	// console.log('initialFragmentEntryKeys', initialFragmentEntryKeys);
+	// console.log('selectedKeys', selectedKeys);
+
+	const handleInputChange = (event) => {
+		const value = event.target.value;
+
+		if (!value) {
+			setItems(initialItemsRef.current);
+			return;
+		}
+
+		const newItems = nodeByName(items, value);
+
+		if (newItems.length) {
+			console.log('setting items to', newItems);
+			setItems(newItems);
+		}
+	};
+
 	return (
 		<>
 			<div className="px-4">
 				<ClayInput
 					className="mb-4"
-					onChange={(event) => setFilter(event.target.value)}
+					onChange={handleInputChange}
 					placeholder={`${Liferay.Language.get('search')}...`}
 					sizing="sm"
 					type="text"
 				/>
 
 				<div className="mb-2 page-editor__allowed-fragment__tree">
+					{/*
 					<Treeview
 						NodeComponent={AllowedFragmentTreeNode}
 						filter={filter}
@@ -157,7 +198,42 @@ const AllowedFragmentSelector = ({dropZoneConfig, onSelectedFragment}) => {
 						initialSelectedNodeIds={[...fragmentEntryKeys]}
 						nodes={nodes}
 						onSelectedNodesChange={setFragmentEntryKeys}
-					/>
+					/> 
+					*/}
+
+					<ClayTreeView
+						expanderIcons={{
+							close: <ClayIcon symbol="hr" />,
+							open: <ClayIcon symbol="plus" />,
+						}}
+						expandedKeys={expandedKeys}
+						items={nodes}
+						onItemsChange={noop}
+						onSelectionChange={()=>{
+							console.log('onSelectionChange dude');
+						}}
+						nestedKey="children"
+						selectedKeys={selectedKeys}
+						selectionMode="multiple-recursive"
+						showExpanderOnHover={false}
+					>
+						{(item) => (
+							<ClayTreeView.Item>
+								<ClayTreeView.ItemStack>
+									<ClayCheckbox />
+									{item.name}
+								</ClayTreeView.ItemStack>
+								<ClayTreeView.Group items={item.children}>
+									{(item) => (
+										<ClayTreeView.Item>
+											<ClayCheckbox />
+											{item.name}
+										</ClayTreeView.Item>
+									)}
+								</ClayTreeView.Group>
+							</ClayTreeView.Item>
+						)}
+					</ClayTreeView>
 				</div>
 			</div>
 
@@ -179,7 +255,7 @@ const AllowedFragmentSelector = ({dropZoneConfig, onSelectedFragment}) => {
 	);
 };
 
-AllowedFragmentSelector.propTypes = {
+AllowedFragmentSelectorTree.propTypes = {
 	dropZoneConfig: PropTypes.shape({
 		allowNewFragmentEntries: PropTypes.bool,
 		fragmentEntryKeys: PropTypes.array,
@@ -187,5 +263,4 @@ AllowedFragmentSelector.propTypes = {
 	onSelectedFragment: PropTypes.func.isRequired,
 };
 
-export {AllowedFragmentSelector};
-export default AllowedFragmentSelector;
+export default AllowedFragmentSelectorTree;
