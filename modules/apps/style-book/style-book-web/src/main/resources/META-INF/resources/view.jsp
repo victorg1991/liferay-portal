@@ -1,4 +1,4 @@
-<%--
+<%@ page import="java.util.Arrays" %><%--
 /**
  * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
@@ -29,28 +29,35 @@ StyleBookDisplayContext styleBookDisplayContext = new StyleBookDisplayContext(re
 	<portlet:param name="redirect" value="<%= currentURL %>" />
 </portlet:actionURL>
 
+
+
 <clay:container-fluid>
 	<aui:form action="<%= deleteStyleBookEntryURL %>" name="fm">
 		<liferay-ui:search-container
-			searchContainer="<%= styleBookDisplayContext.getStyleBookEntriesSearchContainer() %>"
+			emptyResultsMessage='no-custom-fields-are-defined-for-x'
+			id="customFields"
+			iteratorURL="<%= liferayPortletResponse.createRenderURL() %>"
+			total="<%= 3 %>"
 		>
+			<liferay-ui:search-container-results
+				results="<%= Arrays.asList("hola", "que", "tal") %>"
+			/>
 			<liferay-ui:search-container-row
-				className="com.liferay.style.book.model.StyleBookEntry"
-				keyProperty="styleBookEntryId"
-				modelVar="styleBookEntry"
+				className="java.lang.String"
+				modelVar="name"
+				stringKey="<%= true %>"
 			>
 				<liferay-ui:search-container-column-text>
 					<clay:vertical-card
-						propsTransformer="js/StylebookEntryActionDropdownPropsTransformer"
-						verticalCard="<%= new StyleBookVerticalCard(styleBookEntry, renderRequest, renderResponse, searchContainer.getRowChecker()) %>"
+						actionDropdownItems="<%= styleBookDisplayContext.getActionDropdownItems() %>"
+						icon="camera"
+						selectable="<%= true %>"
+						selected="<%= true %>"
+						stickerLabel="JPG"
+						title="ReallySuperInsanelyJustIncrediblyLongAndTotallyNotPossibleWordButWeAreReallyTryingToCoverAllOurBasesHereJustInCaseSomeoneIsNutsAsPerUsual"
 					/>
 				</liferay-ui:search-container-column-text>
 			</liferay-ui:search-container-row>
-
-			<liferay-ui:search-iterator
-				displayStyle="icon"
-				markupView="lexicon"
-			/>
 		</liferay-ui:search-container>
 	</aui:form>
 </clay:container-fluid>
