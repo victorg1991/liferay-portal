@@ -16,6 +16,8 @@ import {COLLECTION_APPLIED_FILTERS_FRAGMENT_ENTRY_KEY} from '../../../../../app/
 import {COLLECTION_FILTER_FRAGMENT_ENTRY_KEY} from '../../../../../app/config/constants/collectionFilterFragmentEntryKey';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../../../../app/config/constants/editableFragmentEntryProcessor';
 import {EDITABLE_TYPES} from '../../../../../app/config/constants/editableTypes';
+import {FORM_CONTAINER_FRAGMENT_KEY} from '../../../../../app/config/constants/formContainerFragmentKey';
+import {FORM_FIELD_FRAGMENT_KEY} from '../../../../../app/config/constants/formFieldFragmentKey';
 import {FRAGMENT_CONFIGURATION_ROLES} from '../../../../../app/config/constants/fragmentConfigurationRoles';
 import {ITEM_TYPES} from '../../../../../app/config/constants/itemTypes';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../app/config/constants/layoutDataItemTypes';
@@ -29,6 +31,8 @@ import {CollectionGeneralPanel} from '../components/item-configuration-panels/Co
 import ContainerGeneralPanel from '../components/item-configuration-panels/ContainerGeneralPanel';
 import {ContainerStylesPanel} from '../components/item-configuration-panels/ContainerStylesPanel';
 import EditableLinkPanel from '../components/item-configuration-panels/EditableLinkPanel';
+import FormContainerGeneralPanel from '../components/item-configuration-panels/FormContainerGeneralPanel';
+import {FormFieldGeneralPanel} from '../components/item-configuration-panels/FormFieldGeneralPanel';
 import {FragmentAdvancedPanel} from '../components/item-configuration-panels/FragmentAdvancedPanel';
 import {FragmentGeneralPanel} from '../components/item-configuration-panels/FragmentGeneralPanel';
 import {FragmentStylesPanel} from '../components/item-configuration-panels/FragmentStylesPanel';
@@ -38,6 +42,13 @@ import {OldCollectionGeneralPanel} from '../components/item-configuration-panels
 import {RowGeneralPanel} from '../components/item-configuration-panels/RowGeneralPanel';
 import {RowStylesPanel} from '../components/item-configuration-panels/RowStylesPanel';
 
+const FRAGMENT_WITH_CUSTOM_PANEL = [
+	COLLECTION_FILTER_FRAGMENT_ENTRY_KEY,
+	COLLECTION_APPLIED_FILTERS_FRAGMENT_ENTRY_KEY,
+	FORM_CONTAINER_FRAGMENT_KEY,
+	FORM_FIELD_FRAGMENT_KEY,
+];
+
 export const PANEL_IDS = {
 	collectionAppliedFiltersGeneral: 'collectionAppliedFiltersGeneral',
 	collectionFilterGeneral: 'collectionFilterGeneral',
@@ -46,6 +57,8 @@ export const PANEL_IDS = {
 	containerStyles: 'containerStyles',
 	editableLink: 'editableLink',
 	editableMapping: 'editableMapping',
+	formContainerGeneral: 'formContainerGeneral',
+	formFieldGeneral: 'formFieldGeneral',
 	fragmentAdvanced: 'fragmentAdvanced',
 	fragmentGeneral: 'fragmentGeneral',
 	fragmentStyles: 'fragmentStyles',
@@ -96,6 +109,16 @@ export const PANELS = {
 		component: FragmentAdvancedPanel,
 		label: Liferay.Language.get('advanced'),
 		priority: 0,
+	},
+	[PANEL_IDS.formContainerGeneral]: {
+		component: FormContainerGeneralPanel,
+		label: Liferay.Language.get('general'),
+		priority: 2,
+	},
+	[PANEL_IDS.formFieldGeneral]: {
+		component: FormFieldGeneralPanel,
+		label: Liferay.Language.get('general'),
+		priority: 2,
 	},
 	[PANEL_IDS.fragmentGeneral]: {
 		component: FragmentGeneralPanel,
@@ -209,7 +232,7 @@ export function selectPanels(activeItemId, activeItemType, state) {
 				),
 			[PANEL_IDS.fragmentStyles]: true,
 			[PANEL_IDS.fragmentGeneral]:
-				fragmentEntryKey !== COLLECTION_FILTER_FRAGMENT_ENTRY_KEY &&
+				!FRAGMENT_WITH_CUSTOM_PANEL.includes(fragmentEntryKey) &&
 				fieldSets.some((fieldSet) =>
 					config.fragmentAdvancedOptionsEnabled
 						? !fieldSet.configurationRole
@@ -222,6 +245,12 @@ export function selectPanels(activeItemId, activeItemType, state) {
 				state.selectedViewportSize === VIEWPORT_SIZES.desktop,
 			[PANEL_IDS.collectionFilterGeneral]:
 				fragmentEntryKey === COLLECTION_FILTER_FRAGMENT_ENTRY_KEY &&
+				state.selectedViewportSize === VIEWPORT_SIZES.desktop,
+			[PANEL_IDS.formContainerGeneral]:
+				fragmentEntryKey === FORM_CONTAINER_FRAGMENT_KEY &&
+				state.selectedViewportSize === VIEWPORT_SIZES.desktop,
+			[PANEL_IDS.formFieldGeneral]:
+				fragmentEntryKey === FORM_FIELD_FRAGMENT_KEY &&
 				state.selectedViewportSize === VIEWPORT_SIZES.desktop,
 		};
 	}
