@@ -30,6 +30,7 @@ import java.util.List;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 
+import com.liferay.portal.kernel.util.PortalUtil;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -68,7 +69,7 @@ public class GetAvailableInfoItemFormProvidersMVCResourceCommand
 				JSONUtil.put(
 					"label", infoForm.getLabel(resourceRequest.getLocale())
 				).put(
-					"value", infoForm.getName()
+					"value", PortalUtil.getClassNameId(infoForm.getName())
 				));
 		}
 

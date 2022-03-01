@@ -89,13 +89,13 @@ export default function FormContainerGeneralPanel({item}) {
 							disabled={availableItemTypes.length === 0}
 							field={{
 								label: Liferay.Language.get('item-type'),
-								name: 'itemType',
+								name: 'classNameId',
 								typeOptions: {
 									validValues: availableItemTypes,
 								},
 							}}
 							onValueSelect={onValueSelect}
-							value={configurationValues.itemType}
+							value={configurationValues.classNameId}
 						/>
 					)}
 				</div>
