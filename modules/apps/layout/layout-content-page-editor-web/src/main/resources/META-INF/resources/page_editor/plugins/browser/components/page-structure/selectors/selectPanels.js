@@ -16,6 +16,7 @@ import {COLLECTION_APPLIED_FILTERS_FRAGMENT_ENTRY_KEY} from '../../../../../app/
 import {COLLECTION_FILTER_FRAGMENT_ENTRY_KEY} from '../../../../../app/config/constants/collectionFilterFragmentEntryKey';
 import {EDITABLE_FRAGMENT_ENTRY_PROCESSOR} from '../../../../../app/config/constants/editableFragmentEntryProcessor';
 import {EDITABLE_TYPES} from '../../../../../app/config/constants/editableTypes';
+import {FORM_CONTAINER_FRAGMENT_KEY} from '../../../../../app/config/constants/formContainerFragmentKey';
 import {FRAGMENT_CONFIGURATION_ROLES} from '../../../../../app/config/constants/fragmentConfigurationRoles';
 import {ITEM_TYPES} from '../../../../../app/config/constants/itemTypes';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../app/config/constants/layoutDataItemTypes';
@@ -29,6 +30,7 @@ import {CollectionGeneralPanel} from '../components/item-configuration-panels/Co
 import ContainerGeneralPanel from '../components/item-configuration-panels/ContainerGeneralPanel';
 import {ContainerStylesPanel} from '../components/item-configuration-panels/ContainerStylesPanel';
 import EditableLinkPanel from '../components/item-configuration-panels/EditableLinkPanel';
+import FormContainerGeneralPanel from '../components/item-configuration-panels/FormContainerGeneralPanel';
 import {FragmentGeneralPanel} from '../components/item-configuration-panels/FragmentGeneralPanel';
 import {FragmentStylesPanel} from '../components/item-configuration-panels/FragmentStylesPanel';
 import ImageSourcePanel from '../components/item-configuration-panels/ImageSourcePanel';
@@ -36,6 +38,12 @@ import {MappingPanel} from '../components/item-configuration-panels/MappingPanel
 import {OldCollectionGeneralPanel} from '../components/item-configuration-panels/OldCollectionGeneralPanel';
 import {RowGeneralPanel} from '../components/item-configuration-panels/RowGeneralPanel';
 import {RowStylesPanel} from '../components/item-configuration-panels/RowStylesPanel';
+
+const FRAGMENT_WITH_CUSTOM_PANEL = [
+	COLLECTION_FILTER_FRAGMENT_ENTRY_KEY,
+	COLLECTION_APPLIED_FILTERS_FRAGMENT_ENTRY_KEY,
+	FORM_CONTAINER_FRAGMENT_KEY,
+];
 
 export const PANEL_IDS = {
 	collectionAppliedFiltersGeneral: 'collectionAppliedFiltersGeneral',
@@ -45,6 +53,7 @@ export const PANEL_IDS = {
 	containerStyles: 'containerStyles',
 	editableLink: 'editableLink',
 	editableMapping: 'editableMapping',
+	formContainerGeneral: 'formContainerGeneral',
 	fragmentGeneral: 'fragmentGeneral',
 	fragmentStyles: 'fragmentStyles',
 	imageSource: 'imageSource',
@@ -88,6 +97,11 @@ export const PANELS = {
 	[PANEL_IDS.editableMapping]: {
 		component: MappingPanel,
 		label: Liferay.Language.get('mapping'),
+		priority: 1,
+	},
+	[PANEL_IDS.formContainerGeneral]: {
+		component: FormContainerGeneralPanel,
+		label: Liferay.Language.get('general'),
 		priority: 1,
 	},
 	[PANEL_IDS.fragmentGeneral]: {
@@ -192,7 +206,7 @@ export function selectPanels(activeItemId, activeItemType, state) {
 		panelsIds = {
 			[PANEL_IDS.fragmentStyles]: canUpdateItemConfiguration,
 			[PANEL_IDS.fragmentGeneral]:
-				fragmentEntryKey !== COLLECTION_FILTER_FRAGMENT_ENTRY_KEY &&
+				!FRAGMENT_WITH_CUSTOM_PANEL.includes(fragmentEntryKey) &&
 				canUpdateItemConfiguration &&
 				fieldSets.some(
 					(fieldSet) =>
@@ -206,6 +220,10 @@ export function selectPanels(activeItemId, activeItemType, state) {
 				canUpdateItemConfiguration,
 			[PANEL_IDS.collectionFilterGeneral]:
 				fragmentEntryKey === COLLECTION_FILTER_FRAGMENT_ENTRY_KEY &&
+				state.selectedViewportSize === VIEWPORT_SIZES.desktop &&
+				canUpdateItemConfiguration,
+			[PANEL_IDS.formContainerGeneral]:
+				fragmentEntryKey === FORM_CONTAINER_FRAGMENT_KEY &&
 				state.selectedViewportSize === VIEWPORT_SIZES.desktop &&
 				canUpdateItemConfiguration,
 		};
