@@ -244,6 +244,10 @@ public class ContentPageEditorDisplayContext {
 				getFragmentEntryActionURL(
 					"/layout_content_page_editor/add_fragment_entry_link")
 			).put(
+				"addFormItemURL",
+				getFragmentEntryActionURL(
+					"/layout_content_page_editor/add_form_item")
+			).put(
 				"addItemURL",
 				getFragmentEntryActionURL(
 					"/layout_content_page_editor/add_item")

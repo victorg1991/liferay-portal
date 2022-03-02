@@ -34,6 +34,6 @@ String id = PortalUUIDUtil.generate();
 		id="<%= id %>"
 		placeholder="<%=placeholder %>"
 		type="text"
-		name="<%= name %>"
+		name="_com_liferay_layout_content_page_editor_web_internal_portlet_ContentPageEditorPortlet_<%= name %>"
 	/>
 </div>

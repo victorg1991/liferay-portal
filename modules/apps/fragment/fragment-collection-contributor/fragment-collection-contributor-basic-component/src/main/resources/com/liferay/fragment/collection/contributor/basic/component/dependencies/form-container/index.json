@@ -31,8 +31,7 @@
 					"name": "includeFiles",
 					"type": "checkbox"
 				}
-			],
-			"label": "form-container-options"
+			]
 		}
 	]
 }

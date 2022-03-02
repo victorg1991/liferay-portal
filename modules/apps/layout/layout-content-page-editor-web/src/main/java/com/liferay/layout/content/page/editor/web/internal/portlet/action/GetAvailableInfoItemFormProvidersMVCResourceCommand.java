@@ -24,13 +24,14 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.Validator;
 
 import java.util.List;
 
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 
-import com.liferay.portal.kernel.util.PortalUtil;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -65,12 +66,14 @@ public class GetAvailableInfoItemFormProvidersMVCResourceCommand
 
 			InfoForm infoForm = infoItemFormProvider.getInfoForm();
 
-			jsonArray.put(
-				JSONUtil.put(
-					"label", infoForm.getLabel(resourceRequest.getLocale())
-				).put(
-					"value", PortalUtil.getClassNameId(infoForm.getName())
-				));
+			if (Validator.isNotNull(infoForm.getName())) {
+				jsonArray.put(
+					JSONUtil.put(
+						"label", infoForm.getLabel(resourceRequest.getLocale())
+					).put(
+						"value", PortalUtil.getClassNameId(infoForm.getName())
+					));
+			}
 		}
 
 		JSONPortletResponseUtil.writeJSON(

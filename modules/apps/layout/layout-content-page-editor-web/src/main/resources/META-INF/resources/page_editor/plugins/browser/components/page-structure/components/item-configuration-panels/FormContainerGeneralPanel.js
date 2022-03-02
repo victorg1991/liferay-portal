@@ -15,18 +15,22 @@
 import React, {useCallback, useEffect} from 'react';
 
 import {SelectField} from '../../../../../../app/components/fragment-configuration-fields/SelectField';
+import {TextField} from '../../../../../../app/components/fragment-configuration-fields/TextField';
 import {COMMON_STYLES_ROLES} from '../../../../../../app/config/constants/commonStylesRoles';
 import {FREEMARKER_FRAGMENT_ENTRY_PROCESSOR} from '../../../../../../app/config/constants/freemarkerFragmentEntryProcessor';
+import {config} from '../../../../../../app/config/index';
 import {
 	useDispatch,
 	useSelector,
 	useSelectorCallback,
 } from '../../../../../../app/contexts/StoreContext';
 import InfoItemService from '../../../../../../app/services/InfoItemService';
+import updateFragmentConfiguration from '../../../../../../app/thunks/updateFragmentConfiguration';
 import {getResponsiveConfig} from '../../../../../../app/utils/getResponsiveConfig';
 import updateConfigurationValue from '../../../../../../app/utils/updateConfigurationValue';
 import Collapse from '../../../../../../common/components/Collapse';
 import {CommonStyles} from './CommonStyles';
+import {FieldSet} from './FieldSet';
 
 export default function FormContainerGeneralPanel({item}) {
 	const [availableItemTypes, setItemTypes] = React.useState([]);
@@ -59,13 +63,12 @@ export default function FormContainerGeneralPanel({item}) {
 	}, []);
 
 	const onValueSelect = useCallback(
-		(name, value) => {
-			updateConfigurationValue({
+		(pairs) => {
+			updateConfigurationValues({
 				dispatch,
 				fragmentEntryLink,
 				languageId,
-				name,
-				value,
+				pairs,
 			});
 		},
 		[dispatch, fragmentEntryLink, languageId]
@@ -94,11 +97,48 @@ export default function FormContainerGeneralPanel({item}) {
 									validValues: availableItemTypes,
 								},
 							}}
-							onValueSelect={onValueSelect}
+							onValueSelect={(name, value) =>
+								onValueSelect([
+									{name, value},
+									{
+										name: 'actionURL',
+										value: config.addFormItemURL,
+									},
+								])
+							}
 							value={configurationValues.classNameId}
 						/>
 					)}
+
+					{!configurationValues.classNameId && (
+						<TextField
+							field={{label: 'action URL', name: 'actionURL'}}
+							onValueSelect={(name, value) =>
+								onValueSelect([{name, value}])
+							}
+							value={configurationValues.actionURL}
+						/>
+					)}
 				</div>
+
+				{fragmentEntryLink.configuration?.fieldSets
+					?.filter((fieldSet) => fieldSet.fields.length)
+					.map((fieldSet, index) => (
+						<div
+							className="mt-3"
+							key={`${fieldSet.label || ''}-${index}`}
+						>
+							<FieldSet
+								fields={fieldSet.fields}
+								label={fieldSet.label}
+								languageId={languageId}
+								onValueSelect={(name, value) =>
+									onValueSelect([{name, value}])
+								}
+								values={configurationValues}
+							/>
+						</div>
+					))}
 			</Collapse>
 
 			<CommonStyles
@@ -107,5 +147,53 @@ export default function FormContainerGeneralPanel({item}) {
 				role={COMMON_STYLES_ROLES.general}
 			/>
 		</>
+	);
+}
+
+function updateConfigurationValues({
+	configuration,
+	dispatch,
+	fragmentEntryLink,
+	languageId,
+	pairs,
+}) {
+	const configurationValues =
+		fragmentEntryLink.editableValues?.[
+			FREEMARKER_FRAGMENT_ENTRY_PROCESSOR
+		] ?? {};
+
+	const localizable =
+		configuration?.fieldSets?.some((fieldSet) =>
+			fieldSet.fields.some(
+				(field) => field.name === name && field.localizable
+			)
+		) ?? false;
+
+	const currentValue = configurationValues[name];
+
+	let nextConfigurationValues = {
+		...configurationValues,
+	};
+
+	for (const {name, value} of pairs) {
+		nextConfigurationValues = {
+			...configurationValues,
+			[name]: localizable
+				? {
+						...(typeof currentValue === 'object'
+							? currentValue
+							: {[config.defaultLanguageId]: currentValue}),
+						[languageId]: value,
+				  }
+				: value,
+		};
+	}
+
+	dispatch(
+		updateFragmentConfiguration({
+			configurationValues: nextConfigurationValues,
+			fragmentEntryLink,
+			languageId,
+		})
 	);
 }
