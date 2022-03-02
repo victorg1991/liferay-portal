@@ -227,6 +227,10 @@ public class ContentPageEditorDisplayContext {
 		return HashMapBuilder.<String, Object>put(
 			"config",
 			HashMapBuilder.<String, Object>put(
+				"addFormItemURL",
+				getFragmentEntryActionURL(
+					"/layout_content_page_editor/add_form_item")
+			).put(
 				"addFragmentCompositionURL",
 				getFragmentEntryActionURL(
 					"/layout_content_page_editor/add_fragment_composition")
@@ -243,10 +247,6 @@ public class ContentPageEditorDisplayContext {
 				"addFragmentEntryLinkURL",
 				getFragmentEntryActionURL(
 					"/layout_content_page_editor/add_fragment_entry_link")
-			).put(
-				"addFormItemURL",
-				getFragmentEntryActionURL(
-					"/layout_content_page_editor/add_form_item")
 			).put(
 				"addItemURL",
 				getFragmentEntryActionURL(

@@ -27,7 +27,6 @@ import {
 import InfoItemService from '../../../../../../app/services/InfoItemService';
 import updateFragmentConfiguration from '../../../../../../app/thunks/updateFragmentConfiguration';
 import {getResponsiveConfig} from '../../../../../../app/utils/getResponsiveConfig';
-import updateConfigurationValue from '../../../../../../app/utils/updateConfigurationValue';
 import Collapse from '../../../../../../common/components/Collapse';
 import {CommonStyles} from './CommonStyles';
 import {FieldSet} from './FieldSet';
@@ -80,6 +79,12 @@ export default function FormContainerGeneralPanel({item}) {
 		fragmentEntryLink.editableValues[FREEMARKER_FRAGMENT_ENTRY_PROCESSOR] ||
 		{};
 
+	const classNameId = configurationValues.classNameId;
+
+	const selectedItemType = availableItemTypes.find(
+		({value}) => value === classNameId
+	);
+
 	return (
 		<>
 			<Collapse
@@ -100,17 +105,41 @@ export default function FormContainerGeneralPanel({item}) {
 							onValueSelect={(name, value) =>
 								onValueSelect([
 									{name, value},
+									{name: 'classTypeId', value: 0},
 									{
 										name: 'actionURL',
 										value: config.addFormItemURL,
 									},
 								])
 							}
-							value={configurationValues.classNameId}
+							value={classNameId}
 						/>
 					)}
 
-					{!configurationValues.classNameId && (
+					{selectedItemType?.subtypes.length > 0 && (
+						<SelectField
+							disabled={availableItemTypes.length === 0}
+							field={{
+								label: Liferay.Language.get('item-type'),
+								name: 'classTypeId',
+								typeOptions: {
+									validValues: [
+										{
+											label: Liferay.Language.get('none'),
+											value: '',
+										},
+										...selectedItemType?.subtypes,
+									],
+								},
+							}}
+							onValueSelect={(name, value) =>
+								onValueSelect([{name, value}])
+							}
+							value={classNameId}
+						/>
+					)}
+
+					{!classNameId && (
 						<TextField
 							field={{label: 'action URL', name: 'actionURL'}}
 							onValueSelect={(name, value) =>
@@ -177,7 +206,7 @@ function updateConfigurationValues({
 
 	for (const {name, value} of pairs) {
 		nextConfigurationValues = {
-			...configurationValues,
+			...nextConfigurationValues,
 			[name]: localizable
 				? {
 						...(typeof currentValue === 'object'

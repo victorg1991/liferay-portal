@@ -14,20 +14,25 @@
 
 package com.liferay.layout.content.page.editor.web.internal.portlet.action;
 
-import com.liferay.info.form.InfoForm;
+import com.liferay.info.item.InfoItemClassDetails;
+import com.liferay.info.item.InfoItemFormVariation;
 import com.liferay.info.item.InfoItemServiceTracker;
-import com.liferay.info.item.provider.InfoItemFormProvider;
+import com.liferay.info.item.provider.InfoItemFormVariationsProvider;
+import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.layout.content.page.editor.constants.ContentPageEditorPortletKeys;
+import com.liferay.layout.page.template.info.item.capability.DisplayPageInfoItemCapability;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Locale;
 
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
@@ -54,30 +59,72 @@ public class GetAvailableInfoItemFormProvidersMVCResourceCommand
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
-		List<InfoItemFormProvider<?>> infoItemFormProviders =
-			_infoItemServiceTracker.getAllInfoItemServices(
-				(Class<InfoItemFormProvider<?>>)
-					(Class<?>)InfoItemFormProvider.class);
+		ThemeDisplay themeDisplay = (ThemeDisplay)resourceRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 
-		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+		JSONArray mappingTypesJSONArray = JSONFactoryUtil.createJSONArray();
 
-		for (InfoItemFormProvider<?> infoItemFormProvider :
-				infoItemFormProviders) {
+		for (InfoItemClassDetails infoItemClassDetails :
+				_infoItemServiceTracker.getInfoItemClassDetails(
+					DisplayPageInfoItemCapability.KEY)) {
 
-			InfoForm infoForm = infoItemFormProvider.getInfoForm();
-
-			if (Validator.isNotNull(infoForm.getName())) {
-				jsonArray.put(
-					JSONUtil.put(
-						"label", infoForm.getLabel(resourceRequest.getLocale())
-					).put(
-						"value", PortalUtil.getClassNameId(infoForm.getName())
-					));
-			}
+			mappingTypesJSONArray.put(
+				JSONUtil.put(
+					"label",
+					infoItemClassDetails.getLabel(themeDisplay.getLocale())
+				).put(
+					"subtypes",
+					_getMappingFormVariationsJSONArray(
+						infoItemClassDetails, themeDisplay.getScopeGroupId(),
+						themeDisplay.getLocale())
+				).put(
+					"value",
+					String.valueOf(
+						PortalUtil.getClassNameId(
+							infoItemClassDetails.getClassName()))
+				));
 		}
 
 		JSONPortletResponseUtil.writeJSON(
-			resourceRequest, resourceResponse, jsonArray);
+			resourceRequest, resourceResponse, mappingTypesJSONArray);
+	}
+
+	private JSONArray _getMappingFormVariationsJSONArray(
+		InfoItemClassDetails infoItemClassDetails, long groupId,
+		Locale locale) {
+
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		InfoItemFormVariationsProvider<?> infoItemFormVariationsProvider =
+			_infoItemServiceTracker.getFirstInfoItemService(
+				InfoItemFormVariationsProvider.class,
+				infoItemClassDetails.getClassName());
+
+		if (infoItemFormVariationsProvider == null) {
+			return jsonArray;
+		}
+
+		Collection<InfoItemFormVariation> infoItemFormVariations =
+			infoItemFormVariationsProvider.getInfoItemFormVariations(groupId);
+
+		for (InfoItemFormVariation infoItemFormVariation :
+				infoItemFormVariations) {
+
+			jsonArray.put(
+				JSONUtil.put(
+					"label",
+					() -> {
+						InfoLocalizedValue<String> labelInfoLocalizedValue =
+							infoItemFormVariation.getLabelInfoLocalizedValue();
+
+						return labelInfoLocalizedValue.getValue(locale);
+					}
+				).put(
+					"value", String.valueOf(infoItemFormVariation.getKey())
+				));
+		}
+
+		return jsonArray;
 	}
 
 	@Reference

@@ -21,20 +21,22 @@ import {TextField} from '../../../../../../app/components/fragment-configuration
 import {COMMON_STYLES_ROLES} from '../../../../../../app/config/constants/commonStylesRoles';
 import {FORM_CONTAINER_FRAGMENT_KEY} from '../../../../../../app/config/constants/formContainerFragmentKey';
 import {FREEMARKER_FRAGMENT_ENTRY_PROCESSOR} from '../../../../../../app/config/constants/freemarkerFragmentEntryProcessor';
+import {config} from '../../../../../../app/config/index';
 import {
 	useDispatch,
 	useSelector,
 } from '../../../../../../app/contexts/StoreContext';
 import InfoItemService from '../../../../../../app/services/InfoItemService';
+import updateFragmentConfiguration from '../../../../../../app/thunks/updateFragmentConfiguration';
 import {getResponsiveConfig} from '../../../../../../app/utils/getResponsiveConfig';
 import updateConfigurationValue from '../../../../../../app/utils/updateConfigurationValue';
 import Collapse from '../../../../../../common/components/Collapse';
 import {CommonStyles} from './CommonStyles';
 
-function loadMappingFields(classNameId) {
+function loadMappingFields(classNameId, classTypeId) {
 	return InfoItemService.getAvailableStructureMappingFields({
 		classNameId,
-		classTypeId: 0,
+		classTypeId: classTypeId || 0,
 		onNetworkStatus: () => {},
 	}).then((response) => {
 		if (Array.isArray(response)) {
@@ -182,13 +184,9 @@ export function FormFieldGeneralPanel({item}) {
 			formContainerFragmentConfiguration.classNameId &&
 			fields.length === 0
 		) {
-			onValueSelect(
-				'classNameId',
-				formContainerFragmentConfiguration.classNameId
-			);
-
 			loadMappingFields(
-				formContainerFragmentConfiguration.classNameId
+				formContainerFragmentConfiguration.classNameId,
+				formContainerFragmentConfiguration.classTypeId
 			).then((response) => {
 				setFields(response);
 			});
@@ -196,13 +194,14 @@ export function FormFieldGeneralPanel({item}) {
 	}, [
 		formContainerFragment,
 		formContainerFragmentConfiguration.classNameId,
+		formContainerFragmentConfiguration.classTypeId,
 		onValueSelect,
 		fields.length,
 	]);
 
 	if (
 		!formContainerFragment ||
-		!formContainerFragmentConfiguration.className
+		!formContainerFragmentConfiguration.classNameId
 	) {
 		return (
 			<ClayAlert
@@ -217,33 +216,45 @@ export function FormFieldGeneralPanel({item}) {
 
 	return (
 		<>
-			<Collapse
-				label={Liferay.Language.get('form-container-options')}
-				open
-			>
+			<Collapse label="Form container options" open>
 				<div className="mb-3">
-					{formContainerFragmentConfiguration.className}
+					<TextField
+						field={{label: 'Label', name: 'label'}}
+						onValueSelect={onValueSelect}
+						value={formFieldFragmentConfiguration.label}
+					/>
+
+					<TextField
+						field={{label: 'Placeholder', name: 'placeholder'}}
+						onValueSelect={onValueSelect}
+						value={formFieldFragmentConfiguration.placeholder}
+					/>
+
+					<MappingFieldSelect
+						fields={fields}
+						onValueSelect={(event) => {
+							updateConfigurationValues({
+								dispatch,
+								fragmentEntryLink,
+								languageId,
+								pairs: [
+									{name: 'field', value: event.target.value},
+									{
+										name: 'classNameId',
+										value:
+											formContainerFragmentConfiguration.classNameId,
+									},
+									{
+										name: 'classTypeId',
+										value:
+											formContainerFragmentConfiguration.classTypeId,
+									},
+								],
+							});
+						}}
+						value={formFieldFragmentConfiguration.field}
+					/>
 				</div>
-
-				<TextField
-					field={{label: 'label', name: 'label'}}
-					onValueSelect={onValueSelect}
-					value={formFieldFragmentConfiguration.label}
-				/>
-
-				<TextField
-					field={{label: 'placeholder', name: 'placeholder'}}
-					onValueSelect={onValueSelect}
-					value={formFieldFragmentConfiguration.placeholder}
-				/>
-
-				<MappingFieldSelect
-					fields={fields}
-					onValueSelect={(event) =>
-						onValueSelect('field', event.target.value)
-					}
-					value={formFieldFragmentConfiguration.field}
-				/>
 			</Collapse>
 
 			<CommonStyles
@@ -252,5 +263,53 @@ export function FormFieldGeneralPanel({item}) {
 				role={COMMON_STYLES_ROLES.general}
 			/>
 		</>
+	);
+}
+
+function updateConfigurationValues({
+	configuration,
+	dispatch,
+	fragmentEntryLink,
+	languageId,
+	pairs,
+}) {
+	const configurationValues =
+		fragmentEntryLink.editableValues?.[
+			FREEMARKER_FRAGMENT_ENTRY_PROCESSOR
+		] ?? {};
+
+	const localizable =
+		configuration?.fieldSets?.some((fieldSet) =>
+			fieldSet.fields.some(
+				(field) => field.name === name && field.localizable
+			)
+		) ?? false;
+
+	const currentValue = configurationValues[name];
+
+	let nextConfigurationValues = {
+		...configurationValues,
+	};
+
+	for (const {name, value} of pairs) {
+		nextConfigurationValues = {
+			...nextConfigurationValues,
+			[name]: localizable
+				? {
+						...(typeof currentValue === 'object'
+							? currentValue
+							: {[config.defaultLanguageId]: currentValue}),
+						[languageId]: value,
+				  }
+				: value,
+		};
+	}
+
+	dispatch(
+		updateFragmentConfiguration({
+			configurationValues: nextConfigurationValues,
+			fragmentEntryLink,
+			languageId,
+		})
 	);
 }

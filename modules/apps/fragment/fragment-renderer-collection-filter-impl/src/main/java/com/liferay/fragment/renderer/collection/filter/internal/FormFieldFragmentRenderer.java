@@ -19,16 +19,20 @@ import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.renderer.FragmentRenderer;
 import com.liferay.fragment.renderer.FragmentRendererContext;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
+import com.liferay.info.exception.NoSuchFormVariationException;
 import com.liferay.info.field.InfoField;
+import com.liferay.info.field.type.InfoFieldType;
 import com.liferay.info.form.InfoForm;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemFormProvider;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -61,7 +65,7 @@ public class FormFieldFragmentRenderer
 
 	@Override
 	public String getLabel(Locale locale) {
-		return "Form input";
+		return "Form field";
 	}
 
 	@Override
@@ -70,12 +74,20 @@ public class FormFieldFragmentRenderer
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse) {
 
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay) httpServletRequest.getAttribute(WebKeys.THEME_DISPLAY);
+
 		FragmentEntryLink fragmentEntryLink =
 			fragmentRendererContext.getFragmentEntryLink();
 
 		String classNameId =
 			(String) _fragmentEntryConfigurationParser.getConfigurationFieldValue(
 				fragmentEntryLink.getEditableValues(), "classNameId",
+				FragmentConfigurationFieldDataType.STRING);
+
+		String classTypeId =
+			(String) _fragmentEntryConfigurationParser.getConfigurationFieldValue(
+				fragmentEntryLink.getEditableValues(), "classTypeId",
 				FragmentConfigurationFieldDataType.STRING);
 
 		if (Validator.isNull(classNameId)) {
@@ -100,12 +112,27 @@ public class FormFieldFragmentRenderer
 			return;
 		}
 
-		InfoForm infoForm = infoItemFormProvider.getInfoForm();
+		InfoForm infoForm = null;
+		try {
+			infoForm = infoItemFormProvider.getInfoForm(classTypeId,
+				themeDisplay.getScopeGroupId());
+		}
+		catch (NoSuchFormVariationException e) {
+			e.printStackTrace();
+		}
 
 		List<InfoField> infoFields = infoForm.getAllInfoFields();
 
-		InfoField infoField = infoFields.stream().filter(
-			infoField1 -> infoField1.getName().equals(field)).findFirst().get();
+		Optional<InfoField> infoFieldOptional = infoFields.stream().filter(
+			infoField1 -> infoField1.getName().equals(field)).findFirst();
+
+		if (!infoFieldOptional.isPresent()) {
+			printInvalidInfo(httpServletResponse);
+
+			return;
+		}
+
+		InfoField infoField = infoFieldOptional.get();
 
 		String label =
 			(String) _fragmentEntryConfigurationParser.getConfigurationFieldValue(
