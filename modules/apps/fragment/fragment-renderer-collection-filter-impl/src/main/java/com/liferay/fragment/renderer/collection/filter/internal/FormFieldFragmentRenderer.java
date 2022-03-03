@@ -47,7 +47,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * @author Pavel Savinov
+ * @author Víctor Galán
  */
 @Component(service = FragmentRenderer.class)
 public class FormFieldFragmentRenderer
@@ -91,7 +91,7 @@ public class FormFieldFragmentRenderer
 				FragmentConfigurationFieldDataType.STRING);
 
 		if (Validator.isNull(classNameId)) {
-			printInvalidInfo(httpServletResponse);
+			renderInvalidInfo(httpServletResponse);
 
 			return;
 		}
@@ -107,7 +107,7 @@ public class FormFieldFragmentRenderer
 				FragmentConfigurationFieldDataType.STRING);
 
 		if (Validator.isNull(field)) {
-			printInvalidInfo(httpServletResponse);
+			renderInvalidInfo(httpServletResponse);
 
 			return;
 		}
@@ -124,34 +124,61 @@ public class FormFieldFragmentRenderer
 		List<InfoField> infoFields = infoForm.getAllInfoFields();
 
 		Optional<InfoField> infoFieldOptional = infoFields.stream().filter(
-			infoField1 -> infoField1.getName().equals(field)).findFirst();
+			infoField -> infoField.getName().equals(field)).findFirst();
 
 		if (!infoFieldOptional.isPresent()) {
-			printInvalidInfo(httpServletResponse);
+			renderInvalidInfo(httpServletResponse);
 
 			return;
 		}
-
-		InfoField infoField = infoFieldOptional.get();
 
 		String label =
 			(String) _fragmentEntryConfigurationParser.getConfigurationFieldValue(
 				fragmentEntryLink.getEditableValues(), "label",
 				FragmentConfigurationFieldDataType.STRING);
 
+		String placeholder =
+			(String) _fragmentEntryConfigurationParser.getConfigurationFieldValue(
+				fragmentEntryLink.getEditableValues(), "placeholder",
+				FragmentConfigurationFieldDataType.STRING);
+
+		InfoField infoField = infoFieldOptional.get();
+
+		InfoFieldType infoFieldType = infoField.getInfoFieldType();
+
+		FormFieldRenderer formFieldRenderer =
+			_formFieldRendererTracker.getFormFieldRenderer(
+				infoFieldType.getClass().getName());
+
+		if (formFieldRenderer != null) {
+			formFieldRenderer.render(
+				label, placeholder, infoField, httpServletRequest,
+				httpServletResponse);
+		} else {
+			renderTextField(label, placeholder, infoField, httpServletRequest,
+				httpServletResponse);
+		}
+	}
+
+	@Reference
+	private Portal _portal;
+
+	private void renderTextField(
+		String label, String placeholder, InfoField<?> infoField,
+		HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse) {
+
 		httpServletRequest.setAttribute("name", infoField.getName());
 		httpServletRequest.setAttribute(
 			"label",
 			Validator.isNull(label) ?
 				infoField.getLabel(httpServletRequest.getLocale()) : label);
-		httpServletRequest.setAttribute("placeholder",
-			_fragmentEntryConfigurationParser.getConfigurationFieldValue(
-				fragmentEntryLink.getEditableValues(), "placeholder",
-				FragmentConfigurationFieldDataType.STRING));
+		httpServletRequest.setAttribute(
+			"placeholder", placeholder);
 
 		try {
 			RequestDispatcher requestDispatcher =
-				_servletContext.getRequestDispatcher("/form_field.jsp");
+				_servletContext.getRequestDispatcher("/form_field_text.jsp");
 
 			requestDispatcher.include(httpServletRequest, httpServletResponse);
 		}
@@ -160,10 +187,7 @@ public class FormFieldFragmentRenderer
 		}
 	}
 
-	@Reference
-	private Portal _portal;
-
-	private void printInvalidInfo(HttpServletResponse httpServletResponse) {
+	private void renderInvalidInfo(HttpServletResponse httpServletResponse) {
 		try {
 			StringBundler stringBundler = new StringBundler();
 
@@ -181,6 +205,9 @@ public class FormFieldFragmentRenderer
 			e.printStackTrace();
 		}
 	}
+
+	@Reference
+	private FormFieldRendererTrackerImpl _formFieldRendererTracker;
 
 	@Reference
 	private InfoItemServiceTracker _infoItemServiceTracker;

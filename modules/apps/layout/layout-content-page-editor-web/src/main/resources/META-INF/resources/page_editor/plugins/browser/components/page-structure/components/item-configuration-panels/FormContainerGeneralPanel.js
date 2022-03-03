@@ -116,7 +116,7 @@ export default function FormContainerGeneralPanel({item}) {
 						/>
 					)}
 
-					{selectedItemType?.subtypes.length > 0 && (
+					{selectedItemType?.subtypes?.length > 0 && (
 						<SelectField
 							disabled={availableItemTypes.length === 0}
 							field={{
