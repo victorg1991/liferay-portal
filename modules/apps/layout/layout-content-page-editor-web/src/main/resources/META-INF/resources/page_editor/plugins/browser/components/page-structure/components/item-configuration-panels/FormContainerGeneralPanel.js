@@ -29,7 +29,6 @@ import updateFragmentConfiguration from '../../../../../../app/thunks/updateFrag
 import {getResponsiveConfig} from '../../../../../../app/utils/getResponsiveConfig';
 import Collapse from '../../../../../../common/components/Collapse';
 import {CommonStyles} from './CommonStyles';
-import {FieldSet} from './FieldSet';
 
 export default function FormContainerGeneralPanel({item}) {
 	const [availableItemTypes, setItemTypes] = React.useState([]);
@@ -149,25 +148,6 @@ export default function FormContainerGeneralPanel({item}) {
 						/>
 					)}
 				</div>
-
-				{fragmentEntryLink.configuration?.fieldSets
-					?.filter((fieldSet) => fieldSet.fields.length)
-					.map((fieldSet, index) => (
-						<div
-							className="mt-3"
-							key={`${fieldSet.label || ''}-${index}`}
-						>
-							<FieldSet
-								fields={fieldSet.fields}
-								label={fieldSet.label}
-								languageId={languageId}
-								onValueSelect={(name, value) =>
-									onValueSelect([{name, value}])
-								}
-								values={configurationValues}
-							/>
-						</div>
-					))}
 			</Collapse>
 
 			<CommonStyles
