@@ -22,11 +22,14 @@
 JournalArticle article = (JournalArticle)request.getAttribute("liferay-journal:journal-article:article");
 JournalArticleDisplay articleDisplay = (JournalArticleDisplay)request.getAttribute("liferay-journal:journal-article:articleDisplay");
 boolean dataAnalyticsTrackingEnabled = GetterUtil.getBoolean(request.getAttribute("liferay-journal:journal-article:dataAnalyticsTrackingEnabled"));
+boolean isEditMode = GetterUtil.getBoolean(request.getAttribute("liferay-journal:journal-article:editMode"));
 String wrapperCssClass = (String)request.getAttribute("liferay-journal:journal-article:wrapperCssClass");
+
+System.out.println("isEditMode: " + isEditMode);
 %>
 
 <c:choose>
-	<c:when test="<%= (article != null) && article.isExpired() %>">
+	<c:when test="<%= (article != null) && article.isExpired() && isEditMode %>">
 		<div class="alert alert-warning">
 			<liferay-ui:message arguments="<%= HtmlUtil.escape(article.getTitle(locale)) %>" key="x-is-expired" />
 		</div>
@@ -53,20 +56,5 @@ String wrapperCssClass = (String)request.getAttribute("liferay-journal:journal-a
 
 	</c:otherwise>
 </c:choose>
-
-<script type="text/javascript">
-	var isEdit = document.body.classList.contains('has-edit-mode-menu');
-	const xpath = "//div[contains(text(),'expired')]";
-	var matchingElement = document.evaluate(
-		xpath,
-		document,
-		null,
-		XPathResult.FIRST_ORDERED_NODE_TYPE,
-		null
-	).singleNodeValue;
-	if (!isEdit) {
-		matchingElement.setAttribute('hidden', true);
-	}
-</script>
 
 <liferay-util:dynamic-include key="com.liferay.journal.taglib#/journal_article/page.jsp#post" />

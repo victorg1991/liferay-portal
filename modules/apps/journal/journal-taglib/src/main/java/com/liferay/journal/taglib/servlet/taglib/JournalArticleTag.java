@@ -87,6 +87,11 @@ public class JournalArticleTag extends IncludeTag {
 			return SKIP_BODY;
 		}
 
+		String mode = ParamUtil.getString(httpServletRequest, "p_l_mode", "");
+		if (Constants.PREVIEW.equals(mode)) {
+			_editMode = true;
+		}
+
 		return super.doStartTag();
 	}
 
@@ -110,6 +115,10 @@ public class JournalArticleTag extends IncludeTag {
 		return _dataAnalyticsTrackingEnabled;
 	}
 
+	public boolean isEditMode() {
+		return _editMode;
+	}
+	
 	public boolean isShowTitle() {
 		return _showTitle;
 	}
@@ -130,6 +139,10 @@ public class JournalArticleTag extends IncludeTag {
 
 	public void setDdmTemplateKey(String ddmTemplateKey) {
 		_ddmTemplateKey = ddmTemplateKey;
+	}
+
+	public void setEditMode(boolean editMode) {
+		_editMode = editMode;
 	}
 
 	public void setGroupId(long groupId) {
@@ -165,6 +178,7 @@ public class JournalArticleTag extends IncludeTag {
 		_dataAnalyticsTrackingEnabled = true;
 		_ddmTemplateKey = null;
 		_groupId = 0;
+		_editMode = false;
 		_languageId = null;
 		_showTitle = false;
 		_wrapperCssClass = null;
@@ -201,6 +215,9 @@ public class JournalArticleTag extends IncludeTag {
 			"liferay-journal:journal-article:dataAnalyticsTrackingEnabled",
 			String.valueOf(_dataAnalyticsTrackingEnabled));
 		httpServletRequest.setAttribute(
+			"liferay-journal:journal-article:editMode",
+			String.valueOf(_editMode));
+		httpServletRequest.setAttribute(
 			"liferay-journal:journal-article:showTitle",
 			String.valueOf(_showTitle));
 		httpServletRequest.setAttribute(
@@ -219,6 +236,7 @@ public class JournalArticleTag extends IncludeTag {
 	private boolean _dataAnalyticsTrackingEnabled = true;
 	private String _ddmTemplateKey;
 	private long _groupId;
+	private boolean _editMode;
 	private String _languageId;
 	private boolean _showTitle;
 	private String _wrapperCssClass;
