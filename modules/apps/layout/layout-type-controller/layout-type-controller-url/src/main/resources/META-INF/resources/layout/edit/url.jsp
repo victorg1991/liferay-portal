@@ -26,6 +26,20 @@ if (selLayout != null) {
 }
 %>
 
-<aui:input cssClass="lfr-input-text-container" id="url" label="url" name="TypeSettingsProperties--url--" type="text" value="<%= url %>">
-	<aui:validator errorMessage="please-enter-a-valid-url" name="required" />
-</aui:input>
+<aui:field-wrapper cssClass="lfr-input-text-container" label="url">
+	<liferay-ui:input-localized
+		cssClass="lfr-input-text"
+		fieldPrefix="TypeSettingsProperties"
+		fieldPrefixSeparator="--"
+		name="url"
+		xml="<%= StringPool.BLANK %>"
+	/>
+</aui:field-wrapper>
+
+<aui:script use="liferay-form">
+	Liferay.componentReady('<portlet:namespace />editLayoutFm').then(() => {
+		const form = Liferay.Form.get('<portlet:namespace />editLayoutFm');
+
+		form.addRule('<portlet:namespace />url', 'required');
+	});
+</aui:script>
