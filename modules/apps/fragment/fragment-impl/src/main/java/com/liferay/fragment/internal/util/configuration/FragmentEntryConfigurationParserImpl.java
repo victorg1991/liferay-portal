@@ -22,6 +22,7 @@ import com.liferay.frontend.token.definition.FrontendToken;
 import com.liferay.frontend.token.definition.FrontendTokenDefinition;
 import com.liferay.frontend.token.definition.FrontendTokenDefinitionRegistry;
 import com.liferay.frontend.token.definition.FrontendTokenMapping;
+import com.liferay.info.constants.InfoDisplayWebKeys;
 import com.liferay.info.item.ClassPKInfoItemIdentifier;
 import com.liferay.info.item.InfoItemServiceTracker;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
@@ -58,6 +59,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -493,6 +496,31 @@ public class FragmentEntryConfigurationParserImpl
 		return fieldValue;
 	}
 
+	private Object _getDisplayObject() {
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		if (serviceContext == null) {
+			return null;
+		}
+
+		HttpServletRequest httpServletRequest = serviceContext.getRequest();
+
+		if (httpServletRequest == null) {
+			return null;
+		}
+
+		Object infoItem = httpServletRequest.getAttribute(
+			InfoDisplayWebKeys.INFO_ITEM);
+
+		if (infoItem != null) {
+			return infoItem;
+		}
+
+		return httpServletRequest.getAttribute(
+			InfoDisplayWebKeys.INFO_LIST_DISPLAY_OBJECT);
+	}
+
 	private JSONArray _getFieldSetsJSONArray(String configuration) {
 		try {
 			JSONObject configurationJSONObject =
@@ -568,8 +596,10 @@ public class FragmentEntryConfigurationParserImpl
 	}
 
 	private Object _getInfoDisplayObjectEntry(String value) {
-		if (Validator.isNull(value)) {
-			return null;
+		if (Validator.isNull(value) ||
+			Objects.equals(value, JSONFactoryUtil.getNullJSON())) {
+
+			return _getDisplayObject();
 		}
 
 		try {
@@ -577,6 +607,10 @@ public class FragmentEntryConfigurationParserImpl
 
 			String className = GetterUtil.getString(
 				jsonObject.getString("className"));
+
+			if (Validator.isNull(className)) {
+				return _getDisplayObject();
+			}
 
 			InfoItemObjectProvider<?> infoItemObjectProvider =
 				_infoItemServiceTracker.getFirstInfoItemService(
@@ -601,9 +635,9 @@ public class FragmentEntryConfigurationParserImpl
 	}
 
 	private JSONObject _getInfoDisplayObjectEntryJSONObject(String value) {
-		if (Validator.isNull(value) ||
-			Objects.equals(value, JSONFactoryUtil.getNullJSON())) {
+		Object infoDisplayObjectEntry = _getInfoDisplayObjectEntry(value);
 
+		if (infoDisplayObjectEntry == null) {
 			return JSONFactoryUtil.createJSONObject();
 		}
 
@@ -612,8 +646,7 @@ public class FragmentEntryConfigurationParserImpl
 				JSONFactoryUtil.createJSONObject(value);
 
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-				JSONFactoryUtil.looseSerialize(
-					_getInfoDisplayObjectEntry(value)));
+				JSONFactoryUtil.looseSerialize(infoDisplayObjectEntry));
 
 			jsonObject.put(
 				"className",
