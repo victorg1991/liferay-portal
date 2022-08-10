@@ -28,12 +28,19 @@ export default getAlloyEditorProcessor(
 
 		const link = getEditableLinkValue(editableConfig, languageId);
 
+		const textContent = element.querySelector('[data-lfr-text-content]');
+
 		if (anchor) {
 			anchor.href = link.href || '#';
 			anchor.target = link.target;
 
 			if (!isNullOrUndefined(value)) {
-				anchor.innerHTML = value;
+				if (textContent) {
+					textContent.innerHTML = value;
+				}
+				else {
+					anchor.innerHTML = value;
+				}
 			}
 		}
 	}
