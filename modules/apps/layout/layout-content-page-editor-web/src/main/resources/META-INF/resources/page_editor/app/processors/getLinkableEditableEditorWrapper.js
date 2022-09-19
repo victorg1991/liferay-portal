@@ -18,7 +18,17 @@ export function getLinkableEditableEditorWrapper(element) {
 			? element
 			: element.querySelector('a');
 
-	if (anchor) {
+	const textContent = element.querySelector('[data-lfr-text-content]');
+
+	if (textContent) {
+		const innerWrapper = document.createElement('div');
+		innerWrapper.innerHTML = textContent.innerHTML;
+		textContent.innerHTML = '';
+		textContent.appendChild(innerWrapper);
+
+		return innerWrapper;
+	}
+	else if (anchor) {
 		const innerWrapper = document.createElement('div');
 		innerWrapper.innerHTML = anchor.innerHTML;
 		anchor.innerHTML = '';

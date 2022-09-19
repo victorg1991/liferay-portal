@@ -32,6 +32,7 @@ import java.util.ResourceBundle;
 
 import org.jsoup.nodes.Element;
 
+import org.jsoup.select.Elements;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -75,7 +76,14 @@ public class LinkEditableElementParser implements EditableElementParser {
 
 		Element replaceableElement = elements.get(0);
 
+		Elements textContentElements = replaceableElement.select("[data-lfr-text-content]");
+
 		String html = replaceableElement.html();
+
+		if (!textContentElements.isEmpty()) {
+			Element firstElement = textContentElements.first();
+			html = firstElement.html();
+		}
 
 		if (Validator.isNull(html.trim())) {
 			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
@@ -104,10 +112,21 @@ public class LinkEditableElementParser implements EditableElementParser {
 
 		Element replaceableElement = elements.get(0);
 
+		Element contentElement = null;
+
+		Elements textContentElements = replaceableElement.select("[data-lfr-text-content]");
+
+		if (textContentElements.isEmpty()) {
+			contentElement = replaceableElement;
+		}
+		else {
+			contentElement = textContentElements.first();
+		}
+
 		Element bodyElement = EditableElementParserUtil.getDocumentBody(value);
 
 		if (configJSONObject == null) {
-			replaceableElement.html(bodyElement.html());
+			contentElement.html(bodyElement.html());
 
 			return;
 		}
@@ -147,7 +166,7 @@ public class LinkEditableElementParser implements EditableElementParser {
 			}
 		}
 
-		replaceableElement.html(bodyElement.html());
+		contentElement.html(bodyElement.html());
 	}
 
 	@Override
