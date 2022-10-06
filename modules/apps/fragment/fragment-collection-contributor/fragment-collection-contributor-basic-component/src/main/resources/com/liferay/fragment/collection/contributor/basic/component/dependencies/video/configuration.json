@@ -6,7 +6,7 @@
 					"defaultValue": "",
 					"label": "url",
 					"name": "url",
-					"type": "text"
+					"type": "mappableText"
 				},
 				{
 					"defaultValue": false,

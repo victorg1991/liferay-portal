@@ -24,6 +24,7 @@ import CustomCSSField from './CustomCSSField';
 import {HideFragmentField} from './HideFragmentField';
 import {ImageSelectorField} from './ImageSelectorField';
 import {ItemSelectorField} from './ItemSelectorField';
+import MappableTextField from './MappableTextField';
 import {NavigationMenuSelectorField} from './NavigationMenuSelectorField';
 import {SelectField} from './SelectField';
 import {SpacingBoxField} from './SpacingBoxField';
@@ -44,6 +45,7 @@ export const FRAGMENT_CONFIGURATION_FIELDS = {
 	imageSelector: ImageSelectorField,
 	itemSelector: ItemSelectorField,
 	length: LengthField,
+	mappableText: MappableTextField,
 	navigationMenuSelector: NavigationMenuSelectorField,
 	select: SelectField,
 	spacing: SpacingBoxField,

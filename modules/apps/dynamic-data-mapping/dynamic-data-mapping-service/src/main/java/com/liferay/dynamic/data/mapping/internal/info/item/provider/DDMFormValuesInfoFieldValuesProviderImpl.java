@@ -270,8 +270,17 @@ public class DDMFormValuesInfoFieldValuesProviderImpl
 					JSONFactoryUtil.createJSONObject(valueString));
 			}
 			else if (Objects.equals(
-						ddmFormFieldValue.getType(),
-						DDMFormFieldTypeConstants.SELECT)) {
+				ddmFormFieldValue.getType(),
+				DDMFormFieldTypeConstants.DOCUMENT_LIBRARY)) {
+
+				JSONObject jsonObject =
+					JSONFactoryUtil.createJSONObject(valueString);
+
+				return jsonObject.getString("url");
+			}
+			else if (Objects.equals(
+				ddmFormFieldValue.getType(),
+				DDMFormFieldTypeConstants.SELECT)) {
 
 				if (Validator.isNull(valueString)) {
 					return null;

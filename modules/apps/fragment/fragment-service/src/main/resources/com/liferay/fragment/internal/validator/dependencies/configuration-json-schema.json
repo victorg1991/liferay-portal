@@ -154,6 +154,7 @@
 						"collectionSelector",
 						"itemSelector",
 						"length",
+						"mappableText",
 						"navigationMenuSelector",
 						"select",
 						"text",

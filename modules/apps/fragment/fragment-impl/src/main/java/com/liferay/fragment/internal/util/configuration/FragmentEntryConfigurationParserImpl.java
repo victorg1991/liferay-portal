@@ -601,8 +601,36 @@ public class FragmentEntryConfigurationParserImpl
 			return _getURLValue(parsedValue);
 		}
 
+		else if (StringUtil.equalsIgnoreCase(
+			fragmentConfigurationField.getType(), "mappableText")) {
+
+			return _getMappableText(parsedValue);
+		}
+
 		return _getFieldValue(
 			FragmentConfigurationFieldDataType.STRING, parsedValue);
+	}
+
+	private String _getMappableText(String value) {
+		if (Validator.isNull(value)) {
+			return null;
+		}
+
+		try {
+			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(value);
+
+			if (jsonObject.has("url")) {
+				return jsonObject.getString("url");
+			}
+
+
+
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unable to get entry: " + value, exception);
+			}
+		}
 	}
 
 	private Object _getInfoDisplayObjectEntry(String value) {
