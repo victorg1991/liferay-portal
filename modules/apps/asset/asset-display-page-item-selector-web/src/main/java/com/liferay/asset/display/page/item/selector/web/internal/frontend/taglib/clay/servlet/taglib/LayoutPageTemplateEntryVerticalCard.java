@@ -56,6 +56,8 @@ public class LayoutPageTemplateEntryVerticalCard implements VerticalCard {
 		).put(
 			"data-name", _layoutPageTemplateEntry.getName()
 		).put(
+			"data-plid", String.valueOf(_layoutPageTemplateEntry.getPlid())
+		).put(
 			"data-type", "asset-display-page"
 		).build();
 	}
@@ -63,6 +65,20 @@ public class LayoutPageTemplateEntryVerticalCard implements VerticalCard {
 	@Override
 	public String getIcon() {
 		return "page";
+	}
+
+	@Override
+	public String getStickerIcon() {
+		if (_layoutPageTemplateEntry.isDefaultTemplate()) {
+			return "check-circle";
+		}
+
+		return null;
+	}
+
+	@Override
+	public String getStickerStyle() {
+		return "primary";
 	}
 
 	@Override
