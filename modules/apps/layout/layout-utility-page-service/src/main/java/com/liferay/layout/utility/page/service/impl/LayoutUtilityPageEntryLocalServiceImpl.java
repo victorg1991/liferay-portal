@@ -123,6 +123,14 @@ public class LayoutUtilityPageEntryLocalServiceImpl
 	}
 
 	@Override
+	public LayoutUtilityPageEntry fetchLayoutUtilityPageEntry(
+		long groupId, String externalReferenceCode) {
+
+		return layoutUtilityPageEntryPersistence.fetchByG_ERC(
+			groupId, externalReferenceCode);
+	}
+
+	@Override
 	public LayoutUtilityPageEntry fetchDefaultLayoutUtilityPageEntry(
 		long groupId, int type) {
 

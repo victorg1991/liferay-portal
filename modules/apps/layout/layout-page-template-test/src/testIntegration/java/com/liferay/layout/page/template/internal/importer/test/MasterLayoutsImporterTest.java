@@ -18,9 +18,9 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.fragment.contributor.FragmentCollectionContributor;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.service.FragmentEntryLocalServiceUtil;
+import com.liferay.layout.importer.LayoutsImporter;
+import com.liferay.layout.importer.LayoutsImporterResultEntry;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateExportImportConstants;
-import com.liferay.layout.page.template.importer.LayoutPageTemplatesImporter;
-import com.liferay.layout.page.template.importer.LayoutPageTemplatesImporterResultEntry;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
@@ -196,28 +196,27 @@ public class MasterLayoutsImporterTest {
 
 		_importLayoutPageTemplateEntry(testCaseName);
 
-		List<LayoutPageTemplatesImporterResultEntry>
+		List<LayoutsImporterResultEntry>
 			layoutPageTemplatesImporterResultEntries =
 				_getLayoutPageTemplatesImporterResultEntries(testCaseName);
 
-		LayoutPageTemplatesImporterResultEntry
-			layoutPageTemplatesImporterResultEntry =
-				layoutPageTemplatesImporterResultEntries.get(0);
+		LayoutsImporterResultEntry layoutsImporterResultEntry =
+			layoutPageTemplatesImporterResultEntries.get(0);
 
 		Assert.assertEquals(
-			LayoutPageTemplatesImporterResultEntry.Status.IGNORED,
-			layoutPageTemplatesImporterResultEntry.getStatus());
+			LayoutsImporterResultEntry.Status.IGNORED,
+			layoutsImporterResultEntry.getStatus());
 		Assert.assertEquals(
 			String.format(
 				"%s/master-pages/%s/master-page.json was ignored because a " +
 					"master page with the same key already exists.",
 				testCaseName, testCaseName),
-			layoutPageTemplatesImporterResultEntry.getErrorMessage());
+			layoutsImporterResultEntry.getErrorMessage());
 	}
 
 	@Test
 	public void testImportMasterLayouts() throws Exception {
-		List<LayoutPageTemplatesImporterResultEntry>
+		List<LayoutsImporterResultEntry>
 			layoutPageTemplatesImporterResultEntries =
 				_getLayoutPageTemplatesImporterResultEntries(
 					"master-page-multiple");
@@ -282,20 +281,19 @@ public class MasterLayoutsImporterTest {
 	}
 
 	private LayoutPageTemplateEntry _getLayoutPageTemplateEntry(
-		List<LayoutPageTemplatesImporterResultEntry>
+		List<LayoutsImporterResultEntry>
 			layoutPageTemplatesImporterResultEntries,
 		int index) {
 
-		LayoutPageTemplatesImporterResultEntry
-			layoutPageTemplatesImporterResultEntry =
-				layoutPageTemplatesImporterResultEntries.get(index);
+		LayoutsImporterResultEntry layoutsImporterResultEntry =
+			layoutPageTemplatesImporterResultEntries.get(index);
 
 		Assert.assertEquals(
-			LayoutPageTemplatesImporterResultEntry.Status.IMPORTED,
-			layoutPageTemplatesImporterResultEntry.getStatus());
+			LayoutsImporterResultEntry.Status.IMPORTED,
+			layoutsImporterResultEntry.getStatus());
 
 		String layoutPageTemplateEntryKey = StringUtil.toLowerCase(
-			layoutPageTemplatesImporterResultEntry.getName());
+			layoutsImporterResultEntry.getName());
 
 		layoutPageTemplateEntryKey = StringUtil.replace(
 			layoutPageTemplateEntryKey, CharPool.SPACE, CharPool.DASH);
@@ -309,13 +307,13 @@ public class MasterLayoutsImporterTest {
 		return layoutPageTemplateEntry;
 	}
 
-	private List<LayoutPageTemplatesImporterResultEntry>
+	private List<LayoutsImporterResultEntry>
 			_getLayoutPageTemplatesImporterResultEntries(String testCaseName)
 		throws Exception {
 
 		File file = _generateZipFile(testCaseName);
 
-		List<LayoutPageTemplatesImporterResultEntry>
+		List<LayoutsImporterResultEntry>
 			layoutPageTemplatesImporterResultEntries = null;
 
 		ServiceContextThreadLocal.pushServiceContext(
@@ -323,7 +321,7 @@ public class MasterLayoutsImporterTest {
 
 		try {
 			layoutPageTemplatesImporterResultEntries =
-				_layoutPageTemplatesImporter.importFile(
+				_layoutsImporter.importFile(
 					_user.getUserId(), _group.getGroupId(), 0, file, false);
 		}
 		finally {
@@ -339,7 +337,7 @@ public class MasterLayoutsImporterTest {
 			String testCaseName)
 		throws Exception {
 
-		List<LayoutPageTemplatesImporterResultEntry>
+		List<LayoutsImporterResultEntry>
 			layoutPageTemplatesImporterResultEntries =
 				_getLayoutPageTemplatesImporterResultEntries(testCaseName);
 
@@ -438,11 +436,11 @@ public class MasterLayoutsImporterTest {
 		_layoutPageTemplateEntryLocalService;
 
 	@Inject
-	private LayoutPageTemplatesImporter _layoutPageTemplatesImporter;
-
-	@Inject
 	private LayoutPageTemplateStructureLocalService
 		_layoutPageTemplateStructureLocalService;
+
+	@Inject
+	private LayoutsImporter _layoutsImporter;
 
 	private ServiceRegistration<FragmentCollectionContributor>
 		_serviceRegistration;

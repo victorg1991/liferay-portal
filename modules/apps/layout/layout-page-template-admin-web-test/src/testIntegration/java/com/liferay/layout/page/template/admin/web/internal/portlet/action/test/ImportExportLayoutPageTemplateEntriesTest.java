@@ -31,10 +31,10 @@ import com.liferay.fragment.service.FragmentCollectionLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.JournalTestUtil;
+import com.liferay.layout.importer.LayoutsImporter;
+import com.liferay.layout.importer.LayoutsImporterResultEntry;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateExportImportConstants;
-import com.liferay.layout.page.template.importer.LayoutPageTemplatesImporter;
-import com.liferay.layout.page.template.importer.LayoutPageTemplatesImporterResultEntry;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
@@ -757,7 +757,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		_getImportLayoutPageTemplateEntry(
 			inputFile1, _group1.getGroupId(), false,
-			LayoutPageTemplatesImporterResultEntry.Status.IMPORTED);
+			LayoutsImporterResultEntry.Status.IMPORTED);
 
 		File inputFile2 = _generateZipFile(
 			"fragment/text_field/mapped_value/class_pk_reference/expected" +
@@ -775,7 +775,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		File outputFile = _importExportLayoutPageTemplateEntry(
 			inputFile2, _group1.getGroupId(), false,
-			LayoutPageTemplatesImporterResultEntry.Status.IGNORED);
+			LayoutsImporterResultEntry.Status.IGNORED);
 
 		_validateFile(expectedFile, outputFile);
 	}
@@ -807,7 +807,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		File outputFile = _importExportLayoutPageTemplateEntry(
 			inputFile, _group1.getGroupId(), true,
-			LayoutPageTemplatesImporterResultEntry.Status.IMPORTED);
+			LayoutsImporterResultEntry.Status.IMPORTED);
 
 		_validateFile(expectedFile, outputFile);
 	}
@@ -833,7 +833,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		_getImportLayoutPageTemplateEntry(
 			inputFile1, _group1.getGroupId(), false,
-			LayoutPageTemplatesImporterResultEntry.Status.IMPORTED);
+			LayoutsImporterResultEntry.Status.IMPORTED);
 
 		Map<String, String> numberValuesMap = HashMapBuilder.put(
 			"CLASS_PK",
@@ -856,7 +856,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		File outputFile = _importExportLayoutPageTemplateEntry(
 			inputFile2, _group1.getGroupId(), true,
-			LayoutPageTemplatesImporterResultEntry.Status.IMPORTED);
+			LayoutsImporterResultEntry.Status.IMPORTED);
 
 		_validateFile(expectedFile, outputFile);
 	}
@@ -1092,10 +1092,10 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 	private LayoutPageTemplateEntry _getImportLayoutPageTemplateEntry(
 			File file, long groupId, boolean overwrite,
-			LayoutPageTemplatesImporterResultEntry.Status status)
+			LayoutsImporterResultEntry.Status status)
 		throws Exception {
 
-		List<LayoutPageTemplatesImporterResultEntry>
+		List<LayoutsImporterResultEntry>
 			layoutPageTemplatesImporterResultEntries = null;
 
 		ServiceContextThreadLocal.pushServiceContext(
@@ -1103,7 +1103,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		try {
 			layoutPageTemplatesImporterResultEntries =
-				_layoutPageTemplatesImporter.importFile(
+				_layoutsImporter.importFile(
 					TestPropsValues.getUserId(), groupId, 0, file, overwrite);
 		}
 		finally {
@@ -1116,7 +1116,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 			layoutPageTemplatesImporterResultEntries.toString(), 1,
 			layoutPageTemplatesImporterResultEntries.size());
 
-		LayoutPageTemplatesImporterResultEntry layoutPageTemplateImportEntry =
+		LayoutsImporterResultEntry layoutPageTemplateImportEntry =
 			layoutPageTemplatesImporterResultEntries.get(0);
 
 		Assert.assertEquals(status, layoutPageTemplateImportEntry.getStatus());
@@ -1183,7 +1183,7 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 	private File _importExportLayoutPageTemplateEntry(
 			File file, long groupId, boolean overwrite,
-			LayoutPageTemplatesImporterResultEntry.Status status)
+			LayoutsImporterResultEntry.Status status)
 		throws Exception {
 
 		LayoutPageTemplateEntry layoutPageTemplateEntry =
@@ -1319,13 +1319,13 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 
 		File outputFile1 = _importExportLayoutPageTemplateEntry(
 			inputFile, groupId1, false,
-			LayoutPageTemplatesImporterResultEntry.Status.IMPORTED);
+			LayoutsImporterResultEntry.Status.IMPORTED);
 
 		_validateFile(expectedFile, outputFile1);
 
 		File outputFile2 = _importExportLayoutPageTemplateEntry(
 			outputFile1, groupId2, true,
-			LayoutPageTemplatesImporterResultEntry.Status.IMPORTED);
+			LayoutsImporterResultEntry.Status.IMPORTED);
 
 		_validateFile(expectedFile, outputFile2);
 	}
@@ -1369,11 +1369,11 @@ public class ImportExportLayoutPageTemplateEntriesTest {
 		_layoutPageTemplateEntryLocalService;
 
 	@Inject
-	private LayoutPageTemplatesImporter _layoutPageTemplatesImporter;
-
-	@Inject
 	private LayoutPageTemplateStructureLocalService
 		_layoutPageTemplateStructureLocalService;
+
+	@Inject
+	private LayoutsImporter _layoutsImporter;
 
 	@Inject(
 		filter = "mvc.command.name=/layout_page_template_admin/export_layout_page_template_entries"
