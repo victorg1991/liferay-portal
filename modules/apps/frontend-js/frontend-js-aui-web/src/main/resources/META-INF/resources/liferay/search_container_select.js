@@ -98,7 +98,6 @@ AUI.add(
 			prototype: {
 				_addRestoreTask() {
 					const instance = this;
-
 					const host = instance.get(STR_HOST);
 
 					Liferay.DOMTaskRunner.addTask({
@@ -382,6 +381,13 @@ AUI.add(
 				const container = A.one(node).one('#' + params.containerId);
 
 				container.setData('bulkSelection', state.data.bulkSelection);
+
+				// This is executed before react loads, so we need a way to preserve it in the
+				// DOM for checking it from react
+
+				const containerElement = container.getDOM()
+
+				containerElement.dataset.selectionData = JSON.stringify(state.data.elements)
 
 				if (state.data.bulkSelection) {
 					container.all(state.data.selector).each((input) => {
