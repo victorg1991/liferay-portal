@@ -18,6 +18,8 @@
 
 <div id="<portlet:namespace />simulationDeviceContainer">
 	<div class="list-group-panel">
+		<div><react:component module="SimulationDevice" /></div>
+
 		<clay:container-fluid
 			cssClass="devices"
 		>
@@ -31,7 +33,11 @@
 								symbol="desktop"
 							/>
 						</span>
-						<span class="d-block mb-3 mt-1"><liferay-ui:message key="desktop" /></span>
+						<span
+							class="d-block mb-3 mt-1"
+							><liferay-ui:message key="desktop"
+						/></span
+						>
 					</div>
 				</button>
 
@@ -47,7 +53,11 @@
 								symbol="tablet-landscape"
 							/>
 						</span>
-						<span class="d-block mb-3 mt-1"><liferay-ui:message key="tablet" /></span>
+						<span
+							class="d-block mb-3 mt-1"
+							><liferay-ui:message key="tablet"
+						/></span
+						>
 					</div>
 				</button>
 
@@ -63,7 +73,11 @@
 								symbol="mobile-landscape"
 							/>
 						</span>
-						<span class="d-block mb-3 mt-1"><liferay-ui:message key="mobile" /></span>
+						<span
+							class="d-block mb-3 mt-1"
+							><liferay-ui:message key="mobile"
+						/></span
+						>
 					</div>
 				</button>
 
@@ -74,7 +88,11 @@
 								symbol="autosize"
 							/>
 						</span>
-						<span class="d-block mb-3 mt-1"><liferay-ui:message key="autosize" /></span>
+						<span
+							class="d-block mb-3 mt-1"
+							><liferay-ui:message key="autosize"
+						/></span
+						>
 					</div>
 				</button>
 
@@ -85,7 +103,11 @@
 								symbol="custom-size"
 							/>
 						</span>
-						<span class="d-block mb-3 mt-1"><liferay-ui:message key="custom" /></span>
+						<span
+							class="d-block mb-3 mt-1"
+							><liferay-ui:message key="custom"
+						/></span
+						>
 					</div>
 				</button>
 			</clay:row>
@@ -104,65 +126,19 @@
 </div>
 
 <aui:script use="liferay-product-navigation-simulation-device">
-	var simulationDevice = new Liferay.SimulationDevice({
-		devices: {
-			autosize: {
-				skin: 'autosize',
-			},
-			custom: {
-				height: '#<portlet:namespace />height',
-				resizable: true,
-				skin: 'custom',
-				width: '#<portlet:namespace />width',
-			},
-			desktop: {
-				height: 1050,
-				selected: true,
-				skin: 'desktop',
-				width: 1300,
-			},
-			smartphone: {
-				height: 640,
-				preventTransition: true,
-				rotation: true,
-				skin: 'smartphone',
-				width: 400,
-			},
-			tablet: {
-				height: 900,
-				preventTransition: true,
-				rotation: true,
-				skin: 'tablet',
-				width: 760,
-			},
-		},
-		inputHeight: '#<portlet:namespace />height',
-		inputWidth: '#<portlet:namespace />width',
-		namespace: '<portlet:namespace />',
-	});
-
-	Liferay.once('screenLoad', () => {
-		simulationDevice.destroy();
-	});
-
-	A.one('.devices').delegate(
-		'click',
-		(event) => {
-			var currentTarget = event.currentTarget;
-
-			var dataDevice = currentTarget.attr('data-device');
-
-			var customDeviceContainer = A.one(
-				'#<portlet:namespace />customDeviceContainer'
-			);
-
-			if (dataDevice === 'custom') {
-				customDeviceContainer.show();
-			}
-			else {
-				customDeviceContainer.hide();
-			}
-		},
-		'.lfr-device-item'
-	);
+	var simulationDevice = new Liferay.SimulationDevice({ devices: { autosize: {
+	skin: 'autosize', }, custom: { height: '#<portlet:namespace />height',
+	resizable: true, skin: 'custom', width: '#<portlet:namespace />width', },
+	desktop: { height: 1050, selected: true, skin: 'desktop', width: 1300, },
+	smartphone: { height: 640, preventTransition: true, rotation: true, skin:
+	'smartphone', width: 400, }, tablet: { height: 900, preventTransition: true,
+	rotation: true, skin: 'tablet', width: 760, }, }, inputHeight:
+	'#<portlet:namespace />height', inputWidth: '#<portlet:namespace />width',
+	namespace: '<portlet:namespace />', }); Liferay.once('screenLoad', () => {
+	simulationDevice.destroy(); }); A.one('.devices').delegate( 'click', (event)
+	=> { var currentTarget = event.currentTarget; var dataDevice =
+	currentTarget.attr('data-device'); var customDeviceContainer = A.one(
+	'#<portlet:namespace />customDeviceContainer' ); if (dataDevice ===
+	'custom') { customDeviceContainer.show(); } else {
+	customDeviceContainer.hide(); } }, '.lfr-device-item' );
 </aui:script>
