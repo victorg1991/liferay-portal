@@ -136,8 +136,9 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-template"));
 								modelVar="layoutPageTemplateEntry"
 							>
 								<liferay-ui:search-container-column-text>
-									<clay:vertical-card
-										verticalCard="<%= new SelectLayoutPageTemplateEntryVerticalCard(layoutPageTemplateEntry, renderRequest, renderResponse) %>"
+									<react:component
+										module="js/LayoutPageTemplateEntryCard"
+										props="<%= selectLayoutPageTemplateEntryDisplayContext.getLayoutPageTemplateEntryCardProps(layoutPageTemplateEntry) %>"
 									/>
 								</liferay-ui:search-container-column-text>
 							</liferay-ui:search-container-row>
@@ -159,48 +160,3 @@ renderResponse.setTitle(LanguageUtil.get(request, "select-template"));
 		</clay:col>
 	</clay:row>
 </clay:container-fluid>
-
-<aui:script require="frontend-js-web/index as frontendJsWeb">
-	var {delegate} = frontendJsWeb;
-
-	var layoutPageTemplateEntries = document.getElementById(
-		'<portlet:namespace />layoutPageTemplateEntries'
-	);
-
-	var addLayoutActionOptionQueryClickHandler = delegate(
-		layoutPageTemplateEntries,
-		'click',
-		'.add-layout-action-option',
-		(event) => {
-			Liferay.Util.openModal({
-				disableAutoClose: true,
-				height: '60vh',
-				id: 'addLayoutDialog',
-				size: 'md',
-				title: '<liferay-ui:message key="add-page" />',
-				url: event.delegateTarget.dataset.addLayoutUrl,
-			});
-		}
-	);
-
-	var addLayoutActionOptionQueryKeyDownHandler = delegate(
-		layoutPageTemplateEntries,
-		'keydown',
-		'.add-layout-action-option',
-		(event) => {
-			if (event.code === 'Space' || event.code === 'Enter') {
-				event.preventDefault();
-				event.delegateTarget.click();
-			}
-		}
-	);
-
-	function handleDestroyPortlet() {
-		addLayoutActionOptionQueryClickHandler.dispose();
-		addLayoutActionOptionQueryKeyDownHandler.dispose();
-
-		Liferay.detach('destroyPortlet', handleDestroyPortlet);
-	}
-
-	Liferay.on('destroyPortlet', handleDestroyPortlet);
-</aui:script>
