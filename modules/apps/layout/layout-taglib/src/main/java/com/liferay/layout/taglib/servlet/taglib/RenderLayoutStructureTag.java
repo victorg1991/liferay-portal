@@ -1090,6 +1090,18 @@ public class RenderLayoutStructureTag extends IncludeTag {
 				HttpServletResponse httpServletResponse =
 					(HttpServletResponse)pageContext.getResponse();
 
+
+				boolean includeCommonStyles =
+					renderLayoutStructureDisplayContext.includeCommonStyles(
+						fragmentEntryLink);
+
+				String style = renderLayoutStructureDisplayContext.getStyle(
+					fragmentStyledLayoutStructureItem);
+
+				if (includeCommonStyles) {
+					httpServletRequest.setAttribute("FRAGMENT_STYLES", style);
+				}
+
 				// LPS-164462 Call render before getting attribute value
 
 				String html = fragmentRendererController.render(
@@ -1105,14 +1117,18 @@ public class RenderLayoutStructureTag extends IncludeTag {
 
 					_write(
 						fragmentEntryLink, fragmentStyledLayoutStructureItem,
-						jspWriter, renderLayoutStructureDisplayContext);
+						jspWriter,
+						renderLayoutStructureDisplayContext, style);
 				}
 				else {
 					jspWriter.write("<div>");
 				}
 
 				jspWriter.write(html);
-				jspWriter.write("</div>");
+
+				if (!includeCommonStyles) {
+					jspWriter.write("</div>");
+				}
 			}
 		}
 
@@ -1331,27 +1347,28 @@ public class RenderLayoutStructureTag extends IncludeTag {
 
 	private void _write(
 			FragmentEntryLink fragmentEntryLink,
-			FragmentStyledLayoutStructureItem fragmentStyledLayoutStructureItem,
-			JspWriter jspWriter,
+			FragmentStyledLayoutStructureItem fragmentStyledLayoutStructureItem, JspWriter jspWriter,
 			RenderLayoutStructureDisplayContext
-				renderLayoutStructureDisplayContext)
+				renderLayoutStructureDisplayContext,
+			String style)
 		throws Exception {
+
+		if (renderLayoutStructureDisplayContext.includeCommonStyles(
+				fragmentEntryLink)) {
+
+			return;
+		}
 
 		jspWriter.write("<div class=\"");
 
-		if (!renderLayoutStructureDisplayContext.includeCommonStyles(
-				fragmentEntryLink)) {
-
-			jspWriter.write(
-				fragmentStyledLayoutStructureItem.getFragmentEntryLinkCssClass(
-					fragmentEntryLink));
-			jspWriter.write(StringPool.SPACE);
-			jspWriter.write(
-				fragmentStyledLayoutStructureItem.getUniqueCssClass());
-			jspWriter.write(StringPool.SPACE);
-			jspWriter.write(
-				fragmentStyledLayoutStructureItem.getStyledCssClasses());
-		}
+		jspWriter.write(
+			fragmentStyledLayoutStructureItem.getFragmentEntryLinkCssClass(
+				fragmentEntryLink));
+		jspWriter.write(StringPool.SPACE);
+		jspWriter.write(fragmentStyledLayoutStructureItem.getUniqueCssClass());
+		jspWriter.write(StringPool.SPACE);
+		jspWriter.write(
+			fragmentStyledLayoutStructureItem.getStyledCssClasses());
 
 		String colorCssClasses =
 			renderLayoutStructureDisplayContext.getColorCssClasses(
@@ -1363,9 +1380,7 @@ public class RenderLayoutStructureTag extends IncludeTag {
 		}
 
 		jspWriter.write("\" style=\"");
-		jspWriter.write(
-			renderLayoutStructureDisplayContext.getStyle(
-				fragmentStyledLayoutStructureItem));
+		jspWriter.write(style);
 		jspWriter.write("\">");
 	}
 

@@ -23,6 +23,7 @@ import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
 import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -30,8 +31,10 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.Validator;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -85,10 +88,11 @@ public class StylesFragmentEntryProcessor implements FragmentEntryProcessor {
 			return html;
 		}
 
+		HttpServletRequest httpServletRequest =
+			fragmentEntryProcessorContext.getHttpServletRequest();
+
 		FragmentStyledLayoutStructureItem fragmentStyledLayoutStructureItem =
-			_getLayoutStructureItem(
-				fragmentEntryLink,
-				fragmentEntryProcessorContext.getHttpServletRequest());
+			_getLayoutStructureItem(fragmentEntryLink, httpServletRequest);
 
 		if (fragmentStyledLayoutStructureItem == null) {
 			return html;
@@ -102,10 +106,19 @@ public class StylesFragmentEntryProcessor implements FragmentEntryProcessor {
 		String styledLayoutStructureItemCssClasses =
 			fragmentStyledLayoutStructureItem.getStyledCssClasses();
 
+		String style = GetterUtil.getString(
+			httpServletRequest.getAttribute("FRAGMENT_STYLES"));
+
 		for (Element element : elements) {
 			element.addClass(fragmentEntryLinkCssClass);
 			element.addClass(layoutStructureItemUniqueCssClass);
 			element.addClass(styledLayoutStructureItemCssClasses);
+
+			if (Validator.isNotNull(style)) {
+				String currentStyles = element.attr("style");
+
+				element.attr("style", currentStyles + StringPool.SEMICOLON + style);
+			}
 		}
 
 		Element bodyElement = document.body();
