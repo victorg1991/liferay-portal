@@ -32,6 +32,7 @@ import com.liferay.info.item.provider.InfoItemFormProvider;
 import com.liferay.info.localized.InfoLocalizedValue;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.web.internal.info.item.JournalArticleInfoItemFields;
+import com.liferay.layout.page.template.info.item.provider.DisplayPageInfoItemFieldSetProvider;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -67,7 +68,8 @@ public class JournalArticleInfoItemFormProvider
 			return _getInfoForm(
 				StringPool.BLANK,
 				_assetEntryInfoItemFieldSetProvider.getInfoFieldSet(
-					JournalArticle.class.getName()));
+					JournalArticle.class.getName()),
+				0L);
 		}
 		catch (NoSuchFormVariationException noSuchFormVariationException) {
 			throw new RuntimeException(noSuchFormVariationException);
@@ -86,7 +88,8 @@ public class JournalArticleInfoItemFormProvider
 				_assetEntryInfoItemFieldSetProvider.getInfoFieldSet(
 					_assetEntryLocalService.getEntry(
 						JournalArticle.class.getName(),
-						article.getResourcePrimKey())));
+						article.getResourcePrimKey())),
+				0L);
 		}
 		catch (NoSuchClassTypeException noSuchClassTypeException) {
 			throw new RuntimeException(
@@ -109,7 +112,8 @@ public class JournalArticleInfoItemFormProvider
 		return _getInfoForm(
 			formVariationKey,
 			_assetEntryInfoItemFieldSetProvider.getInfoFieldSet(
-				AssetEntry.class.getName()));
+				AssetEntry.class.getName()),
+			0L);
 	}
 
 	@Override
@@ -120,7 +124,8 @@ public class JournalArticleInfoItemFormProvider
 			formVariationKey,
 			_assetEntryInfoItemFieldSetProvider.getInfoFieldSet(
 				JournalArticle.class.getName(),
-				GetterUtil.getLong(formVariationKey), groupId));
+				GetterUtil.getLong(formVariationKey), groupId),
+			groupId);
 	}
 
 	private InfoFieldSet _getBasicInformationInfoFieldSet() {
@@ -146,17 +151,6 @@ public class JournalArticleInfoItemFormProvider
 		).build();
 	}
 
-	private InfoFieldSet _getDisplayPageInfoFieldSet() {
-		return InfoFieldSet.builder(
-		).infoFieldSetEntry(
-			JournalArticleInfoItemFields.displayPageURLInfoField
-		).labelInfoLocalizedValue(
-			InfoLocalizedValue.localize(getClass(), "display-page")
-		).name(
-			"display-page"
-		).build();
-	}
-
 	private InfoFieldSet _getFeaturedImageInfoFieldSet() {
 		return InfoFieldSet.builder(
 		).infoFieldSetEntry(
@@ -169,7 +163,8 @@ public class JournalArticleInfoItemFormProvider
 	}
 
 	private InfoForm _getInfoForm(
-			String formVariationKey, InfoFieldSet assetEntryInfoFieldSet)
+			String formVariationKey, InfoFieldSet assetEntryInfoFieldSet,
+			long groupId)
 		throws NoSuchFormVariationException {
 
 		Set<Locale> availableLocales = _language.getAvailableLocales();
@@ -209,7 +204,8 @@ public class JournalArticleInfoItemFormProvider
 				_templateInfoItemFieldSetProvider.getInfoFieldSet(
 					JournalArticle.class.getName(), formVariationKey)
 			).infoFieldSetEntry(
-				_getDisplayPageInfoFieldSet()
+				_displayPageInfoItemFieldSetProvider.getInfoFieldSet(
+					JournalArticle.class.getName(), formVariationKey, groupId)
 			).infoFieldSetEntry(
 				_getFeaturedImageInfoFieldSet()
 			).infoFieldSetEntry(
@@ -282,6 +278,10 @@ public class JournalArticleInfoItemFormProvider
 	@Reference
 	private AssetEntryInfoItemFieldSetProvider
 		_assetEntryInfoItemFieldSetProvider;
+
+	@Reference
+	private DisplayPageInfoItemFieldSetProvider
+		_displayPageInfoItemFieldSetProvider;
 
 	@Reference
 	private AssetEntryLocalService _assetEntryLocalService;
