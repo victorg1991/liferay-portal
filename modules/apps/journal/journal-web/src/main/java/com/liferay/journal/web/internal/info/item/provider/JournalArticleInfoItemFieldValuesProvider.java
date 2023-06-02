@@ -42,6 +42,7 @@ import com.liferay.journal.service.JournalArticleLocalService;
 import com.liferay.journal.util.JournalContent;
 import com.liferay.journal.util.JournalHelper;
 import com.liferay.journal.web.internal.info.item.JournalArticleInfoItemFields;
+import com.liferay.layout.page.template.info.item.provider.DisplayPageInfoItemFieldSetProvider;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Layout;
@@ -95,6 +96,10 @@ public class JournalArticleInfoItemFieldValuesProvider
 					JournalArticle.class.getName(),
 					journalArticle.getResourcePrimKey())
 			).infoFieldValues(
+				_displayPageInfoItemFieldSetProvider.getInfoFieldValues(
+					JournalArticle.class.getName(),
+					journalArticle.getResourcePrimKey())
+			).infoFieldValues(
 				_expandoInfoItemFieldSetProvider.getInfoFieldValues(
 					JournalArticle.class.getName(), journalArticle)
 			).infoFieldValues(
@@ -120,6 +125,10 @@ public class JournalArticleInfoItemFieldValuesProvider
 				"Caught unexpected exception", noSuchInfoItemException);
 		}
 	}
+
+	@Reference
+	private DisplayPageInfoItemFieldSetProvider
+		_displayPageInfoItemFieldSetProvider;
 
 	private List<InfoFieldValue<Object>> _getDDMStructureInfoFieldValues(
 		JournalArticle article) {
@@ -291,13 +300,6 @@ public class JournalArticleInfoItemFieldValuesProvider
 				new InfoFieldValue<>(
 					JournalArticleInfoItemFields.publishDateInfoField,
 					journalArticle.getDisplayDate()));
-
-			if (themeDisplay != null) {
-				journalArticleFieldValues.add(
-					new InfoFieldValue<>(
-						JournalArticleInfoItemFields.displayPageURLInfoField,
-						_getDisplayPageURL(journalArticle, themeDisplay)));
-			}
 
 			return journalArticleFieldValues;
 		}
