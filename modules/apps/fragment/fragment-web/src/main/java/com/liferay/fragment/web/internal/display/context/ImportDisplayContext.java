@@ -64,6 +64,19 @@ public class ImportDisplayContext {
 			});
 	}
 
+	public Map<String, Object> getProps() {
+		return HashMapBuilder.<String, Object>put(
+			"importURL",
+			() -> {
+				ResourceURL importURL = _renderResponse.createResourceURL();
+
+				importURL.setResourceID("/fragment/import");
+
+				return importURL.toString();
+			}
+		).build();
+	}
+
 	private List<FragmentsImporterResultEntry>
 		_getFragmentsImporterResultEntries() {
 
