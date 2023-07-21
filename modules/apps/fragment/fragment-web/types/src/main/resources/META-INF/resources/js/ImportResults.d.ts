@@ -14,14 +14,19 @@
 
 /// <reference types="react" />
 
-interface Props {
-	backURL: string;
-	importURL: string;
-	portletNamespace: string;
+interface ImportResult {
+	message: string;
+	name: string;
+	type: 'fragment' | 'composition';
 }
-declare function Import({
-	backURL,
-	importURL,
-	portletNamespace,
-}: Props): JSX.Element;
-export default Import;
+export interface ImportResultsData {
+	'imported': ImportResult[];
+	'imported-draft': ImportResult[];
+	'invalid': ImportResult[];
+}
+interface Props {
+	fileName: string | null;
+	importResults: ImportResultsData;
+}
+declare function ImportResults({fileName, importResults}: Props): JSX.Element;
+export default ImportResults;
