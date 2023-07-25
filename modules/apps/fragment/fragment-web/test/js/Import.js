@@ -16,7 +16,7 @@ import '@testing-library/jest-dom/extend-expect';
 import {act, fireEvent, render, screen} from '@testing-library/react';
 import React from 'react';
 
-import ImportModal from '../../src/main/resources/META-INF/resources/js/ImportModal';
+import Import from '../../src/main/resources/META-INF/resources/js/Import';
 
 describe('ImportModal', () => {
 	beforeAll(() => {
@@ -24,7 +24,7 @@ describe('ImportModal', () => {
 	});
 
 	it('renders text informing the user should upload a ZIP file', () => {
-		render(<ImportModal portletNamespace="namespace" />);
+		render(<Import portletNamespace="namespace" />);
 
 		act(() => {
 			jest.runAllTimers();
@@ -38,7 +38,7 @@ describe('ImportModal', () => {
 	});
 
 	it('renders file input and overwrite checkbox', () => {
-		render(<ImportModal portletNamespace="namespace" />);
+		render(<Import portletNamespace="namespace" />);
 
 		act(() => {
 			jest.runAllTimers();
@@ -54,7 +54,7 @@ describe('ImportModal', () => {
 	});
 
 	it('renders submit button disabled until file input has a valid value', () => {
-		render(<ImportModal portletNamespace="namespace" />);
+		render(<Import portletNamespace="namespace" />);
 
 		act(() => {
 			jest.runAllTimers();
@@ -75,7 +75,7 @@ describe('ImportModal', () => {
 	});
 
 	it('shows required validation when a file with an invalid extension is introduced', () => {
-		render(<ImportModal portletNamespace="namespace" />);
+		render(<Import portletNamespace="namespace" />);
 
 		act(() => {
 			jest.runAllTimers();
