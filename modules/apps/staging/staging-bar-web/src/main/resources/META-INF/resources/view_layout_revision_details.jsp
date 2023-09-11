@@ -224,17 +224,17 @@ else {
 	<portlet:param name="layoutSetBranchId" value="<%= String.valueOf(layoutSetBranch.getLayoutSetBranchId()) %>" />
 </portlet:renderURL>
 
-<aui:script position="inline" use="liferay-staging-version">
-	var stagingBar = Liferay.StagingBar;
-
-	stagingBar.init({
-		layoutRevisionStatusURL: '<%= layoutRevisionStatusURL %>',
-		markAsReadyForPublicationURL: '<%= markAsReadyForPublicationURL %>',
-		namespace: '<portlet:namespace />',
-		portletId: '<%= portletDisplay.getId() %>',
-		viewHistoryURL: '<%= viewHistoryURL %>',
-	});
-</aui:script>
+<liferay-frontend:component
+	componentId="stagingVersionId"
+	context='<%=
+		HashMapBuilder.<String, Object>put(
+			"layoutRevisionStatusURL", layoutRevisionStatusURL
+		).put(
+			"markAsReadyForPublicationURL", markAsReadyForPublicationURL
+		).build()
+	%>'
+	module="js/StagingVersion"
+/>
 
 <aui:script>
 	function <portlet:namespace />openPageVariationsDialog() {
