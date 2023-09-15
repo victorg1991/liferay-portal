@@ -33,9 +33,12 @@ import com.liferay.portal.kernel.service.LayoutSetBranchLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbEntry;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HtmlUtil;
+import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -45,6 +48,8 @@ import com.liferay.portal.util.LayoutTypeControllerTracker;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import javax.portlet.ResourceURL;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -199,6 +204,9 @@ public class MillerColumnsDisplayContext {
 				StringUtil.merge(
 					_layoutsAdminDisplayContext.getAvailableActions(layout))
 			).put(
+				"createLayoutPageTemplateEntryURL",
+				_getCreateLayoutPageTemplateEntryURL()
+			).put(
 				"description",
 				LanguageUtil.get(
 					_httpServletRequest,
@@ -208,6 +216,9 @@ public class MillerColumnsDisplayContext {
 					"layout.types." + layout.getType())
 			).put(
 				"draggable", true
+			).put(
+				"getLayoutPageTemplateCollectionsURL",
+				_getLayoutPageTemplateCollectionsURL()
 			);
 
 			int childLayoutsCount = LayoutServiceUtil.getLayoutsCount(
@@ -345,6 +356,20 @@ public class MillerColumnsDisplayContext {
 		}
 
 		return breadcrumbEntriesJSONArray;
+	}
+
+	private String _getCreateLayoutPageTemplateEntryURL() {
+		return HttpComponentsUtil.addParameter(
+			PortletURLBuilder.createActionURL(
+				_liferayPortletResponse
+			).setActionName(
+				"/layout_admin/create_layout_page_template_entry"
+			).setBackURL(
+				ParamUtil.getString(
+					PortalUtil.getOriginalServletRequest(_httpServletRequest),
+					"p_l_back_url", _themeDisplay.getURLCurrent())
+			).buildString(),
+			"p_l_mode", Constants.EDIT);
 	}
 
 	private List<Long> _getDuplicatedFriendlyURLPlids() throws PortalException {
@@ -491,6 +516,16 @@ public class MillerColumnsDisplayContext {
 		}
 
 		return jsonArray;
+	}
+
+	private String _getLayoutPageTemplateCollectionsURL() {
+		ResourceURL resourceURL = _liferayPortletResponse.createResourceURL();
+
+		resourceURL.setResourceID(
+			"/layout_admin/get_layout_page_template_collections");
+
+		return HttpComponentsUtil.addParameter(
+			resourceURL.toString(), "p_l_mode", Constants.EDIT);
 	}
 
 	private JSONArray _getLayoutSetBranchesJSONArray() throws Exception {
