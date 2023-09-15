@@ -10,6 +10,7 @@ import ClayIcon from '@clayui/icon';
 import ClayLabel from '@clayui/label';
 import ClayLayout from '@clayui/layout';
 import ClayLink from '@clayui/link';
+import {useModal} from '@clayui/modal';
 import classNames from 'classnames';
 import {sub} from 'frontend-js-web';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
@@ -17,6 +18,7 @@ import {useDrag, useDrop} from 'react-dnd';
 import {getEmptyImage} from 'react-dnd-html5-backend';
 
 import ACTIONS from '../actions';
+import ConvertToPageTemplateModal from '../convert_to_page_template_modal/ConvertToPageTemplateModal';
 import {ACCEPTING_TYPES, ITEM_HOVER_BORDER_LIMIT} from './constants';
 
 const DROP_ZONES = {
@@ -165,8 +167,10 @@ const MillerColumnsItem = ({
 		bulkActions = [],
 		checked,
 		columnIndex,
+		createLayoutPageTemplateEntryURL,
 		description,
 		draggable,
+		getLayoutPageTemplateCollectionsURL,
 		hasChild,
 		hasDuplicatedFriendlyURL = false,
 		id: itemId,
@@ -191,6 +195,16 @@ const MillerColumnsItem = ({
 	const ref = useRef();
 	const timeoutRef = useRef();
 
+	const onClose = () => {
+		setOpenModal(false);
+	};
+
+	const [openModal, setOpenModal] = useState(false);
+
+	const {observer} = useModal({
+		onClose,
+	});
+
 	const [dropZone, setDropZone] = useState();
 
 	const [dropdownActionsActive, setDropdownActionsActive] = useState(false);
@@ -203,6 +217,10 @@ const MillerColumnsItem = ({
 				...item,
 				onClick(event) {
 					const action = item.data?.action;
+
+					if (action === 'convertToPageTemplate') {
+						setOpenModal(true);
+					}
 
 					if (action) {
 						event.preventDefault();
@@ -507,6 +525,21 @@ const MillerColumnsItem = ({
 							/>
 						}
 					/>
+
+					{openModal && (
+						<ConvertToPageTemplateModal
+							createLayoutPageTemplateEntryURL={
+								createLayoutPageTemplateEntryURL
+							}
+							getLayoutPageTemplateCollectionsURL={
+								getLayoutPageTemplateCollectionsURL
+							}
+							itemId={itemId}
+							namespace={namespace}
+							observer={observer}
+							onClose={onClose}
+						/>
+					)}
 				</ClayLayout.ContentCol>
 			)}
 
