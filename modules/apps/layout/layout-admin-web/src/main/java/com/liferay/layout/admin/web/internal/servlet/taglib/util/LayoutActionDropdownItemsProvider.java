@@ -10,6 +10,12 @@ import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.layout.admin.web.internal.display.context.LayoutsAdminDisplayContext;
 import com.liferay.layout.admin.web.internal.helper.LayoutActionsHelper;
+import com.liferay.layout.admin.web.internal.security.permission.resource.LayoutPageTemplatePermission;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateActionKeys;
+import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
+import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
+import com.liferay.layout.utility.page.model.LayoutUtilityPageEntry;
+import com.liferay.layout.utility.page.service.LayoutUtilityPageEntryLocalServiceUtil;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
@@ -124,7 +130,18 @@ public class LayoutActionDropdownItemsProvider {
 		).addGroup(
 			dropdownGroupItem -> {
 				dropdownGroupItem.setDropdownItems(
-					DropdownItemListBuilder.addContext(
+					DropdownItemListBuilder.add(
+						() -> _isShowConvertToPageTemplateAction(layout),
+						dropdownItem -> {
+							dropdownItem.putData(
+								"action", "convertToPageTemplate");
+							dropdownItem.setIcon("page-template");
+							dropdownItem.setLabel(
+								LanguageUtil.get(
+									_httpServletRequest,
+									"convert-to-page-template"));
+						}
+					).addContext(
 						_getCopyLayoutWithPermissionsActionUnsafeConsumer(
 							layout)
 					).add(
@@ -525,6 +542,57 @@ public class LayoutActionDropdownItemsProvider {
 		return draftLayout.hasScopeGroup();
 	}
 
+	private boolean _isContentLayout(Layout layout) {
+		if (_contentLayout != null) {
+			return _contentLayout;
+		}
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			LayoutPageTemplateEntryLocalServiceUtil.
+				fetchLayoutPageTemplateEntryByPlid(layout.getPlid());
+
+		if (layoutPageTemplateEntry == null) {
+			layoutPageTemplateEntry =
+				LayoutPageTemplateEntryLocalServiceUtil.
+					fetchLayoutPageTemplateEntryByPlid(layout.getClassPK());
+		}
+
+		if (layoutPageTemplateEntry == null) {
+			LayoutUtilityPageEntry layoutUtilityPageEntry =
+				LayoutUtilityPageEntryLocalServiceUtil.
+					fetchLayoutUtilityPageEntryByPlid(layout.getPlid());
+
+			if (layoutUtilityPageEntry != null) {
+				_contentLayout = false;
+			}
+			else {
+				_contentLayout = true;
+			}
+		}
+		else {
+			_contentLayout = false;
+		}
+
+		return _contentLayout;
+	}
+
+	private boolean _isShowConvertToPageTemplateAction(Layout layout) {
+		if (_isContentLayout(layout) &&
+			LayoutPageTemplatePermission.contains(
+				_themeDisplay.getPermissionChecker(), layout.getGroupId(),
+				LayoutPageTemplateActionKeys.
+					ADD_LAYOUT_PAGE_TEMPLATE_COLLECTION) &&
+			LayoutPageTemplatePermission.contains(
+				_themeDisplay.getPermissionChecker(), layout.getGroupId(),
+				LayoutPageTemplateActionKeys.ADD_LAYOUT_PAGE_TEMPLATE_ENTRY)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private Boolean _contentLayout;
 	private final HttpServletRequest _httpServletRequest;
 	private final LayoutActionsHelper _layoutActionsHelper;
 	private final LayoutsAdminDisplayContext _layoutsAdminDisplayContext;
