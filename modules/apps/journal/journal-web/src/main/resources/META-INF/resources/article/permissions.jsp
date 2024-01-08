@@ -14,7 +14,9 @@
 
 <aui:model-context bean="<%= journalDisplayContext.getArticle() %>" model="<%= JournalArticle.class %>" />
 
-<liferay-ui:input-permissions
-	modelName="<%= JournalArticle.class.getName() %>"
-	reverse="<%= true %>"
-/>
+<div class="<%= FeatureFlagManagerUtil.isEnabled("LPS-198959") ? "m-4" : StringPool.BLANK %>">
+	<liferay-ui:input-permissions
+		modelName="<%= JournalArticle.class.getName() %>"
+		reverse="<%= true %>"
+	/>
+</div>
