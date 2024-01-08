@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2024 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -8,6 +8,7 @@ package com.liferay.journal.web.internal.portlet.configuration.icon;
 import com.liferay.journal.constants.JournalPortletKeys;
 import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.web.internal.portlet.action.ActionUtil;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -26,7 +27,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 /**
- * @author Daniel Kocsis
+ * @author Bárbara Cabrera
  */
 @Component(
 	property = {
@@ -35,12 +36,17 @@ import org.osgi.service.component.annotations.Reference;
 	},
 	service = PortletConfigurationIcon.class
 )
-public class ViewSourcePortletConfigurationIcon
+public class PermissionsPortletConfigurationIcon
 	extends BasePortletConfigurationIcon {
 
 	@Override
+	public String getIconCssClass() {
+		return "password-policies";
+	}
+
+	@Override
 	public String getMessage(PortletRequest portletRequest) {
-		return _language.get(getLocale(portletRequest), "view-source");
+		return _language.get(getLocale(portletRequest), "permissions");
 	}
 
 	@Override
@@ -58,7 +64,7 @@ public class ViewSourcePortletConfigurationIcon
 			return PortletURLBuilder.createRenderURL(
 				_portal.getLiferayPortletResponse(portletResponse)
 			).setMVCPath(
-				"/configuration/icon/view_source.jsp"
+				"/article/permissions.jsp"
 			).setRedirect(
 				themeDisplay.getURLCurrent()
 			).setParameter(
@@ -82,7 +88,7 @@ public class ViewSourcePortletConfigurationIcon
 
 	@Override
 	public double getWeight() {
-		return 101;
+		return 100.0;
 	}
 
 	@Override
@@ -91,7 +97,9 @@ public class ViewSourcePortletConfigurationIcon
 			JournalArticle article = ActionUtil.getArticle(
 				_portal.getHttpServletRequest(portletRequest));
 
-			if (article != null) {
+			if ((article != null) ||
+				FeatureFlagManagerUtil.isEnabled("LPS-198959")) {
+
 				return true;
 			}
 		}
@@ -110,7 +118,7 @@ public class ViewSourcePortletConfigurationIcon
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
-		ViewSourcePortletConfigurationIcon.class);
+		PermissionsPortletConfigurationIcon.class);
 
 	@Reference
 	private Language _language;
