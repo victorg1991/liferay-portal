@@ -4,7 +4,8 @@
  */
 
 import ClayButton from '@clayui/button';
-import React from 'react';
+import React, {useState} from 'react';
+import PermissionsModal from './modals/PermissionsModal.js';
 
 export default function SaveButtons({
 	articleId,
@@ -14,7 +15,14 @@ export default function SaveButtons({
 	publishButtonLabel,
 	saveButtonLabel,
 	selectedLanguageId,
+	permissionsURL
 }) {
+	const [permissionsModalVisible, setPermissionsModalVisible] = useState(false);
+
+	const onClick = () => {
+		setPermissionsModalVisible(true);
+	};
+
 	const handleButtonClick = (type) => {
 		document
 			.querySelectorAll('.journal-alert-container')
@@ -95,11 +103,17 @@ export default function SaveButtons({
 				</ClayButton>
 			) : null}
 			<ClayButton
-				onClick={() => handleButtonClick('publish')}
-				type="submit"
+				onClick={onClick}
 			>
 				{publishButtonLabel}
 			</ClayButton>
+
+			{permissionsModalVisible ? (
+				<PermissionsModal
+					permissionsURL={permissionsURL}
+					onPublishButtonClick={() => handleButtonClick('publish')}
+				/>
+			) : null}
 		</>
 	);
 }

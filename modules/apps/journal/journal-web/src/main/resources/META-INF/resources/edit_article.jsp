@@ -136,29 +136,29 @@ JournalEditArticleDisplayContext journalEditArticleDisplayContext = new JournalE
 						</c:if>
 
 						<c:if test="<%= journalEditArticleDisplayContext.hasSavePermission() %>">
-							<div>
-								<c:if test='<%= !FeatureFlagManagerUtil.isEnabled("LPS-141392") && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASS_NAME_ID_DEFAULT) %>'>
-									<clay:button
-										data-actionname='<%= ((article == null) || Validator.isNull(article.getArticleId())) ? "/journal/add_article" : "/journal/update_article" %>'
-										displayType="secondary"
-										id='<%= liferayPortletResponse.getNamespace() + "saveButton" %>'
-										label="<%= journalEditArticleDisplayContext.getSaveButtonLabel() %>"
-										type="submit"
-									/>
-								</c:if>
-
+							<c:if test='<%= !FeatureFlagManagerUtil.isEnabled("LPS-141392") && (journalEditArticleDisplayContext.getClassNameId() == JournalArticleConstants.CLASS_NAME_ID_DEFAULT) %>'>
 								<clay:button
-									data-actionname="<%= Constants.PUBLISH %>"
-									displayType="primary"
-									id='<%= liferayPortletResponse.getNamespace() + "publishButton" %>'
-									label="<%= journalEditArticleDisplayContext.getPublishButtonLabel() %>"
+									data-actionname='<%= ((article == null) || Validator.isNull(article.getArticleId())) ? "/journal/add_article" : "/journal/update_article" %>'
+									displayType="secondary"
+									id='<%= liferayPortletResponse.getNamespace() + "saveButton" %>'
+									label="<%= journalEditArticleDisplayContext.getSaveButtonLabel() %>"
 									type="submit"
 								/>
+							</c:if>
 
+							<clay:button
+								data-actionname="<%= Constants.PUBLISH %>"
+								displayType="primary"
+								id='<%= liferayPortletResponse.getNamespace() + "publishButton" %>'
+								label="<%= journalEditArticleDisplayContext.getPublishButtonLabel() %>"
+								type="submit"
+							/>
+
+							<div>
 								<c:if test='<%= FeatureFlagManagerUtil.isEnabled("LPS-198959") %>'>
 									<react:component
 										module="js/SaveButtons"
-										props="<%= journalEditArticleDisplayContext.getSaveButtonsContext() %>"
+										props='<%= journalEditArticleDisplayContext.getSaveButtonsContext() %>'
 									/>
 								</c:if>
 							</div>

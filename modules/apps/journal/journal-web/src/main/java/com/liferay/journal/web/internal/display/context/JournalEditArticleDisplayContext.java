@@ -37,6 +37,7 @@ import com.liferay.journal.model.JournalFolder;
 import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.journal.service.JournalArticleServiceUtil;
 import com.liferay.journal.service.JournalFolderLocalServiceUtil;
+import com.liferay.journal.web.internal.portlet.action.ActionUtil;
 import com.liferay.journal.web.internal.security.permission.resource.JournalArticlePermission;
 import com.liferay.journal.web.internal.security.permission.resource.JournalFolderPermission;
 import com.liferay.journal.web.internal.util.RecentGroupManagerUtil;
@@ -97,6 +98,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
 
 import javax.portlet.RenderResponse;
 
@@ -307,6 +309,19 @@ public class JournalEditArticleDisplayContext {
 			_httpServletRequest, "backURL", getRedirect());
 
 		return _backURL;
+	}
+
+	public String getPermissionsURL() {
+
+			return PortletURLBuilder.createRenderURL(
+				_liferayPortletResponse
+			).setMVCPath(
+				"/article/permissions.jsp"
+			).setRedirect(
+				_themeDisplay.getURLCurrent()
+			).setWindowState(
+				LiferayWindowState.POP_UP
+			).buildString();
 	}
 
 	public Map<String, Object> getChangeDefaultLanguageData() {
@@ -985,6 +1000,8 @@ public class JournalEditArticleDisplayContext {
 			() -> LanguageUtil.get(_httpServletRequest, getSaveButtonLabel())
 		).put(
 			"selectedLanguageId", getSelectedLanguageId()
+		).put(
+			"permissionsURL", getPermissionsURL()
 		).build();
 	}
 
