@@ -7,12 +7,17 @@ package com.liferay.layout.page.template.admin.web.internal.servlet.taglib.util;
 
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
+import com.liferay.item.selector.ItemSelector;
+import com.liferay.item.selector.criteria.UUIDItemSelectorReturnType;
+import com.liferay.layout.page.template.admin.web.internal.constants.LayoutPageTemplateAdminWebKeys;
 import com.liferay.layout.page.template.admin.web.internal.security.permission.resource.LayoutPageTemplateCollectionPermission;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateCollectionTypeConstants;
+import com.liferay.layout.page.template.item.selector.criterion.LayoutPageTemplateCollectionTreeNodeItemSelectorCriterion;
 import com.liferay.layout.page.template.model.LayoutPageTemplateCollection;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
+import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -21,6 +26,7 @@ import com.liferay.taglib.security.PermissionsURLTag;
 
 import java.util.List;
 
+import javax.portlet.PortletURL;
 import javax.portlet.RenderResponse;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +41,11 @@ public class LayoutPageTemplateCollectionActionDropdownItem {
 
 		_httpServletRequest = httpServletRequest;
 		_renderResponse = renderResponse;
+		_itemSelector = (ItemSelector)_httpServletRequest.getAttribute(
+			LayoutPageTemplateAdminWebKeys.ITEM_SELECTOR);
+
+		_themeDisplay = (ThemeDisplay)_httpServletRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
 	}
 
 	public List<DropdownItem> getActionDropdownItems(
@@ -103,6 +114,25 @@ public class LayoutPageTemplateCollectionActionDropdownItem {
 							dropdownItem.setLabel(
 								LanguageUtil.get(_httpServletRequest, "edit"));
 						}
+					).add(
+						() ->
+							(layoutPageTemplateCollection.getType() ==
+							 LayoutPageTemplateCollectionTypeConstants.
+								 DISPLAY_PAGE) &&
+							LayoutPageTemplateCollectionPermission.contains(
+								themeDisplay.getPermissionChecker(),
+								layoutPageTemplateCollection,
+								ActionKeys.UPDATE),
+						dropdownItem -> {
+							dropdownItem.putData(
+								"action", "moveLayoutPageTemplateCollection");
+							dropdownItem.putData(
+								"moveLayoutPageTemplateCollectionURL",
+								_getMoveLayoutPageTemplateCollectionURL());
+							dropdownItem.setIcon("move-folder");
+							dropdownItem.setLabel(
+								LanguageUtil.get(_httpServletRequest, "move"));
+						}
 					).build());
 				dropdownGroupItem.setSeparator(true);
 			}
@@ -158,6 +188,22 @@ public class LayoutPageTemplateCollectionActionDropdownItem {
 				dropdownGroupItem.setSeparator(true);
 			}
 		).build();
+	}
+
+	private String _getMoveLayoutPageTemplateCollectionURL(){
+		LayoutPageTemplateCollectionTreeNodeItemSelectorCriterion
+			layoutPageTemplateCollectionTreeNodeItemSelectorCriterion =
+			new LayoutPageTemplateCollectionTreeNodeItemSelectorCriterion();
+
+		layoutPageTemplateCollectionTreeNodeItemSelectorCriterion.
+			setDesiredItemSelectorReturnTypes(new UUIDItemSelectorReturnType());
+
+		PortletURL itemSelectorURL = _itemSelector.getItemSelectorURL(
+			RequestBackedPortletURLFactoryUtil.create(_httpServletRequest),
+			_renderResponse.getNamespace() + "selectFolder",
+			layoutPageTemplateCollectionTreeNodeItemSelectorCriterion);
+
+		return itemSelectorURL.toString();
 	}
 
 	private String _getDeleteDialogTitle(
@@ -264,5 +310,8 @@ public class LayoutPageTemplateCollectionActionDropdownItem {
 
 	private final HttpServletRequest _httpServletRequest;
 	private final RenderResponse _renderResponse;
+
+	private final ItemSelector _itemSelector;
+	private final ThemeDisplay _themeDisplay;
 
 }

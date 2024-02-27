@@ -24,6 +24,14 @@ const ACTIONS = {
 		});
 	},
 
+	moveLayoutPageTemplateCollection({moveLayoutPageTemplateCollectionURL}){
+		openModal({
+			selectEventName: 'selectFolder',
+			title: Liferay.Language.get('move-folder'),
+			url: moveLayoutPageTemplateCollectionURL,
+		});
+	},
+
 	permissionsLayoutPageTemplateCollection({
 		permissionsLayoutPageTemplateCollectionURL,
 	}) {
