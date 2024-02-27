@@ -1,3 +1,7 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
 
 import {TreeView as ClayTreeView} from '@clayui/core';
 import ClayIcon from "@clayui/icon";
@@ -7,47 +11,37 @@ import React from "react";
 export default function SelectLayoutPageTemplateCollection({
 	layoutPageTemplateCollections,
 }){
-	return (
-		<>
-			<ClayTreeView
-				items={layoutPageTemplateCollections}
-				showExpanderOnHover={false}
-			>
-				{(item) => (
-					<ClayTreeView.Item>
-						<ClayTreeView.ItemStack
-							onClick={(event) => onClick(event, item)}
-							onKeyUp={(event) => onKeyUp(event, item)}
-						>
-							<ClayIcon symbol="folder"/>
 
-							{item.name}
-						</ClayTreeView.ItemStack>
+	return layoutPageTemplateCollections ? (
+		<ClayTreeView
+			items={layoutPageTemplateCollections}
+			showExpanderOnHover={false}
+		>
+			{(item) => (
+				<ClayTreeView.Item>
+					<ClayTreeView.ItemStack>
+						<ClayIcon symbol="folder"/>
 
-						<ClayTreeView.Group items={item.children}>
-							{(item) => (
-								<ClayTreeView.Item
-									onClick={(event) => onClick(event, item)}
-									onKeyUp={(event) => onKeyUp(event, item)}
-								>
-									<ClayIcon symbol="folder"/>
+						{item.name}
+					</ClayTreeView.ItemStack>
 
-									{item.name}
-								</ClayTreeView.Item>
-							)}
-						</ClayTreeView.Group>
-					</ClayTreeView.Item>
-				)}
-			</ClayTreeView>
-			) : (
-			<ClayEmptyState
-				description={Liferay.Language.get(
-					'try-again-with-a-different-search'
-				)}
-				imgSrc={`${themeDisplay.getPathThemeImages()}/states/search_state.gif`}
-				small
-				title={Liferay.Language.get('no-results-found')}
-			/>
-			);
-		</>
-	)}
+					<ClayTreeView.Group items={item.children}>
+						{(item) => (
+							<ClayTreeView.Item>
+								<ClayIcon symbol="folder"/>
+
+								{item.name}
+							</ClayTreeView.Item>
+						)}
+					</ClayTreeView.Group>
+				</ClayTreeView.Item>
+			)}
+		</ClayTreeView>
+	) : (
+		<ClayEmptyState
+			imgSrc={`${themeDisplay.getPathThemeImages()}/states/search_state.gif`}
+			small
+			title={Liferay.Language.get('no-results-found')}
+		/>
+	)
+}

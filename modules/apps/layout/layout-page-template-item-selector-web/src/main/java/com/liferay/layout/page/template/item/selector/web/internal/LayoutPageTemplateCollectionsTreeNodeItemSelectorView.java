@@ -77,7 +77,7 @@ public class LayoutPageTemplateCollectionsTreeNodeItemSelectorView
 	private Language _language;
 
 	@Reference(
-		target = "(osgi.web.symbolicname=com.liferay.asset.categories.item.selector.web)"
+		target = "(osgi.web.symbolicname=com.liferay.layout.page.template.item.selector.web)"
 	)
 	private ServletContext _servletContext;
 }

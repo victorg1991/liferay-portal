@@ -200,7 +200,7 @@ public class LayoutPageTemplateCollectionActionDropdownItem {
 
 		PortletURL itemSelectorURL = _itemSelector.getItemSelectorURL(
 			RequestBackedPortletURLFactoryUtil.create(_httpServletRequest),
-			_renderResponse.getNamespace() + "selectFolder",
+			"selectFolder",
 			layoutPageTemplateCollectionTreeNodeItemSelectorCriterion);
 
 		return itemSelectorURL.toString();

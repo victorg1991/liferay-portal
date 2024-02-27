@@ -44,14 +44,6 @@ public class LayoutPageTemplateCollectionsTreeNodeDisplayContext {
 				"name", layoutPageTemplateCollection.getName()
 			);
 
-			if (layoutPageTemplateCollection.getParentLayoutPageTemplateCollectionId() == getParentLayoutPageTemplateCollectionId()) {
-				jsonObject.put("selected", true);
-			}
-
-			if (layoutPageTemplateCollection.getParentLayoutPageTemplateCollectionId() == getLayoutPageTemplateCollectionId()) {
-				jsonObject.put("disabled", true);
-			}
-
 			jsonArray.put(jsonObject);
 		}
 
