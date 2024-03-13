@@ -24,11 +24,6 @@ export class JournalEditTemplatePage {
 
 	async goto() {
 		await this.journalPage.goToCreateNewTemplate();
-
-		// Do it twice so we decrease flakiness
-
-		await this.journalPage.goto();
-		await this.journalPage.goToCreateNewTemplate();
 	}
 
 	async gotoElements() {

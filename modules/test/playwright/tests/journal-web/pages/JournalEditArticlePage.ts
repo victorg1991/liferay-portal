@@ -32,11 +32,6 @@ export class JournalEditArticlePage {
 		}
 		else {
 			await this.journalPage.goToCreateNewBasicArticle();
-
-			// Do it twice so we decrease flakiness
-
-			await this.journalPage.goto();
-			await this.journalPage.goToCreateNewBasicArticle();
 		}
 	}
 
