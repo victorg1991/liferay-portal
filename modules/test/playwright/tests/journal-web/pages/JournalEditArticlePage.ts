@@ -55,6 +55,10 @@ export class JournalEditArticlePage {
 		await this.publishButton.waitFor();
 
 		await this.publishButton.click();
+
+		await this.page
+			.getByText(`Success:${title} was updated successfully.`)
+			.waitFor();
 	}
 
 	async publishNewBasicArticle(title: string) {
@@ -63,5 +67,9 @@ export class JournalEditArticlePage {
 		await this.publishButton.waitFor();
 
 		await this.publishButton.click();
+
+		await this.page
+			.getByText(`Success:${title} was created successfully.`)
+			.waitFor();
 	}
 }
