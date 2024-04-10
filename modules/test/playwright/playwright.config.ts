@@ -37,6 +37,9 @@ import {config as stableConfig} from './tests/stable/config';
 import {config as stylebookConfig} from './tests/style-book-web/config';
 import {config as usersAdminWebConfig} from './tests/users-admin-web/config';
 
+import setupProjects from './tests/setup/index';
+import teardownProjects from './tests/teardown/index';
+
 export default defineConfig({
 	expect: {
 		timeout: 15 * 1000,
@@ -74,6 +77,8 @@ export default defineConfig({
 		stableConfig,
 		stylebookConfig,
 		usersAdminWebConfig,
+		...setupProjects,
+		...teardownProjects,
 	],
 	reporter: [
 		[
