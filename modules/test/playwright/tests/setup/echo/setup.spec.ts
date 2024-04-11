@@ -4,6 +4,8 @@
  */
 
 import {expect, mergeTests} from '@playwright/test';
+import {createReadStream} from 'fs';
+import {resolve} from 'path';
 
 import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
 import {loginTest} from '../../../fixtures/loginTest';
@@ -23,21 +25,35 @@ test('Setup: Create site with required data for Echo tests', async ({
 
 	const authToken = await page.evaluate(() => Liferay.authToken);
 
+	const file = resolve(__dirname, 'site-initializer.zip');
+
+	const stream = createReadStream(file);
+
 	const response = await page.request.post(
-		`${apiHelpers.baseUrl}headless-site/v1.0/sites`,
+		`http://localhost:8080/o/headless-site/v1.0/sites`,
 		{
-			form: {
-				file: './site-initializer.zip',
-				site: `{name: 'Papa'}`,
-			},
 			headers: {
+				'Accept': '*/*',
 				'Content-Type': 'multipart/form-data',
 				'x-csrf-token': authToken,
+			},
+
+			multipart: {
+				file: stream,
+				site: {
+					buffer: Buffer.from('{"name": "Papa"}', 'utf-8'),
+					mimeType: 'application/json',
+					name: 'site',
+				},
 			},
 		}
 	);
 
+	console.log(response);
+
 	const site = await response.json();
+
+	console.log(site);
 
 	expect(site).toHaveProperty('externalReferenceCode', 'echo-site-erc');
 });

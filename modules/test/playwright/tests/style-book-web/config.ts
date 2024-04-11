@@ -8,6 +8,7 @@
 import {devices} from '@playwright/test';
 
 export const config = {
+	dependencies: ['echo-setup'],
 	name: 'style-book-web',
 	testDir: 'tests/style-book-web',
 	use: {
