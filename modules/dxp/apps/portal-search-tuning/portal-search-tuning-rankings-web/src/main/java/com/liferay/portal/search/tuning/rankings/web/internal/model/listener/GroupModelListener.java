@@ -31,36 +31,38 @@ public class GroupModelListener extends BaseModelListener<Group> {
 
 	@Override
 	public void onBeforeRemove(Group group) {
-		if (FeatureFlagManagerUtil.isEnabled(
+		if (!FeatureFlagManagerUtil.isEnabled(
 				group.getCompanyId(), "LPD-6368")) {
 
-			try {
-				RankingIndexName rankingIndexName =
-					_rankingIndexNameBuilder.getRankingIndexName(
-						group.getCompanyId());
+			return;
+		}
 
-				List<Ranking> rankings =
-					_rankingIndexReader.fetchByGroupExternalReferenceCode(
-						group.getExternalReferenceCode(), rankingIndexName);
+		try {
+			RankingIndexName rankingIndexName =
+				_rankingIndexNameBuilder.getRankingIndexName(
+					group.getCompanyId());
 
-				if (rankings == null) {
-					return;
-				}
+			List<Ranking> rankings =
+				_rankingIndexReader.fetchByGroupExternalReferenceCode(
+					group.getExternalReferenceCode(), rankingIndexName);
 
-				for (Ranking ranking : rankings) {
-					Ranking.Builder rankingBuilder =
-						_rankingBuilderFactory.builder(ranking);
-
-					rankingBuilder.status(
-						ResultRankingsConstants.STATUS_NOT_APPLICABLE);
-
-					_rankingStorageAdapter.update(
-						rankingBuilder.build(), rankingIndexName);
-				}
+			if (rankings == null) {
+				return;
 			}
-			catch (PortalException portalException) {
-				throw new RuntimeException(portalException);
+
+			for (Ranking ranking : rankings) {
+				Ranking.Builder rankingBuilder = _rankingBuilderFactory.builder(
+					ranking);
+
+				rankingBuilder.status(
+					ResultRankingsConstants.STATUS_NOT_APPLICABLE);
+
+				_rankingStorageAdapter.update(
+					rankingBuilder.build(), rankingIndexName);
 			}
+		}
+		catch (PortalException portalException) {
+			throw new RuntimeException(portalException);
 		}
 	}
 
