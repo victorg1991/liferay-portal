@@ -16,11 +16,14 @@ import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCResourceCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 import javax.portlet.MimeResponse;
 import javax.portlet.ResourceRequest;
@@ -52,8 +55,18 @@ public class UploadImageMVCResourceCommand extends BaseMVCResourceCommand {
 				FileEntry tempFileEntry = UploadImageUtil.getTempImageFileEntry(
 					resourceRequest);
 
-				_serveTempImageFile(
-					resourceResponse, tempFileEntry.getContentStream());
+				if (Objects.equals(tempFileEntry.getMimeType(), ContentTypes.IMAGE_SVG_XML)) {
+					resourceResponse.setContentType(
+						tempFileEntry.getMimeType());
+
+					PortletResponseUtil.write(
+						resourceResponse, tempFileEntry.getContentStream());
+
+				}
+				else {
+					_serveTempImageFile(
+						resourceResponse, tempFileEntry.getContentStream());
+				}
 			}
 		}
 		catch (NoSuchFileEntryException noSuchFileEntryException) {
