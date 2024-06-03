@@ -139,6 +139,10 @@ public class AntivirusAsyncFileStoreSchedulerJobConfiguration
 	private void _scheduleAntivirusScan(Path rootPath, Path filePath) {
 		Path relativePath = rootPath.relativize(filePath);
 
+		if (relativePath.getNameCount() <= 1) {
+			return;
+		}
+
 		// Company ID
 
 		Path companyIdPath = relativePath.getName(0);
