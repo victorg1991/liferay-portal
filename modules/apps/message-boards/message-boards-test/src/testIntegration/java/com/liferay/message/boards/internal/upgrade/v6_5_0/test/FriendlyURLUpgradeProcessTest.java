@@ -55,7 +55,7 @@ public class FriendlyURLUpgradeProcessTest {
 
 	@Test
 	public void testUpgrade() throws Exception {
-		MBCategory productionMBCategory;
+		MBCategory productionMBCategory = null;
 
 		try (SafeCloseable safeCloseable =
 				CTCollectionThreadLocal.setProductionModeWithSafeCloseable()) {
@@ -72,7 +72,7 @@ public class FriendlyURLUpgradeProcessTest {
 				productionMBCategory);
 		}
 
-		MBCategory ctCollectionMBCategory;
+		MBCategory ctCollectionMBCategory = null;
 
 		try (SafeCloseable safeCloseable =
 				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
@@ -94,7 +94,7 @@ public class FriendlyURLUpgradeProcessTest {
 				ctCollectionMBCategory);
 		}
 
-		_runUpgradeProcess();
+		_runUpgrade();
 
 		_multiVMPool.clear();
 
@@ -124,7 +124,7 @@ public class FriendlyURLUpgradeProcessTest {
 			ctCollectionMBCategory.getFriendlyURL());
 	}
 
-	private void _runUpgradeProcess() throws Exception {
+	private void _runUpgrade() throws Exception {
 		UpgradeProcess upgradeProcess = UpgradeTestUtil.getUpgradeStep(
 			_upgradeStepRegistrator,
 			"com.liferay.message.boards.internal.upgrade.v6_5_0." +
