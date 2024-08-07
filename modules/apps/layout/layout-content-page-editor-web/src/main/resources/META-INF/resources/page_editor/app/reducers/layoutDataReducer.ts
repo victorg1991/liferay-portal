@@ -82,15 +82,21 @@ export default function layoutDataReducer(
 
 		case UPDATE_FORM_ITEM_CONFIG:
 		case UPDATE_ITEM_CONFIG: {
-			const {itemId, layoutData: nextLayoutData} = action;
+			const {itemIds, layoutData} = action;
 
-			const nextItem = nextLayoutData.items[itemId] || {};
+			let nextLayoutData = layoutData;
 
-			return setIn(
-				nextLayoutData,
-				['items', itemId, 'config'],
-				nextItem.config
-			);
+			itemIds.forEach((itemId: string) => {
+				const nextItem = nextLayoutData.items[itemId] || {};
+
+				nextLayoutData = setIn(
+					nextLayoutData,
+					['items', itemId, 'config'],
+					nextItem.config
+				);
+			});
+
+			return nextLayoutData;
 		}
 
 		case UPDATE_PREVIEW_IMAGE: {
