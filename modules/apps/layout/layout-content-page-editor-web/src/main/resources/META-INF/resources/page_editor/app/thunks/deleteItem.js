@@ -95,8 +95,7 @@ export default function deleteItem({itemIds, selectItem = () => {}}) {
 
 			clearPageContents();
 
-			// maybeShowAlert(layoutData, itemIds, fragmentEntryLinks);
-
+			maybeShowAlert(layoutData, itemIds, fragmentEntryLinks);
 		});
 	};
 }
@@ -184,60 +183,74 @@ function findPortletIds(itemId, layoutData, fragmentEntryLinks) {
 	return deletedWidgets;
 }
 
-function maybeShowAlert(layoutData, itemId, fragmentEntryLinks) {
-	const item = layoutData?.items?.[itemId];
-
-	if (
-		!item ||
-		item.type !== LAYOUT_DATA_ITEM_TYPES.fragment ||
-		!hasFormParent(item, layoutData)
-	) {
-		return null;
-	}
-
-	const {classNameId, classTypeId} = selectFormConfiguration(
-		item,
-		layoutData
-	);
-
-	const cacheKey = getCacheKey([
-		CACHE_KEYS.formFields,
-		classNameId,
-		classTypeId,
-	]);
-
-	const {data: fields} = getCacheItem(cacheKey);
-
-	const promise = fields
-		? Promise.resolve(fields)
-		: FormService.getFormFields({
-				classNameId,
-				classTypeId,
-			});
-
-	promise.then((formFields) => {
+function maybeShowAlert(layoutData, itemIds, fragmentEntryLinks) {
+	const getFields = (item) => {
 		if (
-			item.type === LAYOUT_DATA_ITEM_TYPES.fragment &&
-			isRequiredFormInput(item, fragmentEntryLinks, formFields)
+			!item ||
+			item.type !== LAYOUT_DATA_ITEM_TYPES.fragment ||
+			!hasFormParent(item, layoutData)
 		) {
-			const fieldId = selectEditableValue(
-				{fragmentEntryLinks},
-				item.config.fragmentEntryLinkId,
-				'inputFieldId',
-				FREEMARKER_FRAGMENT_ENTRY_PROCESSOR
-			);
-
-			const {message} = getFormErrorDescription({
-				name: getFieldLabel(fieldId, formFields),
-				type: FORM_ERROR_TYPES.deletedFragment,
-			});
-
-			openToast({
-				message,
-				type: 'warning',
-			});
+			return null;
 		}
-	});
+
+		const {classNameId, classTypeId} = selectFormConfiguration(
+			item,
+			layoutData
+		);
+
+		const cacheKey = getCacheKey([
+			CACHE_KEYS.formFields,
+			classNameId,
+			classTypeId,
+		]);
+
+		const {data: fields} = getCacheItem(cacheKey);
+
+		return fields
+			? Promise.resolve(fields)
+			: FormService.getFormFields({
+					classNameId,
+					classTypeId,
+				});
+	};
+
+	let isShowAlert = false;
+
+	for (const itemId of itemIds) {
+		const item = layoutData?.items?.[itemId];
+
+		const fields = getFields(item);
+
+		if (!fields || isShowAlert) {
+			return;
+		}
+
+		fields.then((formFields) => {
+			if (
+				item.type === LAYOUT_DATA_ITEM_TYPES.fragment &&
+				isRequiredFormInput(item, fragmentEntryLinks, formFields)
+			) {
+				const fieldId = selectEditableValue(
+					{fragmentEntryLinks},
+					item.config.fragmentEntryLinkId,
+					'inputFieldId',
+					FREEMARKER_FRAGMENT_ENTRY_PROCESSOR
+				);
+
+				const {message} = getFormErrorDescription({
+					name: getFieldLabel(fieldId, formFields),
+					type: FORM_ERROR_TYPES.deletedFragment,
+				});
+
+				openToast({
+					message,
+					type: 'warning',
+				});
+
+				isShowAlert = true;
+			}
+		});
+	}
 }
 
 function getFieldLabel(fieldId, formFields) {
