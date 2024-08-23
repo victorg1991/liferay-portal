@@ -67,24 +67,6 @@ public class DropZoneFragmentEntryLinkListener
 	}
 
 	@Override
-	public void onCopyFragmentEntryLink(
-		FragmentEntryLink fragmentEntryLink,
-		FragmentEntryLink originalFragmentEntryLink) {
-
-		try {
-			updateLayoutPageTemplateStructure(
-				fragmentEntryLink, originalFragmentEntryLink);
-		}
-		catch (Exception exception) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(
-					"Unable to update layout page template structure",
-					exception);
-			}
-		}
-	}
-
-	@Override
 	public void onDeleteFragmentEntryLink(FragmentEntryLink fragmentEntryLink) {
 	}
 
