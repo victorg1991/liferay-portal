@@ -9,6 +9,7 @@ import {ManagementToolbar} from 'frontend-js-components-web';
 import {sub} from 'frontend-js-web';
 import React from 'react';
 
+import copyItemAction from '../../../../../app/actions/copyItem';
 import hasDropZoneChild from '../../../../../app/components/layout_data_items/hasDropZoneChild';
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../app/config/constants/layoutDataItemTypes';
 import {VIEWPORT_SIZES} from '../../../../../app/config/constants/viewportSizes';
@@ -19,6 +20,7 @@ import {
 } from '../../../../../app/contexts/StoreContext';
 import deleteItem from '../../../../../app/thunks/deleteItem';
 import duplicateItem from '../../../../../app/thunks/duplicateItem';
+import pasteItem from '../../../../../app/thunks/pasteItem';
 import canBeDuplicated from '../../../../../app/utils/canBeDuplicated';
 import canBeRemoved from '../../../../../app/utils/canBeRemoved';
 import isInputFragment from '../../../../../app/utils/isInputFragment';
@@ -39,7 +41,7 @@ export default function PageStructureSidebarToolbar({activeItemIds}) {
 			canBeRemoved(layoutData.items[activeItemId], layoutData)
 		);
 
-	const itemsCanBeDuplicated = () =>
+	const itemsCanBeDuplicated = (activeItemIds = activeItemIds) =>
 		activeItemIds.every((activeItemId) =>
 			canBeDuplicated(
 				fragmentEntryLinks,
@@ -62,6 +64,8 @@ export default function PageStructureSidebarToolbar({activeItemIds}) {
 
 	const firstActiveItemIsHidden =
 		layoutData.items[activeItemIds[0]]?.config?.styles?.display === 'none';
+
+	const copyItemIds = useSelector((state) => state.copyFragmentItemIds);
 
 	const dropdownItems = [
 		{
@@ -89,12 +93,31 @@ export default function PageStructureSidebarToolbar({activeItemIds}) {
 		},
 		{
 			label: Liferay.Language.get('cut'),
-			onClick: () => {},
+			onClick: () => {
+				if (itemsCanBeDeleted()) {
+					dispatch(
+						copyItemAction({
+							itemIds: activeItemIds,
+						})
+					);
+					dispatch(
+						deleteItem({
+							itemIds: activeItemIds,
+							selectItems,
+						})
+					);
+				}
+			},
 			symbolLeft: 'cut',
 		},
 		{
 			label: Liferay.Language.get('copy'),
-			onClick: () => {},
+			onClick: () =>
+				dispatch(
+					copyItemAction({
+						itemIds: activeItemIds,
+					})
+				),
 			symbolLeft: 'copy',
 		},
 		{
@@ -112,9 +135,19 @@ export default function PageStructureSidebarToolbar({activeItemIds}) {
 			symbolLeft: 'copy',
 		},
 		{
-			disabled: true,
+			disabled: !copyItemIds?.length,
 			label: Liferay.Language.get('paste'),
-			onClick: () => {},
+			onClick: () => {
+				if (itemsCanBeDuplicated(copyItemIds)) {
+					dispatch(
+						pasteItem({
+							copyItemIds,
+							itemIds: activeItemIds,
+							selectItems,
+						})
+					);
+				}
+			},
 			symbolLeft: 'paste',
 		},
 		{
