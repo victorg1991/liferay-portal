@@ -5,6 +5,7 @@
 
 import baseReducer from './baseReducer';
 import collectionsReducer from './collectionsReducer';
+import copyFragmentItemIdsReducer from './copyFragmentItemIdsReducer';
 import draftReducer from './draftReducer';
 import fragmentEntryLinksReducer from './fragmentEntryLinksReducer';
 import fragmentsReducer from './fragmentsReducer';
@@ -28,6 +29,7 @@ import widgetsReducer from './widgetsReducer';
 
 const REDUCER_MAP = {
 	collections: collectionsReducer,
+	copyFragmentItemIds: copyFragmentItemIdsReducer,
 	draft: draftReducer,
 	fragmentEntryLinks: fragmentEntryLinksReducer,
 	fragments: fragmentsReducer,
