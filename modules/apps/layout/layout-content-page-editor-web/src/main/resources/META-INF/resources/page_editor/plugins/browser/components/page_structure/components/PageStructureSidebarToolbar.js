@@ -20,7 +20,6 @@ import {
 } from '../../../../../app/contexts/StoreContext';
 import deleteItem from '../../../../../app/thunks/deleteItem';
 import duplicateItem from '../../../../../app/thunks/duplicateItem';
-import pasteItem from '../../../../../app/thunks/pasteItem';
 import canBeDuplicated from '../../../../../app/utils/canBeDuplicated';
 import canBeRemoved from '../../../../../app/utils/canBeRemoved';
 import isInputFragment from '../../../../../app/utils/isInputFragment';
@@ -41,7 +40,7 @@ export default function PageStructureSidebarToolbar({activeItemIds}) {
 			canBeRemoved(layoutData.items[activeItemId], layoutData)
 		);
 
-	const itemsCanBeDuplicated = (activeItemIds = activeItemIds) =>
+	const itemsCanBeDuplicated = () =>
 		activeItemIds.every((activeItemId) =>
 			canBeDuplicated(
 				fragmentEntryLinks,
@@ -64,8 +63,6 @@ export default function PageStructureSidebarToolbar({activeItemIds}) {
 
 	const firstActiveItemIsHidden =
 		layoutData.items[activeItemIds[0]]?.config?.styles?.display === 'none';
-
-	const copyItemIds = useSelector((state) => state.copyFragmentItemIds);
 
 	const dropdownItems = [
 		{
@@ -133,22 +130,6 @@ export default function PageStructureSidebarToolbar({activeItemIds}) {
 				}
 			},
 			symbolLeft: 'copy',
-		},
-		{
-			disabled: !copyItemIds?.length,
-			label: Liferay.Language.get('paste'),
-			onClick: () => {
-				if (itemsCanBeDuplicated(copyItemIds)) {
-					dispatch(
-						pasteItem({
-							copyItemIds,
-							itemIds: activeItemIds,
-							selectItems,
-						})
-					);
-				}
-			},
-			symbolLeft: 'paste',
 		},
 		{
 			label: Liferay.Language.get('delete'),
