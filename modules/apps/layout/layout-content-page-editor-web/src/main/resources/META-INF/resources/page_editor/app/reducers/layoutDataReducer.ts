@@ -11,6 +11,7 @@ import deleteItem from '../actions/deleteItem';
 import deleteRule from '../actions/deleteRule';
 import duplicateItem from '../actions/duplicateItem';
 import moveItem from '../actions/moveItem';
+import pasteItem from '../actions/pasteItem';
 import {
 	ADD_FRAGMENT_ENTRY_LINKS,
 	ADD_ITEM,
@@ -19,6 +20,7 @@ import {
 	DELETE_RULE,
 	DUPLICATE_ITEM,
 	MOVE_ITEM,
+	PASTE_ITEM,
 	UPDATE_COLLECTION_DISPLAY_COLLECTION,
 	UPDATE_COL_SIZE,
 	UPDATE_FORM_ITEM_CONFIG,
@@ -55,6 +57,7 @@ export default function layoutDataReducer(
 		| ReturnType<typeof deleteItem>
 		| ReturnType<typeof deleteRule>
 		| ReturnType<typeof duplicateItem>
+		| ReturnType<typeof pasteItem>
 		| ReturnType<typeof moveItem>
 		| ReturnType<typeof updateCollectionDisplayCollection>
 		| ReturnType<typeof updateColSize>
@@ -72,6 +75,7 @@ export default function layoutDataReducer(
 		case DELETE_ITEM:
 		case DELETE_RULE:
 		case DUPLICATE_ITEM:
+		case PASTE_ITEM:
 		case MOVE_ITEM:
 		case UPDATE_COL_SIZE:
 		case UPDATE_COLLECTION_DISPLAY_COLLECTION:
