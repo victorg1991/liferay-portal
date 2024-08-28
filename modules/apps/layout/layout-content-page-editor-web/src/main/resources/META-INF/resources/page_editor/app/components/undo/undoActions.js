@@ -9,10 +9,12 @@ import {
 	ADD_ITEM,
 	ADD_RULE,
 	CHANGE_MASTER_LAYOUT,
+	CUT_ITEM,
 	DELETE_ITEM,
 	DELETE_RULE,
 	DUPLICATE_ITEM,
 	MOVE_ITEM,
+	PASTE_ITEM,
 	SWITCH_VIEWPORT_SIZE,
 	TOGGLE_FRAGMENT_HIGHLIGHTED,
 	TOGGLE_WIDGET_HIGHLIGHTED,
@@ -35,6 +37,7 @@ import * as undoDeleteItem from './undoDeleteItem';
 import * as undoDeleteRule from './undoDeleteRule';
 import * as undoDuplicateItem from './undoDuplicateItem';
 import * as undoMoveItem from './undoMoveItem';
+import * as undoPasteItem from './undoPasteItem';
 import * as undoSelectExperience from './undoSelectExperience';
 import * as undoSwitchViewportSize from './undoSwitchViewportSize';
 import * as undoToggleFragmentHighlighted from './undoToggleFragmentHighlighted';
@@ -54,10 +57,12 @@ const UNDO_ACTIONS = {
 	[ADD_ITEM]: undoAddItem,
 	[ADD_RULE]: undoAddRule,
 	[CHANGE_MASTER_LAYOUT]: undoChangeMasterLayout,
+	[CUT_ITEM]: undoDeleteItem,
 	[DELETE_ITEM]: undoDeleteItem,
 	[DELETE_RULE]: undoDeleteRule,
 	[DUPLICATE_ITEM]: undoDuplicateItem,
 	[MOVE_ITEM]: undoMoveItem,
+	[PASTE_ITEM]: undoPasteItem,
 	[SELECT_SEGMENTS_EXPERIENCE]: undoSelectExperience,
 	[SWITCH_VIEWPORT_SIZE]: undoSwitchViewportSize,
 	[TOGGLE_FRAGMENT_HIGHLIGHTED]: undoToggleFragmentHighlighted,
