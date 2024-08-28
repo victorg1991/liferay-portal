@@ -5,15 +5,19 @@
 
 import React, {useEffect, useRef, useState} from 'react';
 
+import copyItemAction from '../actions/copyItem';
 import {ITEM_ACTIVATION_ORIGINS} from '../config/constants/itemActivationOrigins';
 import {ITEM_TYPES} from '../config/constants/itemTypes';
 import {
 	BACKSPACE_KEY_CODE,
+	C_KEY_CODE,
 	D_KEY_CODE,
 	H_KEY_CODE,
 	PERIOD_KEY_CODE,
 	R_KEY_CODE,
 	S_KEY_CODE,
+	V_KEY_CODE,
+	X_KEY_CODE,
 	Z_KEY_CODE,
 } from '../config/constants/keyboardCodes';
 import {LAYOUT_DATA_ITEM_TYPES} from '../config/constants/layoutDataItemTypes';
@@ -32,6 +36,7 @@ import {useDispatch, useSelector} from '../contexts/StoreContext';
 import selectCanUpdatePageStructure from '../selectors/selectCanUpdatePageStructure';
 import deleteItem from '../thunks/deleteItem';
 import duplicateItem from '../thunks/duplicateItem';
+import pasteItem from '../thunks/pasteItem';
 import switchSidebarPanel from '../thunks/switchSidebarPanel';
 import canBeDuplicated from '../utils/canBeDuplicated';
 import canBeHidden from '../utils/canBeHidden';
@@ -94,6 +99,8 @@ export default function ShortcutManager() {
 			? layoutData.items[activeItemIds[0]]
 			: null;
 
+	const copyItemIds = useSelector((state) => state.copyFragmentItemIds);
+
 	const masterLayoutData = useSelector(
 		(state) => state.masterLayout?.masterLayoutData
 	);
@@ -105,6 +112,38 @@ export default function ShortcutManager() {
 	const duplicate = () => {
 		dispatch(
 			duplicateItem({
+				itemIds: activeItemIds,
+				selectItems,
+			})
+		);
+	};
+
+	const cut = () => {
+		dispatch(
+			copyItemAction({
+				itemIds: activeItemIds,
+			})
+		);
+		dispatch(
+			deleteItem({
+				itemIds: activeItemIds,
+				selectItems,
+			})
+		);
+	};
+
+	const copy = () => {
+		dispatch(
+			copyItemAction({
+				itemIds: activeItemIds,
+			})
+		);
+	};
+
+	const paste = () => {
+		dispatch(
+			pasteItem({
+				copyItemIds,
 				itemIds: activeItemIds,
 				selectItems,
 			})
@@ -188,6 +227,43 @@ export default function ShortcutManager() {
 	const keymapRef = useRef(null);
 
 	keymapRef.current = {
+		...(Liferay.FeatureFlags['LPD-18221'] && {
+			copy: {
+				action: copy,
+				canBeExecuted: () =>
+					canUpdatePageStructure &&
+					activeItemIds.every(
+						(activeItemId) =>
+							!!layoutData.items[activeItemId] &&
+							canBeDuplicated(
+								fragmentEntryLinks,
+								layoutData.items[activeItemId],
+								layoutData,
+								widgets
+							)
+					),
+				isKeyCombination: (event) =>
+					isCtrlOrMeta(event) && event.code === C_KEY_CODE,
+			},
+		}),
+		...(Liferay.FeatureFlags['LPD-18221'] && {
+			cut: {
+				action: cut,
+				canBeExecuted: (event) =>
+					canUpdatePageStructure &&
+					activeItemIds.every(
+						(activeItemId) =>
+							!!layoutData.items[activeItemId] &&
+							canBeRemoved(
+								layoutData.items[activeItemId],
+								layoutData
+							) &&
+							!isInteractiveElement(event.target)
+					),
+				isKeyCombination: (event) =>
+					isCtrlOrMeta(event) && event.code === X_KEY_CODE,
+			},
+		}),
 		duplicate: {
 			action: duplicate,
 			canBeExecuted: () =>
@@ -247,6 +323,25 @@ export default function ShortcutManager() {
 				!isEditingEditableField(),
 			isKeyCombination: (event) => event.shiftKey && event.key === '?',
 		},
+		...(Liferay.FeatureFlags['LPD-18221'] && {
+			paste: {
+				action: paste,
+				canBeExecuted: () =>
+					canUpdatePageStructure &&
+					copyItemIds.every(
+						(copiedItemId) =>
+							!!layoutData.items[copiedItemId] &&
+							canBeDuplicated(
+								fragmentEntryLinks,
+								layoutData.items[copiedItemId],
+								layoutData,
+								widgets
+							)
+					),
+				isKeyCombination: (event) =>
+					isCtrlOrMeta(event) && event.code === V_KEY_CODE,
+			},
+		}),
 		remove: {
 			action: remove,
 			canBeExecuted: (event) =>
