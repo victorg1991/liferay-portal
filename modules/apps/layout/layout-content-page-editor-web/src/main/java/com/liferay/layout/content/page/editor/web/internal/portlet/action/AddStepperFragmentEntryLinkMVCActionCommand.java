@@ -207,10 +207,8 @@ public class AddStepperFragmentEntryLinkMVCActionCommand
 
 			fragmentEntryLinks.addAll(
 				_formItemManager.changeToMultistepFormType(
-					formStyledLayoutStructureItem, themeDisplay.getLayout(),
-					layoutStructure, themeDisplay.getLocale(), numberOfSteps,
-					segmentsExperienceId,
-					ServiceContextFactory.getInstance(actionRequest)));
+					formStyledLayoutStructureItem, layoutStructure,
+					themeDisplay.getLocale(), numberOfSteps));
 		}
 
 		_layoutPageTemplateStructureService.
@@ -305,7 +303,7 @@ public class AddStepperFragmentEntryLinkMVCActionCommand
 
 	@Reference
 	private FragmentEntryLinkListenerRegistry
-		_fragmentEntryLinkListenerRegistry;
+			_fragmentEntryLinkListenerRegistry;
 
 	@Reference
 	private FragmentEntryLinkManager _fragmentEntryLinkManager;
