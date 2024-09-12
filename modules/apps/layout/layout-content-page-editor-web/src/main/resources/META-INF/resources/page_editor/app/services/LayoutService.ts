@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {FormLayoutDataItem} from 'page_editor/types/layout_data/FormLayoutDataItem';
+
 import {CollectionItemLayoutDataItem} from '../../types/layout_data/CollectionItemLayoutDataItem';
 import {LayoutData, LayoutDataItem} from '../../types/layout_data/LayoutData';
 import {
@@ -59,6 +61,43 @@ export default {
 					itemType,
 					parentItemId,
 					position,
+					segmentsExperienceId,
+				},
+			},
+			onNetworkStatus
+		);
+	},
+
+	changeDeletionStatus({
+		addedItemIds,
+		itemConfig,
+		itemId,
+		movedItemIds,
+		onNetworkStatus,
+		removedItemIds,
+		segmentsExperienceId,
+	}: {
+		addedItemIds: string[];
+		itemConfig: FormLayoutDataItem['config'];
+		itemId: string;
+		movedItemIds: {itemId: string; parentId: string}[];
+		onNetworkStatus: OnNetworkStatus;
+		removedItemIds: string[];
+		segmentsExperienceId: number;
+	}) {
+		console.log(config.changeItemDeletionStatusURL);
+
+		return draftServiceFetch<{
+			layoutData: LayoutData;
+		}>(
+			config.changeItemDeletionStatusURL,
+			{
+				body: {
+					addedItemIds,
+					config: JSON.stringify(itemConfig),
+					itemId,
+					movedItemIds: JSON.stringify(movedItemIds),
+					removedItemIds,
 					segmentsExperienceId,
 				},
 			},

@@ -5,58 +5,47 @@
 
 import updateFormItemConfig from '../../actions/updateFormItemConfig';
 import LayoutService from '../../services/LayoutService';
-import getFragmentItem from '../../utils/getFragmentItem';
 
 function undoAction({action, store}) {
 	const {
+		addedItemIds,
 		config,
 		deletedItems,
 		isMapping,
 		itemIds,
-		removedFragmentEntryLinkIds,
-		restoredFragmentEntryLinkIds,
+		movedItemIds,
+		removedItemIds,
 	} = action;
 
-	const {layoutData} = store;
 	const [itemId] = itemIds;
 
-	const removedItems = removedFragmentEntryLinkIds.map((id) => ({
-		itemId: getFragmentItem(layoutData, id).itemId,
-	}));
+	const nextMovedItems = [];
 
-	const restoredItemIds = restoredFragmentEntryLinkIds.map(
-		(id) => getFragmentItem(layoutData, id).itemId
-	);
+	movedItemIds.forEach((movedItem) => {
+		const item = store.layoutData.items[movedItem.itemId];
 
-	const item = layoutData.items[itemId];
-
-	const nextLayoutData = {
-		...layoutData,
-		deletedItems: [...deletedItems, ...removedItems],
-		items: {
-			...layoutData.items,
-			[itemId]: {
-				...item,
-				children: isMapping ? restoredItemIds : item.children,
-				config,
-			},
-		},
-	};
+		nextMovedItems.push({itemId: item.itemId, parentId: item.parentId});
+	});
 
 	return (dispatch) => {
-		return LayoutService.updateLayoutData({
-			layoutData: nextLayoutData,
+		return LayoutService.changeDeletionStatus({
+			addedItemIds: removedItemIds,
+			itemConfig: config,
+			itemId,
+			movedItemIds,
 			onNetworkStatus: dispatch,
+			removedItemIds: addedItemIds,
 			segmentsExperienceId: store.segmentsExperienceId,
-		}).then(() => {
+		}).then(({layoutData}) => {
 			dispatch(
 				updateFormItemConfig({
+					addedItemIds: removedItemIds,
 					deletedItems,
 					isMapping,
 					itemIds: [itemId],
-					layoutData: nextLayoutData,
-					removedFragmentEntryLinkIds,
-					restoredFragmentEntryLinkIds,
+					layoutData,
+					movedItemIds: nextMovedItems,
+					removedItemIds: addedItemIds,
 				})
 			);
 		});
@@ -64,13 +53,8 @@ function undoAction({action, store}) {
 }
 
 function getDerivedStateForUndo({action, state}) {
-	const {
-		addedFragmentEntryLinks,
-		isMapping,
-		itemIds,
-		removedFragmentEntryLinkIds,
-		restoredFragmentEntryLinkIds,
-	} = action;
+	const {addedItemIds, isMapping, itemIds, movedItemIds, removedItemIds} =
+		action;
 
 	const {layoutData} = state;
 	const [itemId] = itemIds;
@@ -78,14 +62,13 @@ function getDerivedStateForUndo({action, state}) {
 	const item = layoutData.items[itemId];
 
 	return {
+		addedItemIds,
 		config: {...item.config, loading: false},
 		deletedItems: layoutData.deletedItems,
 		isMapping,
 		itemIds: [itemId],
-		removedFragmentEntryLinkIds: addedFragmentEntryLinks
-			? Object.keys(addedFragmentEntryLinks)
-			: restoredFragmentEntryLinkIds,
-		restoredFragmentEntryLinkIds: removedFragmentEntryLinkIds,
+		movedItemIds,
+		removedItemIds,
 	};
 }
 

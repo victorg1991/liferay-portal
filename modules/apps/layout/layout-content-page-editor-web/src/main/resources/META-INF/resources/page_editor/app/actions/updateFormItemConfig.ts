@@ -13,29 +13,32 @@ import type {FragmentEntryLinkMap} from './addFragmentEntryLinks';
 
 export default function updateFormItemConfig({
 	addedFragmentEntryLinks = null,
+	addedItemIds = [],
 	deletedItems = [],
 	isMapping,
 	itemIds,
 	layoutData,
-	removedFragmentEntryLinkIds = [],
-	restoredFragmentEntryLinkIds = [],
+	movedItemIds = [],
+	removedItemIds = [],
 }: {
 	addedFragmentEntryLinks?: FragmentEntryLinkMap | null;
+	addedItemIds: string[];
 	deletedItems?: DeletedLayoutDataItem[];
 	isMapping: boolean;
 	itemIds: string[];
 	layoutData: LayoutData;
-	removedFragmentEntryLinkIds?: string[];
-	restoredFragmentEntryLinkIds?: string[];
+	movedItemIds: {itemId: string; parentId: string}[];
+	removedItemIds?: string[];
 }) {
 	return {
 		addedFragmentEntryLinks,
+		addedItemIds,
 		deletedItems,
 		isMapping,
 		itemIds,
 		layoutData,
-		removedFragmentEntryLinkIds,
-		restoredFragmentEntryLinkIds,
+		movedItemIds,
+		removedItemIds,
 		type: UPDATE_FORM_ITEM_CONFIG,
 	} as const;
 }

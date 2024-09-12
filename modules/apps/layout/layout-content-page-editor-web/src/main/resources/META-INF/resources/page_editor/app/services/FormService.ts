@@ -80,9 +80,11 @@ export default {
 	}) {
 		return draftServiceFetch<{
 			addedFragmentEntryLinks: FragmentEntryLinkMap;
+			addedItemIds: string[];
 			errorMessage?: string;
 			layoutData: LayoutData;
-			removedFragmentEntryLinkIds: string[];
+			movedItemIds: {itemId: string; parentId: string}[];
+			removedItemIds: string[];
 		}>(
 			config.updateFormItemConfigURL,
 			{

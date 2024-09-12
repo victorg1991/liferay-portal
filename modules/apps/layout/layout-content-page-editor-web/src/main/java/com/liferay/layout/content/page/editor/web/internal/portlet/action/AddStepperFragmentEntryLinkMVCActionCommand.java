@@ -205,10 +205,9 @@ public class AddStepperFragmentEntryLinkMVCActionCommand
 
 			formStyledLayoutStructureItem.setNumberOfSteps(numberOfSteps);
 
-			fragmentEntryLinks.addAll(
-				_formItemManager.changeToMultistepFormType(
-					formStyledLayoutStructureItem, layoutStructure,
-					themeDisplay.getLocale(), numberOfSteps));
+			_formItemManager.changeToMultistepFormType(
+				formStyledLayoutStructureItem, layoutStructure,
+				themeDisplay.getLocale(), numberOfSteps);
 		}
 
 		_layoutPageTemplateStructureService.
@@ -220,10 +219,8 @@ public class AddStepperFragmentEntryLinkMVCActionCommand
 				_fragmentEntryLinkListenerRegistry.
 					getFragmentEntryLinkListeners()) {
 
-			for (FragmentEntryLink fragmentEntryLink : fragmentEntryLinks) {
-				fragmentEntryLinkListener.onAddFragmentEntryLink(
-					fragmentEntryLink);
-			}
+			fragmentEntryLinkListener.onAddFragmentEntryLink(
+				stepperFragmentEntryLink);
 		}
 
 		JSONObject editableValuesJSONObject =
@@ -275,21 +272,21 @@ public class AddStepperFragmentEntryLinkMVCActionCommand
 					stepperFragmentEntryLink);
 		}
 
+		FragmentEntryLink finalStepperFragmentEntryLink =
+			stepperFragmentEntryLink;
+
 		return jsonObject.put(
 			"fragmentEntryLinks",
 			() -> {
 				JSONArray fragmentEntryLinksJSONArray =
 					_jsonFactory.createJSONArray();
 
-				for (FragmentEntryLink fragmentEntryLink : fragmentEntryLinks) {
-					fragmentEntryLinksJSONArray.put(
-						_fragmentEntryLinkManager.
-							getFragmentEntryLinkJSONObject(
-								fragmentEntryLink,
-								_portal.getHttpServletRequest(actionRequest),
-								_portal.getHttpServletResponse(actionResponse),
-								layoutStructure));
-				}
+				fragmentEntryLinksJSONArray.put(
+					_fragmentEntryLinkManager.getFragmentEntryLinkJSONObject(
+						finalStepperFragmentEntryLink,
+						_portal.getHttpServletRequest(actionRequest),
+						_portal.getHttpServletResponse(actionResponse),
+						layoutStructure));
 
 				return fragmentEntryLinksJSONArray;
 			}
@@ -303,7 +300,7 @@ public class AddStepperFragmentEntryLinkMVCActionCommand
 
 	@Reference
 	private FragmentEntryLinkListenerRegistry
-			_fragmentEntryLinkListenerRegistry;
+		_fragmentEntryLinkListenerRegistry;
 
 	@Reference
 	private FragmentEntryLinkManager _fragmentEntryLinkManager;

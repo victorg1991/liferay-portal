@@ -287,6 +287,10 @@ public class ContentPageEditorDisplayContext {
 			).put(
 				"availableViewportSizes", _getAvailableViewportSizes()
 			).put(
+				"changeItemDeletionStatusURL",
+				getFragmentEntryActionURL(
+					"/layout_content_page_editor/change_item_deletion_status")
+			).put(
 				"changeMasterLayoutURL",
 				getFragmentEntryActionURL(
 					"/layout_content_page_editor/change_master_layout")
