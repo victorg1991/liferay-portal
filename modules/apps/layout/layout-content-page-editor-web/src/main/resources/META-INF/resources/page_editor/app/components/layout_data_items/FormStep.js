@@ -6,13 +6,14 @@
 import classNames from 'classnames';
 import React from 'react';
 
+import useSetRef from '../../../common/hooks/useSetRef';
 import {getLayoutDataItemPropTypes} from '../../../prop_types/index';
 import {useActiveStep} from '../../contexts/FormStepContext';
 import {useItemLocalConfig} from '../../contexts/LocalConfigContext';
 import {useSelectorCallback} from '../../contexts/StoreContext';
 import getLayoutDataItemTopperUniqueClassName from '../../utils/getLayoutDataItemTopperUniqueClassName';
 import isItemEmpty from '../../utils/isItemEmpty';
-import TopperEmpty from '../topper/TopperEmpty';
+import Topper from '../topper/Topper';
 
 const FormStepWithControls = React.forwardRef(({children, item}, ref) => {
 	const isEmpty = useSelectorCallback(
@@ -42,16 +43,22 @@ const FormStepWithControls = React.forwardRef(({children, item}, ref) => {
 
 	const visible = index === activeStep;
 
+	const [setRef, itemElement] = useSetRef(ref);
+
 	return (
-		<TopperEmpty
-			className={getLayoutDataItemTopperUniqueClassName(item.itemId)}
+		<Topper
+			className={classNames(
+				'page-editor__form-step-topper',
+				getLayoutDataItemTopperUniqueClassName(item.itemId)
+			)}
 			item={item}
+			itemElement={itemElement}
 		>
 			<FormStep
 				className={classNames('page-editor__form-step', {
 					'd-none': !visible && !localConfig.displayAllSteps,
 				})}
-				ref={ref}
+				ref={setRef}
 			>
 				{isEmpty && (
 					<div className="page-editor__no-fragments-state">
@@ -65,7 +72,7 @@ const FormStepWithControls = React.forwardRef(({children, item}, ref) => {
 
 				{children}
 			</FormStep>
-		</TopperEmpty>
+		</Topper>
 	);
 });
 

@@ -189,7 +189,7 @@ html#{$cadmin-selector} {
 			outline-offset: -$borderWidth;
 		}
 
-		& > .page-editor__topper__content {
+		&:not(.page-editor__form-step-topper) > .page-editor__topper__content {
 			height: 100%;
 			min-height: 5px;
 		}

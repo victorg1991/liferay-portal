@@ -734,7 +734,6 @@ function visit(
 
 	return {
 		activable:
-			item.type !== LAYOUT_DATA_ITEM_TYPES.formStep &&
 			item.type !== LAYOUT_DATA_ITEM_TYPES.column &&
 			item.type !== LAYOUT_DATA_ITEM_TYPES.collectionItem &&
 			item.type !== LAYOUT_DATA_ITEM_TYPES.fragmentDropZone &&

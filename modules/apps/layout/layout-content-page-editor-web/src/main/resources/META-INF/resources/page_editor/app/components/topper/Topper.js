@@ -128,7 +128,9 @@ function TopperContent({
 	const canBeDragged =
 		canUpdatePageStructure &&
 		!editableProcessorUniqueId &&
-		item.type !== LAYOUT_DATA_ITEM_TYPES.formStepContainer;
+		item.type !== LAYOUT_DATA_ITEM_TYPES.column &&
+		item.type !== LAYOUT_DATA_ITEM_TYPES.formStepContainer &&
+		item.type !== LAYOUT_DATA_ITEM_TYPES.formStep;
 
 	const name = useSelectorCallback(
 		(state) => selectLayoutDataItemLabel(state, item),
