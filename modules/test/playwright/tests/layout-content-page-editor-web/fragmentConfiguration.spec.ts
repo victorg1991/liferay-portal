@@ -482,6 +482,181 @@ test.describe('Advanced Configuration', () => {
 	});
 });
 
+test.describe('General Configuration', () => {
+	test('Allows using a configuration of type checkbox', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create a fragment with itemSelector configuration for file entries
+
+		const {fragmentCollectionId} =
+			await apiHelpers.jsonWebServicesFragmentCollection.addFragmentCollection(
+				{
+					groupId: site.id,
+					name: getRandomString(),
+				}
+			);
+
+		const configuration: FragmentConfiguration = {
+			fieldSets: [
+				{
+					fields: [
+						{
+							defaultValue: false,
+							label: 'Make Bold',
+							name: 'makeBold',
+							type: 'checkbox',
+						},
+					],
+				},
+			],
+		};
+
+		const html = `
+			<div class="fragment-configuration">
+				[#if configuration.makeBold == true]
+					<b>Bold Words</b>
+				[#else]
+					<p>Not bold words</p>
+				[/#if]
+			</div>
+		`;
+
+		const fragmentEntryName = getRandomString();
+
+		await apiHelpers.jsonWebServicesFragmentEntry.addFragmentEntry({
+			configuration,
+			fragmentCollectionId,
+			groupId: site.id,
+			html,
+			name: fragmentEntryName,
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([
+				getFragmentDefinition({
+					id: fragmentEntryName,
+					key: fragmentEntryName,
+				}),
+			]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await expect(page.getByText('Not bold words')).toBeVisible();
+
+		await pageEditorPage.selectFragment(fragmentEntryName);
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Make Bold',
+			fragmentId: fragmentEntryName,
+			tab: 'General',
+			value: true,
+		});
+
+		await expect(page.getByText('Bold words')).toBeVisible();
+	});
+
+	test('Allows using a configuration of type select', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create a fragment with itemSelector configuration for file entries
+
+		const {fragmentCollectionId} =
+			await apiHelpers.jsonWebServicesFragmentCollection.addFragmentCollection(
+				{
+					groupId: site.id,
+					name: getRandomString(),
+				}
+			);
+
+		const configuration: FragmentConfiguration = {
+			fieldSets: [
+				{
+					fields: [
+						{
+							dataType: 'string',
+							defaultValue: 'light',
+							label: 'Applied Style',
+							name: 'headingAppliedStyle',
+							type: 'select',
+							typeOptions: {
+								validValues: [
+									{
+										value: 'dark',
+									},
+									{
+										value: 'light',
+									},
+								],
+							},
+						},
+					],
+				},
+			],
+		};
+
+		const html = `
+			<div class="fragment-configuration">
+				[#if configuration.headingAppliedStyle == "dark"]
+				<div class="dark">
+					<h1>Title-dark</h1>
+				</div>
+				[#else]
+				<div class="light">
+					<h1>Title-light</h1>
+				</div>
+				[/#if]
+			</div>
+		`;
+
+		const fragmentEntryName = getRandomString();
+
+		await apiHelpers.jsonWebServicesFragmentEntry.addFragmentEntry({
+			configuration,
+			fragmentCollectionId,
+			groupId: site.id,
+			html,
+			name: fragmentEntryName,
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([
+				getFragmentDefinition({
+					id: fragmentEntryName,
+					key: fragmentEntryName,
+				}),
+			]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await expect(page.getByText('Title-light')).toBeVisible();
+
+		await pageEditorPage.selectFragment(fragmentEntryName);
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Applied Style',
+			fragmentId: fragmentEntryName,
+			tab: 'General',
+			value: 'dark',
+		});
+
+		await expect(page.getByText('Title-dark')).toBeVisible();
+	});
+});
+
 test.describe('Styles Configuration', () => {
 	test('Allows selecting a color palette color', async ({
 		apiHelpers,

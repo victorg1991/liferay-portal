@@ -71,7 +71,7 @@ const FormStepWithControls = React.forwardRef(({children, item}, ref) => {
 					>
 						<img
 							className="page-editor__no-fragments-state__image"
-							src={`${config.imagesPath}/drag_and_drop.svg`}
+						 	src={`${config.imagesPath}/drag_and_drop.svg`}
 						/>
 
 						<p className="page-editor__no-fragments-state__message">

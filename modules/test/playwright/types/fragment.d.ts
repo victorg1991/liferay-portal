@@ -13,13 +13,19 @@ type FragmentConfiguration = {
 };
 
 type FragmentConfigurationField = {
+	dataType: 'string';
+	defaultValue: boolean | string;
 	label: string;
 	name: string;
-	type: 'itemSelector';
-	typeOptions: {
-		enableSelectTemplate: boolean;
-		itemSubtype: string;
-		itemType: string;
+	type: 'itemSelector' | 'checkbox' | 'select';
+	typeOptions?: {
+		enableSelectTemplate?: boolean;
+		itemSubtype?: string;
+		itemType?: string;
+		validValues: {
+			label?: string;
+			value: string;
+		}[];
 	};
 };
 
