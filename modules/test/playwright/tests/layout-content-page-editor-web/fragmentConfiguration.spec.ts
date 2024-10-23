@@ -655,6 +655,182 @@ test.describe('General Configuration', () => {
 
 		await expect(page.getByText('Title-dark')).toBeVisible();
 	});
+
+	test('Allows using a configuration of type text', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create a fragment with itemSelector configuration for file entries
+
+		const {fragmentCollectionId} =
+			await apiHelpers.jsonWebServicesFragmentCollection.addFragmentCollection(
+				{
+					groupId: site.id,
+					name: getRandomString(),
+				}
+			);
+
+		const configuration: FragmentConfiguration = {
+			fieldSets: [
+				{
+					fields: [
+						{
+							dataType: 'string',
+							defaultValue: 'Go Somewhere',
+							label: 'Button Text',
+							name: 'buttonText',
+							type: 'text',
+							typeOptions: {
+								placeholder: 'Placeholder',
+							},
+						},
+					],
+				},
+			],
+		};
+
+		const html = `
+			<div class="fragment-configuration">
+				<button type="button" class="btn btn-primary">\${configuration.buttonText}</button>
+			</div>
+		`;
+
+		const fragmentEntryName = getRandomString();
+
+		await apiHelpers.jsonWebServicesFragmentEntry.addFragmentEntry({
+			configuration,
+			fragmentCollectionId,
+			groupId: site.id,
+			html,
+			name: fragmentEntryName,
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([
+				getFragmentDefinition({
+					id: fragmentEntryName,
+					key: fragmentEntryName,
+				}),
+			]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await expect(page.getByText('Go Somewhere')).toBeVisible();
+
+		await pageEditorPage.selectFragment(fragmentEntryName);
+
+		await pageEditorPage.goToConfigurationTab('General');
+
+		expect(page.getByPlaceholder('Placeholder')).toBeVisible();
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Button Text',
+			fragmentId: fragmentEntryName,
+			tab: 'General',
+			value: 'Go Somewhere Else',
+		});
+
+		await expect(page.getByText('Go Somewhere Else')).toBeVisible();
+	});
+
+	test('Text configuration allows setting a max and min value', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create a fragment with itemSelector configuration for file entries
+
+		const {fragmentCollectionId} =
+			await apiHelpers.jsonWebServicesFragmentCollection.addFragmentCollection(
+				{
+					groupId: site.id,
+					name: getRandomString(),
+				}
+			);
+
+		const configuration: FragmentConfiguration = {
+			fieldSets: [
+				{
+					fields: [
+						{
+							dataType: 'int',
+							defaultValue: '1',
+							label: 'Number',
+							name: 'number',
+							type: 'text',
+							typeOptions: {
+								validation: {
+									max: 10,
+									min: 1,
+									type: 'number',
+								},
+							},
+						},
+					],
+				},
+			],
+		};
+
+		const html = `
+			<div class="fragment-configuration">
+				<button type="button" class="btn btn-primary">Number: \${configuration.number}</button>
+			</div>
+		`;
+
+		const fragmentEntryName = getRandomString();
+
+		await apiHelpers.jsonWebServicesFragmentEntry.addFragmentEntry({
+			configuration,
+			fragmentCollectionId,
+			groupId: site.id,
+			html,
+			name: fragmentEntryName,
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([
+				getFragmentDefinition({
+					id: fragmentEntryName,
+					key: fragmentEntryName,
+				}),
+			]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await expect(page.getByText('Number: 1')).toBeVisible();
+
+		await pageEditorPage.selectFragment(fragmentEntryName);
+
+		await pageEditorPage.goToConfigurationTab('General');
+
+		await fillAndClickOutside(page, page.getByLabel('Number'), '0');
+
+		expect(page.getByText('You have entered invalid data.')).toBeVisible();
+
+		await fillAndClickOutside(page, page.getByLabel('Number'), '11');
+
+		expect(page.getByText('You have entered invalid data.')).toBeVisible();
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Number',
+			fragmentId: fragmentEntryName,
+			tab: 'General',
+			value: '3',
+		});
+
+		await expect(page.getByText('Number: 3')).toBeVisible();
+	});
 });
 
 test.describe('Styles Configuration', () => {
