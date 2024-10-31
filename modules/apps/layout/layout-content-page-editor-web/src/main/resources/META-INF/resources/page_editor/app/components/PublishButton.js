@@ -9,10 +9,12 @@ import React, {useState} from 'react';
 
 import {config} from '../config/index';
 import useCheckFormsValidity from '../utils/useCheckFormsValidity';
+import useSaveEditableChanges from '../utils/useSaveEditableChanges';
 import {FormValidationModal} from './FormValidationModal';
 
 export default function PublishButton({canPublish, formRef, label, onPublish}) {
 	const checkFormsValidity = useCheckFormsValidity();
+	const saveEditableChanges = useSaveEditableChanges();
 
 	const [openFormValidationModal, setOpenFormValidationModal] = useState(
 		false
@@ -37,15 +39,18 @@ export default function PublishButton({canPublish, formRef, label, onPublish}) {
 					aria-label={label}
 					disabled={config.pending || !canPublish}
 					displayType="primary"
-					onClick={() => {
-						checkFormsValidity().then((valid) => {
-							if (valid) {
-								onPublish();
-							}
-							else {
-								setOpenFormValidationModal(true);
-							}
-						});
+					onClick={async () => {
+						const valid = await checkFormsValidity();
+
+						if (!valid) {
+							setOpenFormValidationModal(true);
+
+							return;
+						}
+
+						await saveEditableChanges();
+
+						onPublish();
 					}}
 					size="sm"
 				>

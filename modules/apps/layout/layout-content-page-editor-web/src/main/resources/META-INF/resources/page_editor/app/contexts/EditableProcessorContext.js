@@ -5,7 +5,11 @@
 
 import React, {useCallback, useContext, useRef, useState} from 'react';
 
-const INITIAL_STATE = {editableClickPosition: null, editableUniqueId: null};
+const INITIAL_STATE = {
+	editableClickPosition: null,
+	editableUniqueId: null,
+	editorInstance: null,
+};
 
 const EditableProcessorDispatchContext = React.createContext(() => {});
 const EditableProcessorRefContext = React.createContext({current: null});
@@ -38,6 +42,10 @@ export function useEditableProcessorUniqueId() {
 	return useContext(EditableProcessorStateContext).editableUniqueId;
 }
 
+export function useEditorInstance() {
+	return useContext(EditableProcessorStateContext).editorInstance;
+}
+
 export function useIsProcessorEnabled() {
 	const ref = useContext(EditableProcessorRefContext);
 
@@ -59,6 +67,17 @@ export function useSetEditableProcessorUniqueId() {
 				editableClickPosition,
 				editableUniqueId: editableUniqueIdOrNull,
 			});
+		},
+		[setState]
+	);
+}
+
+export function useSetEditorInstance() {
+	const setState = useContext(EditableProcessorDispatchContext);
+
+	return useCallback(
+		(editorInstance) => {
+			setState((state) => ({...state, editorInstance}));
 		},
 		[setState]
 	);

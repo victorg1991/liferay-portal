@@ -206,6 +206,8 @@ export default function getAlloyEditorProcessor(
 					}, 100)
 				),
 			];
+
+			return _editor;
 		},
 
 		/**

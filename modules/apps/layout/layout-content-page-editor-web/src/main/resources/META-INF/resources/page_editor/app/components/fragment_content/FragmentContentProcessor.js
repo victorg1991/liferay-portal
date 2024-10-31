@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {useIsMounted} from '@liferay/frontend-js-react-web';
+import {navigate} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import {useEffect} from 'react';
 
@@ -11,6 +13,7 @@ import {
 	useEditableProcessorClickPosition,
 	useEditableProcessorUniqueId,
 	useSetEditableProcessorUniqueId,
+	useSetEditorInstance,
 } from '../../contexts/EditableProcessorContext';
 import {
 	useDispatch,
@@ -29,7 +32,9 @@ export default function FragmentContentProcessor({
 	const editableProcessorUniqueId = useEditableProcessorUniqueId();
 	const languageId = useSelector(selectLanguageId);
 	const setEditableProcessorUniqueId = useSetEditableProcessorUniqueId();
+	const setEditorInstance = useSetEditorInstance();
 	const toControlsId = useToControlsId();
+	const isMounted = useIsMounted();
 
 	const editable = editables.find(
 		(editable) =>
@@ -48,6 +53,34 @@ export default function FragmentContentProcessor({
 	);
 
 	useEffect(() => {
+		const onBeforeNavigate = (event) => {
+			if (!editable) {
+				return;
+			}
+
+			event.originalEvent.preventDefault();
+
+			const editableValue =
+				editableValues[editable.editableValueNamespace][
+					editable.editableId
+				];
+
+			editable.processor.destroyEditor(
+				editable.element,
+				editableValue.config
+			);
+
+			navigate(event.path);
+		};
+
+		Liferay.on('beforeNavigate', onBeforeNavigate);
+
+		return () => {
+			Liferay.detach('beforeNavigate', onBeforeNavigate);
+		};
+	}, [editable, editableValues]);
+
+	useEffect(() => {
 		if (
 			!editable ||
 			!editableValues ||
@@ -61,7 +94,7 @@ export default function FragmentContentProcessor({
 				editable.editableId
 			];
 
-		editable.processor.createEditor(
+		const editor = editable.processor.createEditor(
 			editable.element,
 			(value, config = {}) => {
 				const defaultValue =
@@ -103,6 +136,11 @@ export default function FragmentContentProcessor({
 			() => {
 				if (editableCollectionItemId === editableProcessorUniqueId) {
 					setEditableProcessorUniqueId(null);
+					setEditorInstance(null);
+				}
+
+				if (!isMounted()) {
+					return;
 				}
 
 				editable.processor.destroyEditor(
@@ -112,6 +150,10 @@ export default function FragmentContentProcessor({
 			},
 			editableProcessorClickPosition
 		);
+
+		if (editor) {
+			setEditorInstance(editor);
+		}
 	}, [
 		dispatch,
 		editable,
@@ -120,8 +162,10 @@ export default function FragmentContentProcessor({
 		editableProcessorUniqueId,
 		editableValues,
 		fragmentEntryLinkId,
+		isMounted,
 		languageId,
 		setEditableProcessorUniqueId,
+		setEditorInstance,
 	]);
 
 	return null;
