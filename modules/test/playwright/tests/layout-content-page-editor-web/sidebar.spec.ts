@@ -37,6 +37,7 @@ const test = mergeTests(
 	collectionsPagesTest,
 	featureFlagsTest({
 		'LPD-15596': true,
+		'LPD-18221': true,
 		'LPS-169837': true,
 		'LPS-178052': true,
 	}),
@@ -197,6 +198,50 @@ test('Checks sidebar accessibility', async ({
 	await checkAccessibility({
 		page,
 		selectors: ['.page-editor__sidebar'],
+	});
+});
+
+test.describe('Browser Panel', () => {
+	test('Deleting an fragment while its editable is selected', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+
+		// Create a page with a Heading fragment
+
+		const headingId = getRandomString();
+		const headingDefinition = getFragmentDefinition({
+			id: headingId,
+			key: 'BASIC_COMPONENT-heading',
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([headingDefinition]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		// Go to edit mode of page
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await pageEditorPage.selectEditable(headingId, 'element-text');
+
+		await pageEditorPage.goToSidebarTab('Browser');
+
+		const treeNode = page.getByLabel('Select Heading');
+
+		await treeNode.hover();
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: page.getByRole('menuitem', {name: 'Delete'}),
+			trigger: page.locator('.treeview-item').getByLabel('Options'),
+		});
+
+		await pageEditorPage.waitForChangesSaved();
 	});
 });
 
