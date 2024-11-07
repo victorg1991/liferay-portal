@@ -1437,7 +1437,7 @@ public class UserLocalServiceTest {
 			"passwordPolicyEnabled", passwordPolicyEnabled);
 
 		_ldapAuthConfigurationProvider.updateProperties(
-			TestPropsValues.getCompanyId(), configurationProperties);
+			companyId, configurationProperties);
 
 		return () -> {
 			if (existingValue != null) {
