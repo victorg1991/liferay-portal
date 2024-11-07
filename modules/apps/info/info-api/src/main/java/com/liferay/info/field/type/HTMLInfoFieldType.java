@@ -12,6 +12,9 @@ public class HTMLInfoFieldType implements InfoFieldType {
 
 	public static final HTMLInfoFieldType INSTANCE = new HTMLInfoFieldType();
 
+	public static final Attribute<LongTextInfoFieldType, Boolean> LOCALIZABLE =
+		new Attribute<>();
+
 	@Override
 	public String getName() {
 		return "html";

@@ -12,6 +12,9 @@ public class TextInfoFieldType implements InfoFieldType {
 
 	public static final TextInfoFieldType INSTANCE = new TextInfoFieldType();
 
+	public static final Attribute<LongTextInfoFieldType, Boolean> LOCALIZABLE =
+		new Attribute<>();
+
 	public static final Attribute<TextInfoFieldType, Long> MAX_LENGTH =
 		new Attribute<>();
 

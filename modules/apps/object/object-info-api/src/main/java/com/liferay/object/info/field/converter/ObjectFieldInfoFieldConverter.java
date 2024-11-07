@@ -157,6 +157,13 @@ public class ObjectFieldInfoFieldConverter {
 		}
 		else if (Objects.equals(
 					objectField.getBusinessType(),
+					ObjectFieldConstants.BUSINESS_TYPE_RICH_TEXT)) {
+
+			finalStep.attribute(
+				LongTextInfoFieldType.LOCALIZABLE, objectField.isLocalized());
+		}
+		else if (Objects.equals(
+					objectField.getBusinessType(),
 					ObjectFieldConstants.BUSINESS_TYPE_INTEGER)) {
 
 			finalStep.attribute(
@@ -190,8 +197,11 @@ public class ObjectFieldInfoFieldConverter {
 					ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT)) {
 
 			finalStep.attribute(
+				LongTextInfoFieldType.LOCALIZABLE, objectField.isLocalized()
+			).attribute(
 				LongTextInfoFieldType.MAX_LENGTH,
-				_getMaxLength(objectField, 65000));
+				_getMaxLength(objectField, 65000)
+			);
 		}
 		else if (Objects.equals(
 					objectField.getBusinessType(),
@@ -258,7 +268,10 @@ public class ObjectFieldInfoFieldConverter {
 					ObjectFieldConstants.BUSINESS_TYPE_TEXT)) {
 
 			finalStep.attribute(
-				TextInfoFieldType.MAX_LENGTH, _getMaxLength(objectField, 280));
+				LongTextInfoFieldType.LOCALIZABLE, objectField.isLocalized()
+			).attribute(
+				TextInfoFieldType.MAX_LENGTH, _getMaxLength(objectField, 280)
+			);
 		}
 
 		return finalStep.build();

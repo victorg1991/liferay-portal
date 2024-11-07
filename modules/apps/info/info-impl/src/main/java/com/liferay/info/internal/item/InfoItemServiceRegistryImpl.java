@@ -28,6 +28,7 @@ import com.liferay.info.item.provider.InfoItemDetailsProvider;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.info.item.provider.InfoItemFormProvider;
 import com.liferay.info.item.provider.InfoItemFormVariationsProvider;
+import com.liferay.info.item.provider.InfoItemLocalizationProvider;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.info.item.provider.InfoItemObjectVariationProvider;
 import com.liferay.info.item.provider.InfoItemPermissionProvider;
@@ -407,6 +408,7 @@ public class InfoItemServiceRegistryImpl implements InfoItemServiceRegistry {
 			InfoItemFormVariationsProvider.class,
 			InfoItemFriendlyURLProvider.class, InfoItemFriendlyURLUpdater.class,
 			InfoItemIdentifierTranslator.class, InfoItemLanguagesProvider.class,
+			InfoItemLocalizationProvider.class,
 			InfoItemObjectProvider.class, InfoItemObjectVariationProvider.class,
 			InfoItemPermissionProvider.class, InfoItemRenderer.class,
 			InfoItemScopeProvider.class, InfoItemStatusProvider.class,

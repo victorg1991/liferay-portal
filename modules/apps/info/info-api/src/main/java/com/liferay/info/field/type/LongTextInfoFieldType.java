@@ -13,6 +13,9 @@ public class LongTextInfoFieldType implements InfoFieldType {
 	public static final LongTextInfoFieldType INSTANCE =
 		new LongTextInfoFieldType();
 
+	public static final Attribute<LongTextInfoFieldType, Boolean> LOCALIZABLE =
+		new Attribute<>();
+
 	public static final Attribute<LongTextInfoFieldType, Long> MAX_LENGTH =
 		new Attribute<>();
 
