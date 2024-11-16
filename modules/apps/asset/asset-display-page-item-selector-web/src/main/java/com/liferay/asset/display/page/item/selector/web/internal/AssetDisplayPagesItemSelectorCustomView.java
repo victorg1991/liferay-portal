@@ -10,7 +10,6 @@ import com.liferay.asset.display.page.item.selector.web.internal.display.context
 import com.liferay.item.selector.ItemSelectorReturnType;
 import com.liferay.item.selector.ItemSelectorView;
 import com.liferay.item.selector.criteria.UUIDItemSelectorReturnType;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 
@@ -65,11 +64,7 @@ public class AssetDisplayPagesItemSelectorCustomView
 		AssetDisplayPageSelectorCriterion assetDisplayPageSelectorCriterion,
 		ThemeDisplay themeDisplay) {
 
-		if (FeatureFlagManagerUtil.isEnabled("LPS-189856")) {
-			return true;
-		}
-
-		return false;
+		return true;
 	}
 
 	@Override
