@@ -1332,7 +1332,7 @@ public class GroupServiceTest {
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION, null, true, true,
 			ServiceContextTestUtil.getServiceContext());
 
-		_assertGroupKeyWithDifferentDefaultLocale(group, "Spanish");
+		_testUpdateGroupWithDifferentDefaultLocale(group, "Spanish");
 	}
 
 	@Test
@@ -1357,7 +1357,7 @@ public class GroupServiceTest {
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION, null, true, true,
 			ServiceContextTestUtil.getServiceContext());
 
-		_assertGroupKeyWithDifferentDefaultLocale(
+		_testUpdateGroupWithDifferentDefaultLocale(
 			group2, String.valueOf(classPK));
 	}
 
@@ -1417,7 +1417,7 @@ public class GroupServiceTest {
 				true));
 	}
 
-	private void _assertGroupKeyWithDifferentDefaultLocale(
+	private void _testUpdateGroupWithDifferentDefaultLocale(
 			Group group, String expectedGroupKey)
 		throws Exception {
 
