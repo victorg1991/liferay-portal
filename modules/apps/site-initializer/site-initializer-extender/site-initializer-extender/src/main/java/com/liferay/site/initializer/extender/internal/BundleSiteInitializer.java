@@ -23,8 +23,6 @@ import com.liferay.asset.list.model.AssetListEntry;
 import com.liferay.asset.list.service.AssetListEntryLocalService;
 import com.liferay.asset.list.util.comparator.ClassNameModelResourceComparator;
 import com.liferay.blogs.model.BlogsEntry;
-import com.liferay.bookmarks.model.BookmarksEntry;
-import com.liferay.bookmarks.model.BookmarksFolder;
 import com.liferay.client.extension.constants.ClientExtensionEntryConstants;
 import com.liferay.client.extension.service.ClientExtensionEntryLocalService;
 import com.liferay.client.extension.type.CET;
@@ -4681,11 +4679,10 @@ public class BundleSiteInitializer implements SiteInitializer {
 		Map<String, String> map = new HashMap<>();
 
 		Class<?>[] classes = {
-			BlogsEntry.class, BookmarksEntry.class, BookmarksFolder.class,
-			com.liferay.calendar.model.Calendar.class, DDLRecord.class,
-			DDMStructure.class, DLFileEntry.class, DLFolder.class,
-			JournalArticle.class, KBArticle.class, MBMessage.class,
-			WikiPage.class
+			BlogsEntry.class, com.liferay.calendar.model.Calendar.class,
+			DDLRecord.class, DDMStructure.class, DLFileEntry.class,
+			DLFolder.class, JournalArticle.class, KBArticle.class,
+			MBMessage.class, WikiPage.class
 		};
 
 		for (Class<?> clazz : classes) {
