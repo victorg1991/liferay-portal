@@ -139,6 +139,8 @@ public class DataSourceFactoryImpl implements DataSourceFactory {
 			}
 			catch (Exception exception) {
 				_log.error("Unable to lookup " + jndiName, exception);
+
+				throw exception;
 			}
 		}
 		else {
