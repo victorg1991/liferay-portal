@@ -73,12 +73,13 @@ public class DataSourceFactoryTest {
 
 	@Test
 	public void testDestroyDataSource() throws Exception {
+
+		// Destroy JDNI data source
+
 		DataSource dataSource1 = _dataSourceFactory.initDataSource(
 			"org.hsqldb.jdbc.JDBCDriver",
 			"jdbc:hsqldb:" + _tempDir.getAbsolutePath() + "/lportal;", "sa",
 			StringPool.BLANK, StringPool.BLANK);
-
-		// Destroy JDNI data source
 
 		NamingManager.setInitialContextFactoryBuilder(
 			environment -> environment1 -> new InitialContext() {
