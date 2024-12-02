@@ -3459,9 +3459,27 @@ public class PortalImpl implements Portal {
 			getCompanyId(httpServletRequest),
 			PropsKeys.LOCALE_PREPEND_FRIENDLY_URL_STYLE);
 
-		if ((localePrependFriendlyURLStyle == 0) ||
-			((localePrependFriendlyURLStyle == 1) &&
-			 locale.equals(LocaleUtil.getDefault()))) {
+		User user = null;
+
+		try {
+			user = getUser(httpServletRequest);
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+		}
+
+		if ((user != null) && !user.isGuestUser() &&
+			(localePrependFriendlyURLStyle == 3) &&
+			locale.equals(user.getLocale())) {
+
+			appendI18nPath = false;
+		}
+		else if ((localePrependFriendlyURLStyle == 0) ||
+				 (((localePrependFriendlyURLStyle == 1) ||
+				   (localePrependFriendlyURLStyle == 3)) &&
+				  locale.equals(LocaleUtil.getDefault()))) {
 
 			appendI18nPath = false;
 		}
