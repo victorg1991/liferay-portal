@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.PropsValues;
@@ -93,6 +94,8 @@ public class PortalImplLocalizedFriendlyURLTest {
 		).put(
 			LocaleUtil.US, "/home"
 		).build();
+
+		UserTestUtil.setUser(TestPropsValues.getUser());
 	}
 
 	@AfterClass
@@ -172,6 +175,27 @@ public class PortalImplLocalizedFriendlyURLTest {
 	}
 
 	@Test
+	public void testIncludeI18nPathCustomLocaleAlgorithm3() throws Exception {
+		int originalLocalePrependFriendlyURLStyle =
+			PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE;
+
+		try {
+			PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE = 3;
+
+			_assertLocalizedSiteLayoutFriendlyURL(
+				_group.getGroupId(),
+				LayoutTestUtil.addTypePortletLayout(
+					_group.getGroupId(), false, _nameMap, _friendlyURLMap),
+				"/inicio", LocaleUtil.BRAZIL, LocaleUtil.BRAZIL, "/inicio",
+				true);
+		}
+		finally {
+			PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE =
+				originalLocalePrependFriendlyURLStyle;
+		}
+	}
+
+	@Test
 	public void testIncludeI18nPathDefaultLocaleAlgorithm0() throws Exception {
 		PortletPreferences portletPreferences = PrefsPropsUtil.getPreferences(
 			_group.getCompanyId());
@@ -238,11 +262,34 @@ public class PortalImplLocalizedFriendlyURLTest {
 	}
 
 	@Test
+	public void testIncludeI18nPathDefaultLocaleAlgorithm3() throws Exception {
+		int originalLocalePrependFriendlyURLStyle =
+			PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE;
+
+		try {
+			PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE = 3;
+
+			_assertLocalizedSiteLayoutFriendlyURL(
+				_group.getGroupId(),
+				LayoutTestUtil.addTypePortletLayout(
+					_group.getGroupId(), false, _nameMap, _friendlyURLMap),
+				"/home", LocaleUtil.US, LocaleUtil.US, "/home", false);
+		}
+		finally {
+			PropsValues.LOCALE_PREPEND_FRIENDLY_URL_STYLE =
+				originalLocalePrependFriendlyURLStyle;
+		}
+	}
+
+	@Test
 	public void testLocalizedSiteLayoutFriendlyURLWithVirtualHost()
 		throws Exception {
 
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setAttribute(
+			WebKeys.USER, TestPropsValues.getUser());
 
 		String layoutFriendlyURL = "/home";
 
@@ -623,6 +670,9 @@ public class PortalImplLocalizedFriendlyURLTest {
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest();
 
+		mockHttpServletRequest.setAttribute(
+			WebKeys.USER, TestPropsValues.getUser());
+
 		Group group = _groupLocalService.getGroup(groupId);
 
 		mockHttpServletRequest.setPathInfo(
@@ -663,11 +713,13 @@ public class PortalImplLocalizedFriendlyURLTest {
 		MockHttpServletRequest mockHttpServletRequest =
 			new MockHttpServletRequest();
 
-		StringBundler sb = new StringBundler(4);
-
 		User user = TestPropsValues.getUser();
 
+		mockHttpServletRequest.setAttribute(WebKeys.USER, user);
+
 		Group groupUser = user.getGroup();
+
+		StringBundler sb = new StringBundler(4);
 
 		sb.append(groupUser.getFriendlyURL());
 
