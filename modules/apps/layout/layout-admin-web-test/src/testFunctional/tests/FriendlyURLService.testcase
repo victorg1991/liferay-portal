@@ -56,7 +56,7 @@ definition {
 
 		Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-source-page");
 
-		AssertLocation(value1 = "${portalURL}/en/web/test-site-name/new-test-page");
+		AssertLocation(value1 = "${portalURL}/web/test-site-name/new-test-page");
 
 		AssertVisible(
 			key_pageName = "Test Source Page",
@@ -384,7 +384,7 @@ definition {
 
 		Navigator.openSpecificURL(url = "${portalURL}/web/test-site-name/test-source-page");
 
-		AssertLocation(value1 = "${portalURL}/en/web/test-site-name/new-test-page");
+		AssertLocation(value1 = "${portalURL}/web/test-site-name/new-test-page");
 
 		AssertVisible(
 			key_pageName = "Test Source Page",
