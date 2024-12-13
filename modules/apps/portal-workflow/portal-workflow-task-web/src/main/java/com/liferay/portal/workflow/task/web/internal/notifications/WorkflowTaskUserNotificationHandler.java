@@ -117,6 +117,15 @@ public class WorkflowTaskUserNotificationHandler
 		long ctCollectionId = jsonObject.getLong(
 			WorkflowConstants.CONTEXT_CT_COLLECTION_ID);
 
+		CTCollection ctCollection = _ctCollectionLocalService.fetchCTCollection(
+			ctCollectionId);
+
+		if ((ctCollection != null) &&
+			(ctCollection.getStatus() == WorkflowConstants.STATUS_APPROVED)) {
+
+			ctCollectionId = CTConstants.CT_COLLECTION_ID_PRODUCTION;
+		}
+
 		if (ctCollectionId != CTCollectionThreadLocal.getCTCollectionId()) {
 			return StringPool.BLANK;
 		}
@@ -281,6 +290,16 @@ public class WorkflowTaskUserNotificationHandler
 
 			long ctCollectionId = jsonObject.getLong(
 				WorkflowConstants.CONTEXT_CT_COLLECTION_ID);
+
+			CTCollection ctCollection =
+				_ctCollectionLocalService.fetchCTCollection(ctCollectionId);
+
+			if ((ctCollection != null) &&
+				(ctCollection.getStatus() ==
+					WorkflowConstants.STATUS_APPROVED)) {
+
+				ctCollectionId = CTConstants.CT_COLLECTION_ID_PRODUCTION;
+			}
 
 			try (SafeCloseable safeCloseable =
 					CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
