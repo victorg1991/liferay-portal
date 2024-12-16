@@ -156,13 +156,13 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(true);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
 					passwordPolicy -> {
 						passwordPolicy.setChangeRequired(true);
 						passwordPolicy.setCheckSyntax(true);
-					})) {
+					});
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			User user = _createUser(true, "abc");
 
@@ -183,13 +183,13 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(false);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
 					passwordPolicy -> {
 						passwordPolicy.setChangeRequired(true);
 						passwordPolicy.setCheckSyntax(true);
-					})) {
+					});
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(false)) {
 
 			AssertUtils.assertFailure(
 				UserPasswordException.class,
@@ -205,13 +205,13 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(true);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
 					passwordPolicy -> {
 						passwordPolicy.setChangeRequired(true);
 						passwordPolicy.setCheckSyntax(true);
-					})) {
+					});
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			AssertUtils.assertFailure(
 				UserPasswordException.class,
@@ -288,10 +288,10 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(true);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
-					passwordPolicy -> passwordPolicy.setLockout(true))) {
+					passwordPolicy -> passwordPolicy.setLockout(true));
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			User user = UserTestUtil.addUser();
 
@@ -310,10 +310,10 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(false);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
-					passwordPolicy -> passwordPolicy.setLockout(true))) {
+					passwordPolicy -> passwordPolicy.setLockout(true));
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(false)) {
 
 			User user = UserTestUtil.addUser();
 
@@ -334,10 +334,10 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(true);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
-					passwordPolicy -> passwordPolicy.setLockout(true))) {
+					passwordPolicy -> passwordPolicy.setLockout(true));
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			User user = UserTestUtil.addUser();
 
@@ -355,10 +355,10 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(true);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
-					passwordPolicy -> passwordPolicy.setChangeRequired(true))) {
+					passwordPolicy -> passwordPolicy.setChangeRequired(true));
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			User user = _createUser(true, "Liferay123");
 
@@ -377,10 +377,10 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try (SafeCloseable safeCloseable1 =
-				_updateLDAPAuthConfigurationWithSafeCloseable(false);
-			SafeCloseable safeCloseable2 =
 				_updateDefaultPasswordPolicyWithSafeCloseable(
-					passwordPolicy -> passwordPolicy.setChangeRequired(true))) {
+					passwordPolicy -> passwordPolicy.setChangeRequired(true));
+			SafeCloseable safeCloseable2 =
+				_updateLDAPAuthConfigurationWithSafeCloseable(false)) {
 
 			User user = _createUser(true, "Liferay123");
 
