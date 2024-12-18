@@ -1230,9 +1230,9 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		}
 
 		validate(
-			companyId, ldapServerId, userId, autoPassword, password1, password2,
-			autoScreenName, screenName, emailAddress, null, firstName,
-			middleName, lastName, organizationIds, locale);
+			companyId, userId, autoPassword, password1, password2,
+			autoScreenName, screenName, emailAddress, ldapServerId, null,
+			firstName, middleName, lastName, organizationIds, locale);
 
 		if (!autoPassword &&
 			(Validator.isNull(password1) || Validator.isNull(password2))) {
@@ -4808,9 +4808,9 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 			}
 
 			validate(
-				companyId, -1, user.getUserId(), autoPassword, password1,
-				password2, autoScreenName, screenName, emailAddress, null,
-				firstName, middleName, lastName, null, locale);
+				companyId, user.getUserId(), autoPassword, password1, password2,
+				autoScreenName, screenName, emailAddress, -1, null, firstName,
+				middleName, lastName, null, locale);
 
 			if (!autoPassword &&
 				(Validator.isNull(password1) || Validator.isNull(password2))) {
@@ -7009,30 +7009,11 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		}
 	}
 
-	/**
-	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
-	 *             #validatePassword(long, String, String)}
-	 */
-	@Deprecated
 	protected void validate(
 			long companyId, long userId, boolean autoPassword, String password1,
 			String password2, boolean autoScreenName, String screenName,
-			String emailAddress, String openId, String firstName,
-			String middleName, String lastName, long[] organizationIds,
-			Locale locale)
-		throws PortalException {
-
-		validate(
-			companyId, -1, userId, autoPassword, password1, password2,
-			autoScreenName, screenName, emailAddress, openId, firstName,
-			middleName, lastName, organizationIds, locale);
-	}
-
-	protected void validate(
-			long companyId, long ldapServerId, long userId,
-			boolean autoPassword, String password1, String password2,
-			boolean autoScreenName, String screenName, String emailAddress,
-			String openId, String firstName, String middleName, String lastName,
+			String emailAddress, long ldapServerId, String openId,
+			String firstName, String middleName, String lastName,
 			long[] organizationIds, Locale locale)
 		throws PortalException {
 
@@ -7082,6 +7063,25 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 				}
 			}
 		}
+	}
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 *             #validatePassword(long, String, String)}
+	 */
+	@Deprecated
+	protected void validate(
+			long companyId, long userId, boolean autoPassword, String password1,
+			String password2, boolean autoScreenName, String screenName,
+			String emailAddress, String openId, String firstName,
+			String middleName, String lastName, long[] organizationIds,
+			Locale locale)
+		throws PortalException {
+
+		validate(
+			companyId, userId, autoPassword, password1, password2,
+			autoScreenName, screenName, emailAddress, -1, openId, firstName,
+			middleName, lastName, organizationIds, locale);
 	}
 
 	protected void validate(
