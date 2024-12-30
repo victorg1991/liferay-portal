@@ -16,6 +16,8 @@ import com.liferay.layout.display.page.LayoutDisplayPageProvider;
 import com.liferay.layout.display.page.LayoutDisplayPageProviderRegistry;
 import com.liferay.layout.display.page.constants.LayoutDisplayPageWebKeys;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutSet;
@@ -175,12 +177,24 @@ public class GetPagePreviewStrutsAction implements StrutsAction {
 					httpServletRequest, httpServletResponse,
 					"portal_normal.ftl", layoutSet.getTheme(), false));
 
-			Element contentElement = document.getElementById("content");
+			Element element = document.getElementById("content");
+
+			if (element == null) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						StringBundler.concat(
+							"Theme ", layoutSet.getThemeId(),
+							" lacks a tag with ID 'content', replacing all ",
+							"body content."));
+				}
+
+				element = document.body();
+			}
 
 			StringBundler sb = (StringBundler)httpServletRequest.getAttribute(
 				WebKeys.LAYOUT_CONTENT);
 
-			contentElement.html(sb.toString());
+			element.html(sb.toString());
 
 			ServletResponseUtil.write(httpServletResponse, document.html());
 		}
@@ -250,6 +264,9 @@ public class GetPagePreviewStrutsAction implements StrutsAction {
 				layoutDisplayPageObjectProvider);
 		}
 	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		GetPagePreviewStrutsAction.class);
 
 	@Reference
 	private InfoItemServiceRegistry _infoItemServiceRegistry;
