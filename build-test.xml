@@ -1344,17 +1344,27 @@ jdbc.default.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 							srcFile="${tstamp.value}-dir/fixpack_documentation.json"
 						/>
 
-						<script language="javascript">
-							var json = project.getProperty("json.content");
+						<beanshell>
+							<![CDATA[
+								import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 
-							var fixpackDocumentation = JSON.parse(json);
+								import java.io.File;
 
-							var patchRequirements = fixpackDocumentation["patch"]["requirements"];
+								import org.json.JSONObject;
 
-							if (patchRequirements != null) {
-								project.setProperty("patch.requirements", patchRequirements);
-							}
-						</script>
+								JSONObject fixPackDocumentationJSONObject = new JSONObject(project.getProperty("json.content"));
+
+								JSONObject patchJSONObject = fixPackDocumentationJSONObject.getJSONObject("patch");
+
+								if (patchJSONObject != null) {
+									String patchRequirements = patchJSONObject.getString("requirements");
+
+									if (!JenkinsResultsParserUtil.isNullOrEmpty(patchRequirements)) {
+										project.setProperty("patch.requirements", patchRequirements);
+									}
+								}
+							]]>
+						</beanshell>
 
 						<antelope:stringutil property="patch.requirements" string="${patch.requirements}">
 							<antelope:replace regex="!" replacement="" />
@@ -1373,25 +1383,35 @@ jdbc.default.connectionProperties=oracle.jdbc.ReadTimeout=0;oracle.net.CONNECT_T
 							srcFile="${tstamp.value}-dir/hotfix.json"
 						/>
 
-						<script language="javascript">
-							var json = project.getProperty("json.content");
+						<beanshell>
+							<![CDATA[
+								import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 
-							var hotfix = JSON.parse(json);
+								import java.io.File;
 
-							var patchingToolVersion = hotfix["requirement"]["patching-tool-version"];
+								import org.json.JSONObject;
 
-							if (patchingToolVersion != null) {
-								project.setProperty("patching.tool.version", patchingToolVersion);
-							}
+								JSONObject hotfixJSONObject = new JSONObject(project.getProperty("json.content"));
 
-							var patchProductVersion = hotfix["requirement"]["product-version"];
+								JSONObject requirementJSONObject = hotfixJSONObject.getJSONObject("requirement");
 
-							if (patchProductVersion != null) {
-								project.setProperty("patch.product.version", patchProductVersion);
-							}
+								if (requirementJSONObject != null){
+									String patchingToolVersion = requirementJSONObject.getString("patching-tool-version");
 
-							project.setProperty("patch.requirements", "");
-						</script>
+									if (!JenkinsResultsParserUtil.isNullOrEmpty(patchingToolVersion)) {
+										project.setProperty("patching.tool.version", patchingToolVersion);
+									}
+
+									String patchProductVersion = requirementJSONObject.getString("product-version");
+
+									if (!JenkinsResultsParserUtil.isNullOrEmpty(patchProductVersion)) {
+										project.setProperty("patch.product.version", patchProductVersion);
+									}
+								}
+
+								project.setProperty("patch.requirements", "");
+							]]>
+						</beanshell>
 					</then>
 				</elseif>
 			</if>
