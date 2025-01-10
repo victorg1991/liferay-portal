@@ -191,6 +191,18 @@ public class PortalImplEscapeRedirectTest {
 	}
 
 	@Test
+	public void testEscapeRedirectWithProtocols() throws Exception {
+		Assert.assertNull(_portalImpl.escapeRedirect("file://localhost"));
+		Assert.assertNull(_portalImpl.escapeRedirect("ftp://localhost"));
+		Assert.assertEquals(
+			"http://localhost", _portalImpl.escapeRedirect("http://localhost"));
+		Assert.assertEquals(
+			"https://localhost",
+			_portalImpl.escapeRedirect("https://localhost"));
+		Assert.assertNull(_portalImpl.escapeRedirect("javascript://localhost"));
+	}
+
+	@Test
 	public void testEscapeRedirectWithRelativeURL() throws Exception {
 
 		// Relative path
