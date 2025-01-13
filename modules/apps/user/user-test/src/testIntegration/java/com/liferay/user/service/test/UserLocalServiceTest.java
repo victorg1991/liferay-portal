@@ -1314,16 +1314,16 @@ public class UserLocalServiceTest {
 			_ldapAuthConfigurationProvider.getConfigurationProperties(
 				companyId);
 
-		Object existingValue = configurationProperties.put(
+		Object originalPasswordPolicyEnabled = configurationProperties.put(
 			"passwordPolicyEnabled", passwordPolicyEnabled);
 
 		_ldapAuthConfigurationProvider.updateProperties(
 			companyId, configurationProperties);
 
 		return () -> {
-			if (existingValue != null) {
+			if (originalPasswordPolicyEnabled != null) {
 				configurationProperties.put(
-					"passwordPolicyEnabled", existingValue);
+					"passwordPolicyEnabled", originalPasswordPolicyEnabled);
 			}
 			else {
 				configurationProperties.remove("passwordPolicyEnabled");
