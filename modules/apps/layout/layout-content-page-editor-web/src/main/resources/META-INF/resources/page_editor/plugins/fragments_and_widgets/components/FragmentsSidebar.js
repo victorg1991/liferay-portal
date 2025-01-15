@@ -3,14 +3,12 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {ClayButtonWithIcon} from '@clayui/button';
 import {
 	SearchForm,
 	SearchResultsMessage,
 	isNullOrUndefined,
 } from '@liferay/layout-js-components-web';
 import {useSessionState} from 'frontend-js-components-web';
-import {sub} from 'frontend-js-web';
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {FRAGMENTS_DISPLAY_STYLES} from '../../../app/config/constants/fragmentsDisplayStyles';
@@ -21,9 +19,9 @@ import {useSelector} from '../../../app/contexts/StoreContext';
 import {useLoadWidgets} from '../../../app/contexts/WidgetsContext';
 import SidebarPanelHeader from '../../../common/components/SidebarPanelHeader';
 import {TABS_IDS} from '../config/constants/tabsIds';
+import FragmentsSidebarMenuActions from './FragmentsSidebarMenuActions';
 import SearchResultsPanel from './SearchResultsPanel';
 import TabsPanel from './TabsPanel';
-import {ReorderSetsModal} from './reorder_sets_modal/ReorderSetsModal';
 
 export const COLLECTION_IDS = {
 	fragments: 0,
@@ -144,7 +142,6 @@ export default function FragmentsSidebar() {
 	);
 
 	const [searchValue, setSearchValue] = useState(null);
-	const [showReorderModal, setShowReorderModal] = useState(false);
 
 	const tabs = useMemo(
 		() => [
@@ -215,13 +212,6 @@ export default function FragmentsSidebar() {
 		}
 	}, [activeTabId, loadWidgets, searchValue, widgets]);
 
-	const viewButtonLabel = sub(
-		Liferay.Language.get('switch-to-x-view'),
-		displayStyle === FRAGMENTS_DISPLAY_STYLES.LIST
-			? Liferay.Language.get('card')
-			: Liferay.Language.get('list[noun]')
-	);
-
 	return (
 		<>
 			<SidebarPanelHeader>
@@ -240,40 +230,10 @@ export default function FragmentsSidebar() {
 						onChange={setSearchValue}
 					/>
 
-					<ClayButtonWithIcon
-						aria-label={Liferay.Language.get('reorder-sets')}
-						borderless
-						className="lfr-portal-tooltip ml-2 mt-0"
-						data-tooltip-align="bottom-right"
-						displayType="secondary"
-						onClick={() => setShowReorderModal(true)}
-						size="sm"
-						symbol="order-arrow"
-						title={Liferay.Language.get('reorder-sets')}
-					/>
-
-					<ClayButtonWithIcon
-						aria-label={viewButtonLabel}
-						borderless
-						className="lfr-portal-tooltip ml-2 mt-0"
-						data-tooltip-align="bottom-right"
-						disabled={displayStyleButtonDisabled}
-						displayType="secondary"
-						onClick={() => {
-							setDisplayStyle(
-								displayStyle === FRAGMENTS_DISPLAY_STYLES.LIST
-									? FRAGMENTS_DISPLAY_STYLES.CARDS
-									: FRAGMENTS_DISPLAY_STYLES.LIST
-							);
-						}}
-						size="sm"
-						symbol={
-							displayStyleButtonDisabled ||
-							displayStyle === FRAGMENTS_DISPLAY_STYLES.LIST
-								? 'cards2'
-								: 'list'
-						}
-						title={viewButtonLabel}
+					<FragmentsSidebarMenuActions
+						displayStyle={displayStyle}
+						displayStyleButtonDisabled={displayStyleButtonDisabled}
+						setDisplayStyle={setDisplayStyle}
 					/>
 				</div>
 
@@ -291,12 +251,6 @@ export default function FragmentsSidebar() {
 					/>
 				)}
 			</div>
-
-			{showReorderModal && (
-				<ReorderSetsModal
-					onCloseModal={() => setShowReorderModal(false)}
-				/>
-			)}
 		</>
 	);
 }
