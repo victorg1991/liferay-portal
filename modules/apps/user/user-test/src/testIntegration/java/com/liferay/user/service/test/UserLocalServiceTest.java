@@ -49,6 +49,7 @@ import com.liferay.portal.kernel.service.TicketLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
+import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.randomizerbumpers.NumericStringRandomizerBumper;
 import com.liferay.portal.kernel.test.randomizerbumpers.UniqueStringRandomizerBumper;
@@ -178,7 +179,7 @@ public class UserLocalServiceTest {
 		}
 	}
 
-	@Test(expected = UserPasswordException.class)
+	@Test
 	public void testAddUserWithWorkflowForLDAPUserWithoutLDAPPasswordPolicy()
 		throws Exception {
 
@@ -191,13 +192,16 @@ public class UserLocalServiceTest {
 						passwordPolicy.setCheckSyntax(true);
 					})) {
 
-			_assertUserPasswordException(true, "abc");
+			AssertUtils.assertFailure(
+				UserPasswordException.class,
+				"Password for user 0 must be at least 6 characters",
+				() -> _createUser(true, "abc"));
 
-			_assertUserCreatedWithPasswordPolicy(true, "Liferay123");
+			_assertUserHasPasswordPolicy(true, _createUser(true, "Liferay123"));
 		}
 	}
 
-	@Test(expected = UserPasswordException.class)
+	@Test
 	public void testAddUserWithWorkflowForPortalUserWithLDAPPasswordPolicy()
 		throws Exception {
 
@@ -210,9 +214,13 @@ public class UserLocalServiceTest {
 						passwordPolicy.setCheckSyntax(true);
 					})) {
 
-			_assertUserPasswordException(false, "abc");
+			AssertUtils.assertFailure(
+				UserPasswordException.class,
+				"Password for user 0 must be at least 6 characters",
+				() -> _createUser(false, "abc"));
 
-			_assertUserCreatedWithPasswordPolicy(false, "Liferay123");
+			_assertUserHasPasswordPolicy(
+				false, _createUser(false, "Liferay123"));
 		}
 	}
 
@@ -1238,11 +1246,8 @@ public class UserLocalServiceTest {
 		return userIds;
 	}
 
-	private void _assertUserCreatedWithPasswordPolicy(
-			boolean ldapUser, String password)
-		throws Exception {
-
-		User user = _createUser(ldapUser, password);
+	private void _assertUserHasPasswordPolicy(boolean ldapUser, User user)
+		throws PortalException {
 
 		Assert.assertEquals(
 			"User was created with incorrect LDAP Server Id", ldapUser ? 1 : -1,
@@ -1253,12 +1258,6 @@ public class UserLocalServiceTest {
 		Assert.assertNotNull(
 			"User is bypassing portal password policy",
 			user.getPasswordPolicy());
-	}
-
-	private void _assertUserPasswordException(boolean ldapUser, String password)
-		throws Exception {
-
-		_createUser(ldapUser, password);
 	}
 
 	private User _createUser(boolean ldapUser, String password)
