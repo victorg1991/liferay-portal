@@ -169,10 +169,10 @@ public class UserLocalServiceTest {
 
 		serviceContext.setAttribute("ldapServerId", 1);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				true)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
-			User user = _attemptUserCreation(_INVALID_PASSWORD, true);
+			User user = _createUser(_INVALID_PASSWORD, true);
 
 			Assert.assertEquals(
 				"User was created with incorrect LDAP Server Id", 1,
@@ -216,8 +216,8 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				false)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(false)) {
 
 			_assertUserPasswordException(_INVALID_PASSWORD, true);
 
@@ -245,8 +245,8 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				true)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			_assertUserPasswordException(_INVALID_PASSWORD, false);
 
@@ -333,8 +333,8 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				true)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			User user = UserTestUtil.addUser();
 
@@ -375,8 +375,8 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				false)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(false)) {
 
 			User user = UserTestUtil.addUser();
 
@@ -418,8 +418,8 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				true)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			User user = UserTestUtil.addUser();
 
@@ -460,10 +460,10 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				true)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
-			User user = _attemptUserCreation(_VALID_PASSWORD, true);
+			User user = _createUser(_VALID_PASSWORD, true);
 
 			_userLocalService.checkPasswordExpired(user);
 
@@ -493,10 +493,10 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				false)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(false)) {
 
-			User user = _attemptUserCreation(_VALID_PASSWORD, true);
+			User user = _createUser(_VALID_PASSWORD, true);
 
 			_userLocalService.checkPasswordExpired(user);
 
@@ -524,8 +524,8 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
-				true)) {
+		try (SafeCloseable safeCloseable =
+				_updateLDAPAuthConfigurationWithSafeCloseable(true)) {
 
 			User user = UserTestUtil.addUser();
 
@@ -1367,7 +1367,7 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try {
-			User user = _attemptUserCreation(password, ldapUser);
+			User user = _createUser(password, ldapUser);
 
 			Assert.assertEquals(
 				"User was created with incorrect LDAP Server Id",
@@ -1388,7 +1388,7 @@ public class UserLocalServiceTest {
 		throws Exception {
 
 		try {
-			_attemptUserCreation(password, ldapUser);
+			_createUser(password, ldapUser);
 
 			Assert.fail("Password policy is not being applied to user");
 		}
@@ -1401,7 +1401,7 @@ public class UserLocalServiceTest {
 		}
 	}
 
-	private User _attemptUserCreation(String password, boolean ldapUser)
+	private User _createUser(String password, boolean ldapUser)
 		throws Exception {
 
 		long ldapServerId = -1;
@@ -1428,32 +1428,33 @@ public class UserLocalServiceTest {
 			new long[] {TestPropsValues.getGroupId()}, serviceContext);
 	}
 
-	private SafeCloseable _updateLDAPPasswordPolicyEnabled(
+	private SafeCloseable _updateLDAPAuthConfigurationWithSafeCloseable(
 			boolean passwordPolicyEnabled)
 		throws PortalException {
 
 		long companyId = TestPropsValues.getCompanyId();
 
-		Dictionary<String, Object> configurations =
+		Dictionary<String, Object> configurationProperties =
 			_ldapAuthConfigurationProvider.getConfigurationProperties(
 				companyId);
 
-		Object existingValue = configurations.put(
+		Object existingValue = configurationProperties.put(
 			"passwordPolicyEnabled", passwordPolicyEnabled);
 
 		_ldapAuthConfigurationProvider.updateProperties(
-			TestPropsValues.getCompanyId(), configurations);
+			TestPropsValues.getCompanyId(), configurationProperties);
 
 		return () -> {
 			if (existingValue != null) {
-				configurations.put("passwordPolicyEnabled", existingValue);
+				configurationProperties.put(
+					"passwordPolicyEnabled", existingValue);
 			}
 			else {
-				configurations.remove("passwordPolicyEnabled");
+				configurationProperties.remove("passwordPolicyEnabled");
 			}
 
 			_ldapAuthConfigurationProvider.updateProperties(
-				companyId, configurations);
+				companyId, configurationProperties);
 		};
 	}
 
