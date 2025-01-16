@@ -44,6 +44,4 @@ public interface LDAPSettings {
 
 	public boolean isPasswordPolicyEnabled(long companyId);
 
-	public boolean isPasswordPolicyEnabled(long ldapServerId, long companyId);
-
 }
