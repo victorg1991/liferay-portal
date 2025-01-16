@@ -206,8 +206,7 @@ public class UserLocalServiceTest {
 				"Password for user 0 must be at least 6 characters",
 				() -> _addUser(false, "abc"));
 
-			_assertUserHasPasswordPolicy(
-				false, _addUser(false, "Liferay123"));
+			_assertUserHasPasswordPolicy(false, _addUser(false, "Liferay123"));
 		}
 	}
 
@@ -1195,29 +1194,7 @@ public class UserLocalServiceTest {
 		}
 	}
 
-	private long[] _addUsers(int numberOfUsers) throws Exception {
-		long[] userIds = new long[numberOfUsers];
-
-		for (int i = 0; i < numberOfUsers; i++) {
-			User user = UserTestUtil.addUser();
-
-			userIds[i] = user.getUserId();
-		}
-
-		return userIds;
-	}
-
-	private void _assertUserHasPasswordPolicy(boolean ldapUser, User user)
-		throws PortalException {
-
-		Assert.assertEquals(ldapUser ? 1 : -1, user.getLdapServerId());
-		Assert.assertTrue(user.isPasswordReset());
-		Assert.assertNotNull(user.getPasswordPolicy());
-	}
-
-	private User _addUser(boolean ldapUser, String password)
-		throws Exception {
-
+	private User _addUser(boolean ldapUser, String password) throws Exception {
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext();
 
@@ -1240,6 +1217,26 @@ public class UserLocalServiceTest {
 			LocaleUtil.getDefault(), RandomTestUtil.randomString(),
 			RandomTestUtil.randomString(),
 			new long[] {TestPropsValues.getGroupId()}, serviceContext);
+	}
+
+	private long[] _addUsers(int numberOfUsers) throws Exception {
+		long[] userIds = new long[numberOfUsers];
+
+		for (int i = 0; i < numberOfUsers; i++) {
+			User user = UserTestUtil.addUser();
+
+			userIds[i] = user.getUserId();
+		}
+
+		return userIds;
+	}
+
+	private void _assertUserHasPasswordPolicy(boolean ldapUser, User user)
+		throws PortalException {
+
+		Assert.assertEquals(ldapUser ? 1 : -1, user.getLdapServerId());
+		Assert.assertTrue(user.isPasswordReset());
+		Assert.assertNotNull(user.getPasswordPolicy());
 	}
 
 	private SafeCloseable _updateDefaultPasswordPolicyWithSafeCloseable(
