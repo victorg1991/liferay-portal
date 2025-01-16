@@ -68,7 +68,6 @@ import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -165,15 +164,14 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			true);
-
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext();
 
 		serviceContext.setAttribute("ldapServerId", 1);
 
-		try {
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				true)) {
+
 			User user = _attemptUserCreation(_INVALID_PASSWORD, true);
 
 			Assert.assertEquals(
@@ -201,8 +199,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setCheckSyntax(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -220,10 +216,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			false);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				false)) {
 
-		try {
 			_assertUserPasswordException(_INVALID_PASSWORD, true);
 
 			_assertUserCreatedWithPasswordPolicy(_VALID_PASSWORD, true);
@@ -233,8 +228,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setCheckSyntax(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -252,10 +245,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			true);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				true)) {
 
-		try {
 			_assertUserPasswordException(_INVALID_PASSWORD, false);
 
 			_assertUserCreatedWithPasswordPolicy(_VALID_PASSWORD, false);
@@ -265,8 +257,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setCheckSyntax(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -343,10 +333,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			true);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				true)) {
 
-		try {
 			User user = UserTestUtil.addUser();
 
 			user.setLdapServerId(1);
@@ -370,8 +359,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setLockout(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -388,10 +375,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			false);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				false)) {
 
-		try {
 			User user = UserTestUtil.addUser();
 
 			user.setLdapServerId(1);
@@ -416,8 +402,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setLockout(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -434,10 +418,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			true);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				true)) {
 
-		try {
 			User user = UserTestUtil.addUser();
 
 			user.setLockout(true);
@@ -461,8 +444,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setLockout(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -479,10 +460,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			true);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				true)) {
 
-		try {
 			User user = _attemptUserCreation(_VALID_PASSWORD, true);
 
 			_userLocalService.checkPasswordExpired(user);
@@ -497,8 +477,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setChangeRequired(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -515,10 +493,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			false);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				false)) {
 
-		try {
 			User user = _attemptUserCreation(_VALID_PASSWORD, true);
 
 			_userLocalService.checkPasswordExpired(user);
@@ -533,8 +510,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setChangeRequired(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -549,10 +524,9 @@ public class UserLocalServiceTest {
 		passwordPolicy = _passwordPolicyLocalService.updatePasswordPolicy(
 			passwordPolicy);
 
-		boolean ldapPasswordPolicyEnabled = _updateLDAPPasswordPolicyEnabled(
-			true);
+		try (SafeCloseable safeCloseable = _updateLDAPPasswordPolicyEnabled(
+				true)) {
 
-		try {
 			User user = UserTestUtil.addUser();
 
 			Assert.assertFalse(user.isPasswordReset());
@@ -576,8 +550,6 @@ public class UserLocalServiceTest {
 			passwordPolicy.setChangeRequired(false);
 
 			_passwordPolicyLocalService.updatePasswordPolicy(passwordPolicy);
-
-			_updateLDAPPasswordPolicyEnabled(ldapPasswordPolicyEnabled);
 		}
 	}
 
@@ -1456,21 +1428,33 @@ public class UserLocalServiceTest {
 			new long[] {TestPropsValues.getGroupId()}, serviceContext);
 	}
 
-	private boolean _updateLDAPPasswordPolicyEnabled(
+	private SafeCloseable _updateLDAPPasswordPolicyEnabled(
 			boolean passwordPolicyEnabled)
 		throws PortalException {
 
+		long companyId = TestPropsValues.getCompanyId();
+
 		Dictionary<String, Object> configurations =
 			_ldapAuthConfigurationProvider.getConfigurationProperties(
-				TestPropsValues.getCompanyId());
+				companyId);
 
-		boolean existingValue = GetterUtil.getBoolean(
-			configurations.put("passwordPolicyEnabled", passwordPolicyEnabled));
+		Object existingValue = configurations.put(
+			"passwordPolicyEnabled", passwordPolicyEnabled);
 
 		_ldapAuthConfigurationProvider.updateProperties(
 			TestPropsValues.getCompanyId(), configurations);
 
-		return existingValue;
+		return () -> {
+			if (existingValue != null) {
+				configurations.put("passwordPolicyEnabled", existingValue);
+			}
+			else {
+				configurations.remove("passwordPolicyEnabled");
+			}
+
+			_ldapAuthConfigurationProvider.updateProperties(
+				companyId, configurations);
+		};
 	}
 
 	private static final String _INVALID_PASSWORD = "abc";
