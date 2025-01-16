@@ -23,7 +23,7 @@ public class PwdToolkitUtil {
 	}
 
 	public static void validate(
-			long userId, String password1, String password2,
+			long companyId, long userId, String password1, String password2,
 			PasswordPolicy passwordPolicy)
 		throws PortalException {
 

@@ -7035,7 +7035,7 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 						companyId);
 			}
 
-			PwdToolkitUtil.validate(0, password1, password2, passwordPolicy);
+			PwdToolkitUtil.validate(0, 0, password1, password2, passwordPolicy);
 		}
 
 		validateEmailAddress(companyId, emailAddress);
@@ -7064,6 +7064,20 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 				}
 			}
 		}
+	}
+
+	protected void validate(
+			long companyId, long userId, boolean autoPassword, String password1,
+			String password2, boolean autoScreenName, String screenName,
+			String emailAddress, String openId, String firstName,
+			String middleName, String lastName, long[] organizationIds,
+			Locale locale)
+		throws PortalException {
+
+		validate(
+			companyId, userId, autoPassword, password1, password2,
+			autoScreenName, screenName, emailAddress, -1, openId, firstName,
+			middleName, lastName, organizationIds, locale);
 	}
 
 	protected void validate(
@@ -7250,7 +7264,8 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		PasswordPolicy passwordPolicy =
 			_passwordPolicyLocalService.getPasswordPolicyByUserId(userId);
 
-		PwdToolkitUtil.validate(userId, password1, password2, passwordPolicy);
+		PwdToolkitUtil.validate(
+			0, userId, password1, password2, passwordPolicy);
 	}
 
 	protected void validateReminderQuery(
