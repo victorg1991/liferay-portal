@@ -52,7 +52,7 @@ const test = mergeTests(
 );
 
 const PANELS: SidebarTab[] = [
-	'Fragments and Widgets',
+	'Components',
 	'Browser',
 	'Page Design Options',
 	'Page Rules',
@@ -227,9 +227,7 @@ test('Checks sidebar accessibility', async ({
 
 	await page.getByRole('button', {name: 'Close'}).press('Enter');
 
-	await expect(
-		page.getByLabel('Fragments and Widgets', {exact: true})
-	).toBeFocused();
+	await expect(page.getByLabel('Components', {exact: true})).toBeFocused();
 
 	// Check with axe
 
@@ -399,7 +397,7 @@ test.describe('Fragments Panel', () => {
 
 		// Check only published fragment is displayed
 
-		await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+		await pageEditorPage.goToSidebarTab('Components');
 
 		await page
 			.getByRole('menuitem', {
@@ -448,9 +446,9 @@ test.describe('Fragments Panel', () => {
 
 		await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
-		// Open the "Fragments and Widgets" panel
+		// Open the "Components" panel
 
-		await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+		await pageEditorPage.goToSidebarTab('Components');
 
 		// Find the search input and type some text
 
@@ -485,9 +483,9 @@ test.describe('Fragments Panel', () => {
 
 			await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
-			// Open the "Fragments and Widgets" panel
+			// Open the "Components" panel
 
-			await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+			await pageEditorPage.goToSidebarTab('Components');
 
 			// Assert favorite section is empty
 
@@ -499,7 +497,13 @@ test.describe('Fragments Panel', () => {
 
 			// Switch to card view and add "External Video" fragment as favorite
 
-			await page.getByTitle('Switch to Card View').click();
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: page.getByRole('menuitem', {
+					name: 'Switch to Card View',
+				}),
+				trigger: page.getByRole('button', {name: 'Components Options'}),
+			});
 
 			await page.getByLabel('Mark External Video as Favorite').click();
 
@@ -538,7 +542,7 @@ test.describe('Fragments Panel', () => {
 
 			// Go to the Widget tab a select one widget as favorite
 
-			await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+			await pageEditorPage.goToSidebarTab('Components');
 
 			await page.getByRole('tab', {exact: true, name: 'Widgets'}).click();
 
@@ -647,9 +651,9 @@ test.describe('Fragments Panel', () => {
 
 		await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
-		// Open the "Fragments and Widgets" and get the first set of fragments
+		// Open the "Components" and get the first set of fragments
 
-		await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+		await pageEditorPage.goToSidebarTab('Components');
 
 		const tabpanel = page
 			.locator('.page-editor__sidebar__fragments-widgets-panel')
@@ -673,7 +677,11 @@ test.describe('Fragments Panel', () => {
 
 		// Open "Reorder Sets" modal and reorder the first set of fragments
 
-		await page.getByTitle('Reorder Sets', {exact: true}).click();
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: page.getByRole('menuitem', {name: 'Reorder Sets'}),
+			trigger: page.getByRole('button', {name: 'Components Options'}),
+		});
 
 		const modal = page.locator('.modal-body');
 
@@ -778,7 +786,7 @@ test.describe('Fragments Panel', () => {
 
 			// Change the view of the fragments to Cards
 
-			await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+			await pageEditorPage.goToSidebarTab('Components');
 
 			const firstSetList = page
 				.locator('.page-editor__collapse ul')
@@ -788,7 +796,13 @@ test.describe('Fragments Panel', () => {
 				/page-editor__fragments-widgets__tab-collection-list/
 			);
 
-			await page.getByTitle('Switch to Card View').click();
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: page.getByRole('menuitem', {
+					name: 'Switch to Card View',
+				}),
+				trigger: page.getByRole('button', {name: 'Components Options'}),
+			});
 
 			// Open Cookie Banner collapse
 
@@ -805,7 +819,7 @@ test.describe('Fragments Panel', () => {
 
 			await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
-			await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+			await pageEditorPage.goToSidebarTab('Components');
 
 			await expect(firstSetList).toHaveClass(
 				/page-editor__fragments-widgets__tab-collection-cards/
@@ -815,7 +829,13 @@ test.describe('Fragments Panel', () => {
 
 			// Reset the panel
 
-			await page.getByTitle('Switch to List View').click();
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: page.getByRole('menuitem', {
+					name: 'Switch to List View',
+				}),
+				trigger: page.getByRole('button', {name: 'Components Options'}),
+			});
 
 			await menuDisplayFragmentSet.click();
 		}
@@ -837,7 +857,7 @@ test.describe('Fragments Panel', () => {
 
 			// Go to the Fragments and Widget panel
 
-			await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+			await pageEditorPage.goToSidebarTab('Components');
 
 			const fragment = page
 				.locator('.page-editor__fragments-widgets__tab-list-item')
@@ -905,7 +925,7 @@ test.describe('Fragments Panel', () => {
 
 			// Try to add the fragment
 
-			await pageEditorPage.goToSidebarTab('Fragments and Widgets');
+			await pageEditorPage.goToSidebarTab('Components');
 
 			const header = page.getByRole('menuitem', {
 				exact: true,
