@@ -22,7 +22,6 @@ test('LPD-32888 Check reCaptcha has a label for textarea', async ({
 		reCaptchaConfig.publicKey,
 		reCaptchaConfig.privateKey
 	);
-	await captchaConfigPage.saveConfiguration();
 
 	await page.getByTitle('User Profile Menu').click();
 	await page.getByRole('menuitem', {name: 'Sign Out'}).click();
