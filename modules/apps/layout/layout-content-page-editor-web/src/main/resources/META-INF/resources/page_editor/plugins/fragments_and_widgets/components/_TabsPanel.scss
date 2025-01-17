@@ -3,11 +3,37 @@
 html#{$cadmin-selector} {
 	.cadmin {
 		.page-editor__sidebar__fragments-widgets-panel__tabs {
-			border-bottom: 1px solid $cadmin-secondary-l3;
+			border: 0;
 			font-size: 12px;
 
-			.nav-link:not(.active) {
-				color: $cadmin-secondary;
+			.nav-item {
+				margin: 0 0 -12px -1px;
+				width: 50%;
+
+				.nav-link {
+					background-color: $cadmin-white;
+					border: 1px solid $cadmin-secondary-l0;
+					color: $cadmin-secondary;
+					text-align: center;
+
+					&.active,
+					&:hover {
+						background-color: $cadmin-light;
+						border: 1px solid $cadmin-secondary-l0;
+						color: $cadmin-dark;
+					}
+					&:hover,
+					&:focus {
+						background-color: $cadmin-light-l1;
+					}
+				}
+
+				&:nth-child(1) .nav-link {
+					border-radius: 4px 0 0 4px;
+				}
+				&:nth-child(2) .nav-link {
+					border-radius: 0 4px 4px 0;
+				}
 			}
 		}
 	}
