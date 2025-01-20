@@ -824,7 +824,7 @@ public class UserLocalServiceTest {
 
 			Assert.assertEquals(
 				"PBKDF2WITHHMACSHA1/160/1300000",
-				PasswordEncryptorUtil.getFullEncryptedPasswordAlgorithm(
+				PasswordEncryptorUtil.getEncryptionAlgorithmConfiguration(
 					user.getPassword()));
 		}
 
@@ -849,7 +849,7 @@ public class UserLocalServiceTest {
 
 			Assert.assertEquals(
 				"PBKDF2WITHHMACSHA1/160/2600000",
-				PasswordEncryptorUtil.getFullEncryptedPasswordAlgorithm(
+				PasswordEncryptorUtil.getEncryptionAlgorithmConfiguration(
 					user.getPassword()));
 		}
 	}
