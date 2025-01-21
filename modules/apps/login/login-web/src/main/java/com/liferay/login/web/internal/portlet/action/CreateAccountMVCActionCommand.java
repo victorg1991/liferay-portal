@@ -344,7 +344,8 @@ public class CreateAccountMVCActionCommand extends BaseMVCActionCommand {
 			}
 		}
 
-		_sendCompanySecurityStrangersURLRedirect(actionRequest, actionResponse, themeDisplay);
+		_sendCompanySecurityStrangersURLRedirect(
+			actionRequest, actionResponse, themeDisplay);
 	}
 
 	protected CaptchaConfiguration getCaptchaConfiguration()
@@ -553,21 +554,6 @@ public class CreateAccountMVCActionCommand extends BaseMVCActionCommand {
 		addUser(actionRequest, actionResponse);
 	}
 
-	private void _updateUserAndSendRedirect(
-			ActionRequest actionRequest, ActionResponse actionResponse,
-			ThemeDisplay themeDisplay, User user, String password1)
-		throws Exception {
-
-		_userLocalService.updateLastLogin(user.getUserId(), user.getLoginIP());
-
-		_userLocalService.updatePasswordReset(user.getUserId(), false);
-
-		_userLocalService.updateEmailAddressVerified(user.getUserId(), true);
-
-		sendRedirect(
-			actionRequest, actionResponse, themeDisplay, user, password1);
-	}
-
 	private void _sendCompanySecurityStrangersURLRedirect(
 			ActionRequest actionRequest, ActionResponse actionResponse,
 			ThemeDisplay themeDisplay)
@@ -594,6 +580,21 @@ public class CreateAccountMVCActionCommand extends BaseMVCActionCommand {
 				_log.debug(noSuchLayoutException);
 			}
 		}
+	}
+
+	private void _updateUserAndSendRedirect(
+			ActionRequest actionRequest, ActionResponse actionResponse,
+			ThemeDisplay themeDisplay, User user, String password1)
+		throws Exception {
+
+		_userLocalService.updateLastLogin(user.getUserId(), user.getLoginIP());
+
+		_userLocalService.updatePasswordReset(user.getUserId(), false);
+
+		_userLocalService.updateEmailAddressVerified(user.getUserId(), true);
+
+		sendRedirect(
+			actionRequest, actionResponse, themeDisplay, user, password1);
 	}
 
 	private ActionRequest _wrapActionRequest(ActionRequest actionRequest)
