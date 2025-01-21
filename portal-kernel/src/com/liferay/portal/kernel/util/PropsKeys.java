@@ -2193,6 +2193,9 @@ public interface PropsKeys {
 	public static final String RECENT_GROUPS_MAX_ELEMENTS =
 		"recent.groups.max.elements";
 
+	public static final String REDIRECT_URL_PROTOCOLS_ALLOWED =
+		"redirect.url.protocols.allowed";
+
 	public static final String RELEASE_INFO_BUILD_NUMBER =
 		"release.info.build.number";
 

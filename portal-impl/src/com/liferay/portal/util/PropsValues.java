@@ -1930,6 +1930,9 @@ public class PropsValues {
 	public static final int RECENT_GROUPS_MAX_ELEMENTS = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.RECENT_GROUPS_MAX_ELEMENTS));
 
+	public static final String[] REDIRECT_URL_PROTOCOLS_ALLOWED =
+		PropsUtil.getArray(PropsKeys.REDIRECT_URL_PROTOCOLS_ALLOWED);
+
 	public static final boolean REQUEST_HEADER_AUTH_IMPORT_FROM_LDAP =
 		GetterUtil.getBoolean(
 			PropsUtil.get(PropsKeys.REQUEST_HEADER_AUTH_IMPORT_FROM_LDAP));

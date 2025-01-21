@@ -884,6 +884,14 @@ public class PortalImpl implements Portal {
 			return url;
 		}
 
+		String[] allowedProtocols = PropsValues.REDIRECT_URL_PROTOCOLS_ALLOWED;
+
+		if ((allowedProtocols.length != 0) &&
+			!ArrayUtil.contains(allowedProtocols, uri.getScheme(), true)) {
+
+			return null;
+		}
+
 		String domain = uri.getHost();
 
 		if (Validator.isNull(domain)) {
