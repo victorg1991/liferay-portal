@@ -247,7 +247,7 @@ public class RestrictedLiferayObjectWrapperTest
 		_testRestrictedMethodNames(liferayFreeMarkerStringModel, "getname");
 
 		Assert.assertEquals(
-			"Denied access to toString of class " +
+			"Denied access to the toString method in class " +
 				TestLiferayMethodObject.class,
 			liferayFreeMarkerStringModel.getAsString());
 

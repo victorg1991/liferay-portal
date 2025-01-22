@@ -52,7 +52,8 @@ public class LiferayFreeMarkerStringModel extends StringModel {
 	@Override
 	public String getAsString() {
 		if ((_restrictedMethodNames == null) || _deniedAccessToString) {
-			return "Denied access to toString of class " + object.getClass();
+			return "Denied access to the toString method in class " +
+				object.getClass();
 		}
 
 		return object.toString();
