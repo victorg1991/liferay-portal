@@ -29,18 +29,22 @@ import com.liferay.object.model.ObjectFolder;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectFolderLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.HTTPTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
@@ -123,6 +127,31 @@ public class ObjectDefinitionResourceTest
 		Assert.assertEquals(
 			"/o/c/" + objectDefinitionPluralName,
 			objectDefinition.getRestContextPath());
+	}
+
+	@Override
+	@Test
+	public void testGetObjectDefinitionByExternalReferenceCode()
+		throws Exception {
+
+		super.testGetObjectDefinitionByExternalReferenceCode();
+
+		ObjectDefinition objectDefinition =
+			testGetObjectDefinitionsPage_addObjectDefinition(
+				randomObjectDefinition());
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				"object-admin/v1.0/object-definitions",
+				"/by-external-reference-code/",
+				objectDefinition.getExternalReferenceCode(),
+				"?nestedFields=objectFields"),
+			Http.Method.GET);
+
+		JSONArray jsonArray = jsonObject.getJSONArray("objectFields");
+
+		Assert.assertEquals(jsonArray.toString(), 7, jsonArray.length());
 	}
 
 	@Override
