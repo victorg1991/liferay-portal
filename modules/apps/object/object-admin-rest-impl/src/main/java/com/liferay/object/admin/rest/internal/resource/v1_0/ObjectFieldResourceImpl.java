@@ -31,6 +31,7 @@ import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.fields.NestedField;
+import com.liferay.portal.vulcan.fields.NestedFieldId;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
@@ -83,8 +84,8 @@ public class ObjectFieldResourceImpl extends BaseObjectFieldResourceImpl {
 	@NestedField(parentClass = ObjectDefinition.class, value = "objectFields")
 	@Override
 	public Page<ObjectField> getObjectDefinitionObjectFieldsPage(
-			Long objectDefinitionId, String search, Filter filter,
-			Pagination pagination, Sort[] sorts)
+			@NestedFieldId(value = "id") Long objectDefinitionId, String search,
+			Filter filter, Pagination pagination, Sort[] sorts)
 		throws Exception {
 
 		return _getObjectFieldsPage(
