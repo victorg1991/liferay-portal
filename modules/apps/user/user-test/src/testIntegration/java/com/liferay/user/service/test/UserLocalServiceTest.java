@@ -1337,7 +1337,7 @@ public class UserLocalServiceTest {
 
 			Assert.assertEquals(
 				oldPasswordsEncryptionAlgorithm,
-				PasswordEncryptorUtil.getEncryptionAlgorithmConfiguration(
+				PasswordEncryptorUtil.getEncryptedPasswordAlgorithmSettings(
 					user.getPassword()));
 		}
 
@@ -1362,7 +1362,7 @@ public class UserLocalServiceTest {
 
 			Assert.assertEquals(
 				newPasswordsEncryptionAlgorithm,
-				PasswordEncryptorUtil.getEncryptionAlgorithmConfiguration(
+				PasswordEncryptorUtil.getEncryptedPasswordAlgorithmSettings(
 					user.getPassword()));
 		}
 	}
