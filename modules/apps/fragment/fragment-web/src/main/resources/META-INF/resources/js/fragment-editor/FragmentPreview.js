@@ -92,9 +92,9 @@ const FragmentPreview = ({configuration, css, html, js, urls = {}}) => {
 							setLoading(false);
 						}
 
-						iframeRef.current.contentWindow.postMessage(
-							JSON.stringify({data: response}),
-							'*'
+						iframeRef.current.contentWindow.Liferay.fire(
+							'fragmentEditor:updatePreview',
+							{data: response}
 						);
 					});
 			}

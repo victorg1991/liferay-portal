@@ -10,18 +10,21 @@
 <aui:script require="frontend-js-web/index as frontendJsWeb">
 	var {runScriptsInElement} = frontendJsWeb;
 
-	function handleIframeMessage(event) {
+	Liferay.on('fragmentEditor:updatePreview', (event) => {
 		if (event.data) {
 			var virtualDocument = document.createElement('html');
 
-			virtualDocument.innerHTML = JSON.parse(event.data).data;
+			virtualDocument.innerHTML = event.data;
 
-			document.querySelector('.portlet-body').innerHTML =
-				virtualDocument.innerHTML;
+			const body = virtualDocument.querySelector('body');
 
-			runScriptsInElement(virtualDocument);
+			const portletBody = document.querySelector('.portlet-body');
+
+			portletBody.innerHTML = '';
+
+			portletBody.appendChild(body);
+
+			runScriptsInElement(body);
 		}
-	}
-
-	window.addEventListener('message', handleIframeMessage);
+	});
 </aui:script>
