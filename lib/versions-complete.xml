@@ -5686,6 +5686,275 @@
 				</licenses>
 			</library>
 			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!annotations.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Annotations</project-name>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!apache-client.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: HTTP Clients :: Apache</project-name>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!auth.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Auth</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!aws-core.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: AWS Core</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!aws-json-protocol.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Core :: Protocols :: AWS Json Protocol</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!checksums-spi.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Checksums SPI</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!checksums.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Checksums</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!endpoints-spi.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Endpoints SPI</project-name>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!eventstream.jar</file-name>
+				<version>1.0.1</version>
+				<project-name>AWS Event Stream</project-name>
+				<project-url>https://github.com/awslabs/aws-eventstream-java</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!http-auth-aws.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: HTTP Auth AWS</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!http-auth-spi.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: HTTP Auth SPI</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!http-auth.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: HTTP Auth</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!http-client-spi.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: HTTP Client Interface</project-name>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!identity-spi.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Identity SPI</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!json-utils.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Core :: Protocols :: Json Utils</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!metrics-spi.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Metrics SPI</project-name>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!profiles.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Profiles</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!protocol-core.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Core :: Protocols :: Protocol Core</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!regions.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Regions</project-name>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!sdk-core.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: SDK Core</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!third-party-jackson-core.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Third Party :: Jackson-core</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!translate.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Services :: Amazon Translate</project-name>
+				<project-url>https://aws.amazon.com/sdkforjava</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.translation.translator.aws.jar!utils.jar</file-name>
+				<version>2.25.53</version>
+				<project-name>AWS Java SDK :: Utilities</project-name>
+				<licenses>
+					<license>
+						<license-name>Apache License, Version 2.0</license-name>
+						<license-url>https://aws.amazon.com/apache2.0</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
 				<file-name>com.liferay.wiki.engine.creole.jar!antlr.jar</file-name>
 				<version>3.0.1</version>
 				<project-name>AntLR Parser Generator</project-name>
