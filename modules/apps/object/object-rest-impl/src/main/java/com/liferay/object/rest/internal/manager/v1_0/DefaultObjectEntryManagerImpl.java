@@ -5,6 +5,7 @@
 
 package com.liferay.object.rest.internal.manager.v1_0;
 
+import com.liferay.account.exception.NoSuchGroupException;
 import com.liferay.object.action.engine.ObjectActionEngine;
 import com.liferay.object.constants.ObjectActionTriggerConstants;
 import com.liferay.object.constants.ObjectConstants;
@@ -62,6 +63,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.ExternalReferenceCodeModel;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.PersistedModel;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
@@ -1412,7 +1414,14 @@ public class DefaultObjectEntryManagerImpl
 			}
 			else {
 				folderExternalReferenceCode = folder.getExternalReferenceCode();
-				folderGroupId = folder.getSiteId();
+
+				Group group = groupLocalService.getGroup(folder.getSiteId());
+
+				if (group.getCompanyId() != objectField.getCompanyId()) {
+					throw new NoSuchGroupException();
+				}
+
+				folderGroupId = group.getGroupId();
 			}
 
 			serviceBuilderFileEntry = _attachmentManager.addFileEntry(
