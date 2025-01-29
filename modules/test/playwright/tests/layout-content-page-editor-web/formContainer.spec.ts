@@ -1952,6 +1952,32 @@ test.describe('Form Localization', () => {
 							name: 'scientificName',
 							required: false,
 						},
+						{
+							DBType: ObjectField.DBTypeEnum.Integer,
+							businessType: ObjectField.BusinessTypeEnum.Integer,
+							externalReferenceCode: 'age1',
+							indexed: true,
+							indexedAsKeyword: false,
+							label: {
+								en_US: 'Age1',
+							},
+							localized: true,
+							name: 'age1',
+							required: false,
+						},
+						{
+							DBType: ObjectField.DBTypeEnum.Integer,
+							businessType: ObjectField.BusinessTypeEnum.Integer,
+							externalReferenceCode: 'age2',
+							indexed: true,
+							indexedAsKeyword: false,
+							label: {
+								en_US: 'Age2',
+							},
+							localized: false,
+							name: 'age2',
+							required: false,
+						},
 					],
 					pluralLabel: {
 						en_US: 'Plants',
@@ -1963,10 +1989,10 @@ test.describe('Form Localization', () => {
 					},
 				});
 
-			apiHelpers.data.push({
-				id: objectDefinition.id,
-				type: 'objectDefinition',
-			});
+			// apiHelpers.data.push({
+			// 	id: objectDefinition.id,
+			// 	type: 'objectDefinition',
+			// });
 
 			// Create a page with a Form fragment
 

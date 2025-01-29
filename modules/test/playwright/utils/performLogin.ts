@@ -59,11 +59,14 @@ async function performLogin(
 
 	const emailAddressInput = page.getByLabel('Email Address');
 
-	await expect(emailAddressInput).toBeVisible();
-
-	await emailAddressInput.fill(`${screenName}${domain}`);
+	await expect(emailAddressInput).toBeEditable();
+	await expect(async () => {
+		await emailAddressInput.fill(`${screenName}${domain}`);
+		await expect(emailAddressInput).toHaveValue(`${screenName}${domain}`);
+	}).toPass();
 
 	await page.getByLabel('Password').fill(password);
+
 	await page.getByLabel('Remember Me').setChecked(rememberMe);
 
 	if ((await signInButton.count()) === 1) {

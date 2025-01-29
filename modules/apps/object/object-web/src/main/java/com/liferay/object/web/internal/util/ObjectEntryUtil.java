@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.KeyValuePair;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 
 import java.text.Format;
@@ -40,6 +41,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -190,25 +192,23 @@ public class ObjectEntryUtil {
 					infoField.getName(),
 					dateTimeFormatter.format((LocalDateTime)value));
 			}
-			else if ((Objects.equals(
-						HTMLInfoFieldType.INSTANCE,
-						infoField.getInfoFieldType()) ||
-					  Objects.equals(
-						  LongTextInfoFieldType.INSTANCE,
-						  infoField.getInfoFieldType()) ||
-					  Objects.equals(
-						  TextInfoFieldType.INSTANCE,
-						  infoField.getInfoFieldType())) &&
+			else if (
 					 infoField.isLocalizable() &&
 					 (value instanceof InfoLocalizedValue)) {
 
-				InfoLocalizedValue<String> infoLocalizedValue =
-					(InfoLocalizedValue<String>)value;
+				InfoLocalizedValue<Object> infoLocalizedValue =
+					(InfoLocalizedValue<Object>)value;
+
+				Map<Locale, Object> values = infoLocalizedValue.getValues();
+
+				Map<String, Object> languageIdMap = new HashMap<>();
+
+				values.forEach(
+					(locale, localizedValue) -> languageIdMap.put(
+						LocaleUtil.toLanguageId(locale), localizedValue));
 
 				properties.put(
-					infoField.getName() + "_i18n",
-					LocalizedMapUtil.getLanguageIdMap(
-						infoLocalizedValue.getValues()));
+					infoField.getName() + "_i18n", languageIdMap);
 			}
 			else {
 				properties.put(infoField.getName(), value);
