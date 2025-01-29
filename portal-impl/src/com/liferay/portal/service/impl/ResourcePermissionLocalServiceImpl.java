@@ -430,7 +430,9 @@ public class ResourcePermissionLocalServiceImpl
 
 			// Update existing resource permissions
 
-			String sql = CustomSQLUtil.get(_UPDATE_ACTION_IDS);
+			String sql = CustomSQLUtil.get(
+				ResourcePermissionLocalServiceImpl.class.getName() +
+					".updateActionIds");
 
 			sql = StringUtil.replace(
 				sql, "[$ROLE_ID$]",
@@ -449,7 +451,9 @@ public class ResourcePermissionLocalServiceImpl
 
 			// Add missing resource permissions
 
-			sql = CustomSQLUtil.get(_FIND_MISSING_RESOURCE_PERMISSIONS);
+			sql = CustomSQLUtil.get(
+				ResourcePermissionLocalServiceImpl.class.getName() +
+					".findMissingResourcePermissions");
 
 			sqlQuery = session.createSynchronizedSQLQuery(sql);
 
@@ -2293,13 +2297,6 @@ public class ResourcePermissionLocalServiceImpl
 
 		return false;
 	}
-
-	private static final String _FIND_MISSING_RESOURCE_PERMISSIONS =
-		ResourcePermissionLocalServiceImpl.class.getName() +
-			".findMissingResourcePermissions";
-
-	private static final String _UPDATE_ACTION_IDS =
-		ResourcePermissionLocalServiceImpl.class.getName() + ".updateActionIds";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ResourcePermissionLocalServiceImpl.class);

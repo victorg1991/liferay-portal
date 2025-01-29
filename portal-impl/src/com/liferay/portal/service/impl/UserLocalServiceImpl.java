@@ -7490,7 +7490,8 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 		try {
 			session = userPersistence.openSession();
 
-			String sql = CustomSQLUtil.get(_UPDATE_LAST_LOGIN);
+			String sql = CustomSQLUtil.get(
+				UserLocalServiceImpl.class.getName() + ".updateLastLogin");
 
 			SQLQuery sqlQuery = session.createSynchronizedSQLQuery(sql);
 
@@ -7533,9 +7534,6 @@ public class UserLocalServiceImpl extends UserLocalServiceBaseImpl {
 	private static final String _PASSWORDS_ENCRYPTION_ALGORITHM =
 		GetterUtil.getString(
 			PropsUtil.get(PropsKeys.PASSWORDS_ENCRYPTION_ALGORITHM));
-
-	private static final String _UPDATE_LAST_LOGIN =
-		UserLocalServiceImpl.class.getName() + ".updateLastLogin";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		UserLocalServiceImpl.class);
