@@ -55,11 +55,6 @@ public class EditSiteURLMVCActionCommandTest {
 		MockLiferayPortletActionRequest mockLiferayPortletActionRequest =
 			new MockLiferayPortletActionRequest();
 
-		ThemeDisplay themeDisplay = _getThemeDisplay();
-
-		mockLiferayPortletActionRequest.setAttribute(
-			WebKeys.THEME_DISPLAY, themeDisplay);
-
 		mockLiferayPortletActionRequest.addParameter(
 			"liveGroupId", String.valueOf(_group.getGroupId()));
 
@@ -67,6 +62,11 @@ public class EditSiteURLMVCActionCommandTest {
 
 		mockLiferayPortletActionRequest.addParameter(
 			"groupFriendlyURL", groupFriendlyURL);
+
+		ThemeDisplay themeDisplay = _getThemeDisplay();
+
+		mockLiferayPortletActionRequest.setAttribute(
+			WebKeys.THEME_DISPLAY, themeDisplay);
 
 		ReflectionTestUtil.invoke(
 			_mvcActionCommand, "doProcessAction",
