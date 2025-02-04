@@ -210,9 +210,9 @@ export default function StructureTreeContent({expandedKeys, setExpandedKeys}) {
 
 	useEffect(() => {
 		if (dragAndDropHoveredItemId) {
-			setExpandedKeys((previousExpanedKeys) => [
+			setExpandedKeys((previousExpandedKeys) => [
 				...new Set([
-					...previousExpanedKeys,
+					...previousExpandedKeys,
 					...[dragAndDropHoveredItemId],
 				]),
 			]);

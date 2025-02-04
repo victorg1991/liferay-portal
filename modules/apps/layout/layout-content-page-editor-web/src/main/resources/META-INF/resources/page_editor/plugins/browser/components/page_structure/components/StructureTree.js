@@ -67,9 +67,9 @@ export default function PageStructureSidebar() {
 				return;
 			}
 
-			setExpandedKeys((previousExpanedKeys) => [
+			setExpandedKeys((previousExpandedKeys) => [
 				...new Set([
-					...previousExpanedKeys,
+					...previousExpandedKeys,
 					...getAncestorsIds(layoutDataActiveItem, layoutData),
 				]),
 			]);
@@ -85,9 +85,9 @@ export default function PageStructureSidebar() {
 				return;
 			}
 
-			setExpandedKeys((previousExpanedKeys) => [
+			setExpandedKeys((previousExpandedKeys) => [
 				...new Set([
-					...previousExpanedKeys,
+					...previousExpandedKeys,
 					...getAncestorsIds(layoutDataTargetItem, layoutData),
 				]),
 			]);
