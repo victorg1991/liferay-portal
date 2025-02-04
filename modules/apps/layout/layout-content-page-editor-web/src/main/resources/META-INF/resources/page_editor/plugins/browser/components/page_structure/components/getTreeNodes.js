@@ -218,13 +218,11 @@ export default function getTreeNodes(
 	item,
 	items,
 	{
-		activeItemId,
 		canUpdateEditables,
 		canUpdateItemConfiguration,
 		editingNodeId,
 		fragmentEntryLinks,
 		hasHiddenAncestor,
-		hoveredItemId,
 		isMasterPage,
 		layoutData,
 		layoutDataRef,
@@ -302,13 +300,11 @@ export default function getTreeNodes(
 					activable:
 						canUpdateEditables &&
 						canActivateEditable(selectedViewportSize, type),
-					active: childId === activeItemId,
 					children: [],
 					draggable: false,
 					hidable: false,
 					hidden: false,
 					hiddenAncestor: hasHiddenAncestor || hidden,
-					hovered: childId === hoveredItemId,
 					icon: EDITABLE_TYPE_ICONS[type],
 					id: childId,
 					isMasterItem: !isMasterPage && itemInMasterLayout,
@@ -326,13 +322,11 @@ export default function getTreeNodes(
 
 				children.push({
 					...getTreeNodes(items[mainItemId], items, {
-						activeItemId,
 						canUpdateEditables,
 						canUpdateItemConfiguration,
 						editingNodeId,
 						fragmentEntryLinks,
 						hasHiddenAncestor: hasHiddenAncestor || hidden,
-						hoveredItemId,
 						isMasterPage,
 						layoutData,
 						layoutDataRef,
@@ -372,13 +366,11 @@ export default function getTreeNodes(
 					layoutData.items[layoutData.rootItems.main],
 					layoutData.items,
 					{
-						activeItemId,
 						canUpdateEditables,
 						canUpdateItemConfiguration,
 						editingNodeId,
 						fragmentEntryLinks,
 						hasHiddenAncestor: hasHiddenAncestor || hidden,
-						hoveredItemId,
 						isMasterPage,
 						layoutData,
 						layoutDataRef,
@@ -395,13 +387,11 @@ export default function getTreeNodes(
 			}
 			else {
 				const child = getTreeNodes(childItem, items, {
-					activeItemId,
 					canUpdateEditables,
 					canUpdateItemConfiguration,
 					editingNodeId,
 					fragmentEntryLinks,
 					hasHiddenAncestor: hasHiddenAncestor || hidden,
-					hoveredItemId,
 					isMasterPage,
 					layoutData,
 					layoutDataRef,
@@ -424,7 +414,6 @@ export default function getTreeNodes(
 			item.type !== LAYOUT_DATA_ITEM_TYPES.collectionItem &&
 			item.type !== LAYOUT_DATA_ITEM_TYPES.fragmentDropZone &&
 			canUpdateItemConfiguration,
-		active: item.itemId === activeItemId,
 		children,
 		config: layoutDataRef?.current?.items[item.itemId]?.config,
 		draggable: true,
@@ -434,7 +423,6 @@ export default function getTreeNodes(
 			isHidable(item, fragmentEntryLinks, layoutData),
 		hidden,
 		hiddenAncestor: hasHiddenAncestor,
-		hovered: item.itemId === hoveredItemId,
 		icon,
 		id: item.itemId,
 		isMasterItem: !isMasterPage && itemInMasterLayout,

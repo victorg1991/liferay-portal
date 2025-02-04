@@ -85,15 +85,13 @@ export default function StructureTreeContent({expandedKeys, setExpandedKeys}) {
 		setDragAndDropHoveredItemId(itemId);
 	}, []);
 
-	const nodes = useMemo(
+	const initNodes = useMemo(
 		() =>
 			getTreeNodes(data.items[data.rootItems.main], data.items, {
-				activeItemId,
 				canUpdateEditables,
 				canUpdateItemConfiguration,
 				editingNodeId,
 				fragmentEntryLinks,
-				hoveredItemId,
 				isMasterPage,
 				layoutData,
 				layoutDataRef,
@@ -106,14 +104,12 @@ export default function StructureTreeContent({expandedKeys, setExpandedKeys}) {
 			}).children,
 
 		[
-			activeItemId,
 			canUpdateEditables,
 			canUpdateItemConfiguration,
 			data.items,
 			data.rootItems.main,
 			editingNodeId,
 			fragmentEntryLinks,
-			hoveredItemId,
 			isMasterPage,
 			layoutData,
 			layoutDataRef,
@@ -124,6 +120,31 @@ export default function StructureTreeContent({expandedKeys, setExpandedKeys}) {
 			onHoverNode,
 			selectedViewportSize,
 		]
+	);
+
+	const updateNodes = useCallback(({activeItemId, hoveredItemId, nodes}) => {
+		return nodes.map((item) => ({
+			...item,
+			active: item.id === activeItemId,
+			children: item.children
+				? updateNodes({
+					activeItemId,
+					hoveredItemId,
+					nodes: item.children,
+				})
+				: [],
+			hovered: item.id === hoveredItemId,
+		}));
+	}, []);
+
+	const nodes = useMemo(
+		() =>
+			updateNodes({
+				activeItemId,
+				hoveredItemId,
+				nodes: initNodes,
+			}),
+		[activeItemId, updateNodes, hoveredItemId, initNodes]
 	);
 
 	const setExpandedNodes = (expandedNodes) => {
