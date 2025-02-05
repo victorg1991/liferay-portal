@@ -214,7 +214,7 @@ function isRemovable(item, layoutData) {
 	return !hasDropZoneChild(item, layoutData);
 }
 
-export default function visit(
+export default function getTreeNodes(
 	item,
 	items,
 	{
@@ -325,7 +325,7 @@ export default function visit(
 				const {dropZoneId, mainItemId} = element;
 
 				children.push({
-					...visit(items[mainItemId], items, {
+					...getTreeNodes(items[mainItemId], items, {
 						activeItemId,
 						canUpdateEditables,
 						canUpdateItemConfiguration,
@@ -368,7 +368,7 @@ export default function visit(
 				!isMasterPage &&
 				childItem.type === LAYOUT_DATA_ITEM_TYPES.dropZone
 			) {
-				const dropZoneChildren = visit(
+				const dropZoneChildren = getTreeNodes(
 					layoutData.items[layoutData.rootItems.main],
 					layoutData.items,
 					{
@@ -394,7 +394,7 @@ export default function visit(
 				children.push(...dropZoneChildren);
 			}
 			else {
-				const child = visit(childItem, items, {
+				const child = getTreeNodes(childItem, items, {
 					activeItemId,
 					canUpdateEditables,
 					canUpdateItemConfiguration,
