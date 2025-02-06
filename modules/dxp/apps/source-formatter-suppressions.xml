@@ -4,4 +4,7 @@
 	<checkstyle>
 		<suppress checks="OSGiCommandsCheck" files="antivirus/antivirus-async-store/src/main/java/com/liferay/antivirus/async/store/internal/scheduler/AntivirusAsyncFileStoreSchedulerJobConfiguration\.java" />
 	</checkstyle>
+	<source-check>
+		<suppress checks="GradleDependencyArtifactsCheck" files="sharepoint-soap/sharepoint-soap-repository/build\.gradle" />
+	</source-check>
 </suppressions>
