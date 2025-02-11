@@ -5,17 +5,16 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
+import {applicationsMenuPageTest} from '../../fixtures/applicationsMenuPageTest';
 import {captchaConfigPageTest} from '../../fixtures/captchaConfigPageTest';
-import {instanceSettingsPagesTest} from '../../fixtures/instanceSettingsPagesTest';
 import {loginTest} from '../../fixtures/loginTest';
 import {liferayConfig} from '../../liferay.config';
 import getRandomString from '../../utils/getRandomString';
-import performLogin, {performLogout} from '../../utils/performLogin';
 
 export const test = mergeTests(
 	captchaConfigPageTest,
-	instanceSettingsPagesTest,
-	loginTest()
+	applicationsMenuPageTest,
+	loginTest
 );
 
 test.beforeEach(
@@ -24,7 +23,7 @@ test.beforeEach(
 		await page.goto(liferayConfig.environment.baseUrl);
 
 		if (await page.getByRole('button', {name: 'Sign In'}).isVisible()) {
-			await performLogin(page, 'test');
+			await captchaConfigPage.performLogin();
 		}
 
 		await captchaConfigPage.goTo();
@@ -36,30 +35,34 @@ test.beforeEach(
 test.afterEach(
 	'Reset CAPTCHA configuration',
 	async ({captchaConfigPage, page}) => {
-		await page.goto(liferayConfig.environment.baseUrl);
+		await page.goto('/');
 
 		if (await page.getByRole('button', {name: 'Sign In'}).isVisible()) {
-			await performLogin(page, 'test');
+			await captchaConfigPage.performLogin();
 		}
 
 		await captchaConfigPage.goTo();
 
 		await captchaConfigPage.resetCaptchaConfiguration();
 
-		await page.goto(liferayConfig.environment.baseUrl);
+		await page.goto('/');
 	}
 );
 
 test('LPD-44960 Create account using duplicate email address', async ({
 	page,
 }) => {
-	await performLogout(page);
+	await page.getByLabel('Test Test User Profile').click();
+
+	await page.getByRole('menuitem', {name: 'Sign Out'}).click();
 
 	await page.goto(liferayConfig.environment.baseUrl);
 
 	await page.getByRole('button', {name: 'Sign In'}).click();
 
 	await page.getByText('Create Account').click();
+
+	await page.getByRole('heading', {name: 'User Display Data'}).waitFor();
 
 	await page.getByLabel('Screen Name').fill(getRandomString());
 
@@ -89,23 +92,28 @@ test('LPD-44960 Create account using duplicate email address', async ({
 });
 
 test('LPD-44960 Create account using duplicate email address with email address verification', async ({
-	instanceSettingsPage,
+	applicationsMenuPage,
+	captchaConfigPage,
 	page,
 }) => {
-	await instanceSettingsPage.goToInstanceSetting(
-		'User Authentication',
-		'General'
-	);
+	await applicationsMenuPage.goToInstanceSettings();
+
+	await page.getByRole('link', {name: 'User Authentication'}).click();
 
 	const strangersVerify = page.getByText(
 		'Require strangers to verify their email address?'
 	);
+
+	await expect(strangersVerify).toBeVisible();
+
 	await strangersVerify.check();
 	await expect(strangersVerify).toBeChecked();
 
-	await instanceSettingsPage.saveAndWaitForAlert();
+	await captchaConfigPage.saveConfiguration();
 
-	await performLogout(page);
+	await page.getByLabel('Test Test User Profile').click();
+
+	await page.getByRole('menuitem', {name: 'Sign Out'}).click();
 
 	await page.goto(liferayConfig.environment.baseUrl);
 
@@ -139,15 +147,16 @@ test('LPD-44960 Create account using duplicate email address with email address 
 		page.getByText('Error:Your request failed to complete.')
 	).toBeHidden();
 
-	await performLogin(page, 'test');
+	await captchaConfigPage.performLogin();
 
-	await instanceSettingsPage.goToInstanceSetting(
-		'User Authentication',
-		'General'
-	);
+	await applicationsMenuPage.goToInstanceSettings();
+
+	await page.getByRole('link', {name: 'User Authentication'}).click();
+
+	await expect(strangersVerify).toBeVisible();
 
 	await strangersVerify.uncheck();
 	await expect(strangersVerify).not.toBeChecked();
 
-	await instanceSettingsPage.saveAndWaitForAlert();
+	await captchaConfigPage.saveConfiguration();
 });

@@ -64,8 +64,7 @@ export class ApplicationsMenuPage {
 			exact: true,
 			name: 'Data Sets',
 		});
-		this.instanceSettingsMenuItem = page.getByRole('link', {
-			exact: true,
+		this.instanceSettingsMenuItem = page.getByRole('menuitem', {
 			name: 'Instance Settings',
 		});
 		this.oAuth2Administration = page.getByRole('menuitem', {
@@ -97,8 +96,7 @@ export class ApplicationsMenuPage {
 			exact: true,
 			name: 'Site Templates',
 		});
-		this.systemSettingsItem = page.getByRole('link', {
-			exact: true,
+		this.systemSettingsItem = page.getByRole('menuitem', {
 			name: 'System Settings',
 		});
 		this.usersAndOrganizationsItem = page.getByRole('menuitem', {

@@ -15,6 +15,7 @@ import {config as headlessBuilderWebConfig} from './tests/headless-builder-web/c
 import {config as knowledgeBaseWebConfig} from './tests/knowledge-base-web/config';
 import {config as layoutContentPageEditorWebConfig} from './tests/layout-content-page-editor-web/config';
 import {config as layoutSetPrototypeWebConfig} from './tests/layout-set-prototype-web/config';
+import {config as loginWebConfig} from './tests/login-web/config';
 import {config as objectWebConfig} from './tests/object-web/config';
 import {config as portalWebConfig} from './tests/portal-web/config';
 import {config as productNavigationUserPersonalBarWebConfig} from './tests/product-navigation-user-personal-bar-web/config';
@@ -37,6 +38,7 @@ export default defineConfig({
 		knowledgeBaseWebConfig,
 		layoutContentPageEditorWebConfig,
 		layoutSetPrototypeWebConfig,
+		loginWebConfig,
 		objectWebConfig,
 		portalWebConfig,
 		productNavigationUserPersonalBarWebConfig,

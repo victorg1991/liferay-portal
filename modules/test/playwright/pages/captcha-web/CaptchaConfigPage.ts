@@ -6,7 +6,7 @@
 import {Locator, Page, expect} from '@playwright/test';
 
 import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
-import {waitForAlert} from '../../utils/waitForAlert';
+import {waitForSuccessAlert} from '../../utils/waitForSuccessAlert';
 import {ApplicationsMenuPage} from '../product-navigation-applications-menu/ApplicationsMenuPage';
 
 export class CaptchaConfigPage {
@@ -155,7 +155,7 @@ export class CaptchaConfigPage {
 				trigger: this.actions,
 			});
 
-			await waitForAlert(this.page);
+			await waitForSuccessAlert(this.page);
 
 			await this.saveConfiguration();
 		}
@@ -165,7 +165,7 @@ export class CaptchaConfigPage {
 		if (await this.page.isVisible('button:has-text("Update")')) {
 			await this.updateButton.click();
 
-			await waitForAlert(
+			await waitForSuccessAlert(
 				this.page,
 				`Success:Your request completed successfully.`
 			);
@@ -175,9 +175,33 @@ export class CaptchaConfigPage {
 
 		await this.saveButton.click();
 
-		await waitForAlert(
+		await waitForSuccessAlert(
 			this.page,
 			`Success:Your request completed successfully.`
 		);
+	}
+
+	async performLogin() {
+		if (!this.page.getByRole('button', {name: 'Sign In'}).isVisible()) {
+			return;
+		}
+
+		await this.page.goto('/');
+
+		await this.page.getByRole('button', {name: 'Sign In'}).click();
+
+		await this.page.getByLabel('Email Address').fill('test@liferay.com');
+		await this.page.getByLabel('Password').fill('test');
+
+		await this.page
+			.getByLabel('Sign In- Loading')
+			.getByRole('button', {name: 'Sign In'})
+			.click();
+
+		await expect(
+			this.page.getByLabel('Open Applications MenuCtrl+')
+		).toBeVisible({
+			timeout: 30 * 1000,
+		});
 	}
 }
