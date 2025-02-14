@@ -248,7 +248,7 @@ public class FunctionActionExecutorImpl
 
 		DTOConverterContext dtoConverterContext =
 			new DefaultDTOConverterContext(
-				false, null, null, assetRenderer.getClassPK(),
+				false, null, _dtoConverterRegistry, assetRenderer.getClassPK(),
 				serviceContext.getLocale(), null, null);
 
 		Serializable dtoSerializable = dtoConverter.toDTO(
