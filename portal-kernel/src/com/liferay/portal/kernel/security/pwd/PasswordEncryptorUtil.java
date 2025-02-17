@@ -83,8 +83,15 @@ public class PasswordEncryptorUtil {
 	public static String getEncryptedPasswordAlgorithmSettings(
 		String encryptedPassword) {
 
+		String encryptedPasswordAlgorithm = _getEncryptedPasswordAlgorithm(
+			encryptedPassword);
+
+		if (Validator.isNull(encryptedPasswordAlgorithm)) {
+			return null;
+		}
+
 		PasswordEncryptor passwordEncryptor = _getPasswordEncryptor(
-			_getEncryptedPasswordAlgorithm(encryptedPassword));
+			encryptedPasswordAlgorithm);
 
 		return passwordEncryptor.getEncryptedPasswordAlgorithmSettings(
 			encryptedPassword);
