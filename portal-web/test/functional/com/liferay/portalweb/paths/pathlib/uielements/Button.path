@@ -442,7 +442,7 @@
 </tr>
 <tr>
 	<td>EXPORT_MODAL_DISABLED</td>
-	<td>//div[contains(@class,'btn-group-item')]/button[@disabled and contains(.,'Export')]</td>
+	<td>//div[contains(@class,'btn-group-spaced')]/button[@disabled and contains(.,'Export')]</td>
 	<td></td>
 </tr>
 <tr>
