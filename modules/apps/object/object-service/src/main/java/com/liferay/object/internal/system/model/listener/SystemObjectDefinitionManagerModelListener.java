@@ -6,6 +6,7 @@
 package com.liferay.object.internal.system.model.listener;
 
 import com.liferay.dynamic.data.mapping.expression.DDMExpressionFactory;
+import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.object.action.engine.ObjectActionEngine;
 import com.liferay.object.action.util.ObjectActionThreadLocal;
 import com.liferay.object.constants.ObjectActionTriggerConstants;
@@ -299,6 +300,10 @@ public class SystemObjectDefinitionManagerModelListener<T extends BaseModel<T>>
 		DTOConverter<T, ?> dtoConverter = _getDTOConverter();
 
 		Map<String, Object> modelAttributes = baseModel.getModelAttributes();
+
+		ExpandoBridge expandoBridge = baseModel.getExpandoBridge();
+
+		modelAttributes.putAll(expandoBridge.getAttributes());
 
 		if (dtoConverter == null) {
 			if (_log.isWarnEnabled()) {
