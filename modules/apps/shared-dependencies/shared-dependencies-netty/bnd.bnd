@@ -4,12 +4,48 @@ Bundle-Version: 1.0.6
 Import-Package:\
 	!com.aayushatharva.brotli4j.*,\
 	\
+	!com.github.luben.zstd,\
 	!com.github.luben.zstd.util.*,\
+	\
+	!com.google.crypto.tink.subtle.*,\
+	!com.google.protobuf.nano.*,\
+	\
+	!com.jcraft.jzlib,\
 	\
 	!com.nimbusds.common.contenttype.*,\
 	!com.nimbusds.langtag.*,\
 	\
+	!com.ning.compress.*,\
+	\
+	!com.oracle.svm.core.annotate,\
+	\
+	!jakarta.servlet.*,\
+	\
+	!lzma.sdk.*,\
+	\
 	!net.jcip.annotations.*,\
+	\
+	!net.jpountz.*,\
+	\
+	!net.shibboleth.utilities.java.support.xml,\
+	\
+	!org.apache.log4j.*,\
+	\
+	!org.bouncycastle.*,\
+	\
+	!org.conscrypt,\
+	\
+	!org.cryptomator.siv,\
+	\
+	!org.eclipse.jetty.*,\
+	\
+	!org.jboss.marshalling,\
+	\
+	!org.opensaml.*,\
+	\
+	!reactor.blockhound.*,\
+	\
+	!sun.security.x509,\
 	\
 	*
 -exportcontents: io.netty.*
