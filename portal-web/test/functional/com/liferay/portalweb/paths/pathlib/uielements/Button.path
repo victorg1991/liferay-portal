@@ -437,7 +437,7 @@
 </tr>
 <tr>
 	<td>EXPORT_MODAL</td>
-	<td>//div[contains(@class,'btn-group-item')]/button[contains(@class,'btn') and contains(.,'Export')]</td>
+	<td>//div[contains(@class,'btn-group-spaced')]/button[contains(@class,'btn') and contains(.,'Export')]</td>
 	<td></td>
 </tr>
 <tr>
