@@ -821,6 +821,10 @@ public class HttpImpl implements Http {
 
 			requestConfigBuilder.setNormalizeUri(normalizeURI);
 
+			if (!followRedirects) {
+				requestConfigBuilder.setRedirectsEnabled(false);
+			}
+
 			addProxyCredentials(uri, httpClientContext);
 
 			requestBuilder.setConfig(requestConfigBuilder.build());
