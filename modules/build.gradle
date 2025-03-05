@@ -521,6 +521,7 @@ gradle.beforeProject {
 				compileIncludePlatform {
 					visible = false
 				}
+
 				xmltask
 			}
 
