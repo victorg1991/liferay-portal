@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.template.engine.TemplateContextHelper;
@@ -48,7 +49,7 @@ public class TemplateContextHelperTest {
 
 		Http http = (Http)helperUtilities.get("httpUtil");
 
-		String expectedString = "FollowRedirectDisabled";
+		String expectedString = RandomTestUtil.randomString();
 
 		byte[] expectedByteArray = expectedString.getBytes();
 
@@ -94,16 +95,8 @@ public class TemplateContextHelperTest {
 
 		options.setLocation("http://www.google.com");
 
-		Assert.assertSame(expectedString, http.URLtoString(options));
-
-		Assert.assertSame(
-			expectedString, http.URLtoString("http://www.google.com"));
-		Assert.assertSame(
-			expectedString, http.URLtoString("http://www.google.com", false));
-		Assert.assertSame(
-			expectedString, http.URLtoString(new URL("http://www.google.com")));
-
 		Assert.assertSame(expectedByteArray, http.URLtoByteArray(options));
+
 		Assert.assertSame(
 			expectedByteArray, http.URLtoByteArray("http://www.google.com"));
 		Assert.assertSame(
@@ -117,6 +110,14 @@ public class TemplateContextHelperTest {
 		Assert.assertSame(
 			expectedInputStream,
 			http.URLtoInputStream("http://www.google.com", false));
+
+		Assert.assertSame(expectedString, http.URLtoString(options));
+		Assert.assertSame(
+			expectedString, http.URLtoString("http://www.google.com"));
+		Assert.assertSame(
+			expectedString, http.URLtoString("http://www.google.com", false));
+		Assert.assertSame(
+			expectedString, http.URLtoString(new URL("http://www.google.com")));
 	}
 
 }
