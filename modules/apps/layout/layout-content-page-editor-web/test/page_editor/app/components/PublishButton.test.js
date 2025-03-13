@@ -4,11 +4,13 @@
  */
 
 import '@testing-library/jest-dom/extend-expect';
-import {act, fireEvent, render, screen} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 import PublishButton from '../../../../src/main/resources/META-INF/resources/page_editor/app/components/PublishButton';
 import useCheckFormsValidity from '../../../../src/main/resources/META-INF/resources/page_editor/app/utils/useCheckFormsValidity';
+import useSaveEditableChanges from '../../../../src/main/resources/META-INF/resources/page_editor/app/utils/useSaveEditableChanges';
 
 jest.mock(
 	'../../../../src/main/resources/META-INF/resources/page_editor/app/config/index',
@@ -32,6 +34,11 @@ jest.mock(
 	() => jest.fn()
 );
 
+jest.mock(
+	'../../../../src/main/resources/META-INF/resources/page_editor/app/utils/useSaveEditableChanges',
+	() => jest.fn()
+);
+
 const renderComponent = ({onPublish = () => {}, canPublish = true} = {}) => {
 	const ref = React.createRef();
 
@@ -46,15 +53,23 @@ const renderComponent = ({onPublish = () => {}, canPublish = true} = {}) => {
 };
 
 describe('PublishButton', () => {
-	afterEach(() => {
-		useCheckFormsValidity.mockClear();
-	});
-
-	it('renders PublishButton component', () => {
+	beforeAll(() => {
 		useCheckFormsValidity.mockImplementation(() => () =>
 			Promise.resolve(true)
 		);
 
+		useSaveEditableChanges.mockImplementation(() => () =>
+			Promise.resolve(true)
+		);
+	});
+
+	afterAll(() => {
+		useCheckFormsValidity.mockClear();
+
+		useSaveEditableChanges.mockClear();
+	});
+
+	it('renders PublishButton component', () => {
 		renderComponent();
 
 		expect(screen.getByLabelText('publish')).toBeInTheDocument();
@@ -67,12 +82,12 @@ describe('PublishButton', () => {
 
 		const button = screen.getByLabelText('publish');
 
-		await fireEvent.click(button);
+		userEvent.click(button);
 
-		expect(onPublish).toHaveBeenCalled();
+		await waitFor(() => expect(onPublish).toHaveBeenCalled());
 	});
 
-	it('does not allow to publish if canPublish is false', () => {
+	it('does not allow to publish if canPublish is false', async () => {
 		const onPublish = jest.fn(() => {});
 
 		renderComponent({
@@ -84,7 +99,8 @@ describe('PublishButton', () => {
 
 		fireEvent.click(button);
 
-		expect(onPublish).not.toHaveBeenCalled();
+		await waitFor(() => expect(onPublish).not.toHaveBeenCalled());
+
 		expect(button).toBeDisabled();
 	});
 
@@ -103,6 +119,6 @@ describe('PublishButton', () => {
 			fireEvent.click(button);
 		});
 
-		expect(onPublish).not.toHaveBeenCalled();
+		await waitFor(() => expect(onPublish).not.toHaveBeenCalled());
 	});
 });
