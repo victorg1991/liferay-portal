@@ -15,8 +15,14 @@ import {
 	FieldChangeEventHandler,
 	ReactFieldBase as FieldBase,
 } from 'dynamic-data-mapping-form-field-type';
-import {openSelectionModal, sub} from 'frontend-js-web';
-import React, {ChangeEventHandler, useRef, useState} from 'react';
+import {fetch, openSelectionModal, sub} from 'frontend-js-web';
+import React, {
+	ChangeEventHandler,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
 
 import './Attachment.scss';
 
@@ -131,6 +137,7 @@ function File({attachment, loading, onDelete, readOnly}: IFileProps) {
 export default function Attachment({
 	acceptedFileExtensions,
 	contentURL,
+	deleteURL,
 	fileSource,
 	maximumFileSize,
 	onChange,
@@ -148,6 +155,54 @@ export default function Attachment({
 	);
 	const [error, setError] = useState({});
 	const [isLoading, setLoading] = useState(false);
+	const [submitButtonClicked, setSubmitButtonClicked] = useState(false);
+
+	const deleteFileEntry = useCallback(async () => {
+		if (!attachment || !deleteURL) {
+			return;
+		}
+
+		const {fileEntryId} = attachment;
+
+		if (!fileEntryId) {
+			return;
+		}
+
+		const formData = new FormData();
+
+		formData.append(`${portletNamespace}fileEntryId`, fileEntryId);
+
+		await fetch(deleteURL, {
+			body: formData,
+			method: 'POST',
+		});
+	}, [attachment, deleteURL, portletNamespace]);
+
+	useEffect(() => {
+		window.onbeforeunload = function () {
+			if (!submitButtonClicked) {
+				deleteFileEntry();
+			}
+		};
+
+		return () => {
+			window.onbeforeunload = null;
+		};
+	}, [deleteFileEntry, submitButtonClicked]);
+
+	useEffect(() => {
+		Liferay.on(
+			'submitButtonClicked',
+
+			() => {
+				setSubmitButtonClicked(true);
+			}
+		);
+
+		return () => {
+			Liferay.detach('submitButtonClicked');
+		};
+	}, []);
 
 	const handleSelectedItem = (selectedItem: any) => {
 		if (!selectedItem) {
@@ -173,6 +228,7 @@ export default function Attachment({
 		else {
 			setAttachment({
 				contentURL: selectedItemValue.url,
+				fileEntryId: selectedItemValue.fileEntryId,
 				title: selectedItemValue.title,
 			});
 
@@ -181,6 +237,8 @@ export default function Attachment({
 	};
 
 	const handleDelete = () => {
+		deleteFileEntry();
+
 		setAttachment(null);
 
 		onChange({target: {value: ''}}); // TODO: fix backend to support null
@@ -221,8 +279,11 @@ export default function Attachment({
 					});
 				}
 				else {
+					deleteFileEntry();
+
 					setAttachment({
 						contentURL: file.contentURL,
+						fileEntryId: file.fileEntryId,
 						title: file.title,
 					});
 
@@ -302,6 +363,7 @@ interface File {
 
 interface Attachment {
 	contentURL: string;
+	fileEntryId?: string;
 	title: string;
 }
 
@@ -314,6 +376,7 @@ interface IFileProps {
 interface IProps {
 	acceptedFileExtensions: string;
 	contentURL: string;
+	deleteURL?: string;
 	fileSource: string;
 	maximumFileSize: number;
 	onChange: FieldChangeEventHandler<string>;
