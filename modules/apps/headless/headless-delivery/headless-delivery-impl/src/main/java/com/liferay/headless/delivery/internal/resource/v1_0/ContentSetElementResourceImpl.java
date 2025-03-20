@@ -22,7 +22,7 @@ import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 import com.liferay.segments.context.Context;
-import com.liferay.segments.provider.SegmentsEntryProviderRegistry;
+import com.liferay.segments.SegmentsEntryRetriever;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -140,11 +140,9 @@ public class ContentSetElementResourceImpl
 			AssetListEntry assetListEntry, Pagination pagination)
 		throws Exception {
 
-		long[] segmentsEntryIds =
-			_segmentsEntryProviderRegistry.getSegmentsEntryIds(
-				assetListEntry.getGroupId(), contextUser.getModelClassName(),
-				contextUser.getPrimaryKey(), _createSegmentsContext(),
-				new long[0]);
+		long[] segmentsEntryIds = _segmentsEntryRetriever.getSegmentsEntryIds(
+			assetListEntry.getGroupId(), contextUser.getUserId(),
+			_createSegmentsContext(), new long[0]);
 
 		return Page.of(
 			transform(
@@ -210,6 +208,6 @@ public class ContentSetElementResourceImpl
 	private DTOConverterRegistry _dtoConverterRegistry;
 
 	@Reference
-	private SegmentsEntryProviderRegistry _segmentsEntryProviderRegistry;
+	private SegmentsEntryRetriever _segmentsEntryRetriever;
 
 }
