@@ -86,7 +86,7 @@ public class AddDefaultSharedCalendarLayoutPortalInstanceLifecycleListener
 		serviceContext.setUserId(guestUserId);
 
 		return _layoutLocalService.addLayout(
-			null, guestUserId, groupId, privateLayout,
+			guestUserId, groupId, privateLayout,
 			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, "Shared",
 			StringPool.BLANK, StringPool.BLANK, CalendarPortletKeys.CALENDAR,
 			true, "/shared", serviceContext);

@@ -73,45 +73,6 @@ public class CalendarBookingInfoItemFieldValuesProvider
 		}
 	}
 
-	private List<InfoFieldValue<Object>> _getCalendarBookingInfoFieldValues(
-		CalendarBooking calendarBooking) {
-
-		return Arrays.asList(
-			new InfoFieldValue<>(
-				CalendarBookingInfoItemFields.titleInfoField,
-				InfoLocalizedValue.<String>builder(
-				).defaultLocale(
-					LocaleUtil.fromLanguageId(
-						calendarBooking.getDefaultLanguageId())
-				).values(
-					calendarBooking.getTitleMap()
-				).build()),
-			new InfoFieldValue<>(
-				CalendarBookingInfoItemFields.descriptionInfoField,
-				InfoLocalizedValue.<String>builder(
-				).defaultLocale(
-					LocaleUtil.fromLanguageId(
-						calendarBooking.getDefaultLanguageId())
-				).values(
-					calendarBooking.getDescriptionMap()
-				).build()),
-			new InfoFieldValue<>(
-				CalendarBookingInfoItemFields.locationInfoField,
-				calendarBooking.getLocation()),
-			new InfoFieldValue<>(
-				CalendarBookingInfoItemFields.eventURLInfoField,
-				_getCalendarBookingURL(calendarBooking)),
-			new InfoFieldValue<>(
-				CalendarBookingInfoItemFields.startDateInfoField,
-				new Date(calendarBooking.getStartTime())),
-			new InfoFieldValue<>(
-				CalendarBookingInfoItemFields.endDateInfoField,
-				new Date(calendarBooking.getEndTime())),
-			new InfoFieldValue<>(
-				CalendarBookingInfoItemFields.allDayInfoField,
-				calendarBooking.isAllDay()));
-	}
-
 	/**
 	 * See {@link
 	 * com.liferay.calendar.internal.notification.NotificationTemplateContextFactory#_getCalendarBookingURL(
@@ -167,6 +128,45 @@ public class CalendarBookingInfoItemFieldValuesProvider
 
 			return StringPool.BLANK;
 		}
+	}
+
+	private List<InfoFieldValue<Object>> _getCalendarBookingInfoFieldValues(
+		CalendarBooking calendarBooking) {
+
+		return Arrays.asList(
+			new InfoFieldValue<>(
+				CalendarBookingInfoItemFields.titleInfoField,
+				InfoLocalizedValue.<String>builder(
+				).defaultLocale(
+					LocaleUtil.fromLanguageId(
+						calendarBooking.getDefaultLanguageId())
+				).values(
+					calendarBooking.getTitleMap()
+				).build()),
+			new InfoFieldValue<>(
+				CalendarBookingInfoItemFields.descriptionInfoField,
+				InfoLocalizedValue.<String>builder(
+				).defaultLocale(
+					LocaleUtil.fromLanguageId(
+						calendarBooking.getDefaultLanguageId())
+				).values(
+					calendarBooking.getDescriptionMap()
+				).build()),
+			new InfoFieldValue<>(
+				CalendarBookingInfoItemFields.locationInfoField,
+				calendarBooking.getLocation()),
+			new InfoFieldValue<>(
+				CalendarBookingInfoItemFields.eventURLInfoField,
+				getCalendarBookingURL(calendarBooking)),
+			new InfoFieldValue<>(
+				CalendarBookingInfoItemFields.startDateInfoField,
+				new Date(calendarBooking.getStartTime())),
+			new InfoFieldValue<>(
+				CalendarBookingInfoItemFields.endDateInfoField,
+				new Date(calendarBooking.getEndTime())),
+			new InfoFieldValue<>(
+				CalendarBookingInfoItemFields.allDayInfoField,
+				calendarBooking.isAllDay()));
 	}
 
 	private ThemeDisplay _getThemeDisplay() {
