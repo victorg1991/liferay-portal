@@ -12,6 +12,8 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.UserConstants;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -113,6 +115,14 @@ public abstract class BaseSegmentsEntryProvider
 				null);
 
 		if (segmentsEntries.isEmpty()) {
+			return new long[0];
+		}
+
+		User user = userLocalService.fetchUser(classPK);
+
+		if ((user == null) ||
+			(user.getType() == UserConstants.TYPE_DEFAULT_SERVICE_ACCOUNT)) {
+
 			return new long[0];
 		}
 
@@ -300,6 +310,9 @@ public abstract class BaseSegmentsEntryProvider
 
 	@Reference
 	protected SegmentsEntryRelLocalService segmentsEntryRelLocalService;
+
+	@Reference
+	protected UserLocalService userLocalService;
 
 	@Reference(
 		target = "(model.class.name=com.liferay.portal.kernel.model.User)"
