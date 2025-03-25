@@ -94,7 +94,7 @@ public class LoginMVCActionCommandTest {
 	}
 
 	@Test
-	public void testLoginWhenQueryStringContainsPwd() throws Exception {
+	public void testProcessActionWhenQueryStringContainsPwd() throws Exception {
 		try (CompanyConfigurationTemporarySwapper
 				configurationTemporarySwapper =
 					new CompanyConfigurationTemporarySwapper(
