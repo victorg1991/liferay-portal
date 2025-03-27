@@ -59,8 +59,7 @@ public class TemplateContextHelperTest {
 		ReflectionTestUtil.setFieldValue(
 			http, "_http",
 			ProxyUtil.newProxyInstance(
-				TemplateContextHelperTest.class.getClassLoader(),
-				new Class<?>[] {Http.class},
+				Http.class.getClassLoader(), new Class<?>[] {Http.class},
 				(proxy, method, args) -> {
 					String methodName = method.getName();
 
