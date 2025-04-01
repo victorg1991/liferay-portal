@@ -238,6 +238,7 @@ declare module Liferay {
 		export function getPortalURL(): string;
 		export function getSiteGroupId(): number;
 		export function isControlPanel(): boolean;
+		export function isSignedIn(): boolean;
 	}
 
 	namespace Util {
