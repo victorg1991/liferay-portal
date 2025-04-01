@@ -12,9 +12,9 @@ import com.liferay.object.constants.ObjectActionKeys;
 import com.liferay.object.constants.ObjectFieldSettingConstants;
 import com.liferay.object.field.builder.AttachmentObjectFieldBuilder;
 import com.liferay.object.field.setting.builder.ObjectFieldSettingBuilder;
-import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
+import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.petra.memory.DeleteFileFinalizeAction;
 import com.liferay.petra.memory.FinalizeManager;
@@ -60,6 +60,7 @@ import java.nio.file.Path;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -98,41 +99,41 @@ public class UploadAttachmentMVCActionCommandTest {
 
 	@Before
 	public void setUp() throws Exception {
-		ObjectDefinition objectDefinition =
-			ObjectDefinitionTestUtil.publishObjectDefinition();
+		String objectFieldName = "a" + RandomTestUtil.randomString();
 
-		ObjectField objectField = ObjectFieldUtil.addCustomObjectField(
-			new AttachmentObjectFieldBuilder(
-			).labelMap(
-				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString())
-			).name(
-				"a" + RandomTestUtil.randomString()
-			).objectDefinitionId(
-				objectDefinition.getObjectDefinitionId()
-			).objectFieldSettings(
-				Arrays.asList(
-					new ObjectFieldSettingBuilder(
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				Collections.singletonList(
+					new AttachmentObjectFieldBuilder(
+					).labelMap(
+						LocalizedMapUtil.getLocalizedMap(
+							RandomTestUtil.randomString())
 					).name(
-						ObjectFieldSettingConstants.
-							NAME_ACCEPTED_FILE_EXTENSIONS
-					).value(
-						"txt"
-					).build(),
-					new ObjectFieldSettingBuilder(
-					).name(
-						ObjectFieldSettingConstants.NAME_FILE_SOURCE
-					).value(
-						ObjectFieldSettingConstants.VALUE_USER_COMPUTER
-					).build(),
-					new ObjectFieldSettingBuilder(
-					).name(
-						ObjectFieldSettingConstants.NAME_MAX_FILE_SIZE
-					).value(
-						"100"
-					).build())
-			).userId(
-				TestPropsValues.getUserId()
-			).build());
+						objectFieldName
+					).objectFieldSettings(
+						Arrays.asList(
+							new ObjectFieldSettingBuilder(
+							).name(
+								ObjectFieldSettingConstants.
+									NAME_ACCEPTED_FILE_EXTENSIONS
+							).value(
+								"txt"
+							).build(),
+							new ObjectFieldSettingBuilder(
+							).name(
+								ObjectFieldSettingConstants.NAME_FILE_SOURCE
+							).value(
+								ObjectFieldSettingConstants.VALUE_USER_COMPUTER
+							).build(),
+							new ObjectFieldSettingBuilder(
+							).name(
+								ObjectFieldSettingConstants.NAME_MAX_FILE_SIZE
+							).value(
+								"100"
+							).build())
+					).userId(
+						TestPropsValues.getUserId()
+					).build()));
 
 		_resourcePermissionLocalService.addResourcePermission(
 			TestPropsValues.getCompanyId(), objectDefinition.getResourceName(),
@@ -174,6 +175,11 @@ public class UploadAttachmentMVCActionCommandTest {
 
 						return method.invoke(_portal, args);
 					}
+
+					ObjectField objectField =
+						_objectFieldLocalService.getObjectField(
+							objectDefinition.getObjectDefinitionId(),
+							objectFieldName);
 
 					return UploadTestUtil.createUploadPortletRequest(
 						UploadTestUtil.createUploadServletRequest(
@@ -306,6 +312,9 @@ public class UploadAttachmentMVCActionCommandTest {
 	private JSONFactory _jsonFactory;
 
 	private MVCActionCommand _mvcActionCommand;
+
+	@Inject
+	private ObjectFieldLocalService _objectFieldLocalService;
 
 	@Inject
 	private Portal _portal;
