@@ -10,6 +10,7 @@ import './Attachment.scss';
 export default function Attachment({
 	acceptedFileExtensions,
 	contentURL,
+	deleteURL,
 	fileSource,
 	maximumFileSize,
 	onChange,
@@ -23,6 +24,7 @@ export default function Attachment({
 interface IProps {
 	acceptedFileExtensions: string;
 	contentURL: string;
+	deleteURL?: string;
 	fileSource: string;
 	maximumFileSize: number;
 	onChange: FieldChangeEventHandler<string>;
