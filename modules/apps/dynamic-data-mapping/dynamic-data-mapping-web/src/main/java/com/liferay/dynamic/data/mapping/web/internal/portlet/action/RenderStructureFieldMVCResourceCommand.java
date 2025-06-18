@@ -19,6 +19,7 @@ import com.liferay.portal.kernel.portlet.bridges.mvc.MVCResourceCommand;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ContentTypes;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
@@ -87,10 +88,11 @@ public class RenderStructureFieldMVCResourceCommand
 				WebKeys.THEME_DISPLAY);
 
 		String mode = ParamUtil.getString(httpServletRequest, "mode");
-		String namespace = ParamUtil.getString(httpServletRequest, "namespace");
+		String namespace = HtmlUtil.escapeAttribute(ParamUtil.getString(
+			httpServletRequest, "namespace"));
 		String portletId = ParamUtil.getString(httpServletRequest, "portletId");
-		String portletNamespace = ParamUtil.getString(
-			httpServletRequest, "portletNamespace");
+		String portletNamespace = HtmlUtil.escapeAttribute(ParamUtil.getString(
+			httpServletRequest, "portletNamespace"));
 		boolean readOnly = ParamUtil.getBoolean(httpServletRequest, "readOnly");
 
 		DDMFormFieldRenderingContext ddmFormFieldRenderingContext =
