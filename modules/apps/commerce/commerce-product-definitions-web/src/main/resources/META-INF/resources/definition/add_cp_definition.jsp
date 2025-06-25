@@ -29,7 +29,8 @@
 		const productData = {
 			active: true,
 			productStatus: <%= WorkflowConstants.STATUS_DRAFT %>,
-			productType: '<%= ParamUtil.getString(request, "productTypeName") %>',
+			productType:
+				'<%= HtmlUtil.escape(ParamUtil.getString(request, "productTypeName")) %>',
 		};
 
 		const AdminCatalogResource = ServiceProvider.default.AdminCatalogAPI('v1');
