@@ -55,6 +55,9 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
@@ -132,6 +135,11 @@ public class EditInfoItemStrutsAction implements StrutsAction {
 		if (layoutStructure == null) {
 			throw new InfoFormException();
 		}
+
+		ServiceContext serviceContext = ServiceContextFactory.getInstance(
+			httpServletRequest);
+
+		ServiceContextThreadLocal.pushServiceContext(serviceContext);
 
 		String redirect = null;
 		boolean success = false;
@@ -355,6 +363,9 @@ public class EditInfoItemStrutsAction implements StrutsAction {
 
 			SessionErrors.add(
 				httpServletRequest, formItemId, infoFormException);
+		}
+		finally {
+			ServiceContextThreadLocal.popServiceContext();
 		}
 
 		if (!success && (infoFieldValues != null)) {

@@ -92,6 +92,7 @@ import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.permission.ModelPermissions;
 import com.liferay.portal.kernel.util.Base64;
@@ -1022,6 +1023,13 @@ public class DefaultObjectEntryManagerImpl
 			dtoConverterContext, objectDefinition, objectEntry, scopeKey);
 
 		serviceContext.setCompanyId(companyId);
+
+		ServiceContext currentServiceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		if (currentServiceContext != null) {
+			serviceContext.setAssetLinkEntryIds(currentServiceContext.getAssetLinkEntryIds());
+		}
 
 		com.liferay.object.model.ObjectEntry serviceBuilderObjectEntry =
 			_objectEntryService.addOrUpdateObjectEntry(
