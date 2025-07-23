@@ -58,7 +58,6 @@ import com.liferay.layout.util.structure.RowStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.collection.EmptyCollectionOptions;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringWriter;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Layout;
@@ -80,12 +79,14 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.layoutconfiguration.util.RuntimePageUtil;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -782,8 +783,8 @@ public class LayoutStructureRenderer {
 					originalHttpServletRequest = _httpServletRequest;
 				}
 
-				List<String> ppids = StringUtil.split(
-					layoutTypePortlet.getStateMax());
+				List<String> ppids = Arrays.asList(
+					StringUtil.split(layoutTypePortlet.getStateMax()));
 				String templateId =
 					_themeDisplay.getThemeId() +
 						LayoutTemplateConstants.STANDARD_SEPARATOR + "max";
@@ -1259,16 +1260,24 @@ public class LayoutStructureRenderer {
 
 					InfoField<?> infoField = infoForm.getInfoField(fieldName);
 
-					if ((infoField != null) &&
-						(infoField.getInfoFieldType() instanceof
-							BooleanInfoFieldType ||
-						 infoField.getInfoFieldType() instanceof
-							 MultiselectInfoFieldType)) {
+					if (infoField != null) {
+						if (infoField.getInfoFieldType() instanceof
+								BooleanInfoFieldType ||
+							infoField.getInfoFieldType() instanceof
+								MultiselectInfoFieldType) {
 
-						jspWriter.write("<input name=\"checkboxNames\" ");
-						jspWriter.write("type=\"hidden\" value=\"");
-						jspWriter.write(fieldName);
-						jspWriter.write("\">");
+							jspWriter.write("<input name=\"checkboxNames\" ");
+							jspWriter.write("type=\"hidden\" value=\"");
+							jspWriter.write(fieldName);
+							jspWriter.write("\">");
+						}
+
+						if (StringUtil.startsWith(
+								fieldName, "ObjectRelationship")) {
+
+							jspWriter.write("<input name=\"nestedEntity\" ");
+							jspWriter.write("type=\"hidden\" value=\"true\">");
+						}
 					}
 				}
 
