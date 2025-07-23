@@ -12,6 +12,7 @@ import {config as commerceConfig} from './tests/commerce/config';
 import {config as exportImportWebConfig} from './tests/export-import-web/config';
 import {config as frontendDataSetViewsWebConfig} from './tests/frontend-data-set-views-web/config';
 import {config as headlessBuilderWebConfig} from './tests/headless-builder-web/config';
+import {config as headlessDiscoveryWebConfig} from './tests/headless-discovery-web/config';
 import {config as knowledgeBaseWebConfig} from './tests/knowledge-base-web/config';
 import {config as layoutContentPageEditorWebConfig} from './tests/layout-content-page-editor-web/config';
 import {config as layoutSetPrototypeWebConfig} from './tests/layout-set-prototype-web/config';
@@ -35,6 +36,7 @@ export default defineConfig({
 		exportImportWebConfig,
 		frontendDataSetViewsWebConfig,
 		headlessBuilderWebConfig,
+		headlessDiscoveryWebConfig,
 		knowledgeBaseWebConfig,
 		layoutContentPageEditorWebConfig,
 		layoutSetPrototypeWebConfig,
