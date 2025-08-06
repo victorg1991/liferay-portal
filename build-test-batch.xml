@@ -6448,14 +6448,37 @@ information. Make sure to commit in all format-javadoc results.
 					<propertyresource name="modules.test.class.group" />
 				</loadresource>
 
-				<for list="${modules.compile.task.groups}" param="modules.compile.task.group" trim="true">
-					<sequential>
-						<echo>Executing Gradle tasks: @{modules.compile.task.group}.</echo>
+				<get-gradle-module-dir-task-names gradle.task.names="${modules.compile.task.groups}" />
 
-						<gradle-execute dir="modules" task="@{modules.compile.task.group}">
-							<arg value="--continue" />
-							<arg value="--parallel" />
-						</gradle-execute>
+				<for delimiter="|" list="${gradle.module.dir.task.names}" param="gradle.module.dir.task.name" trim="true">
+					<sequential>
+						<local name="gradle.module.dir" />
+						<local name="gradle.task.name" />
+
+						<propertyregex
+							input="@{gradle.module.dir.task.name}"
+							override="true"
+							property="gradle.module.dir"
+							regexp="([^=]+)=([^=]+)"
+							replace="\1"
+						/>
+
+						<propertyregex
+							input="@{gradle.module.dir.task.name}"
+							override="true"
+							property="gradle.task.name"
+							regexp="([^=]+)=([^=]+)"
+							replace="\2"
+						/>
+
+						<execute-gradle-task gradle.task.module.dir="${gradle.module.dir}" gradle.task.name="${gradle.task.name}">
+							<action>
+								<gradle-execute dir="${gradle.module.dir}" task="${gradle.task.name}">
+									<arg value="--continue" />
+									<arg value="--parallel" />
+								</gradle-execute>
+							</action>
+						</execute-gradle-task>
 					</sequential>
 				</for>
 			</test-action>
