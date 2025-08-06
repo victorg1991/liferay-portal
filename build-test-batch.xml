@@ -9077,20 +9077,24 @@ ${output.content}</echo>
 					<sequential>
 						<local name="workspace.dir" />
 
-						<property name="workspace.dir" value="${project.dir}/workspaces/@{workspace.name}" />
+						<property name="workspace.dir" value="workspaces/@{workspace.name}" />
 
 						<if>
 							<available file="${workspace.dir}" />
 							<then>
 								<echo></echo>
-								<echo>#</echo>
-								<echo># @{workspace.name}</echo>
-								<echo>#</echo>
+								<echo>##</echo>
+								<echo>## @{workspace.name}</echo>
+								<echo>##</echo>
 								<echo></echo>
 
-								<execute dir="${workspace.dir}">
-									./gradlew build
-								</execute>
+								<execute-gradle-task gradle.task.module.dir="${workspace.dir}" gradle.task.name="build">
+									<action>
+										<execute dir="${workspace.dir}">
+											./gradlew build
+										</execute>
+									</action>
+								</execute-gradle-task>
 							</then>
 						</if>
 					</sequential>
