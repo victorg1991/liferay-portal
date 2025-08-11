@@ -232,18 +232,6 @@
 				</licenses>
 			</library>
 			<library>
-				<file-name>com.liferay.commerce.payment.method.mercanet.jar!commons-lang3.jar</file-name>
-				<version>3.11</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>https://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
 				<file-name>com.liferay.commerce.payment.method.mercanet.jar!jackson-datatype-jsr310.jar</file-name>
 				<version>2.12.1</version>
 				<project-name>Jackson datatype: JSR310</project-name>
@@ -276,18 +264,6 @@
 					<license>
 						<license-name>PayPal SDK License</license-name>
 						<license-url>https://github.com/paypal/Checkout-Java-SDK/blob/master/LICENSE</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
-				<file-name>com.liferay.commerce.payment.method.paypal.jar!commons-lang3.jar</file-name>
-				<version>3.6</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>http://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
@@ -509,18 +485,6 @@
 					<license>
 						<license-name>Mozilla Public License Version 2.0</license-name>
 						<license-url>http://www.mozilla.org/MPL/2.0/</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
-				<file-name>com.liferay.content.dashboard.web.jar!commons-lang3.jar</file-name>
-				<version>3.12.0</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>https://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
@@ -1725,18 +1689,6 @@
 				<licenses>
 					<license>
 						<license-name>The Apache Software License, Version 2.0</license-name>
-						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
-				<file-name>com.liferay.oauth.client.persistence.service.jar!commons-lang3.jar</file-name>
-				<version>3.4</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>http://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
 						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
@@ -3097,18 +3049,6 @@
 				</licenses>
 			</library>
 			<library>
-				<file-name>com.liferay.portal.security.sso.openid.connect.impl.jar!commons-lang3.jar</file-name>
-				<version>3.4</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>http://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
 				<file-name>com.liferay.portal.security.sso.openid.connect.impl.jar!content-type.jar</file-name>
 				<version>2.3</version>
 				<project-name>Nimbus Content Type</project-name>
@@ -4082,18 +4022,6 @@
 				</licenses>
 			</library>
 			<library>
-				<file-name>com.liferay.portal.tika.jar!commons-lang3.jar</file-name>
-				<version>3.12.0</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>https://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
 				<file-name>com.liferay.portal.tika.jar!java-libpst.jar</file-name>
 				<version>0.8.1</version>
 				<project-name>java-libpst</project-name>
@@ -4350,18 +4278,6 @@
 					<license>
 						<license-name>The Apache Software License, Version 2.0</license-name>
 						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
-				<file-name>com.liferay.portal.vulcan.impl.jar!commons-lang3.jar</file-name>
-				<version>3.8</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>http://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
@@ -4745,30 +4661,6 @@
 				</licenses>
 			</library>
 			<library>
-				<file-name>com.liferay.segments.content.targeting.upgrade.jar!commons-lang3.jar</file-name>
-				<version>3.8</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>http://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
-				<file-name>com.liferay.segments.service.jar!commons-lang3.jar</file-name>
-				<version>3.8</version>
-				<project-name>Apache Commons Lang</project-name>
-				<project-url>http://commons.apache.org/proper/commons-lang/</project-url>
-				<licenses>
-					<license>
-						<license-name>Apache License, Version 2.0</license-name>
-						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
-					</license>
-				</licenses>
-			</library>
-			<library>
 				<file-name>com.liferay.shared.dependencies.apache.commons.jar!commons-beanutils.jar</file-name>
 				<version>1.11.0</version>
 				<project-name>Apache Commons BeanUtils</project-name>
@@ -4869,6 +4761,18 @@
 				<version>2.19.0</version>
 				<project-name>Apache Commons IO</project-name>
 				<project-url>https://commons.apache.org/proper/commons-io/</project-url>
+				<licenses>
+					<license>
+						<license-name>Apache-2.0</license-name>
+						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
+					</license>
+				</licenses>
+			</library>
+			<library>
+				<file-name>com.liferay.shared.dependencies.apache.commons.jar!commons-lang3.jar</file-name>
+				<version>3.18.0</version>
+				<project-name>Apache Commons Lang</project-name>
+				<project-url>https://commons.apache.org/proper/commons-lang/</project-url>
 				<licenses>
 					<license>
 						<license-name>Apache-2.0</license-name>
@@ -6793,7 +6697,7 @@
 			</library>
 			<library>
 				<file-name>lib/development/commons-lang3.jar</file-name>
-				<version>3.12.0</version>
+				<version>3.18.0</version>
 				<project-name>Commons Lang</project-name>
 				<project-url>http://commons.apache.org/proper/commons-lang</project-url>
 				<licenses>
