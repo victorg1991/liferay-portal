@@ -1255,7 +1255,8 @@ public class ObjectEntryDTOConverter
 		Map<String, UnsafeSupplier<Object, Exception>> unsafeSuppliers =
 			new HashMap<>();
 
-		Map<String, Serializable> values = objectEntry.getValues();
+		Map<String, Serializable> values =
+			new HashMap<>(objectEntry.getValues());
 
 		List<ObjectField> objectFields =
 			_objectFieldLocalService.getObjectFields(
@@ -1274,8 +1275,17 @@ public class ObjectEntryDTOConverter
 				String i18nObjectFieldName =
 					objectField.getI18nObjectFieldName();
 
-				Map<String, Serializable> objectField_i18n =
+				Map<String, Serializable> originalObjectField_i18n =
 					(Map<String, Serializable>)values.get(i18nObjectFieldName);
+
+				Map<String, Serializable> objectField_i18n;
+
+				if (originalObjectField_i18n != null) {
+					objectField_i18n = new HashMap<>(originalObjectField_i18n);
+				}
+				else {
+					objectField_i18n = null;
+				}
 
 				if (objectField_i18n != null) {
 					serializable = _getLocalizedValue(
