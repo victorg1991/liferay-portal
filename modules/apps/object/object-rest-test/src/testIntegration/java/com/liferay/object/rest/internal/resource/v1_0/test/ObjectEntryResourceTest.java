@@ -4964,9 +4964,13 @@ public class ObjectEntryResourceTest {
 	public void testPostCustomObjectEntryWithAttachmentObjectFieldInDifferentCompany()
 		throws Exception {
 
+		DLFolder dlFolder = DLTestUtil.addDLFolder(
+			TestPropsValues.getGroupId());
+
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry = _toFileEntry(
 			Base64::encode, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt",
+			dlFolder.getExternalReferenceCode(), dlFolder.getGroupId());
 
 		JSONObject objectEntryJSONObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
@@ -4975,7 +4979,11 @@ public class ObjectEntryResourceTest {
 			).toString(),
 			StringBundler.concat(
 				_objectDefinition1.getRESTContextPath(), "?nestedFields=",
-				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE, ".folder"),
+				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+				".fileBase64,",
+				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+				".folder&restrictFields=",
+				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE, ".id"),
 			Http.Method.POST);
 
 		JSONObject portalInstanceJSONObject = HTTPTestUtil.invokeToJSONObject(
