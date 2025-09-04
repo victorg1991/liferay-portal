@@ -4939,6 +4939,26 @@ information. Make sure to commit in all format-javadoc results.
 		/>
 	</target>
 
+	<target name="functional-bundle-tomcat-mysql84-jdk8">
+		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
+
+		<run-functional-test
+			app.server.type="tomcat"
+			database.type="mysql"
+			database.version="8.4"
+			setup.proxy="false"
+			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
+			test.fix.pack.base.url="${test.fix.pack.base.url}"
+			test.license.xml.url="${test.license.xml.url}"
+			test.plugin.zip.url="${test.plugin.zip.url}"
+			test.plugins.war.zip.url="${test.plugins.war.zip.url}"
+			test.portal.bundle.version="${test.portal.bundle.version}"
+			test.portal.bundle.zip.url="${test.portal.bundle.zip.url}"
+			test.portal.lpkg.name="${test.portal.lpkg.name}"
+			test.sql.zip.url="${test.sql.zip.url}"
+		/>
+	</target>
+
 	<target name="functional-bundle-tomcat-oracle193-jdk8">
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
@@ -5850,6 +5870,14 @@ information. Make sure to commit in all format-javadoc results.
 		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" test.portal.log.assert="true" />
 	</target>
 
+	<target name="functional-smoke-tomcat90-mysql84-jdk8">
+		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" test.portal.log.assert="true" />
+	</target>
+
+	<target name="functional-smoke-tomcat90-mysql84-jdk11_open">
+		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" test.portal.log.assert="true" />
+	</target>
+
 	<target name="functional-smoke-tomcat90-oracle193-jdk8">
 		<run-functional-test app.server.type="tomcat" database.type="oracle" database.version="19.3.0.0.0" test.portal.log.assert="true" />
 	</target>
@@ -6102,6 +6130,14 @@ information. Make sure to commit in all format-javadoc results.
 		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" />
 	</target>
 
+	<target name="functional-tomcat90-mysql84-jdk8">
+		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" />
+	</target>
+
+	<target name="functional-tomcat90-mysql84-jdk11_open">
+		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" />
+	</target>
+
 	<target name="functional-tomcat90-oracle193-jdk8">
 		<run-functional-test app.server.type="tomcat" database.type="oracle" database.version="19.3.0.0.0" />
 	</target>
@@ -6275,6 +6311,10 @@ information. Make sure to commit in all format-javadoc results.
 	</target>
 
 	<target name="functional-upgrade-tomcat90-mysql80-jdk8">
+		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" />
+	</target>
+
+	<target name="functional-upgrade-tomcat90-mysql84-jdk8">
 		<run-functional-test app.server.type="tomcat" database.type="mysql" database.version="8.0" />
 	</target>
 
@@ -7241,6 +7281,25 @@ information. Make sure to commit in all format-javadoc results.
 		/>
 	</target>
 
+	<target name="modules-integration-bundle-mysql84-jdk8">
+		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
+
+		<run-modules-integration-test
+			database.type="mysql"
+			database.version="8.0"
+			test.build.fix.pack.zip.url="${test.build.fix.pack.zip.url}"
+			test.fix.pack.base.url="${test.fix.pack.base.url}"
+			test.license.xml.url="${test.license.xml.url}"
+			test.portal.bundle.dependencies.zip.url="${test.portal.bundle.dependencies.zip.url}"
+			test.portal.bundle.osgi.zip.url="${test.portal.bundle.osgi.zip.url}"
+			test.portal.bundle.tools.zip.url="${test.portal.bundle.tools.zip.url}"
+			test.portal.bundle.version="${test.portal.bundle.version}"
+			test.portal.bundle.war.url="${test.portal.bundle.war.url}"
+			test.portal.bundle.zip.url="${test.portal.bundle.zip.url}"
+			test.sql.zip.url="${test.sql.zip.url}"
+		/>
+	</target>
+
 	<target name="modules-integration-bundle-oracle193-jdk8">
 		<set-tomcat-version-number liferay.portal.bundle="${test.portal.bundle.version}" />
 
@@ -7521,6 +7580,18 @@ information. Make sure to commit in all format-javadoc results.
 	</target>
 
 	<target name="modules-integration-mysql80-jdk11_open">
+		<run-modules-integration-test database.type="mysql" database.version="8.0" />
+	</target>
+
+	<target name="modules-integration-mysql84-jdk8">
+		<run-modules-integration-test database.type="mysql" database.version="8.0" />
+	</target>
+
+	<target name="modules-integration-mysql84-jdk8_stable">
+		<run-modules-integration-test database.type="mysql" database.version="8.0" />
+	</target>
+
+	<target name="modules-integration-mysql84-jdk11_open">
 		<run-modules-integration-test database.type="mysql" database.version="8.0" />
 	</target>
 
