@@ -11,6 +11,7 @@ import com.liferay.info.exception.NoSuchInfoItemException;
 import com.liferay.info.field.InfoField;
 import com.liferay.info.field.InfoFieldValue;
 import com.liferay.info.field.type.DateInfoFieldType;
+import com.liferay.info.field.type.LongTextInfoFieldType;
 import com.liferay.info.field.type.TextInfoFieldType;
 import com.liferay.info.formatter.InfoCollectionTextFormatter;
 import com.liferay.info.formatter.InfoTextFormatter;
@@ -426,7 +427,9 @@ public class FragmentEntryProcessorHelperImpl
 				}
 			}
 			else if (infoField.getInfoFieldType() instanceof
-						TextInfoFieldType) {
+						TextInfoFieldType ||
+					 infoField.getInfoFieldType() instanceof
+						 LongTextInfoFieldType) {
 
 				URI uri = null;
 
@@ -501,20 +504,12 @@ public class FragmentEntryProcessorHelperImpl
 
 	@Override
 	public boolean isMappedCollection(JSONObject jsonObject) {
-		if (jsonObject.has("collectionFieldId")) {
-			return true;
-		}
-
-		return false;
+		return jsonObject.has("collectionFieldId");
 	}
 
 	@Override
 	public boolean isMappedDisplayPage(JSONObject jsonObject) {
-		if (jsonObject.has("mappedField")) {
-			return true;
-		}
-
-		return false;
+		return jsonObject.has("mappedField");
 	}
 
 	private String _getDateValue(
