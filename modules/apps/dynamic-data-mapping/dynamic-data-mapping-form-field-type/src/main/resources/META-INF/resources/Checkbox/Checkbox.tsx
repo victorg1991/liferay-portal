@@ -12,6 +12,7 @@ import {FieldBase} from '../FieldBase/ReactFieldBase.es';
 import type {FieldChangeEventHandler} from '../types';
 
 const Switcher: React.FC<ISwitcherProps> = ({
+	accessibleProps,
 	checked,
 	disabled,
 	label,
@@ -26,7 +27,7 @@ const Switcher: React.FC<ISwitcherProps> = ({
 		<>
 			<label className="toggle-switch">
 				<ClayToggle
-					aria-required={required}
+					{...accessibleProps}
 					disabled={disabled}
 					name={name}
 					onToggle={(checked) => {
@@ -67,6 +68,7 @@ const Switcher: React.FC<ISwitcherProps> = ({
 };
 
 const Checkbox: React.FC<ICheckboxProps> = ({
+	accessibleProps,
 	checked,
 	disabled,
 	label,
@@ -77,7 +79,7 @@ const Checkbox: React.FC<ICheckboxProps> = ({
 }) => {
 	return (
 		<ClayCheckbox
-			aria-required={required}
+			{...accessibleProps}
 			checked={checked}
 			disabled={disabled}
 			label={showLabel ? label : ''}
@@ -127,6 +129,19 @@ const Main: React.FC<IProps> = ({
 			{...otherProps}
 		>
 			<Toggle
+				accessibleProps={{
+					...(otherProps.tip && {
+						'aria-describedby': `${
+							otherProps.id ?? name
+						}_fieldHelp`,
+					}),
+					...(otherProps.errorMessage && {
+						'aria-errormessage': `${
+							otherProps.id ?? name
+						}_fieldError`,
+					}),
+					'aria-required': !!required,
+				}}
 				checked={checked}
 				disabled={readOnly}
 				label={label}
@@ -144,20 +159,33 @@ const Main: React.FC<IProps> = ({
 };
 
 interface IProps extends ICheckboxProps {
+	errorMessage?: string;
+	id?: string;
 	predefinedValue?: boolean | String[];
 	readOnly?: boolean;
 	showAsSwitcher?: boolean;
 	showMaximumRepetitionsInfo?: boolean;
 	systemSettingsURL: string;
+	tip?: string;
 	value?: boolean;
 	visible?: boolean;
 }
 interface ISwitcherProps extends ICheckboxProps {
+	accessibleProps: {
+		'aria-describedby'?: string;
+		'aria-errormessage'?: string;
+		'aria-required': boolean;
+	};
 	showMaximumRepetitionsInfo: boolean;
 	systemSettingsURL: string;
 }
 
 interface ICheckboxProps {
+	accessibleProps: {
+		'aria-describedby'?: string;
+		'aria-errormessage'?: string;
+		'aria-required': boolean;
+	};
 	checked: boolean;
 	disabled?: boolean;
 	label?: string;
