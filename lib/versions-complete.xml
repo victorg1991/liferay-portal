@@ -1743,7 +1743,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.oauth.client.persistence.service.jar!nimbus-jose-jwt.jar</file-name>
-				<version>9.40</version>
+				<version>10.4</version>
 				<project-name>Nimbus JOSE+JWT</project-name>
 				<project-url>https://connect2id.com</project-url>
 				<licenses>
@@ -3098,7 +3098,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.security.sso.openid.connect.impl.jar!nimbus-jose-jwt.jar</file-name>
-				<version>9.40</version>
+				<version>10.4</version>
 				<project-name>Nimbus JOSE+JWT</project-name>
 				<project-url>https://connect2id.com</project-url>
 				<licenses>
@@ -3158,7 +3158,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.security.sso.openid.connect.persistence.service.jar!nimbus-jose-jwt.jar</file-name>
-				<version>9.40</version>
+				<version>10.4</version>
 				<project-name>Nimbus JOSE+JWT</project-name>
 				<project-url>https://connect2id.com</project-url>
 				<licenses>
@@ -3456,7 +3456,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.azure.jar!nimbus-jose-jwt.jar</file-name>
-				<version>9.37.3</version>
+				<version>10.4</version>
 				<project-name>Nimbus JOSE+JWT</project-name>
 				<project-url>https://connect2id.com</project-url>
 				<licenses>
@@ -3516,7 +3516,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.azure.jar!reactor-netty-http.jar</file-name>
-				<version>1.0.45</version>
+				<version>1.2.10</version>
 				<project-name>HTTP functionality for the Reactor Netty library</project-name>
 				<project-url>https://github.com/reactor/reactor-netty</project-url>
 				<licenses>
@@ -4331,7 +4331,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.vulcan.impl.jar!graphql-java.jar</file-name>
-				<version>18.7</version>
+				<version>19.11</version>
 				<project-name>graphql-java</project-name>
 				<project-url>https://github.com/graphql-java/graphql-java</project-url>
 				<licenses>
@@ -5402,7 +5402,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.shared.dependencies.netty.jar!nimbus-jose-jwt.jar</file-name>
-				<version>9.37.3</version>
+				<version>10.4</version>
 				<project-name>Nimbus JOSE+JWT</project-name>
 				<project-url>https://connect2id.com</project-url>
 				<licenses>
