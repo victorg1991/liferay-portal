@@ -4498,7 +4498,9 @@ public class ObjectEntryLocalServiceImpl
 			DLFileEntry dlFileEntry = _dlFileEntryLocalService.fetchDLFileEntry(
 				GetterUtil.getLong(entry.getValue()));
 
-			if (dlFileEntry != null) {
+			if ((dlFileEntry != null) &&
+				(dlFileEntry.getCompanyId() == objectField.getCompanyId())) {
+
 				_validateFileExtension(
 					dlFileEntry.getExtension(), objectField.getObjectFieldId(),
 					objectField.getName());
