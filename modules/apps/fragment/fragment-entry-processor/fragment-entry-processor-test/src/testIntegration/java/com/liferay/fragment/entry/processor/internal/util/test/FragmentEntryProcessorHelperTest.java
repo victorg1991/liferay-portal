@@ -36,11 +36,11 @@ import com.liferay.journal.util.JournalConverter;
 import com.liferay.layout.test.util.ContentLayoutTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.object.constants.ObjectDefinitionConstants;
-import com.liferay.object.constants.ObjectEntryFolderConstants;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
+import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.petra.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.petra.string.StringBundler;
@@ -80,6 +80,7 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
 import java.io.InputStream;
+import java.io.Serializable;
 
 import java.text.DateFormat;
 
@@ -88,6 +89,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -117,6 +119,12 @@ public class FragmentEntryProcessorHelperTest {
 	@Before
 	public void setUp() throws Exception {
 		_group = GroupTestUtil.addGroup();
+
+		_layout = LayoutTestUtil.addTypePortletLayout(_group.getGroupId());
+
+		_themeDisplay = ContentLayoutTestUtil.getThemeDisplay(
+			_companyLocalService.getCompany(_group.getCompanyId()), _group,
+			_layout);
 	}
 
 	@Test
@@ -185,7 +193,6 @@ public class FragmentEntryProcessorHelperTest {
 	}
 
 	@Test
-	@TestInfo("LPD-62842")
 	public void testGetFieldValueFromLongText() throws Exception {
 		String fieldValue = StringBundler.concat(
 			"<script>alert(\"", RandomTestUtil.randomString(), "\")</script>");
@@ -200,10 +207,8 @@ public class FragmentEntryProcessorHelperTest {
 				ObjectDefinitionConstants.SCOPE_SITE);
 
 		ObjectEntry objectEntry = _objectEntryLocalService.addObjectEntry(
-			TestPropsValues.getGroupId(), objectDefinition.getUserId(),
+			objectDefinition.getUserId(), TestPropsValues.getGroupId(),
 			objectDefinition.getObjectDefinitionId(),
-			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
-			null,
 			HashMapBuilder.<String, Serializable>put(
 				"externalReferenceCode", RandomTestUtil.randomString()
 			).put(
@@ -792,7 +797,14 @@ public class FragmentEntryProcessorHelperTest {
 	@Inject
 	private JournalConverter _journalConverter;
 
+	private Layout _layout;
+
+	@Inject
+	private ObjectEntryLocalService _objectEntryLocalService;
+
 	@Inject
 	private Portal _portal;
+
+	private ThemeDisplay _themeDisplay;
 
 }
