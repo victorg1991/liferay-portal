@@ -4967,15 +4967,16 @@ public class ObjectEntryResourceTest {
 		DLFolder dlFolder = DLTestUtil.addDLFolder(
 			TestPropsValues.getGroupId());
 
-		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry = _toFileEntry(
-			Base64::encode, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt",
-			dlFolder.getExternalReferenceCode(), dlFolder.getGroupId());
-
 		JSONObject objectEntryJSONObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
-				JSONFactoryUtil.createJSONObject(fileEntry.toString())
+				JSONFactoryUtil.createJSONObject(
+					String.valueOf(
+						_toFileEntry(
+							Base64::encode, RandomTestUtil.randomString(),
+							RandomTestUtil.randomString() + ".txt",
+							dlFolder.getExternalReferenceCode(),
+							dlFolder.getGroupId())))
 			).toString(),
 			StringBundler.concat(
 				_objectDefinition1.getRESTContextPath(), "?nestedFields=",
@@ -4985,6 +4986,13 @@ public class ObjectEntryResourceTest {
 				".folder&restrictFields=",
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE, ".id"),
 			Http.Method.POST);
+
+		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry =
+			com.liferay.object.rest.dto.v1_0.FileEntry.toDTO(
+				JSONUtil.getValueAsString(
+					objectEntryJSONObject,
+					"JSONObject/" +
+						_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE));
 
 		JSONObject portalInstanceJSONObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
@@ -5110,14 +5118,54 @@ public class ObjectEntryResourceTest {
 					JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 						JSONUtil.put(
 							_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
-							objectEntryJSONObject.getJSONObject(
-								_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE)
+							JSONFactoryUtil.createJSONObject(
+								fileEntry.toString())
 						).toString(),
 						objectDefinition.getRESTContextPath(),
 						Http.Method.POST);
 
 					Assert.assertEquals(
 						"NOT_FOUND", jsonObject.getString("status"));
+				}
+			);
+
+			HTTPTestUtil.customize(
+			).withBaseURL(
+				"http://www.able.com:8080"
+			).withCredentials(
+				"test@able.com", PropsValues.DEFAULT_ADMIN_PASSWORD
+			).apply(
+				() -> {
+					JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+						JSONUtil.put(
+							_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+							JSONUtil.put("id", RandomTestUtil.randomLong())
+						).toString(),
+						objectDefinition.getRESTContextPath(),
+						Http.Method.POST);
+
+					Assert.assertEquals(
+						"BAD_REQUEST", jsonObject.getString("status"));
+				}
+			);
+
+			HTTPTestUtil.customize(
+			).withBaseURL(
+				"http://www.able.com:8080"
+			).withCredentials(
+				"test@able.com", PropsValues.DEFAULT_ADMIN_PASSWORD
+			).apply(
+				() -> {
+					JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+						JSONUtil.put(
+							_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+							JSONUtil.put("id", fileEntry.getId())
+						).toString(),
+						objectDefinition.getRESTContextPath(),
+						Http.Method.POST);
+
+					Assert.assertEquals(
+						"BAD_REQUEST", jsonObject.getString("status"));
 				}
 			);
 		}
