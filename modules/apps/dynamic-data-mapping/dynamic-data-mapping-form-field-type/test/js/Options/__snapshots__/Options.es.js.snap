@@ -3,7 +3,6 @@
 exports[`Options shows the options 1`] = `
 <div>
   <div
-    aria-labelledby="options_fieldDetails"
     class="form-group hide"
     data-field-name="options"
   >
@@ -86,12 +85,10 @@ exports[`Options shows the options 1`] = `
                   display-name
                 </label>
                 <div
-                  aria-labelledby="option0_fieldDetails"
                   class="form-group hide"
                   data-field-name="option0"
                 >
                   <div
-                    aria-labelledby="keyValueDisplayNameoption0_fieldDetails"
                     class="form-group hide"
                     data-field-name="keyValueDisplayNameoption0"
                   >
@@ -142,12 +139,10 @@ exports[`Options shows the options 1`] = `
                   option-reference
                 </label>
                 <div
-                  aria-labelledby="Option1_fieldDetails"
                   class="form-group hide"
                   data-field-name="Option1"
                 >
                   <div
-                    aria-labelledby="keyValueReferenceOption1_fieldDetails"
                     class="form-group hide"
                     data-field-name="keyValueReferenceOption1"
                   >
@@ -197,12 +192,10 @@ exports[`Options shows the options 1`] = `
                   </svg>
                 </span>
                 <div
-                  aria-labelledby="Option1_fieldDetails"
                   class="form-group hide"
                   data-field-name="Option1"
                 >
                   <div
-                    aria-labelledby="keyValueNameOption1_fieldDetails"
                     class="form-group hide"
                     data-field-name="keyValueNameOption1"
                   >
@@ -312,12 +305,10 @@ exports[`Options shows the options 1`] = `
                   display-name
                 </label>
                 <div
-                  aria-labelledby="option1_fieldDetails"
                   class="form-group hide"
                   data-field-name="option1"
                 >
                   <div
-                    aria-labelledby="keyValueDisplayNameoption1_fieldDetails"
                     class="form-group hide"
                     data-field-name="keyValueDisplayNameoption1"
                   >
@@ -368,12 +359,10 @@ exports[`Options shows the options 1`] = `
                   option-reference
                 </label>
                 <div
-                  aria-labelledby="Option2_fieldDetails"
                   class="form-group hide"
                   data-field-name="Option2"
                 >
                   <div
-                    aria-labelledby="keyValueReferenceOption2_fieldDetails"
                     class="form-group hide"
                     data-field-name="keyValueReferenceOption2"
                   >
@@ -423,12 +412,10 @@ exports[`Options shows the options 1`] = `
                   </svg>
                 </span>
                 <div
-                  aria-labelledby="Option2_fieldDetails"
                   class="form-group hide"
                   data-field-name="Option2"
                 >
                   <div
-                    aria-labelledby="keyValueNameOption2_fieldDetails"
                     class="form-group hide"
                     data-field-name="keyValueNameOption2"
                   >
