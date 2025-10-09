@@ -108,6 +108,7 @@ import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.UserAttributes;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.redirect.RedirectURLSettingsUtil;
+import com.liferay.portal.kernel.security.ChecksumUtil;
 import com.liferay.portal.kernel.security.auth.AlwaysAllowDoAsUser;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.FullNameGenerator;
@@ -5339,7 +5340,10 @@ public class PortalImpl implements Portal {
 		String doAsUserIdString = ParamUtil.getString(
 			httpServletRequest, "doAsUserId", null);
 
-		if (doAsUserIdString != null) {
+		if (Validator.isHex(doAsUserIdString) &&
+			ChecksumUtil.isValid(
+				StringUtil.hexStringToBytes(doAsUserIdString))) {
+
 			String actionName = getPortletParam(
 				httpServletRequest, "actionName");
 			String mvcRenderCommandName = ParamUtil.getString(
