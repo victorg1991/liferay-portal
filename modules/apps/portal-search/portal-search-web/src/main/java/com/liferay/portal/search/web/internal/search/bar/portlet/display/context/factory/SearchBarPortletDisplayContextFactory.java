@@ -21,7 +21,6 @@ import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -93,7 +92,7 @@ public class SearchBarPortletDisplayContextFactory {
 
 		if (Validator.isBlank(destination)) {
 			searchBarPortletDisplayContext.setSearchURL(
-				_getURLCurrentPath(themeDisplay));
+				getLayoutFriendlyURL(themeDisplay.getLayout(), themeDisplay));
 		}
 		else {
 			String destinationURL = _getDestinationURL(
@@ -414,10 +413,6 @@ public class SearchBarPortletDisplayContextFactory {
 
 		return portletSharedSearchResponse.getFederatedSearchResponse(
 			searchBarPortletPreferences.getFederatedSearchKey());
-	}
-
-	private String _getURLCurrentPath(ThemeDisplay themeDisplay) {
-		return HttpComponentsUtil.getPath(themeDisplay.getURLCurrent());
 	}
 
 	private boolean _isEmptySearchEnabled(
