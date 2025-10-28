@@ -144,8 +144,8 @@ public class InformationTemplatesManagementToolbarDisplayContext
 	private JSONArray _getItemTypesJSONArray() {
 		JSONArray itemTypesJSONArray = JSONFactoryUtil.createJSONArray();
 
-		if (!_informationTemplatesTemplateDisplayContext.
-				containsAddPortletDisplayTemplatePermission()) {
+		if (_informationTemplatesTemplateDisplayContext.
+				isMissingAddPortletDisplayTemplatePermission()) {
 
 			return itemTypesJSONArray;
 		}
