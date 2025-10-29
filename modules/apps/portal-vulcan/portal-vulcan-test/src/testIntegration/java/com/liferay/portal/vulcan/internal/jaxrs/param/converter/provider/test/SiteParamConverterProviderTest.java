@@ -103,7 +103,7 @@ public class SiteParamConverterProviderTest {
 
 		Company company = CompanyLocalServiceUtil.addCompany(
 			null, virtualHostname, virtualHostname, virtualHostname, 0, true,
-			true, null, null, null, null, null, null);
+			null, null, null, null, null, null);
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
 				_CLASS_NAME_WEB_APPLICATION_EXCEPTION_MAPPER,
