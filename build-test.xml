@@ -11374,6 +11374,8 @@ send_user $expect_out(buffer)]]></echo>
 						}
 						catch (Exception exception) {
 							exception.printStackTrace();
+
+							throw exception;
 						}
 					]]>
 				</beanshell>
