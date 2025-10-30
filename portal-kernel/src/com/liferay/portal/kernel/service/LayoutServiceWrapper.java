@@ -407,6 +407,20 @@ public class LayoutServiceWrapper
 		return _layoutService.getDefaultPlid(groupId, scopeGroupId, portletId);
 	}
 
+	@Override
+	public Layout getLayout(long plid)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutService.getLayout(plid);
+	}
+
+	@Override
+	public Layout getLayout(long groupId, boolean privateLayout, long layoutId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutService.getLayout(groupId, privateLayout, layoutId);
+	}
+
 	/**
 	 * Returns the layout matching the UUID, group, and privacy.
 	 *

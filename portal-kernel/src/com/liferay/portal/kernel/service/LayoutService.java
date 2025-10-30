@@ -352,6 +352,13 @@ public interface LayoutService extends BaseService {
 			long groupId, long scopeGroupId, String portletId)
 		throws PortalException;
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Layout getLayout(long plid) throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Layout getLayout(long groupId, boolean privateLayout, long layoutId)
+		throws PortalException;
+
 	/**
 	 * Returns the layout matching the UUID, group, and privacy.
 	 *
