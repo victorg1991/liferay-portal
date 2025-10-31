@@ -899,3 +899,4 @@ export function isReducedMotion(): boolean;
  */
 export {default as loadClientExtensions} from './utils/client_extensions/loadClientExtensions';
 export {loadModule} from './utils/client_extensions/loadModule';
+export {default as pkceChallenge} from './utils/pkceChallenge';

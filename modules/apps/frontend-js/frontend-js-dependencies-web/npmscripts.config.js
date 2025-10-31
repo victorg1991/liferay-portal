@@ -47,7 +47,6 @@ module.exports = {
 			{name: 'moment/min/moment-with-locales', symbols: 'auto'},
 			{name: 'numeral', symbols: 'auto'},
 			{name: 'object-hash', symbols: 'auto'},
-			{name: 'pkce-challenge', symbols: 'auto'},
 			{name: 'qs', symbols: 'auto'},
 			{name: 'react-text-mask', symbols: 'auto'},
 			{name: 'text-mask-addons', symbols: 'auto'},
