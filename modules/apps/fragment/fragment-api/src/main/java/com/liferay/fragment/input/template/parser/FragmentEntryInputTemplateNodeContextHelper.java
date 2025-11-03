@@ -53,6 +53,7 @@ import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -287,6 +288,12 @@ public class FragmentEntryInputTemplateNodeContextHelper {
 			else {
 				value = String.valueOf(infoFieldValue);
 			}
+		}
+
+		if (infoFieldType instanceof LongTextInfoFieldType ||
+			infoFieldType instanceof TextInfoFieldType) {
+
+			value = HtmlUtil.escape(value);
 		}
 
 		InputTemplateNode inputTemplateNode = new InputTemplateNode(
