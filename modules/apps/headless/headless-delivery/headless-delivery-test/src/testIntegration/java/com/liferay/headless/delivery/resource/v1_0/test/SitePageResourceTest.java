@@ -201,7 +201,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 			Assert.assertNotNull(problemException);
 		}
 
-		_testGetSiteSitePageWithNoPermissions();
+		_testGetSiteSitePageWithoutPermissions();
 	}
 
 	@Override
@@ -543,7 +543,7 @@ public class SitePageResourceTest extends BaseSitePageResourceTestCase {
 		return StringUtil.read(inputStream);
 	}
 
-	private void _testGetSiteSitePageWithNoPermissions() throws Exception {
+	private void _testGetSiteSitePageWithoutPermissions() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(testGroup);
 
 		Role guestRole = _roleLocalService.getRole(
