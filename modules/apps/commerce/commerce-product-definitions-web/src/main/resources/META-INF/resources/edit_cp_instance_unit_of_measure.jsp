@@ -49,7 +49,7 @@ CPInstanceUnitOfMeasure cpInstanceUnitOfMeasure = cpInstanceUnitOfMeasureDisplay
 								<label class="field-label"><liferay-ui:message key="primary-unit-of-measure" /></label>
 
 								<div class="col-6 form-group">
-									<%= cpInstanceUnitOfMeasureDisplayContext.getPrimaryCPInstanceUnitOfMeasureName() %>
+									<%= HtmlUtil.escape(cpInstanceUnitOfMeasureDisplayContext.getPrimaryCPInstanceUnitOfMeasureName()) %>
 								</div>
 							</div>
 						</div>
