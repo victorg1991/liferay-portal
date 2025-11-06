@@ -18,13 +18,17 @@ import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.sanitizer.Sanitizer;
+import com.liferay.portal.kernel.sanitizer.SanitizerUtil;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -73,7 +77,10 @@ public class CPInstanceUnitOfMeasureLocalServiceImpl
 			_normalizeCPInstanceUnitOfMeasureBaseDecimalQuantity(
 				incrementalOrderQuantity, precision));
 		cpInstanceUnitOfMeasure.setKey(key);
-		cpInstanceUnitOfMeasure.setNameMap(nameMap);
+		cpInstanceUnitOfMeasure.setNameMap(
+			_sanitizeCPInstanceUnitOfMeasureNameMap(
+				cpInstanceUnitOfMeasure.getCPInstanceUnitOfMeasureId(), nameMap,
+				user, 0));
 		cpInstanceUnitOfMeasure.setPrecision(precision);
 		cpInstanceUnitOfMeasure.setPrimary(primary);
 		cpInstanceUnitOfMeasure.setPriority(priority);
@@ -213,7 +220,10 @@ public class CPInstanceUnitOfMeasureLocalServiceImpl
 			_normalizeCPInstanceUnitOfMeasureBaseDecimalQuantity(
 				incrementalOrderQuantity, precision));
 		cpInstanceUnitOfMeasure.setKey(key);
-		cpInstanceUnitOfMeasure.setNameMap(nameMap);
+		cpInstanceUnitOfMeasure.setNameMap(
+			_sanitizeCPInstanceUnitOfMeasureNameMap(
+				cpInstanceUnitOfMeasureId, nameMap, null,
+				cpInstanceUnitOfMeasure.getUserId()));
 		cpInstanceUnitOfMeasure.setPrecision(precision);
 		cpInstanceUnitOfMeasure.setPrimary(primary);
 		cpInstanceUnitOfMeasure.setPriority(priority);
@@ -234,6 +244,33 @@ public class CPInstanceUnitOfMeasureLocalServiceImpl
 		BigDecimal baseDecimalQuantity, int precision) {
 
 		return baseDecimalQuantity.setScale(precision, RoundingMode.HALF_UP);
+	}
+
+	private Map<Locale, String> _sanitizeCPInstanceUnitOfMeasureNameMap(
+			long cpInstanceUnitOfMeasureId, Map<Locale, String> nameMap,
+			User user, long userId)
+		throws PortalException {
+
+		if (user == null) {
+			user = _userLocalService.getUser(userId);
+		}
+
+		Map<Locale, String> updatedNameMap = new HashMap<>();
+
+		for (Map.Entry<Locale, String> nameMapEntry : nameMap.entrySet()) {
+			if (nameMapEntry.getValue() != null) {
+				updatedNameMap.put(
+					nameMapEntry.getKey(),
+					SanitizerUtil.sanitize(
+						user.getCompanyId(), user.getGroupId(),
+						user.getUserId(),
+						CPInstanceUnitOfMeasure.class.getName(),
+						cpInstanceUnitOfMeasureId, ContentTypes.TEXT_HTML,
+						Sanitizer.MODE_ALL, nameMapEntry.getValue(), null));
+			}
+		}
+
+		return updatedNameMap;
 	}
 
 	private void _updatePrimary(
