@@ -8,7 +8,9 @@ import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
 import ClayList from '@clayui/list';
 import ClaySticker from '@clayui/sticker';
+import {ClayTooltipProvider} from '@clayui/tooltip';
 import classNames from 'classnames';
+import {getObjectValueFromPath} from 'frontend-js-web';
 import React, {forwardRef, useContext} from 'react';
 
 import FrontendDataSetContext from '../../FrontendDataSetContext';
@@ -18,11 +20,12 @@ import FDSDndProvider from '../../dnd/FDSDndProvider';
 import useFDSDrop from '../../dnd/useFDSDrop';
 import {getLocalizedValue} from '../../utils/getLocalizedValue';
 import {
-	ESelectionTrigger,
 	IHeader,
 	IListSchema,
 	IListTitleRenderer,
+	IView,
 } from '../../utils/types';
+import ViewsContext from '../ViewsContext';
 
 const Title = ({
 	item,
@@ -54,12 +57,16 @@ const ListItem = forwardRef<HTMLLIElement, any>(
 	(
 		{
 			className,
+			clayListItemProps,
 			item,
+			items,
 			onItemSelectionChange,
 			schema,
 		}: {
 			className: string;
+			clayListItemProps: Object;
 			item: any;
+			items: any[];
 			onItemSelectionChange: Function;
 			schema: IListSchema;
 		},
@@ -67,20 +74,29 @@ const ListItem = forwardRef<HTMLLIElement, any>(
 	) => {
 		const {
 			itemsActions,
-			onSelect,
 			selectable,
 			selectedItemsKey,
 			selectedItemsValue,
 			selectionType,
 		} = useContext(FrontendDataSetContext);
 
-		const {description, image, sticker, symbol, title, titleRenderer} =
-			schema;
+		const {
+			description,
+			image,
+			sticker,
+			symbol,
+			title,
+			titleRenderer,
+			tooltip,
+		} = schema;
 
 		const SelectionInput =
 			selectionType === 'single' ? ClayRadio : ClayCheckbox;
 
-		const itemId = item[selectedItemsKey || 'id'];
+		const itemId = getObjectValueFromPath({
+			object: item,
+			path: selectedItemsKey,
+		});
 
 		return (
 			<ClayList.Item
@@ -89,6 +105,7 @@ const ListItem = forwardRef<HTMLLIElement, any>(
 				})}
 				flex
 				ref={ref}
+				{...clayListItemProps}
 			>
 				{selectable && (
 					<ClayList.ItemField className="justify-content-center selection-control">
@@ -101,12 +118,7 @@ const ListItem = forwardRef<HTMLLIElement, any>(
 									: false
 							}
 							onChange={() => {
-								onItemSelectionChange({
-									item,
-									trigger: ESelectionTrigger.INPUT,
-								});
-
-								onSelect?.({selectedItems: [item]});
+								onItemSelectionChange(item);
 							}}
 							value={itemId}
 						/>
@@ -124,11 +136,21 @@ const ListItem = forwardRef<HTMLLIElement, any>(
 					symbol &&
 					item[symbol] && (
 						<ClayList.ItemField>
-							<ClaySticker {...(sticker && item[sticker])}>
-								{item[symbol] && (
+							{tooltip && item[tooltip] ? (
+								<ClayTooltipProvider>
+									<span title={item[tooltip]}>
+										<ClaySticker
+											{...(sticker && item[sticker])}
+										>
+											<ClayIcon symbol={item[symbol]} />
+										</ClaySticker>
+									</span>
+								</ClayTooltipProvider>
+							) : (
+								<ClaySticker {...(sticker && item[sticker])}>
 									<ClayIcon symbol={item[symbol]} />
-								)}
-							</ClaySticker>
+								</ClaySticker>
+							)}
 						</ClayList.ItemField>
 					)
 				)}
@@ -138,12 +160,7 @@ const ListItem = forwardRef<HTMLLIElement, any>(
 					expand
 					onClick={() => {
 						if (selectable) {
-							onItemSelectionChange({
-								item,
-								trigger: ESelectionTrigger.CONTAINER,
-							});
-
-							onSelect?.({selectedItems: [item]});
+							onItemSelectionChange(item, true);
 						}
 					}}
 				>
@@ -160,27 +177,32 @@ const ListItem = forwardRef<HTMLLIElement, any>(
 					)}
 				</ClayList.ItemField>
 
-				<ClayList.ItemField>
-					{(itemsActions || item.actionDropdownItems) && (
+				{(itemsActions || item.actionDropdownItems) && (
+					<ClayList.ItemField>
 						<Actions
 							actions={itemsActions || item.actionDropdownItems}
 							itemData={item}
 							itemId={itemId}
+							items={items}
 							onItemSelectionChange={onItemSelectionChange}
 						/>
-					)}
-				</ClayList.ItemField>
+					</ClayList.ItemField>
+				)}
 			</ClayList.Item>
 		);
 	}
 );
 
 const ListItemOptionalDropTarget = ({
+	clayListItemProps,
 	item,
+	items,
 	onItemSelectionChange,
 	schema,
 }: {
+	clayListItemProps?: object;
 	item: any;
+	items: any[];
 	onItemSelectionChange: Function;
 	schema: IListSchema;
 }) => {
@@ -189,7 +211,9 @@ const ListItemOptionalDropTarget = ({
 	return (
 		<ListItem
 			className={className}
+			clayListItemProps={clayListItemProps}
 			item={item}
+			items={items}
 			onItemSelectionChange={onItemSelectionChange}
 			ref={dropRef}
 			schema={schema}
@@ -210,9 +234,19 @@ const List = ({
 }) => {
 	const {selectedItemsKey} = useContext(FrontendDataSetContext);
 
+	const [viewsContext] = useContext(ViewsContext);
+
 	if (!items?.length) {
 		return null;
 	}
+
+	const activeView: IView = viewsContext.activeView;
+
+	const props = {
+		items,
+		onItemSelectionChange,
+		schema,
+	};
 
 	return (
 		<ClayLayout.Sheet
@@ -233,11 +267,17 @@ const List = ({
 							item={item}
 							key={
 								selectedItemsKey
-									? item[selectedItemsKey]
+									? getObjectValueFromPath({
+											object: item,
+											path: selectedItemsKey,
+										})
 									: index
 							}
-							onItemSelectionChange={onItemSelectionChange}
-							schema={schema}
+							{...props}
+							{...(activeView.setItemComponentProps?.({
+								item,
+								props,
+							}) ?? {})}
 						/>
 					))}
 				</ClayList>

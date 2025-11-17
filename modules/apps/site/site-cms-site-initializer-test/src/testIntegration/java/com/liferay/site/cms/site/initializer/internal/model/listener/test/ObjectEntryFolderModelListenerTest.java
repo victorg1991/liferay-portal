@@ -6,37 +6,61 @@
 package com.liferay.site.cms.site.initializer.internal.model.listener.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.batch.engine.unit.BatchEngineUnitProcessor;
+import com.liferay.batch.engine.unit.BatchEngineUnitReader;
+import com.liferay.depot.constants.DepotConstants;
+import com.liferay.depot.constants.DepotRolesConstants;
+import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.service.DepotEntryLocalService;
+import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectEntryFolderConstants;
+import com.liferay.object.constants.ObjectFolderConstants;
+import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.model.ObjectEntryFolder;
+import com.liferay.object.model.ObjectFolder;
+import com.liferay.object.rest.filter.factory.FilterFactory;
 import com.liferay.object.service.ObjectEntryFolderLocalService;
-import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.object.service.ObjectFolderLocalService;
+import com.liferay.petra.sql.dsl.expression.Predicate;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.role.RoleConstants;
-import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
-import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
-import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
-import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.site.initializer.SiteInitializer;
-import com.liferay.site.initializer.SiteInitializerRegistry;
+import com.liferay.sharing.security.permission.SharingEntryAction;
+import com.liferay.sharing.service.SharingEntryLocalService;
+import com.liferay.site.cms.site.initializer.util.CMSDefaultPermissionUtil;
 
-import java.util.Map;
+import java.io.File;
+
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,9 +69,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+
 /**
  * @author Jürgen Kappler
+ * @author Roberto Díaz
  */
+@FeatureFlags(
+	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
+)
 @RunWith(Arquillian.class)
 public class ObjectEntryFolderModelListenerTest {
 
@@ -60,75 +92,275 @@ public class ObjectEntryFolderModelListenerTest {
 
 	@Before
 	public void setUp() throws Exception {
-		_group = GroupTestUtil.addGroup();
-
-		ServiceContextThreadLocal.pushServiceContext(
-			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
-
-		try {
+		if (!_isCMSSiteInitialized()) {
 
 			// Manually initialize the CMS site initializer until the feature
 			// flag LPD-17564 is removed
 
-			Role role = _roleLocalService.fetchRole(
-				_group.getCompanyId(), RoleConstants.CMS_ADMINISTRATOR);
+			Bundle testBundle = FrameworkUtil.getBundle(
+				GroupModelListenerTest.class);
 
-			if (role == null) {
-				SiteInitializer siteInitializer =
-					_siteInitializerRegistry.getSiteInitializer(
-						"com.liferay.site.initializer.cms");
+			BundleContext bundleContext = testBundle.getBundleContext();
 
-				siteInitializer.initialize(_group.getGroupId());
+			for (Bundle bundle : bundleContext.getBundles()) {
+				if (!Objects.equals(
+						bundle.getSymbolicName(),
+						"com.liferay.site.initializer.cms")) {
+
+					continue;
+				}
+
+				_deleteFile(bundle, "00.list.type.definition");
+				_deleteFile(bundle, "01.object.folder");
+				_deleteFile(bundle, "02.object.definition");
+
+				CompletableFuture<Void> completableFuture =
+					_batchEngineUnitProcessor.processBatchEngineUnits(
+						_batchEngineUnitReader.getBatchEngineUnits(bundle));
+
+				completableFuture.join();
 			}
 		}
-		finally {
-			ServiceContextThreadLocal.popServiceContext();
-		}
+
+		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), StringUtil.randomString()
+			).build(),
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), StringUtil.randomString()
+			).build(),
+			DepotConstants.TYPE_SPACE,
+			ServiceContextTestUtil.getServiceContext());
+
+		_group = depotEntry.getGroup();
 	}
 
-	@FeatureFlag("LPD-17564")
 	@Test
 	public void testAddObjectEntryFolder() throws Exception {
+		JSONObject rootJSONObject = CMSDefaultPermissionUtil.getJSONObject(
+			_group.getCompanyId(), _group.getCreatorUserId(),
+			_group.getExternalReferenceCode(), DepotEntry.class.getName(),
+			_filterFactory);
+
+		ObjectEntryFolder rootObjectEntryFolder = _addObjectEntryFolder(
+			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT);
+
+		_assertResourcePermissions(rootJSONObject, rootObjectEntryFolder, null);
+
+		ObjectEntryFolder childObjectEntryFolder = _addObjectEntryFolder(
+			rootObjectEntryFolder.getObjectEntryFolderId());
+
+		_assertResourcePermissions(
+			rootJSONObject, childObjectEntryFolder, null);
+
+		ObjectEntry objectEntry = _fetchObjectEntry(rootObjectEntryFolder);
+
+		Assert.assertNotNull(objectEntry);
+
+		String randomActionId = RandomTestUtil.randomString();
+
+		rootJSONObject.put(
+			"OBJECT_ENTRY_FOLDERS",
+			JSONUtil.put(
+				DepotRolesConstants.ASSET_LIBRARY_CONTENT_REVIEWER,
+				JSONUtil.putAll(
+					ActionKeys.ADD_FOLDER, ActionKeys.DELETE,
+					ActionKeys.PERMISSIONS)
+			).put(
+				RoleConstants.CMS_ADMINISTRATOR,
+				JSONUtil.putAll(
+					randomActionId, ActionKeys.UPDATE, ActionKeys.VIEW)
+			).put(
+				RoleConstants.USER,
+				JSONUtil.putAll(
+					ActionKeys.ADD_ENTRY, ActionKeys.DELETE, ActionKeys.VIEW)
+			));
+
+		CMSDefaultPermissionUtil.addOrUpdateObjectEntry(
+			objectEntry.getExternalReferenceCode(),
+			rootObjectEntryFolder.getCompanyId(),
+			rootObjectEntryFolder.getUserId(),
+			rootObjectEntryFolder.getExternalReferenceCode(),
+			rootObjectEntryFolder.getModelClassName(), rootJSONObject,
+			rootObjectEntryFolder.getGroupId(),
+			rootObjectEntryFolder.getTreePath());
+
+		childObjectEntryFolder = _addObjectEntryFolder(
+			rootObjectEntryFolder.getObjectEntryFolderId());
+
+		_assertResourcePermissions(
+			rootJSONObject, childObjectEntryFolder, randomActionId);
+	}
+
+	@Test
+	public void testDeleteObjectEntryFolder() throws Exception {
+		ObjectEntryFolder rootObjectEntryFolder =
+			_objectEntryFolderLocalService.
+				getObjectEntryFolderByExternalReferenceCode(
+					ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
+					_group.getGroupId(), _group.getCompanyId());
+
 		ObjectEntryFolder objectEntryFolder =
 			_objectEntryFolderLocalService.addObjectEntryFolder(
-				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
-				_group.getGroupId(), _group.getCreatorUserId(),
-				ObjectEntryFolderConstants.
-					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
-				"",
+				RandomTestUtil.randomString(), _group.getGroupId(),
+				_group.getCreatorUserId(),
+				rootObjectEntryFolder.getObjectEntryFolderId(), "",
 				HashMapBuilder.put(
 					LocaleUtil.ENGLISH, RandomTestUtil.randomString()
 				).build(),
 				RandomTestUtil.randomString(),
 				ServiceContextTestUtil.getServiceContext());
 
-		Map<Long, Set<String>> sourceRoleIdsToActionIds =
-			_resourcePermissionLocalService.
-				getAvailableResourcePermissionActionIds(
-					objectEntryFolder.getCompanyId(),
-					ObjectEntryFolder.class.getName(),
-					ResourceConstants.SCOPE_INDIVIDUAL,
-					String.valueOf(objectEntryFolder.getObjectEntryFolderId()),
-					TransformUtil.transform(
-						_resourceActionLocalService.getResourceActions(
-							ObjectEntryFolder.class.getName()),
-						ResourceAction::getActionId));
+		User user = UserTestUtil.addGroupAdminUser(_group);
 
-		Role role = RoleLocalServiceUtil.getRole(
-			_group.getCompanyId(), RoleConstants.CMS_ADMINISTRATOR);
+		int sharingEntriesCount =
+			_sharingEntryLocalService.getSharingEntriesCount();
 
-		Set<String> actionIds = sourceRoleIdsToActionIds.get(role.getRoleId());
+		_sharingEntryLocalService.addSharingEntry(
+			null, TestPropsValues.getUserId(), 0, user.getUserId(),
+			_portal.getClassNameId(ObjectEntryFolder.class.getName()),
+			objectEntryFolder.getObjectEntryFolderId(), _group.getGroupId(),
+			true, Arrays.asList(SharingEntryAction.VIEW), null,
+			ServiceContextTestUtil.getServiceContext(
+				_group.getGroupId(), TestPropsValues.getUserId()));
 
-		for (ResourceAction resourceAction :
-				_resourceActionLocalService.getResourceActions(
-					ObjectEntryFolder.class.getName())) {
+		Assert.assertEquals(
+			sharingEntriesCount + 1,
+			_sharingEntryLocalService.getSharingEntriesCount());
 
-			Assert.assertTrue(actionIds.contains(resourceAction.getActionId()));
+		_objectEntryFolderLocalService.deleteObjectEntryFolder(
+			objectEntryFolder.getObjectEntryFolderId());
+
+		Assert.assertEquals(
+			sharingEntriesCount,
+			_sharingEntryLocalService.getSharingEntriesCount());
+
+		Assert.assertNull(_fetchObjectEntry(objectEntryFolder));
+	}
+
+	private ObjectEntryFolder _addObjectEntryFolder(
+			long parentObjectEntryFolderId)
+		throws Exception {
+
+		return _objectEntryFolderLocalService.addObjectEntryFolder(
+			RandomTestUtil.randomString(), _group.getGroupId(),
+			_group.getCreatorUserId(), parentObjectEntryFolderId, "",
+			HashMapBuilder.put(
+				LocaleUtil.ENGLISH, RandomTestUtil.randomString()
+			).build(),
+			RandomTestUtil.randomString(), new ServiceContext());
+	}
+
+	private void _assertResourcePermissions(
+			JSONObject expectedDefaultPermissionsJSONObject,
+			ObjectEntryFolder objectEntryFolder, String randomActionId)
+		throws Exception {
+
+		JSONObject actualDefaultPermissionsJSONObject =
+			CMSDefaultPermissionUtil.getJSONObject(
+				objectEntryFolder.getCompanyId(), objectEntryFolder.getUserId(),
+				objectEntryFolder.getExternalReferenceCode(),
+				objectEntryFolder.getModelClassName(), _filterFactory);
+
+		Assert.assertEquals(
+			expectedDefaultPermissionsJSONObject.toString(),
+			actualDefaultPermissionsJSONObject.toString());
+
+		JSONObject jsonObject =
+			expectedDefaultPermissionsJSONObject.getJSONObject(
+				"OBJECT_ENTRY_FOLDERS");
+
+		for (String roleName : jsonObject.keySet()) {
+			Set<String> actionIds = JSONUtil.toStringSet(
+				jsonObject.getJSONArray(roleName));
+
+			ResourcePermission resourcePermission = _fetchResourcePermission(
+				objectEntryFolder, roleName);
+
+			for (ResourceAction resourceAction :
+					_resourceActionLocalService.getResourceActions(
+						ObjectEntryFolder.class.getName())) {
+
+				String actionId = resourceAction.getActionId();
+
+				if ((objectEntryFolder.getParentObjectEntryFolderId() ==
+						ObjectEntryFolderConstants.
+							PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT) &&
+					Objects.equals(actionId, ActionKeys.DELETE)) {
+
+					Assert.assertFalse(
+						resourcePermission.hasActionId(actionId));
+				}
+				else {
+					Assert.assertEquals(
+						actionIds.toString(), actionIds.contains(actionId),
+						resourcePermission.hasActionId(actionId));
+				}
+			}
+
+			Assert.assertFalse(resourcePermission.hasActionId(randomActionId));
 		}
 	}
 
+	private void _deleteFile(Bundle bundle, String fileName) {
+		File file = bundle.getDataFile(
+			".com.liferay.site.initializer.cms.internal.batch." + fileName +
+				".batch.engine.data.json.0.processed");
+
+		if ((file != null) && file.exists()) {
+			file.delete();
+		}
+	}
+
+	private ObjectEntry _fetchObjectEntry(ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		return CMSDefaultPermissionUtil.fetchObjectEntry(
+			objectEntryFolder.getCompanyId(), objectEntryFolder.getUserId(),
+			objectEntryFolder.getExternalReferenceCode(),
+			objectEntryFolder.getModelClassName(), _filterFactory);
+	}
+
+	private ResourcePermission _fetchResourcePermission(
+			ObjectEntryFolder objectEntryFolder, String roleName)
+		throws Exception {
+
+		Role role = RoleLocalServiceUtil.getRole(
+			_group.getCompanyId(), roleName);
+
+		return _resourcePermissionLocalService.fetchResourcePermission(
+			_group.getCompanyId(), ObjectEntryFolder.class.getName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(objectEntryFolder.getObjectEntryFolderId()),
+			role.getRoleId());
+	}
+
+	private boolean _isCMSSiteInitialized() throws Exception {
+		ObjectFolder objectFolder =
+			_objectFolderLocalService.fetchObjectFolderByExternalReferenceCode(
+				ObjectFolderConstants.EXTERNAL_REFERENCE_CODE_FILE_TYPES,
+				TestPropsValues.getCompanyId());
+
+		if (objectFolder != null) {
+			return true;
+		}
+
+		return false;
+	}
+
 	@Inject
-	private CompanyLocalService _companyLocalService;
+	private BatchEngineUnitProcessor _batchEngineUnitProcessor;
+
+	@Inject
+	private BatchEngineUnitReader _batchEngineUnitReader;
+
+	@Inject
+	private DepotEntryLocalService _depotEntryLocalService;
+
+	@Inject(
+		filter = "filter.factory.key=" + ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT
+	)
+	private FilterFactory<Predicate> _filterFactory;
 
 	@DeleteAfterTestRun
 	private Group _group;
@@ -137,15 +369,18 @@ public class ObjectEntryFolderModelListenerTest {
 	private ObjectEntryFolderLocalService _objectEntryFolderLocalService;
 
 	@Inject
+	private ObjectFolderLocalService _objectFolderLocalService;
+
+	@Inject
+	private Portal _portal;
+
+	@Inject
 	private ResourceActionLocalService _resourceActionLocalService;
 
 	@Inject
 	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 	@Inject
-	private RoleLocalService _roleLocalService;
-
-	@Inject
-	private SiteInitializerRegistry _siteInitializerRegistry;
+	private SharingEntryLocalService _sharingEntryLocalService;
 
 }

@@ -5,13 +5,16 @@ $border-radius-lg: 0.5rem;
 $border-radius-sm: 0.5rem;
 
 $breadcrumb-divider-svg-icon: clay-icon(slash, $gray-600);
-$breadcrumb-divider-svg-icon-height: 0.9em;
+$breadcrumb-divider-svg-icon-height: 15px;
+$breadcrumb-font-size: 18px !default;
 
 $btn-xs-border-radius: 0.25rem;
 
 $custom-checkbox-indicator-border-radius: 0.25rem;
 
 $label-border-radius: 0.25rem;
+
+$nav-divider-color: $secondary-l1;
 
 $sticker-sm-border-radius: 0.25rem;
 
@@ -274,6 +277,16 @@ $label-danger: map-deep-merge(
 		close: $label-danger-close,
 	),
 	$label-danger
+);
+
+$sticker-sizes: () !default;
+$sticker-sizes: map-deep-merge(
+	(
+		sticker-xs: (
+			border-radius: $sticker-sm-border-radius,
+		),
+	),
+	$sticker-sizes
 );
 
 $sticker-sm: () !default;

@@ -22,6 +22,7 @@ const DATE_TIME_FIELD: Field = {
 	indexableConfig: {indexed: false},
 	label: {en_US: 'Date and Time Field'},
 	localized: true,
+	locked: false,
 	name: 'datetimeField',
 	parent: getUuid(),
 	required: false,
@@ -37,7 +38,22 @@ const TEXT_FIELD: Field = {
 	indexableConfig: {indexed: true, indexedAsKeyword: true},
 	label: {en_US: 'Text Field'},
 	localized: false,
+	locked: false,
 	name: 'textField',
+	parent: getUuid(),
+	required: true,
+	settings: {},
+	type: 'text',
+	uuid: getUuid(),
+};
+
+const TITLE_FIELD: Field = {
+	erc: 'title-field',
+	indexableConfig: {indexed: true, indexedAsKeyword: true},
+	label: {en_US: 'Title Field'},
+	localized: false,
+	locked: true,
+	name: 'titleField',
 	parent: getUuid(),
 	required: true,
 	settings: {},
@@ -56,11 +72,10 @@ function getChildren(fields: Field[]) {
 }
 
 describe('buildObjectDefinition', () => {
-	it('Builds objectDefinition with a field without settings', () => {
+	it('builds objectDefinition with a field without settings and a locked field', () => {
 		const result = buildObjectDefinition({
-			children: getChildren([TEXT_FIELD]),
+			children: getChildren([TEXT_FIELD, TITLE_FIELD]),
 			erc: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			spaces: [],
@@ -68,13 +83,15 @@ describe('buildObjectDefinition', () => {
 		});
 
 		expect(result).toEqual({
+			enableComments: true,
 			enableFriendlyURLCustomization: true,
 			enableIndexSearch: true,
 			enableLocalization: true,
 			enableObjectEntryDraft: true,
+			enableObjectEntryHistory: true,
+			enableObjectEntrySchedule: true,
 			enableObjectEntryVersioning: true,
 			externalReferenceCode: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			objectFields: [
@@ -90,6 +107,21 @@ describe('buildObjectDefinition', () => {
 					name: 'textField',
 					objectFieldSettings: [],
 					required: true,
+					system: false,
+				},
+				{
+					DBType: 'String',
+					businessType: 'Text',
+					externalReferenceCode: 'title-field',
+					indexed: true,
+					indexedAsKeyword: true,
+					indexedLanguageId: '',
+					label: {en_US: 'Title Field'},
+					localized: false,
+					name: 'titleField',
+					objectFieldSettings: [],
+					required: true,
+					system: true,
 				},
 			],
 			objectRelationships: [],
@@ -98,14 +130,14 @@ describe('buildObjectDefinition', () => {
 			status: {
 				code: 2,
 			},
+			titleObjectFieldName: 'title',
 		});
 	});
 
-	it('Builds objectDefinition with a field with settings', () => {
+	it('builds objectDefinition with a field with settings', () => {
 		const result = buildObjectDefinition({
 			children: getChildren([DATE_TIME_FIELD]),
 			erc: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			spaces: [],
@@ -113,13 +145,15 @@ describe('buildObjectDefinition', () => {
 		});
 
 		expect(result).toEqual({
+			enableComments: true,
 			enableFriendlyURLCustomization: true,
 			enableIndexSearch: true,
 			enableLocalization: true,
 			enableObjectEntryDraft: true,
+			enableObjectEntryHistory: true,
+			enableObjectEntrySchedule: true,
 			enableObjectEntryVersioning: true,
 			externalReferenceCode: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			objectFields: [
@@ -135,6 +169,7 @@ describe('buildObjectDefinition', () => {
 						{name: 'timeStorage', value: 'convertToUTC'},
 					],
 					required: false,
+					system: false,
 				},
 			],
 			objectRelationships: [],
@@ -143,28 +178,31 @@ describe('buildObjectDefinition', () => {
 			status: {
 				code: 0,
 			},
+			titleObjectFieldName: 'title',
 		});
 	});
 
-	it('Builds objectDefinition with spaces selected', () => {
+	it('builds objectDefinition with spaces and workflows selected', () => {
 		const result = buildObjectDefinition({
 			children: getChildren([TEXT_FIELD]),
 			erc: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			spaces: ['space-1-erc', 'space-2-erc'],
 			status: 'published',
+			workflows: {'': 'Workflow 2', 'space-1-erc': 'Workflow 1'},
 		});
 
 		expect(result).toEqual({
+			enableComments: true,
 			enableFriendlyURLCustomization: true,
 			enableIndexSearch: true,
 			enableLocalization: true,
 			enableObjectEntryDraft: true,
+			enableObjectEntryHistory: true,
+			enableObjectEntrySchedule: true,
 			enableObjectEntryVersioning: true,
 			externalReferenceCode: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			objectDefinitionSettings: [
@@ -186,6 +224,7 @@ describe('buildObjectDefinition', () => {
 					name: 'textField',
 					objectFieldSettings: [],
 					required: true,
+					system: false,
 				},
 			],
 			objectRelationships: [],
@@ -194,6 +233,17 @@ describe('buildObjectDefinition', () => {
 			status: {
 				code: 0,
 			},
+			titleObjectFieldName: 'title',
+			workflowDefinitionLinks: [
+				{
+					groupExternalReferenceCode: '',
+					workflowDefinitionName: 'Workflow 2',
+				},
+				{
+					groupExternalReferenceCode: 'space-1-erc',
+					workflowDefinitionName: 'Workflow 1',
+				},
+			],
 		});
 	});
 });

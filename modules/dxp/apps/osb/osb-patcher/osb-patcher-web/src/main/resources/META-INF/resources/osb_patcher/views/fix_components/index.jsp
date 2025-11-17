@@ -11,9 +11,9 @@
 PatcherFixComponentsDisplayContext patcherFixComponentsDisplayContext = new PatcherFixComponentsDisplayContext(request, renderRequest, renderResponse);
 %>
 
-<liferay-util:include page="/osb_patcher/views/toolbar.jsp" servletContext="<%= application %>">
-	<liferay-util:param name="tabs1" value="fix-components" />
-</liferay-util:include>
+<clay:navigation-bar
+	navigationItems='<%= patcherDisplayContext.getNavigationItems("fix-components") %>'
+/>
 
 <clay:management-toolbar
 	managementToolbarDisplayContext="<%= new PatcherFixComponentsManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, patcherFixComponentsDisplayContext.getSearchContainer()) %>"
@@ -35,37 +35,11 @@ PatcherFixComponentsDisplayContext patcherFixComponentsDisplayContext = new Patc
 		<liferay-ui:search-container-column-text
 			align="right"
 		>
-			<liferay-ui:icon-menu
-				direction="left-side"
-				icon="<%= StringPool.BLANK %>"
-				markupView="lexicon"
-				message="<%= StringPool.BLANK %>"
-				showWhenSingleIcon="<%= true %>"
-			>
-				<c:if test="<%= PatcherPermission.contains(permissionChecker, patcherFixComponent, PatcherActionKeys.EDIT, patcherFixComponent.getUserId()) %>">
-					<portlet:renderURL var="editPatcherFixComponentURL">
-						<portlet:param name="mvcRenderCommandName" value="/patcher/edit_fix_components" />
-						<portlet:param name="patcherFixComponentId" value="<%= String.valueOf(patcherFixComponent.getPatcherFixComponentId()) %>" />
-					</portlet:renderURL>
-
-					<liferay-ui:icon
-						image="edit"
-						method="get"
-						url="<%= editPatcherFixComponentURL %>"
-					/>
-				</c:if>
-
-				<c:if test="<%= PatcherPermission.contains(permissionChecker, patcherFixComponent, ActionKeys.DELETE, patcherFixComponent.getUserId()) %>">
-					<portlet:actionURL name="/patcher/delete_fix_components" var="deletePatcherFixComponentURL">
-						<portlet:param name="patcherFixComponentId" value="<%= String.valueOf(patcherFixComponent.getPatcherFixComponentId()) %>" />
-						<portlet:param name="redirect" value="<%= currentURL %>" />
-					</portlet:actionURL>
-
-					<liferay-ui:icon-delete
-						url="<%= deletePatcherFixComponentURL %>"
-					/>
-				</c:if>
-			</liferay-ui:icon-menu>
+			<clay:dropdown-actions
+				aria-label='<%= LanguageUtil.get(request, "show-actions") %>'
+				dropdownItems="<%= patcherFixComponentsDisplayContext.getDropdownItems(patcherFixComponent) %>"
+				propsTransformer="{PatcherDropdownDefaultPropsTransformer} from osb-patcher-web"
+			/>
 		</liferay-ui:search-container-column-text>
 	</liferay-ui:search-container-row>
 

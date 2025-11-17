@@ -14,9 +14,9 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.product.navigation.applications.menu.web.internal.constants.ProductNavigationApplicationsMenuPortletKeys;
 
 import jakarta.portlet.PortletRequest;
@@ -74,6 +74,8 @@ public class ApplicationsMenuDisplayContext {
 
 				applicationsMenuPanelAppsURL.setResourceID(
 					"/applications_menu/panel_apps");
+				applicationsMenuPanelAppsURL.setParameter(
+					"backURL", PortalUtil.getCurrentURL(_httpServletRequest));
 				applicationsMenuPanelAppsURL.setParameter(
 					"selectedPortletId", themeDisplay.getPpid());
 

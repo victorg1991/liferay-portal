@@ -4,15 +4,18 @@
  */
 
 import {openModal} from 'frontend-js-components-web';
-import React, {useEffect, useState} from 'react';
+import {getObjectValueFromPath} from 'frontend-js-web';
+import React, {useCallback, useEffect, useState} from 'react';
 
-import {TOnFileDrop} from '../DnDContext';
+import {THandleFileDrop} from '../DnDContext';
 import isFileDropEnabled from '../utils/isFileDropEnabled';
-import {IFileDropSettings} from '../utils/types';
+import {IFileDropSettings, TOnFileDrop} from '../utils/types';
 
 /* This hook connects FDS with state about dropped files, allowing integration
-	with a file uploader component in the future. Current implementation
-	shows a modal with the dropped files.
+	with a file uploader component in the future. To implement an uploader,
+	please provide the the onFileDrop function via fileDropSettings.
+	Default implementation is used if none provided, showing a modal with the
+	list of dropped files.
  */
 const useFileUploader = ({
 	fileDropSettings,
@@ -21,17 +24,56 @@ const useFileUploader = ({
 	fileDropSettings: IFileDropSettings;
 	selectedItemsKey: string | undefined;
 }): {
-	onFileDrop: TOnFileDrop;
+	handleFileDrop: THandleFileDrop;
 } => {
-	const [droppedFiles, setDroppedFiles] = useState([]);
+	const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
 	const [dropTarget, setDropTarget] = useState(null);
 
-	const onFileDrop: TOnFileDrop = (droppedItem: any, dropTarget?: any) => {
+	const defaultUploader: TOnFileDrop = useCallback(
+		(droppedFiles: File[], dropTarget: any) => {
+			const ModalBody = () => {
+				const label = (file: File) =>
+					`'${file.name}' of size '${file.size}' and type '${file.type}'`;
+
+				return (
+					<div>
+						{droppedFiles.map((file: File) => (
+							<li key={file.name}>{label(file)}</li>
+						))}
+
+						{dropTarget ? (
+							<span>
+								Dropped on item{' '}
+
+								{getObjectValueFromPath({
+									object: dropTarget,
+									path: selectedItemsKey,
+								})}
+							</span>
+						) : (
+							<span>
+								Dropped on the FDS, no specific drop target
+							</span>
+						)}
+					</div>
+				);
+			};
+
+			openModal({
+				bodyComponent: ModalBody,
+				size: 'lg',
+				title: Liferay.Language.get('files'),
+			});
+		},
+		[selectedItemsKey]
+	);
+
+	const handleFileDrop: THandleFileDrop = (
+		droppedItem: any,
+		dropTarget?: any
+	) => {
 		if (droppedItem) {
-
-			// @ts-ignore
-
-			const files = droppedItem.files;
+			const files: File[] = droppedItem.files;
 			setDroppedFiles(files);
 			setDropTarget(dropTarget ? dropTarget : null);
 		}
@@ -42,43 +84,24 @@ const useFileUploader = ({
 			return;
 		}
 
-		const ModalBody = () => {
+		if (
+			fileDropSettings.onFileDrop &&
+			typeof fileDropSettings.onFileDrop === 'function'
+		) {
+			fileDropSettings.onFileDrop(droppedFiles, dropTarget);
+		}
+		else {
+			defaultUploader(droppedFiles, dropTarget);
+		}
+	}, [
+		defaultUploader,
+		droppedFiles,
+		dropTarget,
+		fileDropSettings,
+		selectedItemsKey,
+	]);
 
-			// @ts-ignore
-
-			const label = (file) =>
-				`'${file.name}' of size '${file.size}' and type '${file.type}'`;
-
-			return (
-				<div>
-					{droppedFiles.map((file) => (
-
-						// @ts-ignore
-
-						<li key={file.name}>{label(file)}</li>
-					))}
-
-					{dropTarget ? (
-						<span>
-							Dropped on item{' '}
-
-							{dropTarget[selectedItemsKey || 'id']}
-						</span>
-					) : (
-						<span>Dropped on the FDS, no specific drop target</span>
-					)}
-				</div>
-			);
-		};
-
-		openModal({
-			bodyComponent: ModalBody,
-			size: 'lg',
-			title: Liferay.Language.get('files'),
-		});
-	}, [droppedFiles, dropTarget, fileDropSettings, selectedItemsKey]);
-
-	return {onFileDrop};
+	return {handleFileDrop};
 };
 
 export default useFileUploader;

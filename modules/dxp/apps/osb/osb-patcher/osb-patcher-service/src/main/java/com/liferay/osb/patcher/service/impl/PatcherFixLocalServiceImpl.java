@@ -5,8 +5,13 @@
 
 package com.liferay.osb.patcher.service.impl;
 
+import com.liferay.osb.patcher.constants.PatcherFixConstants;
+import com.liferay.osb.patcher.constants.WorkflowConstants;
 import com.liferay.osb.patcher.model.PatcherFix;
+import com.liferay.osb.patcher.service.PatcherFixLocalServiceUtil;
 import com.liferay.osb.patcher.service.base.PatcherFixLocalServiceBaseImpl;
+import com.liferay.osb.patcher.service.persistence.PatcherFixRelPersistence;
+import com.liferay.osb.patcher.util.EmailUtil;
 import com.liferay.osb.patcher.util.PatcherFixRelUtil;
 import com.liferay.osb.patcher.util.PatcherFixUtil;
 import com.liferay.osb.patcher.util.PatcherProjectVersionUtil;
@@ -14,11 +19,12 @@ import com.liferay.osb.patcher.util.comparator.PatcherFixKeyVersionComparator;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.util.Date;
 import java.util.List;
@@ -73,8 +79,41 @@ public class PatcherFixLocalServiceImpl extends PatcherFixLocalServiceBaseImpl {
 
 	@Indexable(type = IndexableType.DELETE)
 	@Override
-	public PatcherFix deletePatcherFix(long patcherFixId)
-		throws PortalException {
+	public PatcherFix deletePatcherFix(long patcherFixId) throws Exception {
+		PatcherFix patcherFix = patcherFixPersistence.findByPrimaryKey(
+			patcherFixId);
+
+		PatcherFixUtil.validateDelete(patcherFix);
+
+		if (patcherFix.getKeyVersion() !=
+				PatcherFixConstants.KEY_VERSION_DEFAULT) {
+
+			PatcherFix oldPatcherFix = _fetchPatcherFixByNextKeyVersion(
+				patcherFix);
+
+			if (oldPatcherFix != null) {
+				boolean patcherFixExcluded = false;
+
+				if (patcherFix.getType() == PatcherFixConstants.TYPE_EXCLUDED) {
+					patcherFixExcluded = true;
+				}
+
+				oldPatcherFix = PatcherFixUtil.updateObsolete(
+					oldPatcherFix.getPatcherFixId(), patcherFixExcluded);
+
+				int status = oldPatcherFix.getStatus();
+
+				if (patcherFixExcluded) {
+					status = PatcherFixConstants.TYPE_EXCLUDED;
+				}
+
+				PatcherFixLocalServiceUtil.updatePatcherFix(
+					oldPatcherFix.getPatcherFixId(), true, status);
+			}
+		}
+
+		_patcherFixRelPersistence.removeByChildPatcherFixId(
+			patcherFix.getPatcherFixId());
 
 		return patcherFixPersistence.remove(patcherFixId);
 	}
@@ -237,17 +276,57 @@ public class PatcherFixLocalServiceImpl extends PatcherFixLocalServiceBaseImpl {
 	@Indexable(type = IndexableType.REINDEX)
 	@Override
 	public PatcherFix updatePatcherFix(
-			long patcherFixId, String gitHash, int status)
-		throws PortalException {
+			long userId, long patcherFixId, String gitHash, int status)
+		throws Exception {
 
 		PatcherFix patcherFix = patcherFixPersistence.findByPrimaryKey(
 			patcherFixId);
+
+		int oldStatus = patcherFix.getStatus();
 
 		patcherFix.setModifiedDate(new Date());
 		patcherFix.setGitHash(gitHash);
 		patcherFix.setStatus(status);
 
-		return patcherFixPersistence.update(patcherFix);
+		User user = _userLocalService.getUser(userId);
+
+		patcherFix.setStatusByUserId(user.getUserId());
+		patcherFix.setStatusByUserName(user.getFullName());
+
+		patcherFix = patcherFixPersistence.update(patcherFix);
+
+		_sendEmail(patcherFix, oldStatus, userId);
+
+		return patcherFix;
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public PatcherFix updatePatcherFix(
+			long userId, long patcherFixId, String gitHash,
+			String jenkinsResults, int status)
+		throws Exception {
+
+		PatcherFix patcherFix = patcherFixPersistence.findByPrimaryKey(
+			patcherFixId);
+
+		int oldStatus = patcherFix.getStatus();
+
+		patcherFix.setModifiedDate(new Date());
+		patcherFix.setGitHash(gitHash);
+		patcherFix.setJenkinsResults(jenkinsResults);
+		patcherFix.setStatus(status);
+
+		User user = _userLocalService.getUser(userId);
+
+		patcherFix.setStatusByUserId(user.getUserId());
+		patcherFix.setStatusByUserName(user.getFullName());
+
+		patcherFix = patcherFixPersistence.update(patcherFix);
+
+		_sendEmail(patcherFix, oldStatus, userId);
+
+		return patcherFix;
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -270,20 +349,27 @@ public class PatcherFixLocalServiceImpl extends PatcherFixLocalServiceBaseImpl {
 
 	@Indexable(type = IndexableType.REINDEX)
 	@Override
-	public PatcherFix updatePatcherFix(
-			long patcherFixId, String gitHash, String jenkinsResults,
-			int status)
-		throws PortalException {
+	public PatcherFix updatePatcherFix(PatcherFix patcherFix) {
+		PatcherFix oldPatcherFix = patcherFixPersistence.fetchByPrimaryKey(
+			patcherFix.getPatcherFixId());
 
-		PatcherFix patcherFix = patcherFixPersistence.findByPrimaryKey(
-			patcherFixId);
+		patcherFix = super.updatePatcherFix(patcherFix);
 
-		patcherFix.setModifiedDate(new Date());
-		patcherFix.setGitHash(gitHash);
-		patcherFix.setJenkinsResults(jenkinsResults);
-		patcherFix.setStatus(status);
+		if (oldPatcherFix == null) {
+			return patcherFix;
+		}
 
-		return patcherFixPersistence.update(patcherFix);
+		try {
+			_sendEmail(
+				patcherFix, oldPatcherFix.getStatus(), patcherFix.getUserId());
+		}
+		catch (Exception exception) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(exception);
+			}
+		}
+
+		return patcherFix;
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -302,16 +388,27 @@ public class PatcherFixLocalServiceImpl extends PatcherFixLocalServiceBaseImpl {
 
 	@Indexable(type = IndexableType.REINDEX)
 	@Override
-	public PatcherFix updateStatus(long patcherFixId, int status)
-		throws PortalException {
+	public PatcherFix updateStatus(long userId, long patcherFixId, int status)
+		throws Exception {
 
 		PatcherFix patcherFix = patcherFixPersistence.findByPrimaryKey(
 			patcherFixId);
 
+		int oldStatus = patcherFix.getStatus();
+
 		patcherFix.setModifiedDate(new Date());
 		patcherFix.setStatus(status);
 
-		return patcherFixPersistence.update(patcherFix);
+		User user = _userLocalService.getUser(userId);
+
+		patcherFix.setStatusByUserId(user.getUserId());
+		patcherFix.setStatusByUserName(user.getFullName());
+
+		patcherFix = patcherFixPersistence.update(patcherFix);
+
+		_sendEmail(patcherFix, oldStatus, userId);
+
+		return patcherFix;
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -327,6 +424,47 @@ public class PatcherFixLocalServiceImpl extends PatcherFixLocalServiceBaseImpl {
 
 		return patcherFixPersistence.update(patcherFix);
 	}
+
+	private PatcherFix _fetchPatcherFixByNextKeyVersion(PatcherFix patcherFix) {
+		List<PatcherFix> patcherFixes =
+			PatcherFixLocalServiceUtil.getPatcherFixes(
+				patcherFix.getKey(), patcherFix.getKeyVersion(),
+				PatcherFixConstants.TYPE_GENERATED_PRIVATE_PUBLIC, true);
+
+		if (patcherFixes.isEmpty()) {
+			return null;
+		}
+
+		return patcherFixes.get(0);
+	}
+
+	private void _sendEmail(PatcherFix patcherFix, int oldStatus, long userId)
+		throws Exception {
+
+		if (oldStatus == patcherFix.getStatus()) {
+			return;
+		}
+
+		if (PatcherFixUtil.isMainPatcherFix(patcherFix.getPatcherFixId()) ||
+			((patcherFix.getType() == PatcherFixConstants.TYPE_REBASE) &&
+			 ((patcherFix.getStatus() ==
+				 WorkflowConstants.STATUS_FIX_COMPLETE) ||
+			  (patcherFix.getStatus() ==
+				  WorkflowConstants.STATUS_FIX_FAILED)))) {
+
+			return;
+		}
+
+		EmailUtil.sendPatcherEmail(
+			patcherFix, patcherFix.getStatus(),
+			_userLocalService.getUser(userId));
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		PatcherFixLocalServiceImpl.class);
+
+	@Reference
+	private PatcherFixRelPersistence _patcherFixRelPersistence;
 
 	@Reference
 	private UserLocalService _userLocalService;

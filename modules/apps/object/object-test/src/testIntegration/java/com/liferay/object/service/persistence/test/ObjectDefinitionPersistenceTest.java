@@ -157,6 +157,9 @@ public class ObjectDefinitionPersistenceTest {
 
 		newObjectDefinition.setEnableComments(RandomTestUtil.randomBoolean());
 
+		newObjectDefinition.setEnableFormContainer(
+			RandomTestUtil.randomBoolean());
+
 		newObjectDefinition.setEnableFriendlyURLCustomization(
 			RandomTestUtil.randomBoolean());
 
@@ -173,6 +176,9 @@ public class ObjectDefinitionPersistenceTest {
 			RandomTestUtil.randomBoolean());
 
 		newObjectDefinition.setEnableObjectEntrySchedule(
+			RandomTestUtil.randomBoolean());
+
+		newObjectDefinition.setEnableObjectEntrySubscription(
 			RandomTestUtil.randomBoolean());
 
 		newObjectDefinition.setEnableObjectEntryVersioning(
@@ -272,6 +278,9 @@ public class ObjectDefinitionPersistenceTest {
 			existingObjectDefinition.isEnableComments(),
 			newObjectDefinition.isEnableComments());
 		Assert.assertEquals(
+			existingObjectDefinition.isEnableFormContainer(),
+			newObjectDefinition.isEnableFormContainer());
+		Assert.assertEquals(
 			existingObjectDefinition.isEnableFriendlyURLCustomization(),
 			newObjectDefinition.isEnableFriendlyURLCustomization());
 		Assert.assertEquals(
@@ -289,6 +298,9 @@ public class ObjectDefinitionPersistenceTest {
 		Assert.assertEquals(
 			existingObjectDefinition.isEnableObjectEntrySchedule(),
 			newObjectDefinition.isEnableObjectEntrySchedule());
+		Assert.assertEquals(
+			existingObjectDefinition.isEnableObjectEntrySubscription(),
+			newObjectDefinition.isEnableObjectEntrySubscription());
 		Assert.assertEquals(
 			existingObjectDefinition.isEnableObjectEntryVersioning(),
 			newObjectDefinition.isEnableObjectEntryVersioning());
@@ -399,6 +411,15 @@ public class ObjectDefinitionPersistenceTest {
 
 		_persistence.countByAccountEntryRestricted(
 			RandomTestUtil.randomBoolean());
+	}
+
+	@Test
+	public void testCountByClassName() throws Exception {
+		_persistence.countByClassName("");
+
+		_persistence.countByClassName("null");
+
+		_persistence.countByClassName((String)null);
 	}
 
 	@Test
@@ -547,15 +568,16 @@ public class ObjectDefinitionPersistenceTest {
 			"titleObjectFieldId", true, "accountEntryRestricted", true,
 			"active", true, "className", true, "dbTableName", true,
 			"enableCategorization", true, "enableComments", true,
-			"enableFriendlyURLCustomization", true, "enableIndexSearch", true,
-			"enableLocalization", true, "enableObjectEntryDraft", true,
-			"enableObjectEntryHistory", true, "enableObjectEntrySchedule", true,
-			"enableObjectEntryVersioning", true, "friendlyURLSeparator", true,
-			"label", true, "modifiable", true, "name", true, "panelAppOrder",
-			true, "panelCategoryKey", true, "pkObjectFieldDBColumnName", true,
-			"pkObjectFieldName", true, "pluralLabel", true, "portlet", true,
-			"scope", true, "storageType", true, "system", true, "version", true,
-			"status", true);
+			"enableFormContainer", true, "enableFriendlyURLCustomization", true,
+			"enableIndexSearch", true, "enableLocalization", true,
+			"enableObjectEntryDraft", true, "enableObjectEntryHistory", true,
+			"enableObjectEntrySchedule", true, "enableObjectEntrySubscription",
+			true, "enableObjectEntryVersioning", true, "friendlyURLSeparator",
+			true, "label", true, "modifiable", true, "name", true,
+			"panelAppOrder", true, "panelCategoryKey", true,
+			"pkObjectFieldDBColumnName", true, "pkObjectFieldName", true,
+			"pluralLabel", true, "portlet", true, "scope", true, "storageType",
+			true, "system", true, "version", true, "status", true);
 	}
 
 	@Test
@@ -828,6 +850,12 @@ public class ObjectDefinitionPersistenceTest {
 
 	private void _assertOriginalValues(ObjectDefinition objectDefinition) {
 		Assert.assertEquals(
+			objectDefinition.getClassName(),
+			ReflectionTestUtil.invoke(
+				objectDefinition, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "className"));
+
+		Assert.assertEquals(
 			Long.valueOf(objectDefinition.getCompanyId()),
 			ReflectionTestUtil.<Long>invoke(
 				objectDefinition, "getColumnOriginalValue",
@@ -906,6 +934,8 @@ public class ObjectDefinitionPersistenceTest {
 
 		objectDefinition.setEnableComments(RandomTestUtil.randomBoolean());
 
+		objectDefinition.setEnableFormContainer(RandomTestUtil.randomBoolean());
+
 		objectDefinition.setEnableFriendlyURLCustomization(
 			RandomTestUtil.randomBoolean());
 
@@ -920,6 +950,9 @@ public class ObjectDefinitionPersistenceTest {
 			RandomTestUtil.randomBoolean());
 
 		objectDefinition.setEnableObjectEntrySchedule(
+			RandomTestUtil.randomBoolean());
+
+		objectDefinition.setEnableObjectEntrySubscription(
 			RandomTestUtil.randomBoolean());
 
 		objectDefinition.setEnableObjectEntryVersioning(

@@ -22,14 +22,14 @@ export default function buildState({
 	const structure = buildStructure({mainObjectDefinition, objectDefinitions});
 
 	return {
-		error: null,
 		history: {
 			deletedChildren: false,
+			modifiedNames: new Set(),
 		},
 		invalids: new Map(),
 		publishedChildren:
 			structure.status === 'published'
-				? getChildrenUuids(structure)
+				? getChildrenUuids({root: structure})
 				: new Set(),
 		selection: [],
 		structure,

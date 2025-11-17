@@ -31,6 +31,7 @@ export const test = mergeTests(
 	displayPageTemplatesPagesTest,
 	featureFlagsTest({
 		'LPD-20379': {enabled: true},
+		'LPD-58472': {enabled: true},
 	}),
 	instanceSettingsPagesTest,
 	isolatedSiteTest,
@@ -54,7 +55,6 @@ test(
 	}) => {
 		const channel =
 			await apiHelpers.headlessCommerceAdminChannel.postChannel({
-				name: getRandomString(),
 				siteGroupId: site.id,
 			});
 

@@ -1409,6 +1409,8 @@ public class Main {
 				_taxonomyCategoriesJSONObject.put(
 					taxonomyCategory.getExternalReferenceCode(),
 					taxonomyCategory.getId());
+
+				continue;
 			}
 
 			existingTaxonomyVocabularies.put(
@@ -1527,6 +1529,7 @@ public class Main {
 							_isShowChildrenCards(englishFile)));
 				}
 			};
+
 		String englishTitle = _getTitle(englishText);
 
 		File japaneseFile = new File(

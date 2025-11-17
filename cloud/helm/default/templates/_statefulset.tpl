@@ -21,6 +21,8 @@ spec:
     serviceName: {{ include "liferay.name" .root }}{{ $suffix }}
     template:
         metadata:
+            annotations:
+                checksum/config: {{ include (print .root.Template.BasePath "/configmap.yaml") .root | sha256sum }}
             labels:
                 app: {{ include "liferay.name" .root }}{{ $suffix }}
                 {{- include "liferay.labels" .root | nindent 16 }}
@@ -234,7 +236,11 @@ spec:
         {{- end }}
     {{- with .statefulset.ingress.tls }}
     tls:
-        {{- toYaml . | nindent 8 }}
+        {{- range $tls := . }}
+        -   hosts:
+            {{- toYaml $tls.hosts | nindent 12 }}
+            secretName: {{ $tls.secretName }}
+        {{- end }}
     {{- end }}
 {{- end }}
 {{- end -}}

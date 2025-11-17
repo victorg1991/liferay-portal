@@ -5,8 +5,8 @@
 
 package com.liferay.jenkins.results.parser;
 
-import com.liferay.jenkins.results.parser.testray.TestrayS3Bucket;
-import com.liferay.jenkins.results.parser.testray.TestrayS3Object;
+import com.liferay.jenkins.results.parser.testray.TestrayCloudBucket;
+import com.liferay.jenkins.results.parser.testray.TestrayCloudObject;
 
 import java.io.IOException;
 
@@ -14,7 +14,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,16 +39,28 @@ public abstract class BaseTopLevelBuildReport
 			return;
 		}
 
-		String batchName = downstreamBuildReport.getBatchName();
+		if (downstreamBuildReport.isBuildCached()) {
+			_cachedDownstreamBuildReports.add(downstreamBuildReport);
 
-		List<DownstreamBuildReport> downstreamBuildReports =
-			_downstreamBuildReports.getOrDefault(batchName, new ArrayList<>());
-
-		if (!downstreamBuildReports.contains(downstreamBuildReport)) {
-			downstreamBuildReports.add(downstreamBuildReport);
+			return;
 		}
 
-		_downstreamBuildReports.put(batchName, downstreamBuildReports);
+		_downstreamBuildReports.add(downstreamBuildReport);
+	}
+
+	@Override
+	public void addDownstreamBuildReports(
+		List<DownstreamBuildReport> downstreamBuildReports) {
+
+		if (downstreamBuildReports == null) {
+			return;
+		}
+
+		for (DownstreamBuildReport downstreamBuildReport :
+				downstreamBuildReports) {
+
+			addDownstreamBuildReport(downstreamBuildReport);
+		}
 	}
 
 	@Override
@@ -69,28 +81,6 @@ public abstract class BaseTopLevelBuildReport
 		jsonArray.put(String.valueOf(testrayAttachmentURL));
 
 		buildReportJSONObject.put("testrayAttachmentURLs", jsonArray);
-	}
-
-	@Override
-	public Map<String, String> getBuildParameters() {
-		Map<String, String> buildParameters = new HashMap<>();
-
-		JSONObject buildReportJSONObject = getBuildReportJSONObject();
-
-		if ((buildReportJSONObject == null) ||
-			!buildReportJSONObject.has("buildParameters")) {
-
-			return buildParameters;
-		}
-
-		JSONObject buildParametersJSONObject =
-			buildReportJSONObject.getJSONObject("buildParameters");
-
-		for (String key : buildParametersJSONObject.keySet()) {
-			buildParameters.put(key, buildParametersJSONObject.getString(key));
-		}
-
-		return buildParameters;
 	}
 
 	@Override
@@ -144,12 +134,13 @@ public abstract class BaseTopLevelBuildReport
 	}
 
 	@Override
-	public TestrayS3Object getBuildReportTestrayS3Object() {
+	public TestrayCloudObject getBuildReportTestrayCloudObject() {
 		JenkinsMaster jenkinsMaster = getJenkinsMaster();
 
-		TestrayS3Bucket testrayS3Bucket = TestrayS3Bucket.getInstance();
+		TestrayCloudBucket testrayCloudBucket =
+			TestrayCloudBucket.getInstance();
 
-		return testrayS3Bucket.getTestrayS3Object(
+		return testrayCloudBucket.getTestrayCloudObject(
 			JenkinsResultsParserUtil.combine(
 				getStartYearMonth(), "/", jenkinsMaster.getName(), "/",
 				getJobName(), "/", String.valueOf(getBuildNumber()),
@@ -186,10 +177,20 @@ public abstract class BaseTopLevelBuildReport
 	@Override
 	public DownstreamBuildReport getDownstreamBuildReport(String axisName) {
 		for (DownstreamBuildReport downstreamBuildReport :
-				getDownstreamBuildReports()) {
+				_downstreamBuildReports) {
 
 			if (Objects.equals(downstreamBuildReport.getAxisName(), axisName)) {
 				return downstreamBuildReport;
+			}
+		}
+
+		for (DownstreamBuildReport cachedDownstreamBuildReport :
+				_cachedDownstreamBuildReports) {
+
+			if (Objects.equals(
+					cachedDownstreamBuildReport.getAxisName(), axisName)) {
+
+				return cachedDownstreamBuildReport;
 			}
 		}
 
@@ -200,11 +201,8 @@ public abstract class BaseTopLevelBuildReport
 	public List<DownstreamBuildReport> getDownstreamBuildReports() {
 		List<DownstreamBuildReport> downstreamBuildReports = new ArrayList<>();
 
-		for (List<DownstreamBuildReport> downstreamBuildReportsList :
-				_downstreamBuildReports.values()) {
-
-			downstreamBuildReports.addAll(downstreamBuildReportsList);
-		}
+		downstreamBuildReports.addAll(_cachedDownstreamBuildReports);
+		downstreamBuildReports.addAll(_downstreamBuildReports);
 
 		return downstreamBuildReports;
 	}
@@ -335,6 +333,28 @@ public abstract class BaseTopLevelBuildReport
 	}
 
 	@Override
+	public long getTotalActualDuration() {
+		JSONObject buildReportJSONObject = getBuildReportJSONObject();
+
+		if (buildReportJSONObject == null) {
+			return 0L;
+		}
+
+		return buildReportJSONObject.optLong("totalActualDuration");
+	}
+
+	@Override
+	public long getTotalCachedDuration() {
+		JSONObject buildReportJSONObject = getBuildReportJSONObject();
+
+		if (buildReportJSONObject == null) {
+			return 0L;
+		}
+
+		return buildReportJSONObject.optLong("totalCachedDuration");
+	}
+
+	@Override
 	public long getTotalDuration() {
 		JSONObject buildReportJSONObject = getBuildReportJSONObject();
 
@@ -361,17 +381,6 @@ public abstract class BaseTopLevelBuildReport
 		super(buildURLString);
 
 		_jobReport = jobReport;
-	}
-
-	protected Set<String> getBatchNames() {
-		return _downstreamBuildReports.keySet();
-	}
-
-	protected List<DownstreamBuildReport> getDownstreamBuildReports(
-		String batchName) {
-
-		return _downstreamBuildReports.getOrDefault(
-			batchName, new ArrayList<>());
 	}
 
 	protected String getStartYearMonth() {
@@ -420,9 +429,11 @@ public abstract class BaseTopLevelBuildReport
 			"(\\.liferay\\.com)?/job/(?<jobName>[^/]+))" +
 				"(/AXIS_VARIABLE=(?<axisVariable>\\d+))?/(?<buildNumber>\\d+)");
 
+	private final Set<DownstreamBuildReport> _cachedDownstreamBuildReports =
+		new HashSet<>();
 	private ControllerBuildReport _controllerBuildReport;
-	private final Map<String, List<DownstreamBuildReport>>
-		_downstreamBuildReports = new HashMap<>();
+	private final Set<DownstreamBuildReport> _downstreamBuildReports =
+		new HashSet<>();
 	private JobReport _jobReport;
 
 }

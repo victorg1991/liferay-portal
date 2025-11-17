@@ -116,7 +116,7 @@ public class ReleaseManagerImpl implements ReleaseManager {
 
 	@Override
 	public String getStatusMessage(boolean showUpgradeSteps) {
-		StringBundler sb = new StringBundler(6);
+		StringBundler sb = new StringBundler(5);
 
 		sb.append(_checkPortal(showUpgradeSteps));
 
@@ -128,9 +128,7 @@ public class ReleaseManagerImpl implements ReleaseManager {
 
 		if (_hasUnsatisfiedUpgradeComponents()) {
 			sb.append("Unsatisfied components prevent upgrade processes to ");
-			sb.append("be registered");
-
-			sb.append(StringPool.NEW_LINE);
+			sb.append("be registered\n");
 		}
 
 		return sb.toString();
@@ -406,10 +404,13 @@ public class ReleaseManagerImpl implements ReleaseManager {
 						"0.0.0");
 
 					release.setVerified(false);
+					release.setState(ReleaseConstants.STATE_GOOD);
 				}
 				catch (Exception exception) {
-					release = _releaseLocalService.addRelease(
-						bundleSymbolicName, "0.0.0");
+					if (release == null) {
+						release = _releaseLocalService.addRelease(
+							bundleSymbolicName, "0.0.0");
+					}
 
 					release.setState(ReleaseConstants.STATE_UPGRADE_FAILURE);
 

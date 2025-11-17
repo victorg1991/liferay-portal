@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -63,6 +64,11 @@ public class DeleteDuplicateUniqueFinderRowsUpgradeProcessTest {
 		_db = DBManagerUtil.getDB();
 
 		_dbInspector = new DBInspector(_connection);
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		DataAccess.cleanUp(_connection);
 	}
 
 	@Test
@@ -274,8 +280,8 @@ public class DeleteDuplicateUniqueFinderRowsUpgradeProcessTest {
 				tableName, columnNames, orderByClause);
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				"com.liferay.portal.kernel.upgrade." +
-					"DeleteDuplicateUniqueFinderRowsUpgradeProcess",
+				"com.liferay.portal.kernel.dao.db." +
+					"DuplicateUniqueFinderRowsCleaner",
 				LoggerTestUtil.OFF)) {
 
 			upgradeProcess.upgrade();

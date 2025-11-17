@@ -21,12 +21,12 @@ import com.liferay.portal.kernel.dao.db.Index;
 import com.liferay.portal.kernel.dao.db.IndexMetadata;
 import com.liferay.portal.kernel.dao.db.IndexMetadataFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
-import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.io.unsync.UnsyncBufferedReader;
 import com.liferay.portal.kernel.io.unsync.UnsyncStringReader;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -965,6 +966,59 @@ public abstract class BaseDB implements DB {
 			validIndexNames);
 	}
 
+	public void updatePrimaryKey(
+			Connection connection, String tableName,
+			String[] primaryKeyColumnNames)
+		throws Exception {
+
+		if (_isSkipIndexOperation(connection, tableName)) {
+			return;
+		}
+
+		DBInspector dbInspector = new DBInspector(connection);
+
+		if (!dbInspector.hasTable(tableName)) {
+			return;
+		}
+
+		for (String columnName : primaryKeyColumnNames) {
+			if (!dbInspector.hasColumn(tableName, columnName)) {
+				if (StringUtil.equalsIgnoreCase(columnName, "ctCollectionId")) {
+					primaryKeyColumnNames = ArrayUtil.filter(
+						primaryKeyColumnNames,
+						name -> !StringUtil.equalsIgnoreCase(
+							name, "ctCollectionId"));
+				}
+				else {
+					if (_log.isDebugEnabled()) {
+						_log.debug(
+							StringBundler.concat(
+								"Unable to recreate primary key for table ",
+								tableName, " because column ", columnName,
+								" does not exist"));
+					}
+
+					return;
+				}
+			}
+		}
+
+		String[] actualPrimaryKeyColumns = getPrimaryKeyColumnNames(
+			connection, tableName);
+
+		if (ArrayUtil.equalsIgnoreCase(
+				actualPrimaryKeyColumns, primaryKeyColumnNames)) {
+
+			return;
+		}
+
+		if (ArrayUtil.isNotEmpty(actualPrimaryKeyColumns)) {
+			removePrimaryKey(connection, tableName);
+		}
+
+		addPrimaryKey(connection, tableName, primaryKeyColumnNames);
+	}
+
 	protected BaseDB(DBType dbType, int majorVersion, int minorVersion) {
 		_dbType = dbType;
 		_majorVersion = majorVersion;
@@ -1537,6 +1591,8 @@ public abstract class BaseDB implements DB {
 
 			String sql = null;
 
+			ThrowableCollector throwableCollector = new ThrowableCollector();
+
 			while ((sql = unsyncBufferedReader.readLine()) != null) {
 				if (Validator.isNull(sql)) {
 					continue;
@@ -1559,12 +1615,21 @@ public abstract class BaseDB implements DB {
 				try {
 					runSQL(connection, sql);
 				}
+				catch (SQLException sqlException) {
+					if (_log.isDebugEnabled()) {
+						_log.debug(sqlException.getMessage() + ": " + sql);
+					}
+
+					throwableCollector.collect(sqlException);
+				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
 						_log.warn(exception.getMessage() + ": " + sql);
 					}
 				}
 			}
+
+			throwableCollector.rethrow();
 		}
 	}
 
@@ -1645,7 +1710,7 @@ public abstract class BaseDB implements DB {
 	private boolean _isSkipIndexOperation(
 		Connection connection, String tableName) {
 
-		if (!DBPartition.isPartitionEnabled() ||
+		if (!PropsValues.DATABASE_PARTITION_ENABLED ||
 			(CompanyThreadLocal.getNonsystemCompanyId() ==
 				PortalInstancePool.getDefaultCompanyId())) {
 

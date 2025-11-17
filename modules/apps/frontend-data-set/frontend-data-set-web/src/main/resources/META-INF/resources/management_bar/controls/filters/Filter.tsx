@@ -7,11 +7,11 @@ import ClayLoadingIndicator from '@clayui/loading-indicator';
 import {loadModule} from 'frontend-js-web';
 import React, {ReactElement, useContext, useEffect, useState} from 'react';
 
+import FrontendDataSetContext from '../../../FrontendDataSetContext';
 import ViewsContext from '../../../views/ViewsContext';
 
 // @ts-ignore
 
-import {VIEWS_ACTION_TYPES} from '../../../views/viewsReducer';
 import clientExtensionFilterImplementation from './implementation/ClientExtensionFilter';
 import dateRangeFilterImplementation from './implementation/DateRangeFilter';
 import selectionFilterImplementation from './implementation/SelectionFilter';
@@ -62,6 +62,7 @@ const Filter = ({
 	type,
 	...otherProps
 }: FilterComponentArgs) => {
+	const {setSearching, updateFilters} = useContext(FrontendDataSetContext);
 	const [{filters}, viewsDispatch] = useContext(ViewsContext);
 
 	const filterImplementation = FILTER_IMPLEMENTATIONS[type];
@@ -104,12 +105,15 @@ const Filter = ({
 		newFilter.selectedItemsLabel =
 			filterImplementation.getSelectedItemsLabel(newFilter);
 
-		viewsDispatch({
-			type: VIEWS_ACTION_TYPES.UPDATE_FILTERS,
-			value: filters.map((filter: FilterConfiguration) =>
-				filter.id === filterId ? newFilter : filter
-			),
-		});
+		setSearching(true);
+
+		viewsDispatch(
+			updateFilters(
+				filters.map((filter: FilterConfiguration) =>
+					filter.id === filterId ? newFilter : filter
+				)
+			)
+		);
 	};
 
 	return Component ? (

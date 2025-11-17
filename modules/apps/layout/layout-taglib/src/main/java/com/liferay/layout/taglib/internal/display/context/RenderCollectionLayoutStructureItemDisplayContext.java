@@ -53,9 +53,9 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.segments.SegmentsEntryRetriever;
 import com.liferay.segments.context.RequestContextMapper;
 import com.liferay.segments.model.SegmentsExperience;
@@ -529,7 +529,7 @@ public class RenderCollectionLayoutStructureItemDisplayContext {
 			JSONArray targetCollectionsJSONArray =
 				(JSONArray)
 					fragmentEntryConfigurationParser.getConfigurationFieldValue(
-						fragmentEntryLink.getEditableValues(),
+						fragmentEntryLink.getEditableValuesJSONObject(),
 						"targetCollections",
 						FragmentConfigurationFieldDataType.ARRAY);
 
@@ -615,6 +615,8 @@ public class RenderCollectionLayoutStructureItemDisplayContext {
 				_collectionStyledLayoutStructureItem.getNumberOfItems(),
 				_collectionStyledLayoutStructureItem.getNumberOfItemsPerPage(),
 				_collectionStyledLayoutStructureItem.getPaginationType()));
+		defaultLayoutListRetrieverContext.setScopeGroupId(
+			_themeDisplay.getScopeGroupId());
 		defaultLayoutListRetrieverContext.setSegmentsEntryIds(
 			_getSegmentsEntryIds(layoutListRetriever, listObjectReference));
 

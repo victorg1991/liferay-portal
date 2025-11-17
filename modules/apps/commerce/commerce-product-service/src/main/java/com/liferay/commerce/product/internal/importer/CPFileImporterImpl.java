@@ -249,7 +249,8 @@ public class CPFileImporterImpl implements CPFileImporter {
 			String layoutName = layoutJSONObject.getString("name");
 
 			if (layoutName.equals("Returns") &&
-				!FeatureFlagManagerUtil.isEnabled("LPD-10562")) {
+				!FeatureFlagManagerUtil.isEnabled(
+					serviceContext.getCompanyId(), "LPD-10562")) {
 
 				continue;
 			}
@@ -461,7 +462,7 @@ public class CPFileImporterImpl implements CPFileImporter {
 				serviceContext);
 		}
 
-		layout = _layoutLocalService.updateLayout(
+		layout = _layoutLocalService.updateTypeSettings(
 			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
 			layout.getTypeSettings());
 

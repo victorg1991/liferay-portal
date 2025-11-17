@@ -103,12 +103,13 @@ public class CommerceCatalogLocalServiceImpl
 		// Group
 
 		_groupLocalService.addGroup(
-			user.getUserId(), GroupConstants.DEFAULT_PARENT_GROUP_ID,
+			StringPool.BLANK, user.getUserId(),
+			GroupConstants.DEFAULT_PARENT_GROUP_ID,
 			CommerceCatalog.class.getName(), commerceCatalogId,
 			GroupConstants.DEFAULT_LIVE_GROUP_ID, getLocalizationMap(name),
-			null, GroupConstants.TYPE_SITE_PRIVATE, false,
-			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION, null, false, true,
-			null);
+			null, GroupConstants.TYPE_SITE_PRIVATE, null, false,
+			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION, null, false, false,
+			true, null);
 
 		commerceCatalog = commerceCatalogPersistence.update(commerceCatalog);
 
@@ -137,8 +138,8 @@ public class CommerceCatalogLocalServiceImpl
 				"master-configuration-x", commerceCatalog.getName(), false),
 			0D, calendar.get(Calendar.MONTH),
 			calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.YEAR),
-			displayDateHour, calendar.get(Calendar.MINUTE), 0, 0, 0, 0, 0,
-			true);
+			displayDateHour, calendar.get(Calendar.MINUTE), 0, 0, 0, 0, 0, true,
+			new ServiceContext());
 
 		return commerceCatalog;
 	}

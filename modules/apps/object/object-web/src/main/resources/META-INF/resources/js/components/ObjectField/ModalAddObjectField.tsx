@@ -95,6 +95,7 @@ export function ModalAddObjectField({
 	const {errors, handleChange, handleSubmit, setValues, values} =
 		useObjectFieldForm({
 			initialValues,
+			objectFields: objectDefinition?.objectFields,
 			onSubmit,
 		});
 
@@ -158,7 +159,9 @@ export function ModalAddObjectField({
 		<ClayModalProvider>
 			<ClayTooltipProvider>
 				<ClayModal center observer={observer}>
-					<ClayModal.Header>
+					<ClayModal.Header
+						closeButtonAriaLabel={Liferay.Language.get('close')}
+					>
 						{Liferay.Language.get('new-field')}
 					</ClayModal.Header>
 
@@ -172,6 +175,7 @@ export function ModalAddObjectField({
 
 							<Input
 								error={errors.label}
+								id="modal-add-object-field__label-input"
 								label={Liferay.Language.get('label')}
 								name="label"
 								onChange={({target: {value}}) => {

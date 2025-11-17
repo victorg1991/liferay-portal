@@ -7,25 +7,35 @@ package com.liferay.marketplace;
 
 import com.liferay.client.extension.util.spring.boot3.BaseRestController;
 import com.liferay.headless.admin.user.client.dto.v1_0.Account;
+import com.liferay.headless.admin.user.client.dto.v1_0.AccountRole;
+import com.liferay.headless.admin.user.client.dto.v1_0.PostalAddress;
+import com.liferay.headless.admin.user.client.dto.v1_0.UserAccount;
 import com.liferay.headless.admin.user.client.resource.v1_0.AccountResource;
+import com.liferay.headless.admin.user.client.resource.v1_0.AccountRoleResource;
+import com.liferay.headless.admin.user.client.resource.v1_0.PostalAddressResource;
+import com.liferay.headless.admin.user.client.resource.v1_0.UserAccountResource;
+import com.liferay.headless.commerce.admin.catalog.client.dto.v1_0.Catalog;
 import com.liferay.headless.commerce.admin.catalog.client.dto.v1_0.Product;
-import com.liferay.headless.commerce.admin.catalog.client.resource.v1_0.SkuResource;
+import com.liferay.headless.commerce.admin.order.client.dto.v1_0.BillingAddress;
 import com.liferay.headless.commerce.admin.order.client.dto.v1_0.Order;
 import com.liferay.headless.commerce.admin.order.client.dto.v1_0.OrderItem;
 import com.liferay.headless.commerce.admin.order.client.pagination.Page;
 import com.liferay.headless.commerce.admin.order.client.pagination.Pagination;
+import com.liferay.headless.commerce.admin.order.client.resource.v1_0.OrderItemResource;
 import com.liferay.headless.commerce.admin.order.client.resource.v1_0.OrderResource;
 import com.liferay.marketplace.constants.MarketplaceConstants;
 import com.liferay.marketplace.service.KoroneikiService;
 import com.liferay.marketplace.service.MarketplaceService;
 import com.liferay.marketplace.util.MarketplaceUtil;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.LocaleUtil;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+
+import java.math.BigDecimal;
 
 import java.net.URL;
 
@@ -33,8 +43,10 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -45,16 +57,21 @@ import org.json.JSONObject;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
@@ -132,24 +149,92 @@ public class MarketplaceRestController extends BaseRestController {
 		);
 	}
 
-	@GetMapping("kpi")
-	public String getProjectsKPI() {
-		return _marketplaceKPIJSONObject.toString();
-	}
-
-	@PostMapping("kpi")
-	public void postKPI(
-		@AuthenticationPrincipal Jwt jwt, @RequestBody String json) {
+	@PostMapping("/account")
+	public ResponseEntity<Account> postAccount(
+			@RequestPart("account") String accountJSON,
+			@RequestPart(name = "file", required = false) MultipartFile file,
+			@AuthenticationPrincipal Jwt jwt)
+		throws Exception {
 
 		if (_log.isInfoEnabled()) {
-			_log.info("POST projects KPI " + json);
+			_log.info("POST account " + accountJSON);
 		}
 
-		JSONObject jsonObject = new JSONObject(json);
+		Account account = Account.toDTO(accountJSON);
 
-		for (String key : jsonObject.keySet()) {
-			_marketplaceKPIJSONObject.put(key, jsonObject.get(key));
+		if (file != null) {
+			Base64.Encoder encoder = Base64.getEncoder();
+
+			account.setLogoBase64(
+				() -> encoder.encodeToString(file.getBytes()));
 		}
+
+		AccountResource accountResource =
+			_marketplaceService.getAccountResource();
+
+		com.liferay.headless.admin.user.client.pagination.Page<Account>
+			accountPage = accountResource.getAccountsPage(
+				"", "name eq '" + account.getName() + "'",
+				com.liferay.headless.admin.user.client.pagination.Pagination.of(
+					1, 1),
+				"");
+
+		if (accountPage.getTotalCount() > 0) {
+			throw new ResponseStatusException(
+				HttpStatus.CONFLICT, "Account already exists");
+		}
+
+		account = accountResource.postAccount(account);
+
+		PostalAddressResource postalAddressesResource =
+			_marketplaceService.getPostalAddressResource();
+
+		PostalAddress postalAddress =
+			postalAddressesResource.getAccountPostalAddressesPage(
+				account.getId()
+			).fetchFirstItem();
+
+		if (postalAddress != null) {
+			accountResource.patchAccount(
+				account.getId(),
+				new Account() {
+					{
+						setDefaultBillingAddressId(postalAddress::getId);
+					}
+				});
+		}
+
+		UserAccountResource userAccountResource =
+			_marketplaceService.getUserAccountResource();
+
+		UserAccount userAccount = userAccountResource.getUserAccount(
+			GetterUtil.getLong(jwt.getClaimAsString("sub")));
+
+		String emailAddress = userAccount.getEmailAddress();
+
+		userAccountResource.postAccountUserAccountByEmailAddress(
+			account.getId(), emailAddress);
+
+		Long accountRoleId = _getAccountAdministratorRoleId(account.getId());
+
+		if (accountRoleId != null) {
+			AccountRoleResource accountRoleResource =
+				_marketplaceService.getAccountRoleResource();
+
+			accountRoleResource.
+				postAccountByExternalReferenceCodeAccountRoleUserAccountByEmailAddress(
+					account.getExternalReferenceCode(), accountRoleId,
+					emailAddress);
+		}
+
+		if (_log.isInfoEnabled()) {
+			_log.info(
+				StringBundler.concat(
+					"User ", emailAddress, " associated with account ",
+					account.getName()));
+		}
+
+		return ResponseEntity.ok(account);
 	}
 
 	@PostMapping("product/purchase")
@@ -166,7 +251,26 @@ public class MarketplaceRestController extends BaseRestController {
 		JSONObject commerceOrderJSONObject = jsonObject.getJSONObject(
 			"commerceOrder");
 
+		String paymentMethod = commerceOrderJSONObject.getString(
+			"paymentMethod");
 		int paymentStatus = commerceOrderJSONObject.getInt("paymentStatus");
+
+		Order order = _marketplaceService.getOrder(
+			commerceOrderJSONObject.getLong("id"));
+
+		if ((Objects.equals(
+				paymentMethod,
+				MarketplaceConstants.ORDER_PAYMENT_METHOD_MONEY_ORDER) &&
+			 (paymentStatus ==
+				 MarketplaceConstants.ORDER_PAYMENT_STATUS_PENDING)) ||
+			(Objects.equals(
+				paymentMethod,
+				MarketplaceConstants.ORDER_PAYMENT_METHOD_PAYPAL) &&
+			 (paymentStatus ==
+				 MarketplaceConstants.ORDER_PAYMENT_STATUS_COMPLETED))) {
+
+			_sendOrderPurchasedNotification(order);
+		}
 
 		if ((paymentStatus !=
 				MarketplaceConstants.ORDER_PAYMENT_STATUS_COMPLETED) &&
@@ -182,9 +286,6 @@ public class MarketplaceRestController extends BaseRestController {
 
 			return;
 		}
-
-		Order order = _marketplaceService.getOrder(
-			commerceOrderJSONObject.getLong("id"));
 
 		_marketplaceService.updateOrder(
 			null, order.getId(), MarketplaceConstants.ORDER_STATUS_PROCESSING);
@@ -242,8 +343,7 @@ public class MarketplaceRestController extends BaseRestController {
 			modelCPDefinitionJSONObject.getLong("CProductId"));
 
 		_marketplaceService.postNotificationQueueEntry(
-			"marketplace-admin@liferay.com",
-			"MARKETPLACE-PRODUCT-SUBMIT-TEMPLATE",
+			null, "MARKETPLACE-PRODUCT-SUBMIT-TEMPLATE",
 			new HashMapBuilder<String, Object>().put(
 				"[%CPDEFINITION_NAME%]",
 				product.getName(
@@ -266,7 +366,7 @@ public class MarketplaceRestController extends BaseRestController {
 					StringBundler.concat(
 						lxcDXPServerProtocol, "://", lxcDXPMainDomain,
 						"/web/marketplace/administrator-dashboard#/apps/",
-						modelCPDefinitionJSONObject.getLong("CPDefinitionId"))
+						modelCPDefinitionJSONObject.getLong("CProductId"))
 				).toString()
 			).put(
 				"[%CPDEFINITION_CREATEDATE%]",
@@ -275,9 +375,215 @@ public class MarketplaceRestController extends BaseRestController {
 					).toInstant(),
 					ZoneOffset.UTC
 				).format(
-					DateTimeFormatter.ofPattern(
-						"MMMM d, yyyy", LocaleUtil.ENGLISH)
+					DateTimeFormatter.ofPattern("MMMM d, yyyy")
 				)
+			).put(
+				"[%CPDEFINITION_ID%]",
+				String.valueOf(
+					modelCPDefinitionJSONObject.getLong("CPDefinitionId"))
+			).build());
+	}
+
+	@PostMapping("/tax-calculate/{orderId}")
+	public void postTaxCalculate(@PathVariable long orderId) throws Exception {
+		if (_log.isInfoEnabled()) {
+			_log.info("POST tax calculate for order " + orderId);
+		}
+
+		Order order = _marketplaceService.getOrder(orderId);
+
+		BillingAddress billingAddress = _marketplaceService.getBillingAddress(
+			orderId);
+
+		if (billingAddress == null) {
+			return;
+		}
+
+		OrderItemResource orderItemResource =
+			_marketplaceService.getOrderItemResource();
+		OrderResource orderResource = _marketplaceService.getOrderResource();
+
+		com.liferay.headless.commerce.admin.order.client.dto.v1_0.Account
+			account = order.getAccount();
+
+		BigDecimal subtotalAmount = BigDecimal.valueOf(
+			order.getSubtotalAmount());
+
+		BigDecimal taxAmount = BigDecimal.ZERO;
+
+		BigDecimal total = subtotalAmount.add(taxAmount);
+
+		if ((Objects.equals(account.getType(), _ACCOUNT_TYPE_BUSINESS) &&
+			 Objects.equals(billingAddress.getCountryISOCode(), "IE")) ||
+			(Objects.equals(account.getType(), _ACCOUNT_TYPE_PERSON) &&
+			 _europeanCountriesISOCode.contains(
+				 billingAddress.getCountryISOCode()))) {
+
+			taxAmount = subtotalAmount.multiply(
+				BigDecimal.valueOf(_MARKETPLACE_TAX_PERCENTAGE));
+
+			total = subtotalAmount.add(taxAmount);
+		}
+
+		BigDecimal finalTaxAmount = taxAmount;
+		BigDecimal finalTotal = total;
+
+		for (OrderItem orderItem : order.getOrderItems()) {
+			orderItemResource.patchOrderItem(
+				orderItem.getId(),
+				new OrderItem() {
+					{
+						setFinalPrice(orderItem::getFinalPrice);
+						setFinalPriceWithTaxAmount(
+							() -> orderItem.getFinalPrice(
+							).add(
+								orderItem.getFinalPrice(
+								).multiply(
+									BigDecimal.valueOf(
+										_MARKETPLACE_TAX_PERCENTAGE)
+								)
+							));
+						setPriceManuallyAdjusted(() -> true);
+					}
+				});
+		}
+
+		orderResource.patchOrder(
+			orderId,
+			new Order() {
+				{
+					setTaxAmount(() -> finalTaxAmount);
+					setTotal(() -> finalTotal);
+				}
+			});
+	}
+
+	private Long _getAccountAdministratorRoleId(long accountId)
+		throws Exception {
+
+		AccountRoleResource accountRoleResource =
+			_marketplaceService.getAccountRoleResource();
+
+		com.liferay.headless.admin.user.client.pagination.Page<AccountRole>
+			accountRolesPage = accountRoleResource.getAccountAccountRolesPage(
+				accountId, null, "name eq 'Account Administrator'",
+				com.liferay.headless.admin.user.client.pagination.Pagination.of(
+					1, 1),
+				null);
+
+		AccountRole accountRole = accountRolesPage.fetchFirstItem();
+
+		if (accountRole == null) {
+			return null;
+		}
+
+		return accountRole.getId();
+	}
+
+	private void _sendOrderPurchasedNotification(Order order) throws Exception {
+		OrderItem[] orderItems = order.getOrderItems();
+
+		OrderItem orderItem = orderItems[0];
+
+		if (orderItem == null) {
+			return;
+		}
+
+		if (_log.isInfoEnabled()) {
+			_log.info(
+				"Sending purchased order notification for order " +
+					order.getId());
+		}
+
+		com.liferay.headless.commerce.admin.order.client.dto.v1_0.Account
+			account = order.getAccount();
+
+		BillingAddress billingAddress = _marketplaceService.getBillingAddress(
+			order.getId());
+
+		Product product = _marketplaceService.getProductBySkuId(
+			orderItem.getSkuId());
+
+		Catalog catalog = _marketplaceService.getCatalog(
+			product.getCatalogId());
+
+		Map<String, String> productSpecificationsMap =
+			_marketplaceService.getProductSpecificationsMap(
+				product.getProductId());
+
+		_marketplaceService.postNotificationQueueEntry(
+			null, "MARKETPLACE-ORDER-PURCHASED-NOTIFICATION",
+			new HashMapBuilder<String, String>().put(
+				"[%ACCOUNT_ID%]", String.valueOf(account.getId())
+			).put(
+				"[%ACCOUNT_NAME%]", account.getName()
+			).put(
+				"[%APP_NAME%]",
+				product.getName(
+				).get(
+					"en_US"
+				)
+			).put(
+				"[%APP_TYPE%]",
+				productSpecificationsMap.get(
+					"type"
+				).replace(
+					"-", " "
+				)
+			).put(
+				"[%BILLING_ADDRESS_FORMATTED%]",
+				String.join(
+					", ", billingAddress.getStreet1(), billingAddress.getCity(),
+					billingAddress.getRegionISOCode(),
+					billingAddress.getCountryISOCode())
+			).put(
+				"[%BILLING_ADDRESS_NAME%]", billingAddress.getName()
+			).put(
+				"[%BILLING_ADDRESS_PHONE%]", billingAddress.getPhoneNumber()
+			).put(
+				"[%CATALOG_NAME%]", catalog.getName()
+			).put(
+				"[%EMAIL_ADDRESS%]", order.getCreatorEmailAddress()
+			).put(
+				"[%LICENSE_TYPE%]", productSpecificationsMap.get("license-type")
+			).put(
+				"[%NET_PRICE_FORMATTED%]", order.getSubtotalFormatted()
+			).put(
+				"[%ORDER_DATE%]",
+				ZonedDateTime.ofInstant(
+					order.getCreateDate(
+					).toInstant(),
+					ZoneOffset.UTC
+				).format(
+					DateTimeFormatter.ofPattern("MMMM d, yyyy")
+				)
+			).put(
+				"[%ORDER_ID%]", String.valueOf(order.getId())
+			).put(
+				"[%ORDER_PAYMENT_METHOD%]",
+				MarketplaceConstants.getOrderPaymentMethodLabel(
+					order.getPaymentMethod())
+			).put(
+				"[%ORDER_STATUS%]",
+				MarketplaceConstants.getOrderStatusLabel(order.getOrderStatus())
+			).put(
+				"[%PAYMENT_TERMS%]", order.getPaymentTermDescription()
+			).put(
+				"[%PRODUCT_THUMBNAIL%]",
+				new URL(
+					StringBundler.concat(
+						lxcDXPServerProtocol, "://", lxcDXPMainDomain,
+						product.getThumbnail())
+				).toString(
+				).replaceAll(
+					"(?<=accounts/)-?\\d+(?=/images)", "-1"
+				)
+			).put(
+				"[%TOTAL_FORMATTED%]", order.getTotalFormatted()
+			).put(
+				"[%VAT_FORMATTED%]", order.getTaxAmountFormatted()
+			).put(
+				"[%VAT_NUMBER%]", account.getTaxId()
 			).build());
 	}
 
@@ -303,11 +609,9 @@ public class MarketplaceRestController extends BaseRestController {
 			Jwt jwt, Order order, Page<OrderItem> orderItemPage)
 		throws Exception {
 
-		SkuResource skuResource = _marketplaceService.getSkuResource();
-
 		Map<String, String> productSpecificationsMap =
 			_marketplaceService.getProductSpecificationsMap(
-				skuResource.getSku(
+				_marketplaceService.getSku(
 					orderItemPage.fetchFirstItem(
 					).getSkuId()
 				).getProductId());
@@ -358,13 +662,22 @@ public class MarketplaceRestController extends BaseRestController {
 		}
 	}
 
+	private static final int _ACCOUNT_TYPE_BUSINESS = 2;
+
+	private static final int _ACCOUNT_TYPE_PERSON = 1;
+
+	private static final double _MARKETPLACE_TAX_PERCENTAGE = 0.23;
+
 	private static final Log _log = LogFactory.getLog(
 		MarketplaceRestController.class);
 
+	private final Set<String> _europeanCountriesISOCode = Set.of(
+		"AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR",
+		"HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO",
+		"SE", "SI", "SK");
+
 	@Autowired
 	private KoroneikiService _koroneikiService;
-
-	private final JSONObject _marketplaceKPIJSONObject = new JSONObject();
 
 	@Autowired
 	private MarketplaceService _marketplaceService;

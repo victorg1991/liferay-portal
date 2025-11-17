@@ -87,6 +87,7 @@ public interface LayoutPageTemplateEntryLocalService
 			LayoutPrototype layoutPrototype)
 		throws PortalException;
 
+	@Indexable(type = IndexableType.REINDEX)
 	public LayoutPageTemplateEntry addLayoutPageTemplateEntry(
 			String externalReferenceCode, long userId, long groupId,
 			long layoutPageTemplateCollectionId,
@@ -145,7 +146,10 @@ public interface LayoutPageTemplateEntryLocalService
 	 * @throws PortalException
 	 */
 	@Indexable(type = IndexableType.DELETE)
-	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
+	@SystemEvent(
+		action = SystemEventConstants.ACTION_SKIP,
+		type = SystemEventConstants.TYPE_DELETE
+	)
 	public LayoutPageTemplateEntry deleteLayoutPageTemplateEntry(
 			LayoutPageTemplateEntry layoutPageTemplateEntry)
 		throws PortalException;
@@ -464,6 +468,11 @@ public interface LayoutPageTemplateEntryLocalService
 		long groupId, long layoutPageTemplateCollectionId, String name,
 		int type);
 
+	public LayoutPageTemplateEntry moveLayoutPageTemplateEntry(
+			long layoutPageTemplateEntryId,
+			long targetLayoutPageTemplateCollectionId)
+		throws PortalException;
+
 	/**
 	 * Updates the layout page template entry in the database or adds it if it does not yet exist. Also notifies the appropriate model listeners.
 	 *
@@ -487,7 +496,8 @@ public interface LayoutPageTemplateEntryLocalService
 		throws PortalException;
 
 	public LayoutPageTemplateEntry updateLayoutPageTemplateEntry(
-			long layoutPageTemplateEntryId, long classNameId, long classTypeId)
+			long userId, long layoutPageTemplateEntryId, long classNameId,
+			long classTypeId)
 		throws PortalException;
 
 	public LayoutPageTemplateEntry updateLayoutPageTemplateEntry(
@@ -495,6 +505,7 @@ public interface LayoutPageTemplateEntryLocalService
 			int status)
 		throws PortalException;
 
+	@Indexable(type = IndexableType.REINDEX)
 	public LayoutPageTemplateEntry updateLayoutPageTemplateEntry(
 			long layoutPageTemplateEntryId, String name)
 		throws PortalException;

@@ -31,8 +31,10 @@ import com.liferay.object.rest.manager.v1_0.DefaultObjectEntryManager;
 import com.liferay.object.rest.manager.v1_0.DefaultObjectEntryManagerProvider;
 import com.liferay.object.rest.manager.v1_0.ObjectEntryManagerRegistry;
 import com.liferay.object.service.ObjectDefinitionLocalService;
+import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.json.JSONArray;
@@ -49,10 +51,10 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.pagination.Page;
@@ -68,6 +70,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -108,10 +111,30 @@ public class CustomFDSSerializer
 
 	@Override
 	public String serializeAdditionalAPIURLParameters(
-		String fdsName, HttpServletRequest httpServletRequest) {
+		String fdsName, HttpServletRequest httpServletRequest,
+		boolean interpolate, JSONObject tokenResolutionsJSONObject) {
 
 		Map<String, Object> properties = getDataSetObjectEntryProperties(
 			fdsName, httpServletRequest);
+
+		String additionalAPIURLParameters = String.valueOf(
+			properties.get("additionalAPIURLParameters"));
+
+		String systemAdditionalAPIURLParameters =
+			_systemFDSSerializer.serializeAdditionalAPIURLParameters(
+				fdsName, httpServletRequest, interpolate,
+				tokenResolutionsJSONObject);
+
+		if (Validator.isNotNull(systemAdditionalAPIURLParameters)) {
+			if (Validator.isNotNull(additionalAPIURLParameters)) {
+				additionalAPIURLParameters =
+					systemAdditionalAPIURLParameters + StringPool.AMPERSAND +
+						additionalAPIURLParameters;
+			}
+			else {
+				additionalAPIURLParameters = systemAdditionalAPIURLParameters;
+			}
+		}
 
 		return createFDSAPIURLBuilder(
 			httpServletRequest,
@@ -119,13 +142,18 @@ public class CustomFDSSerializer
 			String.valueOf(properties.get("restEndpoint")),
 			String.valueOf(properties.get("restSchema"))
 		).addQueryString(
-			String.valueOf(properties.get("additionalAPIURLParameters"))
-		).buildQueryString();
+			additionalAPIURLParameters
+		).setTokenResolutions(
+			tokenResolutionsJSONObject
+		).buildQueryString(
+			interpolate
+		);
 	}
 
 	@Override
 	public String serializeAPIURL(
-		String fdsName, HttpServletRequest httpServletRequest) {
+		String fdsName, HttpServletRequest httpServletRequest,
+		boolean interpolate, JSONObject tokenResolutionsJSONObject) {
 
 		Map<String, Object> properties = getDataSetObjectEntryProperties(
 			fdsName, httpServletRequest);
@@ -134,14 +162,17 @@ public class CustomFDSSerializer
 			httpServletRequest,
 			String.valueOf(properties.get("restApplication")),
 			String.valueOf(properties.get("restEndpoint")),
-			String.valueOf(properties.get("restSchema")));
+			String.valueOf(properties.get("restSchema"))
+		).setTokenResolutions(
+			tokenResolutionsJSONObject
+		);
 
 		List<ObjectEntry> objectEntries = getSortedRelatedObjectEntries(
 			fdsName, httpServletRequest, (Predicate)null, "tableSectionsOrder",
 			"dataSetToDataSetTableSections");
 
 		if (objectEntries == null) {
-			return fdsAPIURLBuilder.build();
+			return fdsAPIURLBuilder.build(interpolate);
 		}
 
 		String nestedFields = StringPool.BLANK;
@@ -169,7 +200,7 @@ public class CustomFDSSerializer
 		}
 
 		if (nestedFields.equals(StringPool.BLANK)) {
-			return fdsAPIURLBuilder.build();
+			return fdsAPIURLBuilder.build(interpolate);
 		}
 
 		fdsAPIURLBuilder.addParameter(
@@ -182,7 +213,7 @@ public class CustomFDSSerializer
 				"nestedFieldsDepth", String.valueOf(nestedFieldsDepth));
 		}
 
-		return fdsAPIURLBuilder.build();
+		return fdsAPIURLBuilder.build(interpolate);
 	}
 
 	@Override
@@ -514,6 +545,67 @@ public class CustomFDSSerializer
 		String defaultVisualizationMode = String.valueOf(
 			dataSetObjectEntryProperties.get("defaultVisualizationMode"));
 
+		JSONArray tableViewSchemaFieldsJSONArray = null;
+
+		JSONArray systemViewsJSONArray = _systemFDSSerializer.serializeViews(
+			fdsName, httpServletRequest);
+
+		for (int i = 0; i < systemViewsJSONArray.length(); i++) {
+			JSONObject systemViewJSONObject =
+				systemViewsJSONArray.getJSONObject(i);
+
+			String contentRenderer = systemViewJSONObject.getString(
+				"contentRenderer");
+
+			if (Validator.isNotNull(contentRenderer) &&
+				contentRenderer.contains("table")) {
+
+				JSONObject tableViewSchemaJSONObject =
+					systemViewJSONObject.getJSONObject("schema");
+
+				if (tableViewSchemaJSONObject != null) {
+					tableViewSchemaFieldsJSONArray =
+						tableViewSchemaJSONObject.getJSONArray("fields");
+
+					break;
+				}
+			}
+		}
+
+		Map<String, JSONObject> schemaFields = new HashMap<>();
+
+		if (tableViewSchemaFieldsJSONArray != null) {
+			for (int i = 0; i < tableViewSchemaFieldsJSONArray.length(); i++) {
+				JSONObject schemaFieldJSONObject =
+					tableViewSchemaFieldsJSONArray.getJSONObject(i);
+
+				Object object = schemaFieldJSONObject.get("fieldName");
+
+				String fieldName = StringPool.BLANK;
+
+				if (object instanceof String) {
+					fieldName = (String)object;
+				}
+				else {
+					StringBundler sb = new StringBundler();
+
+					String[] fieldNameItems = (String[])object;
+
+					for (int j = 0; j < fieldNameItems.length; j++) {
+						sb.append(fieldNameItems[j]);
+
+						if ((j + 1) < fieldNameItems.length) {
+							sb.append('.');
+						}
+					}
+
+					fieldName = sb.toString();
+				}
+
+				schemaFields.put(fieldName, schemaFieldJSONObject);
+			}
+		}
+
 		jsonArray.put(
 			() -> {
 				List<ObjectEntry> objectEntries = getRelatedObjectEntries(
@@ -578,12 +670,21 @@ public class CustomFDSSerializer
 						Map<String, Object> properties =
 							objectEntry.getProperties();
 
-						JSONObject jsonObject = JSONUtil.put(
+						String fieldName = (String)properties.get("fieldName");
+
+						JSONObject schemaFieldJSONObject = schemaFields.get(
+							fieldName);
+
+						if (schemaFieldJSONObject == null) {
+							schemaFieldJSONObject =
+								_jsonFactory.createJSONObject();
+						}
+
+						schemaFieldJSONObject.put(
 							"contentRenderer",
 							String.valueOf(properties.get("renderer"))
 						).put(
-							"fieldName",
-							String.valueOf(properties.get("fieldName"))
+							"fieldName", fieldName
 						).put(
 							"label",
 							MapUtil.getWithFallbackKey(
@@ -596,7 +697,7 @@ public class CustomFDSSerializer
 							properties.get("rendererType"));
 
 						if (!Objects.equals(rendererType, "clientExtension")) {
-							return jsonObject;
+							return schemaFieldJSONObject;
 						}
 
 						String externalReferenceCode = String.valueOf(
@@ -608,6 +709,14 @@ public class CustomFDSSerializer
 								externalReferenceCode);
 
 						if (fdsCellRendererCET == null) {
+							boolean clientExtension =
+								schemaFieldJSONObject.getBoolean(
+									"contentRendererClientExtension");
+
+							if (!clientExtension) {
+								return schemaFieldJSONObject;
+							}
+
 							if (_log.isWarnEnabled()) {
 								_log.warn(
 									"No frontend data set cell renderer " +
@@ -615,14 +724,14 @@ public class CustomFDSSerializer
 											externalReferenceCode);
 							}
 
-							return jsonObject.put(
+							return schemaFieldJSONObject.put(
 								"contentRenderer", "default"
 							).put(
 								"contentRendererClientExtension", false
 							);
 						}
 
-						return jsonObject.put(
+						return schemaFieldJSONObject.put(
 							"contentRendererClientExtension", true
 						).put(
 							"contentRendererModuleURL",
@@ -790,11 +899,14 @@ public class CustomFDSSerializer
 
 		try {
 			Page<ObjectEntry> relatedObjectEntriesPage =
-				defaultObjectEntryManager.getObjectEntryRelatedObjectEntries(
+				defaultObjectEntryManager.getRelatedObjectEntries(
 					new DefaultDTOConverterContext(
 						false, null, null, null, null,
 						LocaleUtil.getMostRelevantLocale(), null, null),
-					objectDefinition, objectEntry.getId(), relationshipName,
+					objectEntry.getId(),
+					_objectRelationshipLocalService.getObjectRelationship(
+						objectDefinition.getObjectDefinitionId(),
+						relationshipName),
 					Pagination.of(QueryUtil.ALL_POS, QueryUtil.ALL_POS));
 
 			objectEntries = relatedObjectEntriesPage.getItems();
@@ -1160,6 +1272,9 @@ public class CustomFDSSerializer
 
 	@Reference
 	private ObjectEntryManagerRegistry _objectEntryManagerRegistry;
+
+	@Reference
+	private ObjectRelationshipLocalService _objectRelationshipLocalService;
 
 	@Reference(
 		target = "(frontend.data.set.serializer.type=" + FDSSerializer.TYPE_SYSTEM + ")"

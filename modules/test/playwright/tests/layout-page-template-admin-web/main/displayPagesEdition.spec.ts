@@ -12,6 +12,7 @@ import {expect, mergeTests} from '@playwright/test';
 import {applicationsMenuPageTest} from '../../../fixtures/applicationsMenuPageTest';
 import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
 import {displayPageTemplatesPagesTest} from '../../../fixtures/displayPageTemplatesPagesTest';
+import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../../fixtures/pageEditorPagesTest';
@@ -34,10 +35,13 @@ const test = mergeTests(
 	applicationsMenuPageTest,
 	dataApiHelpersTest,
 	displayPageTemplatesPagesTest,
-	pageEditorPagesTest,
-	loginTest(),
-	pageManagementSiteTest,
+	featureFlagsTest({
+		'LPD-60546': {enabled: true},
+	}),
 	isolatedSiteTest,
+	loginTest(),
+	pageEditorPagesTest,
+	pageManagementSiteTest,
 	pagesPagesTest
 );
 
@@ -1441,20 +1445,26 @@ test.describe('Object Display page', () => {
 			const genrePicklist =
 				await apiHelpers.listTypeAdmin.postRandomListTypeDefinition();
 
-			await apiHelpers.listTypeAdmin.postListTypeEntry(
-				genrePicklist.externalReferenceCode,
-				'horror'
-			);
+			await apiHelpers.listTypeAdmin.postListTypeEntry({
+				key: 'horror',
+				listTypeDefinitionExternalReferenceCode:
+					genrePicklist.externalReferenceCode,
+				name_i18n: {en_US: 'horror'},
+			});
 
-			await apiHelpers.listTypeAdmin.postListTypeEntry(
-				genrePicklist.externalReferenceCode,
-				'musical'
-			);
+			await apiHelpers.listTypeAdmin.postListTypeEntry({
+				key: 'musical',
+				listTypeDefinitionExternalReferenceCode:
+					genrePicklist.externalReferenceCode,
+				name_i18n: {en_US: 'musical'},
+			});
 
-			await apiHelpers.listTypeAdmin.postListTypeEntry(
-				genrePicklist.externalReferenceCode,
-				'thriller'
-			);
+			await apiHelpers.listTypeAdmin.postListTypeEntry({
+				key: 'thriller',
+				listTypeDefinitionExternalReferenceCode:
+					genrePicklist.externalReferenceCode,
+				name_i18n: {en_US: 'thriller'},
+			});
 
 			apiHelpers.data.push({
 				id: genrePicklist.id,
@@ -1464,15 +1474,19 @@ test.describe('Object Display page', () => {
 			const originPicklist =
 				await apiHelpers.listTypeAdmin.postRandomListTypeDefinition();
 
-			await apiHelpers.listTypeAdmin.postListTypeEntry(
-				originPicklist.externalReferenceCode,
-				'hollywood'
-			);
+			await apiHelpers.listTypeAdmin.postListTypeEntry({
+				key: 'hollywood',
+				listTypeDefinitionExternalReferenceCode:
+					originPicklist.externalReferenceCode,
+				name_i18n: {en_US: 'hollywood'},
+			});
 
-			await apiHelpers.listTypeAdmin.postListTypeEntry(
-				originPicklist.externalReferenceCode,
-				'bollywood'
-			);
+			await apiHelpers.listTypeAdmin.postListTypeEntry({
+				key: 'bollywood',
+				listTypeDefinitionExternalReferenceCode:
+					originPicklist.externalReferenceCode,
+				name_i18n: {en_US: 'bollywood'},
+			});
 
 			apiHelpers.data.push({
 				id: originPicklist.id,

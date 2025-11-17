@@ -119,6 +119,44 @@ public interface ObjectEntryFolderResource {
 				ObjectEntryFolder objectEntryFolder)
 		throws Exception;
 
+	public ObjectEntryFolder postObjectEntryFolderByParentObjectEntryFolderCopy(
+			Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
+	public HttpInvoker.HttpResponse
+			postObjectEntryFolderByParentObjectEntryFolderCopyHttpResponse(
+				Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
+	public ObjectEntryFolder
+			postObjectEntryFolderByParentObjectEntryFolderCopyReplace(
+				Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
+	public HttpInvoker.HttpResponse
+			postObjectEntryFolderByParentObjectEntryFolderCopyReplaceHttpResponse(
+				Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
+	public ObjectEntryFolder postObjectEntryFolderByParentObjectEntryFolderMove(
+			Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
+	public HttpInvoker.HttpResponse
+			postObjectEntryFolderByParentObjectEntryFolderMoveHttpResponse(
+				Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
+	public ObjectEntryFolder
+			postObjectEntryFolderByParentObjectEntryFolderMoveReplace(
+				Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
+	public HttpInvoker.HttpResponse
+			postObjectEntryFolderByParentObjectEntryFolderMoveReplaceHttpResponse(
+				Long objectEntryFolderId, Long parentObjectEntryFolderId)
+		throws Exception;
+
 	public ObjectEntryFolder postScopeScopeKeyObjectEntryFolder(
 			String scopeKey, ObjectEntryFolder objectEntryFolder)
 		throws Exception;
@@ -126,6 +164,36 @@ public interface ObjectEntryFolderResource {
 	public HttpInvoker.HttpResponse
 			postScopeScopeKeyObjectEntryFolderHttpResponse(
 				String scopeKey, ObjectEntryFolder objectEntryFolder)
+		throws Exception;
+
+	public ObjectEntryFolder
+			postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestore(
+				String scopeKey, String externalReferenceCode)
+		throws Exception;
+
+	public HttpInvoker.HttpResponse
+			postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestoreHttpResponse(
+				String scopeKey, String externalReferenceCode)
+		throws Exception;
+
+	public void
+			postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe(
+				String scopeKey, String externalReferenceCode)
+		throws Exception;
+
+	public HttpInvoker.HttpResponse
+			postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribeHttpResponse(
+				String scopeKey, String externalReferenceCode)
+		throws Exception;
+
+	public void
+			postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe(
+				String scopeKey, String externalReferenceCode)
+		throws Exception;
+
+	public HttpInvoker.HttpResponse
+			postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribeHttpResponse(
+				String scopeKey, String externalReferenceCode)
 		throws Exception;
 
 	public ObjectEntryFolder putObjectEntryFolder(
@@ -1274,6 +1342,458 @@ public interface ObjectEntryFolderResource {
 			return httpInvoker.invoke();
 		}
 
+		public ObjectEntryFolder
+				postObjectEntryFolderByParentObjectEntryFolderCopy(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker.HttpResponse httpResponse =
+				postObjectEntryFolderByParentObjectEntryFolderCopyHttpResponse(
+					objectEntryFolderId, parentObjectEntryFolderId);
+
+			String content = httpResponse.getContent();
+
+			if ((httpResponse.getStatusCode() / 100) != 2) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response content: " + content);
+				_logger.log(
+					Level.WARNING,
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.log(
+					Level.WARNING,
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+
+				Problem.ProblemException problemException = null;
+
+				if (Objects.equals(
+						httpResponse.getContentType(), "application/json")) {
+
+					problemException = new Problem.ProblemException(
+						Problem.toDTO(content));
+				}
+				else {
+					_logger.log(
+						Level.WARNING,
+						"Unable to process content type: " +
+							httpResponse.getContentType());
+
+					Problem problem = new Problem();
+
+					problem.setStatus(
+						String.valueOf(httpResponse.getStatusCode()));
+
+					problemException = new Problem.ProblemException(problem);
+				}
+
+				throw problemException;
+			}
+			else {
+				_logger.fine("HTTP response content: " + content);
+				_logger.fine(
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.fine(
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+			}
+
+			try {
+				return ObjectEntryFolderSerDes.toDTO(content);
+			}
+			catch (Exception e) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response: " + content, e);
+
+				throw new Problem.ProblemException(Problem.toDTO(content));
+			}
+		}
+
+		public HttpInvoker.HttpResponse
+				postObjectEntryFolderByParentObjectEntryFolderCopyHttpResponse(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
+
+			if (_builder._locale != null) {
+				httpInvoker.header(
+					"Accept-Language", _builder._locale.toLanguageTag());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._headers.entrySet()) {
+
+				httpInvoker.header(entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._parameters.entrySet()) {
+
+				httpInvoker.parameter(entry.getKey(), entry.getValue());
+			}
+
+			httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
+
+			httpInvoker.path(
+				_builder._scheme + "://" + _builder._host + ":" +
+					_builder._port + _builder._contextPath +
+						"/o/headless-object/v1.0/object-entry-folders/{objectEntryFolderId}/by-parent-object-entry-folder-id/{parentObjectEntryFolderId}/copy");
+
+			httpInvoker.path("objectEntryFolderId", objectEntryFolderId);
+			httpInvoker.path(
+				"parentObjectEntryFolderId", parentObjectEntryFolderId);
+
+			if ((_builder._login != null) && (_builder._password != null)) {
+				httpInvoker.userNameAndPassword(
+					_builder._login + ":" + _builder._password);
+			}
+
+			return httpInvoker.invoke();
+		}
+
+		public ObjectEntryFolder
+				postObjectEntryFolderByParentObjectEntryFolderCopyReplace(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker.HttpResponse httpResponse =
+				postObjectEntryFolderByParentObjectEntryFolderCopyReplaceHttpResponse(
+					objectEntryFolderId, parentObjectEntryFolderId);
+
+			String content = httpResponse.getContent();
+
+			if ((httpResponse.getStatusCode() / 100) != 2) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response content: " + content);
+				_logger.log(
+					Level.WARNING,
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.log(
+					Level.WARNING,
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+
+				Problem.ProblemException problemException = null;
+
+				if (Objects.equals(
+						httpResponse.getContentType(), "application/json")) {
+
+					problemException = new Problem.ProblemException(
+						Problem.toDTO(content));
+				}
+				else {
+					_logger.log(
+						Level.WARNING,
+						"Unable to process content type: " +
+							httpResponse.getContentType());
+
+					Problem problem = new Problem();
+
+					problem.setStatus(
+						String.valueOf(httpResponse.getStatusCode()));
+
+					problemException = new Problem.ProblemException(problem);
+				}
+
+				throw problemException;
+			}
+			else {
+				_logger.fine("HTTP response content: " + content);
+				_logger.fine(
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.fine(
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+			}
+
+			try {
+				return ObjectEntryFolderSerDes.toDTO(content);
+			}
+			catch (Exception e) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response: " + content, e);
+
+				throw new Problem.ProblemException(Problem.toDTO(content));
+			}
+		}
+
+		public HttpInvoker.HttpResponse
+				postObjectEntryFolderByParentObjectEntryFolderCopyReplaceHttpResponse(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
+
+			if (_builder._locale != null) {
+				httpInvoker.header(
+					"Accept-Language", _builder._locale.toLanguageTag());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._headers.entrySet()) {
+
+				httpInvoker.header(entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._parameters.entrySet()) {
+
+				httpInvoker.parameter(entry.getKey(), entry.getValue());
+			}
+
+			httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
+
+			httpInvoker.path(
+				_builder._scheme + "://" + _builder._host + ":" +
+					_builder._port + _builder._contextPath +
+						"/o/headless-object/v1.0/object-entry-folders/{objectEntryFolderId}/by-parent-object-entry-folder-id/{parentObjectEntryFolderId}/copy-replace");
+
+			httpInvoker.path("objectEntryFolderId", objectEntryFolderId);
+			httpInvoker.path(
+				"parentObjectEntryFolderId", parentObjectEntryFolderId);
+
+			if ((_builder._login != null) && (_builder._password != null)) {
+				httpInvoker.userNameAndPassword(
+					_builder._login + ":" + _builder._password);
+			}
+
+			return httpInvoker.invoke();
+		}
+
+		public ObjectEntryFolder
+				postObjectEntryFolderByParentObjectEntryFolderMove(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker.HttpResponse httpResponse =
+				postObjectEntryFolderByParentObjectEntryFolderMoveHttpResponse(
+					objectEntryFolderId, parentObjectEntryFolderId);
+
+			String content = httpResponse.getContent();
+
+			if ((httpResponse.getStatusCode() / 100) != 2) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response content: " + content);
+				_logger.log(
+					Level.WARNING,
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.log(
+					Level.WARNING,
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+
+				Problem.ProblemException problemException = null;
+
+				if (Objects.equals(
+						httpResponse.getContentType(), "application/json")) {
+
+					problemException = new Problem.ProblemException(
+						Problem.toDTO(content));
+				}
+				else {
+					_logger.log(
+						Level.WARNING,
+						"Unable to process content type: " +
+							httpResponse.getContentType());
+
+					Problem problem = new Problem();
+
+					problem.setStatus(
+						String.valueOf(httpResponse.getStatusCode()));
+
+					problemException = new Problem.ProblemException(problem);
+				}
+
+				throw problemException;
+			}
+			else {
+				_logger.fine("HTTP response content: " + content);
+				_logger.fine(
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.fine(
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+			}
+
+			try {
+				return ObjectEntryFolderSerDes.toDTO(content);
+			}
+			catch (Exception e) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response: " + content, e);
+
+				throw new Problem.ProblemException(Problem.toDTO(content));
+			}
+		}
+
+		public HttpInvoker.HttpResponse
+				postObjectEntryFolderByParentObjectEntryFolderMoveHttpResponse(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
+
+			if (_builder._locale != null) {
+				httpInvoker.header(
+					"Accept-Language", _builder._locale.toLanguageTag());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._headers.entrySet()) {
+
+				httpInvoker.header(entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._parameters.entrySet()) {
+
+				httpInvoker.parameter(entry.getKey(), entry.getValue());
+			}
+
+			httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
+
+			httpInvoker.path(
+				_builder._scheme + "://" + _builder._host + ":" +
+					_builder._port + _builder._contextPath +
+						"/o/headless-object/v1.0/object-entry-folders/{objectEntryFolderId}/by-parent-object-entry-folder-id/{parentObjectEntryFolderId}/move");
+
+			httpInvoker.path("objectEntryFolderId", objectEntryFolderId);
+			httpInvoker.path(
+				"parentObjectEntryFolderId", parentObjectEntryFolderId);
+
+			if ((_builder._login != null) && (_builder._password != null)) {
+				httpInvoker.userNameAndPassword(
+					_builder._login + ":" + _builder._password);
+			}
+
+			return httpInvoker.invoke();
+		}
+
+		public ObjectEntryFolder
+				postObjectEntryFolderByParentObjectEntryFolderMoveReplace(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker.HttpResponse httpResponse =
+				postObjectEntryFolderByParentObjectEntryFolderMoveReplaceHttpResponse(
+					objectEntryFolderId, parentObjectEntryFolderId);
+
+			String content = httpResponse.getContent();
+
+			if ((httpResponse.getStatusCode() / 100) != 2) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response content: " + content);
+				_logger.log(
+					Level.WARNING,
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.log(
+					Level.WARNING,
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+
+				Problem.ProblemException problemException = null;
+
+				if (Objects.equals(
+						httpResponse.getContentType(), "application/json")) {
+
+					problemException = new Problem.ProblemException(
+						Problem.toDTO(content));
+				}
+				else {
+					_logger.log(
+						Level.WARNING,
+						"Unable to process content type: " +
+							httpResponse.getContentType());
+
+					Problem problem = new Problem();
+
+					problem.setStatus(
+						String.valueOf(httpResponse.getStatusCode()));
+
+					problemException = new Problem.ProblemException(problem);
+				}
+
+				throw problemException;
+			}
+			else {
+				_logger.fine("HTTP response content: " + content);
+				_logger.fine(
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.fine(
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+			}
+
+			try {
+				return ObjectEntryFolderSerDes.toDTO(content);
+			}
+			catch (Exception e) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response: " + content, e);
+
+				throw new Problem.ProblemException(Problem.toDTO(content));
+			}
+		}
+
+		public HttpInvoker.HttpResponse
+				postObjectEntryFolderByParentObjectEntryFolderMoveReplaceHttpResponse(
+					Long objectEntryFolderId, Long parentObjectEntryFolderId)
+			throws Exception {
+
+			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
+
+			if (_builder._locale != null) {
+				httpInvoker.header(
+					"Accept-Language", _builder._locale.toLanguageTag());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._headers.entrySet()) {
+
+				httpInvoker.header(entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._parameters.entrySet()) {
+
+				httpInvoker.parameter(entry.getKey(), entry.getValue());
+			}
+
+			httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
+
+			httpInvoker.path(
+				_builder._scheme + "://" + _builder._host + ":" +
+					_builder._port + _builder._contextPath +
+						"/o/headless-object/v1.0/object-entry-folders/{objectEntryFolderId}/by-parent-object-entry-folder-id/{parentObjectEntryFolderId}/move-replace");
+
+			httpInvoker.path("objectEntryFolderId", objectEntryFolderId);
+			httpInvoker.path(
+				"parentObjectEntryFolderId", parentObjectEntryFolderId);
+
+			if ((_builder._login != null) && (_builder._password != null)) {
+				httpInvoker.userNameAndPassword(
+					_builder._login + ":" + _builder._password);
+			}
+
+			return httpInvoker.invoke();
+		}
+
 		public ObjectEntryFolder postScopeScopeKeyObjectEntryFolder(
 				String scopeKey, ObjectEntryFolder objectEntryFolder)
 			throws Exception {
@@ -1375,6 +1895,342 @@ public interface ObjectEntryFolderResource {
 						"/o/headless-object/v1.0/scopes/{scopeKey}/object-entry-folders");
 
 			httpInvoker.path("scopeKey", scopeKey);
+
+			if ((_builder._login != null) && (_builder._password != null)) {
+				httpInvoker.userNameAndPassword(
+					_builder._login + ":" + _builder._password);
+			}
+
+			return httpInvoker.invoke();
+		}
+
+		public ObjectEntryFolder
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestore(
+					String scopeKey, String externalReferenceCode)
+			throws Exception {
+
+			HttpInvoker.HttpResponse httpResponse =
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestoreHttpResponse(
+					scopeKey, externalReferenceCode);
+
+			String content = httpResponse.getContent();
+
+			if ((httpResponse.getStatusCode() / 100) != 2) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response content: " + content);
+				_logger.log(
+					Level.WARNING,
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.log(
+					Level.WARNING,
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+
+				Problem.ProblemException problemException = null;
+
+				if (Objects.equals(
+						httpResponse.getContentType(), "application/json")) {
+
+					problemException = new Problem.ProblemException(
+						Problem.toDTO(content));
+				}
+				else {
+					_logger.log(
+						Level.WARNING,
+						"Unable to process content type: " +
+							httpResponse.getContentType());
+
+					Problem problem = new Problem();
+
+					problem.setStatus(
+						String.valueOf(httpResponse.getStatusCode()));
+
+					problemException = new Problem.ProblemException(problem);
+				}
+
+				throw problemException;
+			}
+			else {
+				_logger.fine("HTTP response content: " + content);
+				_logger.fine(
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.fine(
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+			}
+
+			try {
+				return ObjectEntryFolderSerDes.toDTO(content);
+			}
+			catch (Exception e) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response: " + content, e);
+
+				throw new Problem.ProblemException(Problem.toDTO(content));
+			}
+		}
+
+		public HttpInvoker.HttpResponse
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestoreHttpResponse(
+					String scopeKey, String externalReferenceCode)
+			throws Exception {
+
+			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
+
+			if (_builder._locale != null) {
+				httpInvoker.header(
+					"Accept-Language", _builder._locale.toLanguageTag());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._headers.entrySet()) {
+
+				httpInvoker.header(entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._parameters.entrySet()) {
+
+				httpInvoker.parameter(entry.getKey(), entry.getValue());
+			}
+
+			httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
+
+			httpInvoker.path(
+				_builder._scheme + "://" + _builder._host + ":" +
+					_builder._port + _builder._contextPath +
+						"/o/headless-object/v1.0/scopes/{scopeKey}/object-entry-folders/by-external-reference-code/{externalReferenceCode}/restore");
+
+			httpInvoker.path("scopeKey", scopeKey);
+			httpInvoker.path("externalReferenceCode", externalReferenceCode);
+
+			if ((_builder._login != null) && (_builder._password != null)) {
+				httpInvoker.userNameAndPassword(
+					_builder._login + ":" + _builder._password);
+			}
+
+			return httpInvoker.invoke();
+		}
+
+		public void
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe(
+					String scopeKey, String externalReferenceCode)
+			throws Exception {
+
+			HttpInvoker.HttpResponse httpResponse =
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribeHttpResponse(
+					scopeKey, externalReferenceCode);
+
+			String content = httpResponse.getContent();
+
+			if ((httpResponse.getStatusCode() / 100) != 2) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response content: " + content);
+				_logger.log(
+					Level.WARNING,
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.log(
+					Level.WARNING,
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+
+				Problem.ProblemException problemException = null;
+
+				if (Objects.equals(
+						httpResponse.getContentType(), "application/json")) {
+
+					problemException = new Problem.ProblemException(
+						Problem.toDTO(content));
+				}
+				else {
+					_logger.log(
+						Level.WARNING,
+						"Unable to process content type: " +
+							httpResponse.getContentType());
+
+					Problem problem = new Problem();
+
+					problem.setStatus(
+						String.valueOf(httpResponse.getStatusCode()));
+
+					problemException = new Problem.ProblemException(problem);
+				}
+
+				throw problemException;
+			}
+			else {
+				_logger.fine("HTTP response content: " + content);
+				_logger.fine(
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.fine(
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+			}
+
+			try {
+				return;
+			}
+			catch (Exception e) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response: " + content, e);
+
+				throw new Problem.ProblemException(Problem.toDTO(content));
+			}
+		}
+
+		public HttpInvoker.HttpResponse
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribeHttpResponse(
+					String scopeKey, String externalReferenceCode)
+			throws Exception {
+
+			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
+
+			if (_builder._locale != null) {
+				httpInvoker.header(
+					"Accept-Language", _builder._locale.toLanguageTag());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._headers.entrySet()) {
+
+				httpInvoker.header(entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._parameters.entrySet()) {
+
+				httpInvoker.parameter(entry.getKey(), entry.getValue());
+			}
+
+			httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
+
+			httpInvoker.path(
+				_builder._scheme + "://" + _builder._host + ":" +
+					_builder._port + _builder._contextPath +
+						"/o/headless-object/v1.0/scopes/{scopeKey}/object-entry-folders/by-external-reference-code/{externalReferenceCode}/subscribe");
+
+			httpInvoker.path("scopeKey", scopeKey);
+			httpInvoker.path("externalReferenceCode", externalReferenceCode);
+
+			if ((_builder._login != null) && (_builder._password != null)) {
+				httpInvoker.userNameAndPassword(
+					_builder._login + ":" + _builder._password);
+			}
+
+			return httpInvoker.invoke();
+		}
+
+		public void
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe(
+					String scopeKey, String externalReferenceCode)
+			throws Exception {
+
+			HttpInvoker.HttpResponse httpResponse =
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribeHttpResponse(
+					scopeKey, externalReferenceCode);
+
+			String content = httpResponse.getContent();
+
+			if ((httpResponse.getStatusCode() / 100) != 2) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response content: " + content);
+				_logger.log(
+					Level.WARNING,
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.log(
+					Level.WARNING,
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+
+				Problem.ProblemException problemException = null;
+
+				if (Objects.equals(
+						httpResponse.getContentType(), "application/json")) {
+
+					problemException = new Problem.ProblemException(
+						Problem.toDTO(content));
+				}
+				else {
+					_logger.log(
+						Level.WARNING,
+						"Unable to process content type: " +
+							httpResponse.getContentType());
+
+					Problem problem = new Problem();
+
+					problem.setStatus(
+						String.valueOf(httpResponse.getStatusCode()));
+
+					problemException = new Problem.ProblemException(problem);
+				}
+
+				throw problemException;
+			}
+			else {
+				_logger.fine("HTTP response content: " + content);
+				_logger.fine(
+					"HTTP response message: " + httpResponse.getMessage());
+				_logger.fine(
+					"HTTP response status code: " +
+						httpResponse.getStatusCode());
+			}
+
+			try {
+				return;
+			}
+			catch (Exception e) {
+				_logger.log(
+					Level.WARNING,
+					"Unable to process HTTP response: " + content, e);
+
+				throw new Problem.ProblemException(Problem.toDTO(content));
+			}
+		}
+
+		public HttpInvoker.HttpResponse
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribeHttpResponse(
+					String scopeKey, String externalReferenceCode)
+			throws Exception {
+
+			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
+
+			if (_builder._locale != null) {
+				httpInvoker.header(
+					"Accept-Language", _builder._locale.toLanguageTag());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._headers.entrySet()) {
+
+				httpInvoker.header(entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry :
+					_builder._parameters.entrySet()) {
+
+				httpInvoker.parameter(entry.getKey(), entry.getValue());
+			}
+
+			httpInvoker.httpMethod(HttpInvoker.HttpMethod.POST);
+
+			httpInvoker.path(
+				_builder._scheme + "://" + _builder._host + ":" +
+					_builder._port + _builder._contextPath +
+						"/o/headless-object/v1.0/scopes/{scopeKey}/object-entry-folders/by-external-reference-code/{externalReferenceCode}/unsubscribe");
+
+			httpInvoker.path("scopeKey", scopeKey);
+			httpInvoker.path("externalReferenceCode", externalReferenceCode);
 
 			if ((_builder._login != null) && (_builder._password != null)) {
 				httpInvoker.userNameAndPassword(

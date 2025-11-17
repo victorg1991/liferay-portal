@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -53,6 +54,10 @@ public class NotificationRecipientSettingUtil {
 
 		NotificationRecipient notificationRecipient =
 			notificationQueueEntry.getNotificationRecipient();
+
+		if (notificationRecipient == null) {
+			return Collections.emptyMap();
+		}
 
 		return toMap(notificationRecipient.getNotificationRecipientSettings());
 	}
@@ -100,26 +105,42 @@ public class NotificationRecipientSettingUtil {
 
 			String name = notificationRecipientSetting.getName();
 
-			if (!StringUtil.equals(
+			if (StringUtil.equals(
 					recipientTypes.get(
 						NotificationRecipientSettingConstants.
 							getRecipientTypeName(name)),
 					NotificationRecipientConstants.TYPE_ROLE)) {
 
-				map.put(name, value);
+				List<Map<String, String>> roles =
+					(List<Map<String, String>>)map.computeIfAbsent(
+						name, key -> new ArrayList<>());
 
-				continue;
+				roles.add(
+					HashMapBuilder.put(
+						NotificationRecipientSettingConstants.NAME_ROLE_NAME,
+						String.valueOf(value)
+					).build());
 			}
+			else if (StringUtil.equals(
+						recipientTypes.get(
+							NotificationRecipientSettingConstants.
+								getRecipientTypeName(name)),
+						NotificationRecipientConstants.TYPE_USER_GROUP)) {
 
-			List<Map<String, String>> roles =
-				(List<Map<String, String>>)map.computeIfAbsent(
-					name, key -> new ArrayList<>());
+				List<Map<String, String>> userGroups =
+					(List<Map<String, String>>)map.computeIfAbsent(
+						name, key -> new ArrayList<>());
 
-			roles.add(
-				HashMapBuilder.put(
-					NotificationRecipientSettingConstants.NAME_ROLE_NAME,
-					String.valueOf(value)
-				).build());
+				userGroups.add(
+					HashMapBuilder.put(
+						NotificationRecipientSettingConstants.
+							NAME_USER_GROUP_NAME,
+						String.valueOf(value)
+					).build());
+			}
+			else {
+				map.put(name, value);
+			}
 		}
 
 		return map;

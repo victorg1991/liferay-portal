@@ -20,7 +20,6 @@ const test = mergeTests(
 	cmsPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-11232': {enabled: true},
 		'LPD-17564': {enabled: true},
 	}),
 	loginTest()
@@ -35,19 +34,19 @@ test(
 				objectFolderExternalReferenceCode: 'L_CMS_FILE_TYPES',
 				status: {code: 2},
 			})) as ObjectDefinition;
-		const stucctureName = objectDefinition.name;
+		const structureName = objectDefinition.name;
 
 		await structuresPage.goto();
 
 		await structuresPage.execItemAction({
 			action: 'Delete',
-			filter: stucctureName,
+			filter: structureName,
 		});
-		await waitForAlert(page, `${stucctureName} was deleted successfully`, {
+		await waitForAlert(page, `${structureName} was deleted successfully`, {
 			type: 'success',
 		});
 
-		await expect(structuresPage.getItem(stucctureName)).toBeHidden();
+		await expect(structuresPage.getItem(structureName)).toBeHidden();
 	}
 );
 
@@ -60,25 +59,25 @@ test(
 				objectFolderExternalReferenceCode: 'L_CMS_FILE_TYPES',
 				status: {code: 0},
 			})) as ObjectDefinition;
-		const stucctureName = objectDefinition.name;
+		const structureName = objectDefinition.name;
 
 		await structuresPage.goto();
 
 		await structuresPage.execItemAction({
 			action: 'Delete',
-			filter: stucctureName,
+			filter: structureName,
 		});
 
 		await page
-			.getByPlaceholder('Confirm Structure Name')
-			.fill(stucctureName);
+			.getByPlaceholder('Confirm Content Structure Name')
+			.fill(structureName);
 		await page.getByRole('button', {name: 'Delete'}).click();
 
-		await waitForAlert(page, `${stucctureName} was deleted successfully`, {
+		await waitForAlert(page, `${structureName} was deleted successfully`, {
 			type: 'success',
 		});
 
-		await expect(structuresPage.getItem(stucctureName)).toBeHidden();
+		await expect(structuresPage.getItem(structureName)).toBeHidden();
 	}
 );
 
@@ -156,5 +155,86 @@ test(
 		await expect(
 			page.getByRole('heading', {name: 'Deletion Not Allowed'})
 		).toBeVisible();
+	}
+);
+
+test(
+	'Some actions are only allowed to non-system structures',
+	{tag: '@LPD-51405'},
+	async ({apiHelpers, page, structuresPage}) => {
+		await structuresPage.goto();
+
+		await page
+			.getByRole('row', {name: 'Basic Document'})
+			.locator('.dropdown-toggle')
+			.click();
+
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Edit'})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'View Usages'})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Export as JSON'})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {
+				exact: true,
+				name: 'Import and Override',
+			})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Permissions'})
+		).toBeVisible();
+
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Delete'})
+		).toBeHidden();
+
+		const objectDefinition =
+			(await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				objectFolderExternalReferenceCode: 'L_CMS_FILE_TYPES',
+				status: {code: 0},
+			})) as ObjectDefinition;
+
+		await structuresPage.goto();
+
+		await page
+			.getByRole('row', {name: objectDefinition.name})
+			.locator('.dropdown-toggle')
+			.click();
+
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Edit'})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'View Usages'})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Export as JSON'})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {
+				exact: true,
+				name: 'Import and Override',
+			})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Permissions'})
+		).toBeVisible();
+		expect(
+			page.getByRole('menuitem', {exact: true, name: 'Delete'})
+		).toBeVisible();
+	}
+);
+
+test(
+	'There is no checkbox to select structures',
+	{tag: '@LPD-69431'},
+	async ({page, structuresPage}) => {
+		await structuresPage.goto();
+
+		await expect(page.getByRole('checkbox')).toHaveCount(0);
 	}
 );

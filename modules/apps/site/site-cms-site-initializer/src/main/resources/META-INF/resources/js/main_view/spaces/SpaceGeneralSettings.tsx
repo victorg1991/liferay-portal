@@ -3,14 +3,12 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
+import ClayButton from '@clayui/button';
 import ClayForm, {ClayCheckbox, ClayInput} from '@clayui/form';
-import ClayPanel from '@clayui/panel';
-import classNames from 'classnames';
-import {FormikHelpers, FormikTouched, useFormik} from 'formik';
+import {useFormik} from 'formik';
 import {openToast, useId} from 'frontend-js-components-web';
-import {navigate, sub} from 'frontend-js-web';
-import React from 'react';
+import {navigate} from 'frontend-js-web';
+import React, {useState} from 'react';
 
 import {FieldText} from '../../common/components/forms';
 import {
@@ -24,27 +22,24 @@ import {
 	validate,
 } from '../../common/components/forms/validations';
 import SpaceService from '../../common/services/SpaceService';
-import {LogoColor, MimeTypeLimit, Space} from '../../common/types/Space';
+import {LogoColor, Space} from '../../common/types/Space';
 import focusInvalidElement from '../../common/utils/focusInvalidElement';
-import getRandomId from '../../structure_builder/utils/getRandomId';
 import SpaceBaseFields from './SpaceBaseFields';
-
-type Touched = FormikTouched<Record<string, any>>;
-
-const getInitialMimeTypeLimit = () =>
-	({
-		id: getRandomId(),
-		maximumSize: '',
-		mimeType: '',
-	}) as MimeTypeLimit;
+import SpacePanel from './SpacePanel';
 
 export default function SpaceGeneralSettings({
+	backURL,
 	groupId,
+	setSpace,
 	space,
 }: {
+	backURL?: string;
 	groupId: string;
+	setSpace?: React.Dispatch<React.SetStateAction<any>>;
 	space: Space;
 }) {
+	const [initialERC, setInitialERC] = useState(space.externalReferenceCode);
+
 	const id = useId();
 
 	const {
@@ -52,43 +47,42 @@ export default function SpaceGeneralSettings({
 		handleBlur,
 		handleChange,
 		handleSubmit,
-		setErrors,
 		setFieldValue,
-		setTouched,
 		submitForm,
 		touched,
 		values,
 	} = useFormik({
 		initialValues: {
 			description: space.description,
-			erc: space.externalReferenceCode,
+			erc: initialERC,
 			logoColor: space.settings?.logoColor as LogoColor,
-			mimeTypeLimits: space.settings?.mimeTypeLimits.length
-				? space.settings?.mimeTypeLimits
-				: [getInitialMimeTypeLimit()],
 			name: space.name,
 			sharingEnabled: space.settings?.sharingEnabled ?? false,
+			trashEnabled: space.settings?.trashEnabled ?? true,
+			trashEntriesMaxAge: String(
+				space.settings?.trashEntriesMaxAge ?? ''
+			),
 		},
 		onSubmit: async (values) => {
 			const {
 				description,
 				erc,
 				logoColor = 'outline-0',
-				mimeTypeLimits,
 				name,
 				sharingEnabled,
+				trashEnabled,
+				trashEntriesMaxAge,
 			} = values;
 
-			const {data, error} = await SpaceService.updateSpace({
+			const {data, error} = await SpaceService.updateSpace(initialERC, {
 				description,
-				erc,
+				externalReferenceCode: erc,
 				name,
 				settings: {
 					logoColor,
-					mimeTypeLimits: mimeTypeLimits.map(
-						({id: _id, ...rest}) => rest
-					),
 					sharingEnabled,
+					trashEnabled,
+					trashEntriesMaxAge: Number(trashEntriesMaxAge),
 				},
 			});
 
@@ -108,6 +102,13 @@ export default function SpaceGeneralSettings({
 					),
 					type: 'success',
 				});
+
+				const updatedSpace = data as Space;
+
+				if (setSpace) {
+					setSpace(updatedSpace);
+					setInitialERC(updatedSpace.externalReferenceCode);
+				}
 			}
 		},
 		validate: (values): Errors =>
@@ -121,6 +122,9 @@ export default function SpaceGeneralSettings({
 						invalidCharacters(['*']),
 						maxLength(150),
 					],
+					trashEntriesMaxAge: values.trashEnabled
+						? [required, validNumber]
+						: [],
 				},
 				values,
 				errors
@@ -138,11 +142,11 @@ export default function SpaceGeneralSettings({
 	};
 
 	const onCancel = () => {
-		const url = new URL(window.location.href);
-		const redirect = url.searchParams.get('redirect');
-
-		if (redirect) {
-			navigate(redirect);
+		if (backURL) {
+			navigate(backURL);
+		}
+		else {
+			window.history.back();
 		}
 	};
 
@@ -151,7 +155,7 @@ export default function SpaceGeneralSettings({
 			className="container-fluid container-fluid-max-md p-0 p-md-4"
 			onSubmit={handleSubmit}
 		>
-			<Panel title={Liferay.Language.get('general')}>
+			<SpacePanel title={Liferay.Language.get('general')}>
 				<SpaceBaseFields
 					errors={errors}
 					onBlurName={handleBlur}
@@ -192,34 +196,68 @@ export default function SpaceGeneralSettings({
 						/>
 					</>
 				</SpaceBaseFields>
-			</Panel>
+			</SpacePanel>
 
-			<Panel title={Liferay.Language.get('sharing')}>
-				<ClayForm.Group>
-					<ClayCheckbox
-						checked={values.sharingEnabled}
-						label={Liferay.Language.get(
+			<SpacePanel title={Liferay.Language.get('sharing')}>
+				<>
+					<p className="mb-4">
+						{Liferay.Language.get(
 							'enable-this-option-to-allow-users-to-share-items-with-other-users'
 						)}
-						onChange={({target: {checked}}) =>
-							setFieldValue('sharingEnabled', checked)
-						}
-					/>
-				</ClayForm.Group>
-			</Panel>
+					</p>
+					<ClayForm.Group>
+						<ClayCheckbox
+							checked={values.sharingEnabled}
+							label={Liferay.Language.get('enable-sharing')}
+							onChange={({target: {checked}}) =>
+								setFieldValue('sharingEnabled', checked)
+							}
+						/>
+					</ClayForm.Group>
+				</>
+			</SpacePanel>
 
-			<Panel title={Liferay.Language.get('mime-type-limit')}>
-				<p>{Liferay.Language.get('file-size-mime-type-description')}</p>
+			<SpacePanel title={Liferay.Language.get('recycle-bin')}>
+				<>
+					<p className="mb-4">
+						{Liferay.Language.get(
+							'enable-this-option-to-allow-users-to-move-assets-into-recycle-bin'
+						)}
+					</p>
 
-				<MimeTypeLimitFields
-					errors={errors}
-					mimeTypeLimits={values.mimeTypeLimits}
-					setErrors={setErrors}
-					setFieldValue={setFieldValue}
-					setTouched={setTouched}
-					touched={touched}
-				/>
-			</Panel>
+					<ClayForm.Group>
+						<ClayCheckbox
+							checked={values.trashEnabled}
+							label={Liferay.Language.get('enable-recycle-bin')}
+							onChange={({target: {checked}}) =>
+								setFieldValue('trashEnabled', checked)
+							}
+						/>
+					</ClayForm.Group>
+
+					{values.trashEnabled && (
+						<FieldText
+							errorMessage={
+								touched.trashEntriesMaxAge
+									? (errors?.trashEntriesMaxAge as string)
+									: undefined
+							}
+							formGroupProps={{className: 'col-12 col-sm-6 p-0'}}
+							helpIcon={Liferay.Language.get(
+								'trash-entries-max-age-in-days-help'
+							)}
+							label={Liferay.Language.get(
+								'trash-entries-max-age'
+							)}
+							name="trashEntriesMaxAge"
+							onBlur={handleBlur}
+							onChange={handleChange}
+							type="number"
+							value={String(values.trashEntriesMaxAge ?? '')}
+						/>
+					)}
+				</>
+			</SpacePanel>
 
 			<ClayButton.Group className="mt-2" spaced>
 				<ClayButton onClick={onSave}>
@@ -231,190 +269,5 @@ export default function SpaceGeneralSettings({
 				</ClayButton>
 			</ClayButton.Group>
 		</form>
-	);
-}
-
-function Panel({children, title}: {children: React.ReactNode; title: string}) {
-	return (
-		<ClayPanel
-			aria-label={title}
-			className="mb-4"
-			collapsable
-			defaultExpanded={true}
-			displayTitle={
-				<ClayPanel.Title>
-					<h2 className="mb-0 py-2 text-6 text-dark">{title}</h2>
-				</ClayPanel.Title>
-			}
-			displayType="secondary"
-			role="group"
-			showCollapseIcon
-		>
-			<div className="pt-4 px-4">{children}</div>
-		</ClayPanel>
-	);
-}
-
-function MimeTypeLimitFields({
-	errors,
-	mimeTypeLimits,
-	setErrors,
-	setFieldValue,
-	setTouched,
-	touched,
-}: {
-	errors: Errors;
-	mimeTypeLimits: MimeTypeLimit[];
-	setErrors: (errors: Errors) => void;
-	setFieldValue: FormikHelpers<Record<string, any>>['setFieldValue'];
-	setTouched: (touched: Touched) => void;
-	touched: Touched;
-}) {
-	const addError = (fieldName: string, errorMessage: string) => {
-		setErrors({...errors, [fieldName]: errorMessage});
-	};
-
-	const addRow = () => {
-		setFieldValue('mimeTypeLimits', [
-			...mimeTypeLimits,
-			getInitialMimeTypeLimit(),
-		]);
-	};
-
-	const removeError = (fieldName: string) => {
-		const nextErrors = {...errors};
-
-		delete nextErrors[fieldName];
-
-		setErrors(nextErrors);
-	};
-
-	const removeRow = (
-		{currentTarget}: {currentTarget: HTMLElement},
-		fieldName: string
-	) => {
-		removeError(fieldName);
-
-		setFieldValue(
-			'mimeTypeLimits',
-			mimeTypeLimits.filter(({id}) => currentTarget.id !== `${id}button`),
-			false
-		);
-	};
-
-	return (
-		<>
-			{mimeTypeLimits.map(({id, maximumSize, mimeType}, index) => {
-				const fieldName = `${id}maximumSize`;
-
-				return (
-					<div
-						className={classNames('position-relative pt-3', {
-							'mb-0': index === mimeTypeLimits.length - 1,
-						})}
-						key={id}
-					>
-						<div className="row">
-							<FieldText
-								formGroupProps={{
-									className: 'col-12 col-sm-6',
-								}}
-								helpIcon={Liferay.Language.get(
-									'mime-type-help-message'
-								)}
-								id={`${id}text`}
-								label={Liferay.Language.get('mime-type')}
-								name={`${id}mimeType`}
-								onChange={({target: {value}}) => {
-									setFieldValue(
-										`mimeTypeLimits[${index}].mimeType`,
-										value
-									);
-								}}
-								value={mimeType}
-							/>
-
-							<FieldText
-								errorMessage={
-									touched[fieldName]
-										? (errors?.[fieldName] as string)
-										: undefined
-								}
-								formGroupProps={{
-									className: 'col-12 col-sm-6',
-								}}
-								helpIcon={Liferay.Language.get(
-									'maximum-file-size-help-message'
-								)}
-								label={Liferay.Language.get(
-									'maximum-file-size'
-								)}
-								name={fieldName}
-								onBlur={() =>
-									setTouched({
-										...touched,
-										[fieldName]: true,
-									})
-								}
-								onChange={({target}) => {
-									const errorMessage = validNumber(
-										target.value
-									);
-
-									if (errorMessage) {
-										addError(fieldName, errorMessage);
-									}
-									else {
-										removeError(fieldName);
-									}
-
-									setFieldValue(
-										`mimeTypeLimits[${index}].maximumSize`,
-										target.value,
-										false
-									);
-								}}
-								type="number"
-								value={maximumSize.toString()}
-							/>
-						</div>
-
-						<div
-							className="position-absolute"
-							style={{right: 0, top: 0}}
-						>
-							{mimeTypeLimits.length > 1 ? (
-								<ClayButtonWithIcon
-									aria-label={sub(
-										Liferay.Language.get('remove-x'),
-										Liferay.Language.get('mime-type-limit')
-									)}
-									className="mr-1 rounded-circle"
-									id={`${id}button`}
-									onClick={(event) =>
-										removeRow(event, fieldName)
-									}
-									size="xs"
-									symbol="hr"
-									title={Liferay.Language.get('remove')}
-								/>
-							) : null}
-
-							<ClayButtonWithIcon
-								aria-label={sub(
-									Liferay.Language.get('add-x'),
-									Liferay.Language.get('mime-type-limit')
-								)}
-								className="rounded-circle"
-								onClick={addRow}
-								size="xs"
-								symbol="plus"
-								title={Liferay.Language.get('add')}
-							/>
-						</div>
-					</div>
-				);
-			})}
-		</>
 	);
 }

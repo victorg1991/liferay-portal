@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
+import ClayButton from '@clayui/button';
 import ClayModal, {useModal} from '@clayui/modal';
 
+import ButtonWithIcon from '../../../../components/ButtonWithIcon';
 import i18n from '../../../../i18n';
 
 import './DeactivateKeysModal.scss';
@@ -42,7 +43,7 @@ const DeactivateKeysModal: React.FC<DeactivateKeysModalProps> = ({
 							{i18n.translate('confirm-deactivation-terms')}
 						</h2>
 
-						<ClayButtonWithIcon
+						<ButtonWithIcon
 							aria-labelledby="close icon"
 							className="align-self-start"
 							displayType="unstyled"
@@ -59,7 +60,7 @@ const DeactivateKeysModal: React.FC<DeactivateKeysModalProps> = ({
 
 					<p className="mb-6 mt-5">
 						{i18n.translate(
-							'a-request-will-be-sent-to-deactivate-the-selected-activation-key-from-now-on-it-will-be-hidden-and-no-longer-be-visible'
+							'a-request-will-be-sent-to-deactivate-the-selected-activation-key-from-now-on-it-will-be-hidden-and-no-longer-visible'
 						)}
 					</p>
 				</div>
@@ -92,7 +93,7 @@ const DeactivateKeysModal: React.FC<DeactivateKeysModalProps> = ({
 
 					<p className="m-0 text-danger text-paragraph">
 						{i18n.translate(
-							'there-was-an-unexpected-error-while-attempting-to-deactivate-key-please-try-again-in-a-few-moments'
+							'there-was-an-unexpected-error-while-attempting-to-deactivate-the-key-please-try-again-in-a-few-moments'
 						)}
 					</p>
 				</div>

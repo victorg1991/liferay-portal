@@ -77,6 +77,30 @@ public class WidgetPageSpecificationSerDes {
 			sb.append("]");
 		}
 
+		if (widgetPageSpecification.getCustomFields() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"customFields\": ");
+
+			sb.append("[");
+
+			for (int i = 0;
+				 i < widgetPageSpecification.getCustomFields().length; i++) {
+
+				sb.append(widgetPageSpecification.getCustomFields()[i]);
+
+				if ((i + 1) <
+						widgetPageSpecification.getCustomFields().length) {
+
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (widgetPageSpecification.getExternalReferenceCode() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -131,9 +155,7 @@ public class WidgetPageSpecificationSerDes {
 			sb.append("\"status\": ");
 
 			sb.append("\"");
-
 			sb.append(widgetPageSpecification.getStatus());
-
 			sb.append("\"");
 		}
 
@@ -145,9 +167,7 @@ public class WidgetPageSpecificationSerDes {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(widgetPageSpecification.getType());
-
 			sb.append("\"");
 		}
 
@@ -180,6 +200,15 @@ public class WidgetPageSpecificationSerDes {
 				"widgetPageSections",
 				String.valueOf(
 					widgetPageSpecification.getWidgetPageSections()));
+		}
+
+		if (widgetPageSpecification.getCustomFields() == null) {
+			map.put("customFields", null);
+		}
+		else {
+			map.put(
+				"customFields",
+				String.valueOf(widgetPageSpecification.getCustomFields()));
 		}
 
 		if (widgetPageSpecification.getExternalReferenceCode() == null) {
@@ -251,6 +280,9 @@ public class WidgetPageSpecificationSerDes {
 			if (Objects.equals(jsonParserFieldName, "widgetPageSections")) {
 				return false;
 			}
+			else if (Objects.equals(jsonParserFieldName, "customFields")) {
+				return false;
+			}
 			else if (Objects.equals(
 						jsonParserFieldName, "externalReferenceCode")) {
 
@@ -296,6 +328,26 @@ public class WidgetPageSpecificationSerDes {
 
 					widgetPageSpecification.setWidgetPageSections(
 						widgetPageSectionsArray);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "customFields")) {
+				if (jsonParserFieldValue != null) {
+					Object[] jsonParserFieldValues =
+						(Object[])jsonParserFieldValue;
+
+					com.liferay.headless.admin.site.client.custom.field.
+						CustomField[] customFieldsArray = new
+						com.liferay.headless.admin.site.client.custom.field.
+							CustomField[jsonParserFieldValues.length];
+
+					for (int i = 0; i < customFieldsArray.length; i++) {
+						customFieldsArray[i] =
+							com.liferay.headless.admin.site.client.custom.field.
+								CustomField.toDTO(
+									(String)jsonParserFieldValues[i]);
+					}
+
+					widgetPageSpecification.setCustomFields(customFieldsArray);
 				}
 			}
 			else if (Objects.equals(

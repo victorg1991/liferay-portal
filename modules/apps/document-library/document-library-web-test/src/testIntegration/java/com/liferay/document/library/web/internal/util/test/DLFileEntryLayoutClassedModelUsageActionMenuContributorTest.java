@@ -34,7 +34,6 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -89,12 +88,10 @@ public class DLFileEntryLayoutClassedModelUsageActionMenuContributorTest {
 		LayoutClassedModelUsage layoutClassedModelUsage =
 			_addLayoutClassedModelUsage(_fileEntry);
 
-		HttpServletRequest mockHttpServletRequest = _getHttpServletRequest();
-
 		List<DropdownItem> dropdownItems =
 			_layoutClassedModelUsageActionMenuContributor.
 				getLayoutClassedModelUsageActionDropdownItems(
-					mockHttpServletRequest, layoutClassedModelUsage);
+					_getHttpServletRequest(), layoutClassedModelUsage);
 
 		DropdownItem dropdownItem = dropdownItems.get(0);
 
@@ -106,9 +103,7 @@ public class DLFileEntryLayoutClassedModelUsageActionMenuContributorTest {
 			layoutClassedModelUsage.getPlid());
 
 		Assert.assertTrue(
-			StringUtil.contains(
-				href, layout.getFriendlyURL(LocaleUtil.getDefault()),
-				StringPool.BLANK));
+			href.contains(layout.getFriendlyURL(LocaleUtil.getDefault())));
 
 		Assert.assertEquals("View in Page", dropdownItem.get("label"));
 	}
@@ -138,18 +133,16 @@ public class DLFileEntryLayoutClassedModelUsageActionMenuContributorTest {
 	}
 
 	private HttpServletRequest _getHttpServletRequest() {
-		HttpServletRequest mockHttpServletRequest =
-			new MockHttpServletRequest();
+		HttpServletRequest httpServletRequest = new MockHttpServletRequest();
 
 		ThemeDisplay themeDisplay = new ThemeDisplay();
 
 		themeDisplay.setLocale(LocaleUtil.getDefault());
 		themeDisplay.setSiteGroupId(_group.getGroupId());
 
-		mockHttpServletRequest.setAttribute(
-			WebKeys.THEME_DISPLAY, themeDisplay);
+		httpServletRequest.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
 
-		return mockHttpServletRequest;
+		return httpServletRequest;
 	}
 
 	private Company _company;

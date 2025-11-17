@@ -15,25 +15,25 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServ
 import com.liferay.layout.page.template.service.base.LayoutPageTemplateCollectionLocalServiceBaseImpl;
 import com.liferay.layout.validator.LayoutValidator;
 import com.liferay.petra.string.CharPool;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.dao.orm.custom.sql.CustomSQL;
 import com.liferay.portal.kernel.dao.orm.WildcardMode;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.ModelHintsUtil;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Indexable;
+import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
-import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.UniqueUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.Date;
@@ -53,6 +53,7 @@ import org.osgi.service.component.annotations.Reference;
 public class LayoutPageTemplateCollectionLocalServiceImpl
 	extends LayoutPageTemplateCollectionLocalServiceBaseImpl {
 
+	@Indexable(type = IndexableType.REINDEX)
 	@Override
 	public LayoutPageTemplateCollection addLayoutPageTemplateCollection(
 			String externalReferenceCode, long userId, long groupId,
@@ -197,8 +198,12 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 		return targetLayoutPageTemplateCollection;
 	}
 
+	@Indexable(type = IndexableType.DELETE)
 	@Override
-	@SystemEvent(type = SystemEventConstants.TYPE_DELETE)
+	@SystemEvent(
+		action = SystemEventConstants.ACTION_SKIP,
+		type = SystemEventConstants.TYPE_DELETE
+	)
 	public LayoutPageTemplateCollection deleteLayoutPageTemplateCollection(
 			LayoutPageTemplateCollection layoutPageTemplateCollection)
 		throws PortalException {
@@ -253,8 +258,10 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 			long layoutPageTemplateCollectionId)
 		throws PortalException {
 
-		return deleteLayoutPageTemplateCollection(
-			getLayoutPageTemplateCollection(layoutPageTemplateCollectionId));
+		return layoutPageTemplateCollectionLocalService.
+			deleteLayoutPageTemplateCollection(
+				getLayoutPageTemplateCollection(
+					layoutPageTemplateCollectionId));
 	}
 
 	@Override
@@ -262,9 +269,10 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 			String externalReferenceCode, long groupId)
 		throws PortalException {
 
-		return deleteLayoutPageTemplateCollection(
-			getLayoutPageTemplateCollectionByExternalReferenceCode(
-				externalReferenceCode, groupId));
+		return layoutPageTemplateCollectionLocalService.
+			deleteLayoutPageTemplateCollection(
+				getLayoutPageTemplateCollectionByExternalReferenceCode(
+					externalReferenceCode, groupId));
 	}
 
 	@Override
@@ -369,35 +377,25 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 	@Override
 	public String getUniqueLayoutPageTemplateCollectionName(
-		long groupId, long layoutPageTemplateCollectionId, String sourceName,
-		int type) {
+			long groupId, long layoutPageTemplateCollectionId,
+			String sourceName, int type)
+		throws PortalException {
 
-		LayoutPageTemplateCollection layoutPageTemplateCollection =
-			layoutPageTemplateCollectionPersistence.fetchByG_P_N_T(
-				groupId, layoutPageTemplateCollectionId, sourceName, type);
+		return UniqueUtil.getUniqueValue(
+			"copy",
+			uniqueValue -> {
+				LayoutPageTemplateCollection layoutPageTemplateCollection =
+					layoutPageTemplateCollectionPersistence.fetchByG_P_N_T(
+						groupId, layoutPageTemplateCollectionId, uniqueValue,
+						type);
 
-		if (layoutPageTemplateCollection == null) {
-			return sourceName;
-		}
+				if (layoutPageTemplateCollection == null) {
+					return true;
+				}
 
-		String copy = _language.get(LocaleUtil.getSiteDefault(), "copy");
-
-		String name = StringUtil.appendParentheticalSuffix(sourceName, copy);
-
-		for (int i = 1;; i++) {
-			layoutPageTemplateCollection =
-				layoutPageTemplateCollectionPersistence.fetchByG_P_N_T(
-					groupId, layoutPageTemplateCollectionId, name, type);
-
-			if (layoutPageTemplateCollection == null) {
-				break;
-			}
-
-			name = StringUtil.appendParentheticalSuffix(
-				sourceName, copy + StringPool.SPACE + i);
-		}
-
-		return name;
+				return false;
+			},
+			sourceName);
 	}
 
 	@Override
@@ -426,6 +424,7 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 		return updateLayoutPageTemplateCollection(layoutPageTemplateCollection);
 	}
 
+	@Indexable(type = IndexableType.REINDEX)
 	@Override
 	public LayoutPageTemplateCollection updateLayoutPageTemplateCollection(
 			long layoutPageTemplateCollectionId, String name)
@@ -453,6 +452,7 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 			layoutPageTemplateCollection);
 	}
 
+	@Indexable(type = IndexableType.REINDEX)
 	@Override
 	public LayoutPageTemplateCollection updateLayoutPageTemplateCollection(
 			long layoutPageTemplateCollectionId, String name,
@@ -576,9 +576,6 @@ public class LayoutPageTemplateCollectionLocalServiceImpl
 
 	@Reference
 	private GroupLocalService _groupLocalService;
-
-	@Reference
-	private Language _language;
 
 	@Reference
 	private LayoutPageTemplateEntryLocalService

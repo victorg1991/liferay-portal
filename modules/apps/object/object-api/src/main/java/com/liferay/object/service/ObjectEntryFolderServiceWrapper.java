@@ -42,6 +42,18 @@ public class ObjectEntryFolderServiceWrapper
 	}
 
 	@Override
+	public com.liferay.object.model.ObjectEntryFolder copyObjectEntryFolder(
+			long objectEntryFolderId, long parentObjectEntryFolderId,
+			boolean replace,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryFolderService.copyObjectEntryFolder(
+			objectEntryFolderId, parentObjectEntryFolderId, replace,
+			serviceContext);
+	}
+
+	@Override
 	public com.liferay.object.model.ObjectEntryFolder deleteObjectEntryFolder(
 			long objectEntryFolderId)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -121,6 +133,17 @@ public class ObjectEntryFolderServiceWrapper
 			groupId, companyId, parentObjectEntryFolderId);
 	}
 
+	@Override
+	public com.liferay.object.model.ObjectEntryFolder
+			getOrAddEmptyObjectEntryFolder(
+				String externalReferenceCode, long groupId, long companyId,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryFolderService.getOrAddEmptyObjectEntryFolder(
+			externalReferenceCode, groupId, companyId, serviceContext);
+	}
+
 	/**
 	 * Returns the OSGi service identifier.
 	 *
@@ -129,6 +152,58 @@ public class ObjectEntryFolderServiceWrapper
 	@Override
 	public String getOSGiServiceIdentifier() {
 		return _objectEntryFolderService.getOSGiServiceIdentifier();
+	}
+
+	@Override
+	public com.liferay.object.model.ObjectEntryFolder moveObjectEntryFolder(
+			long objectEntryFolderId, long parentObjectEntryFolderId,
+			boolean replace,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryFolderService.moveObjectEntryFolder(
+			objectEntryFolderId, parentObjectEntryFolderId, replace,
+			serviceContext);
+	}
+
+	@Override
+	public com.liferay.object.model.ObjectEntryFolder
+			moveObjectEntryFolderToTrash(
+				com.liferay.object.model.ObjectEntryFolder objectEntryFolder,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryFolderService.moveObjectEntryFolderToTrash(
+			objectEntryFolder, serviceContext);
+	}
+
+	@Override
+	public com.liferay.object.model.ObjectEntryFolder
+			restoreObjectEntryFolderFromTrash(
+				com.liferay.object.model.ObjectEntryFolder objectEntryFolder,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryFolderService.restoreObjectEntryFolderFromTrash(
+			objectEntryFolder, serviceContext);
+	}
+
+	@Override
+	public void subscribeObjectEntryFolder(
+			long groupId, long objectEntryFolderId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		_objectEntryFolderService.subscribeObjectEntryFolder(
+			groupId, objectEntryFolderId);
+	}
+
+	@Override
+	public void unsubscribeObjectEntryFolder(
+			long groupId, long objectEntryFolderId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		_objectEntryFolderService.unsubscribeObjectEntryFolder(
+			groupId, objectEntryFolderId);
 	}
 
 	@Override

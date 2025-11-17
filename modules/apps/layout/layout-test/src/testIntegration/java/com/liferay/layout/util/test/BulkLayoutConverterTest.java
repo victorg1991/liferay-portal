@@ -18,7 +18,6 @@ import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
@@ -96,9 +95,7 @@ public class BulkLayoutConverterTest {
 
 		Assert.assertEquals(LayoutConstants.TYPE_PORTLET, layout.getType());
 
-		_layoutLocalService.updateLayout(
-			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
-			StringPool.BLANK);
+		_layoutLocalService.updateTypeSettings(layout, StringPool.BLANK);
 
 		_bulkLayoutConverter.convertLayout(layout.getPlid());
 	}
@@ -221,8 +218,8 @@ public class BulkLayoutConverterTest {
 				Assert.assertNotNull(fragmentEntryLink);
 				Assert.assertTrue(fragmentEntryLink.isTypePortlet());
 
-				JSONObject jsonObject = _jsonFactory.createJSONObject(
-					fragmentEntryLink.getEditableValues());
+				JSONObject jsonObject =
+					fragmentEntryLink.getEditableValuesJSONObject();
 
 				Assert.assertEquals(
 					AssetPublisherPortletKeys.ASSET_PUBLISHER,
@@ -339,9 +336,8 @@ public class BulkLayoutConverterTest {
 
 		_corruptedLayout = LayoutTestUtil.addTypePortletLayout(_group);
 
-		_layoutLocalService.updateLayout(
-			_corruptedLayout.getGroupId(), _corruptedLayout.isPrivateLayout(),
-			_corruptedLayout.getLayoutId(), StringPool.BLANK);
+		_layoutLocalService.updateTypeSettings(
+			_corruptedLayout, StringPool.BLANK);
 
 		UnicodeProperties typeSettingsUnicodeProperties =
 			UnicodePropertiesBuilder.put(
@@ -425,9 +421,6 @@ public class BulkLayoutConverterTest {
 
 	@DeleteAfterTestRun
 	private Group _group;
-
-	@Inject
-	private JSONFactory _jsonFactory;
 
 	@Inject
 	private LayoutLocalService _layoutLocalService;

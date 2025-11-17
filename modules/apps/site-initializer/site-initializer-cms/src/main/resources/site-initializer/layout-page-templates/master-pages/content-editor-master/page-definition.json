@@ -4,18 +4,8 @@
 		"pageElements": [
 			{
 				"definition": {
-					"fragmentSettings": {
-						"unallowedFragments": [
-						]
-					}
-				},
-				"id": "2392e8c1-3805-8e93-f3f7-9836cfa64177",
-				"type": "DropZone"
-			},
-			{
-				"definition": {
 					"fragment": {
-						"key": "com.liferay.site.cms.site.initializer.internal.fragment.renderer.ContentEditorManagementBarComponentSectionFragmentRenderer"
+						"key": "com.liferay.site.cms.site.initializer.internal.fragment.renderer.ContentEditorToolbarComponentSectionFragmentRenderer"
 					},
 					"fragmentConfig": {
 					},
@@ -25,6 +15,28 @@
 				},
 				"id": "7dae1d9f-3bf1-4883-8f80-deb5a320d77f",
 				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragmentSettings": {
+						"unallowedFragments": [
+							{
+								"key": "page-bar"
+							},
+							{
+								"key": "sidebar"
+							},
+							{
+								"key": "sidebar-trigger"
+							},
+							{
+								"key": "vertical-navigation"
+							}
+						]
+					}
+				},
+				"id": "2392e8c1-3805-8e93-f3f7-9836cfa64177",
+				"type": "DropZone"
 			},
 			{
 				"definition": {
@@ -45,7 +57,7 @@
 	},
 	"settings": {
 		"colorSchemeName": "01",
-		"themeName": "Classic",
+		"themeName": "CMS",
 		"themeSettings": {
 			"lfr-theme:regular:show-footer": "false",
 			"lfr-theme:regular:show-header": "false",

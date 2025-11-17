@@ -19,7 +19,10 @@ import {pageViewModePagesTest} from '../../../fixtures/pageViewModePagesTest';
 import {systemSettingsPageTest} from '../../../fixtures/systemSettingsPageTest';
 import {uiElementsPageTest} from '../../../fixtures/uiElementsTest';
 import {webContentDisplayPageTest} from '../../../fixtures/webContentDisplayPageTest';
+import {workflowPagesTest} from '../../../fixtures/workflowPagesTest';
 import getRandomString from '../../../utils/getRandomString';
+import {reloadUntilVisible} from '../../../utils/reloadUntilVisible';
+import {enableLocalStaging} from '../../../utils/staging';
 import getBasicWebContentStructureId from '../../../utils/structured-content/getBasicWebContentStructureId';
 import {journalPagesTest} from '../../journal-web/main/fixtures/journalPagesTest';
 import {exportImportConfig} from './export_import.config';
@@ -31,7 +34,7 @@ import {unzipAndCheckFolder} from './utils/stagingUtil';
 export const test = mergeTests(
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-35914': {enabled: true, system: true},
+		'LPD-35914': {enabled: true},
 	}),
 	loginTest(),
 	assetPublisherPagesTest,
@@ -46,11 +49,155 @@ export const test = mergeTests(
 	stagingPageTest,
 	systemSettingsPageTest,
 	webContentDisplayPageTest,
+	workflowPagesTest,
 	uiElementsPageTest
 );
 
+test('Staging only approved content goes to live', async ({
+	apiHelpers,
+	page,
+	pageEditorPage,
+	stagingPage,
+	webContentDisplayPage,
+	workflowPage,
+	workflowTasksPage,
+}) => {
+	const site = await apiHelpers.headlessSite.createSite({
+		name: `site-${getRandomString()}`,
+	});
+
+	apiHelpers.data.push({id: site.id, type: 'site'});
+
+	const layout1 = await apiHelpers.jsonWebServicesLayout.addLayout({
+		groupId: site.id,
+		options: {type: 'content'},
+		title: getRandomString(),
+	});
+
+	await pageEditorPage.goto(layout1, site.friendlyUrlPath);
+
+	await pageEditorPage.addWidget('Content Management', 'Web Content Display');
+
+	await pageEditorPage.publishPage();
+
+	const layout2 = await apiHelpers.jsonWebServicesLayout.addLayout({
+		groupId: site.id,
+		options: {type: 'content'},
+		title: getRandomString(),
+	});
+
+	await pageEditorPage.goto(layout2, site.friendlyUrlPath);
+	await pageEditorPage.addWidget('Content Management', 'Web Content Display');
+	await pageEditorPage.publishPage();
+
+	await workflowPage.goto(site.friendlyUrlPath);
+	await workflowPage.changeWorkflow('Web Content Article', 'Single Approver');
+
+	await enableLocalStaging(apiHelpers, page, site, {
+		branchingPrivate: true,
+		branchingPublic: true,
+	});
+
+	const stagingSite =
+		await apiHelpers.headlessAdminUser.getSiteByFriendlyUrlPath(
+			`${site.friendlyUrlPath}-staging`
+		);
+
+	const webcontentContent1 = getRandomString();
+	const webcontentContent2 = getRandomString();
+	const basicWebcontentStructureId =
+		await getBasicWebContentStructureId(apiHelpers);
+
+	const webContent1 = await apiHelpers.jsonWebServicesJournal.addWebContent({
+		content: webcontentContent1,
+		ddmStructureId: basicWebcontentStructureId,
+		groupId: stagingSite.id,
+		titleMap: {en_US: getRandomString()},
+	});
+	const webContent2 = await apiHelpers.jsonWebServicesJournal.addWebContent({
+		content: webcontentContent2,
+		ddmStructureId: basicWebcontentStructureId,
+		groupId: stagingSite.id,
+		titleMap: {en_US: getRandomString()},
+	});
+
+	await pageEditorPage.goto(layout1, stagingSite.friendlyUrlPath);
+
+	await webContentDisplayPage.addWebContentWithDisplay({
+		pageType: 'content',
+		webContentName: webContent1.title,
+	});
+
+	await pageEditorPage.publishPage();
+	await pageEditorPage.goto(layout2, stagingSite.friendlyUrlPath);
+
+	await webContentDisplayPage.addWebContentWithDisplay({
+		pageType: 'content',
+		webContentName: webContent2.title,
+	});
+	await pageEditorPage.publishPage();
+
+	await workflowTasksPage.goto(site.friendlyUrlPath);
+	await workflowTasksPage.goToAssignedToMyRoles();
+	await workflowTasksPage.assignToMe(webContent1.title);
+	await workflowTasksPage.goToAssignedToMyRoles();
+	await workflowTasksPage.assignToMe(webContent2.title);
+	await workflowTasksPage.approve(webContent1.title);
+
+	await pageEditorPage.goto(layout1, stagingSite.friendlyUrlPath);
+	await expect(
+		page.getByText(webcontentContent1, {exact: true})
+	).toBeVisible();
+
+	await pageEditorPage.goto(layout2, stagingSite.friendlyUrlPath);
+	await expect(
+		page.getByText(`${webContent2.title} is not approved.`)
+	).toBeVisible();
+
+	await stagingPage.goto(`${site.name}-staging`);
+	await stagingPage.publish();
+
+	await pageEditorPage.goto(layout1, site.friendlyUrlPath);
+	await reloadUntilVisible({
+		myLocator: page.getByText(webcontentContent1, {exact: true}),
+		page,
+	});
+	await expect(
+		page.getByText(webcontentContent1, {exact: true})
+	).toBeVisible();
+
+	await pageEditorPage.goto(layout2, site.friendlyUrlPath);
+	await expect(
+		page.getByText(webcontentContent2, {exact: true})
+	).toBeHidden();
+
+	await workflowTasksPage.goto(site.friendlyUrlPath);
+	await workflowTasksPage.approve(webContent2.title);
+
+	await stagingPage.goto(`${site.name}-staging`);
+	await stagingPage.publish();
+
+	await apiHelpers.jsonWebServicesJournal.moveArticleToTrash(
+		stagingSite.id,
+		webContent2.articleId
+	);
+
+	await pageEditorPage.goto(layout2, site.friendlyUrlPath);
+
+	await stagingPage.goto(`${site.name}-staging`);
+	await stagingPage.publish();
+
+	await pageEditorPage.goto(layout2, stagingSite.friendlyUrlPath);
+
+	await expect(
+		page.getByText(
+			`The web content article ${webContent2.title} was moved to the Recycle Bin`
+		)
+	).toBeVisible();
+});
+
 test(
-	'exporting a page with a manual collection that contains a link to the page',
+	'Exporting a page with a manual collection that contains a link to the page',
 	{tag: '@LPD-57344'},
 	async ({
 		apiHelpers,
@@ -100,13 +247,13 @@ test(
 
 		await pageEditorPage.publishPage();
 
-		const basicWebcontntStructureId =
+		const basicWebcontentStructureId =
 			await getBasicWebContentStructureId(apiHelpers);
 		const webContentName = getRandomString();
 		const webContent =
 			await apiHelpers.jsonWebServicesJournal.addWebContent({
 				content: getRandomString(),
-				ddmStructureId: basicWebcontntStructureId,
+				ddmStructureId: basicWebcontentStructureId,
 				groupId: site.id,
 				titleMap: {en_US: webContentName},
 			});
@@ -147,8 +294,8 @@ test(
 			assetListEntryId: assetList.assetListEntryId,
 			groupId: site.id,
 			typeSettings: `anyAssetType=${className.classNameId}
-anyClassTypeJournalArticleAssetRendererFactory=${basicWebcontntStructureId}
-classTypeIdsJournalArticleAssetRendererFactory=${basicWebcontntStructureId}`,
+anyClassTypeJournalArticleAssetRendererFactory=${basicWebcontentStructureId}
+classTypeIdsJournalArticleAssetRendererFactory=${basicWebcontentStructureId}`,
 		});
 
 		await collectionsPage.goto(site.friendlyUrlPath);
@@ -176,7 +323,7 @@ classTypeIdsJournalArticleAssetRendererFactory=${basicWebcontntStructureId}`,
 );
 
 test(
-	'non modified referred content cannot publish to live when enable include if modified option',
+	'Non modified referred content cannot publish to live when enable include if modified option',
 	{tag: '@LPS-167777'},
 	async ({apiHelpers, stagingConfigurationPage, stagingPage}) => {
 		const site = await apiHelpers.headlessSite.createSite({
@@ -301,15 +448,16 @@ test(
 		);
 		await journalEditArticlePage.publishArticle(true);
 
-		expect(
-			await page.getByText(
+		await reloadUntilVisible({
+			myLocator: page.getByText(
 				'Close Error: Unable to validate referenced document because it cannot be found with the following parameters'
-			)
-		).toBeVisible();
+			),
+			page,
+		});
 	}
 );
 
-test('staging publish template with smoke', async ({
+test('Staging publish template with smoke', async ({
 	apiHelpers,
 	page,
 	stagingPage,

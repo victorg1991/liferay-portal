@@ -5,10 +5,9 @@
 
 package com.liferay.saml.internal.servlet.filter;
 
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.PortalInstances;
 import com.liferay.saml.helper.SamlHttpRequestHelper;
 import com.liferay.saml.persistence.model.SamlSpSession;
 import com.liferay.saml.runtime.configuration.SamlProviderConfigurationHelper;
@@ -31,7 +30,7 @@ import org.osgi.service.component.annotations.Reference;
 	property = {
 		"before-filter=Absolute Redirects Filter", "dispatcher=FORWARD",
 		"dispatcher=REQUEST",
-		"init-param.url-regex-ignore-pattern=^/html/.+\\.(css|gif|html|ico|jpg|js|png)(\\?.*)?$",
+		"init-param.url-regex-ignore-pattern=^/(html|o)/.+\\.(css|gif|html|ico|jpg|js|png)(\\?.*)?$",
 		"servlet-context-name=",
 		"servlet-filter-name=SP Session Termination SAML Portal Filter",
 		"url-pattern=/*"
@@ -51,10 +50,6 @@ public class SpSessionTerminationSamlPortalFilter extends BaseSamlPortalFilter {
 	public boolean isFilterEnabled(
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse) {
-
-		if (httpServletRequest.getAttribute(WebKeys.COMPANY_ID) == null) {
-			PortalInstances.getCompanyId(httpServletRequest);
-		}
 
 		if (_samlProviderConfigurationHelper.isEnabled() &&
 			(httpServletRequest.getSession(false) != null)) {
@@ -83,6 +78,11 @@ public class SpSessionTerminationSamlPortalFilter extends BaseSamlPortalFilter {
 
 				_singleLogoutProfile.terminateSpSession(
 					httpServletRequest, httpServletResponse);
+
+				if (FeatureFlagManagerUtil.isEnabled("LPD-29737")) {
+					_singleLogoutProfile.terminateSsoSession(
+						httpServletRequest, httpServletResponse);
+				}
 
 				_singleLogoutProfile.logout(
 					httpServletRequest, httpServletResponse);

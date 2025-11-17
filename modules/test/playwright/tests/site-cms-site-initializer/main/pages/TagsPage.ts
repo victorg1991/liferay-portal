@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, Page} from '@playwright/test';
+import {Locator, Page, expect} from '@playwright/test';
 
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
 import {getRandomInt} from '../../../../utils/getRandomInt';
@@ -31,7 +31,14 @@ export class TagsPage {
 		);
 	}
 
-	async createTag() {
+	async goto() {
+		await this.page.goto(PORTLET_URLS.cmsTags);
+		await this.page
+			.getByRole('heading', {name: 'Categorization'})
+			.waitFor();
+	}
+
+	async createTag(spaces?: string[]) {
 		await this.goto();
 
 		const tagName = `Tag${getRandomInt()}`;
@@ -39,6 +46,19 @@ export class TagsPage {
 		await this.newTagButton.click();
 
 		await this.page.getByLabel('NameRequired').fill(tagName);
+
+		if (spaces) {
+			await this.spaceCheckbox.uncheck();
+
+			for (const space of spaces) {
+				await this.page.getByLabel('Space Selector').click();
+				await this.page
+					.locator(
+						`//button[@role='option']//span[text()='${space}']`
+					)
+					.click();
+			}
+		}
 
 		await clickAndExpectToBeVisible({
 			target: this.page.getByText(
@@ -50,9 +70,24 @@ export class TagsPage {
 		return tagName;
 	}
 
-	async goto() {
-		await this.page.goto(PORTLET_URLS.cmsTags);
-		await this.page.getByRole('heading', {name: 'Tags'}).waitFor();
+	async deleteTag(name: string) {
+		await this.execItemAction({
+			action: 'Delete',
+			filter: name,
+		});
+
+		await expect(
+			this.page.getByRole('heading', {name: `Delete Tag`})
+		).toBeVisible();
+
+		await clickAndExpectToBeVisible({
+			target: this.page.getByText(
+				`Success:${name} was deleted successfully.`
+			),
+			trigger: this.page.getByRole('button', {name: 'Delete'}),
+		});
+
+		await expect(this.getItem(name)).not.toBeVisible();
 	}
 
 	getItem(filter: string) {

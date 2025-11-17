@@ -7,8 +7,8 @@ import {expect, mergeTests} from '@playwright/test';
 
 import {dataApiHelpersTest} from '../../../../fixtures/dataApiHelpersTest';
 import {featureFlagsTest} from '../../../../fixtures/featureFlagsTest';
-import {isolatedSiteTest} from '../../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../../fixtures/loginTest';
+import {checkAccessibility} from '../../../../utils/checkAccessibility';
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
 import getRandomString from '../../../../utils/getRandomString';
 import {PORTLET_URLS} from '../../../../utils/portletUrls';
@@ -21,23 +21,34 @@ const test = mergeTests(
 	cmsPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-11232': {enabled: true},
 		'LPD-17564': {enabled: true},
 	}),
-	loginTest(),
-	isolatedSiteTest
+	loginTest()
 );
 
 let vocabularyName: string;
 let vocabularyId: number;
 
-test.beforeEach('Create Vocabulary via API', async ({apiHelpers, site}) => {
+test.beforeEach('Create Vocabulary via API', async ({apiHelpers}) => {
 	vocabularyName = getRandomString();
+
+	const siteId = await apiHelpers.headlessAdminUser
+		.getSiteByFriendlyUrlPath('cms')
+		.then((response) => response.id);
 
 	vocabularyId = await apiHelpers.headlessAdminTaxonomy
 		.postSiteTaxonomyVocabulary({
+			assetLibraries: [{id: -1}],
+			assetTypes: [
+				{
+					required: true,
+					subtype: 'AllAssetSubtypes',
+					type: 'AllAssetTypes',
+				},
+			],
 			name: vocabularyName,
-			siteId: site.id,
+			siteId,
+			visibilityType: 'PUBLIC',
 		})
 		.then((response) => response.id);
 });
@@ -62,6 +73,12 @@ test.describe('Category tests that focus on creation', () => {
 			await editCategoryPage.fillName(categoryName1);
 			await editCategoryPage.fillDescription(getRandomString());
 
+			await checkAccessibility({
+				page: editCategoryPage.page,
+				selectors: ['.cms-section'],
+				selectorsToExclude: ['.control-menu-container'],
+			});
+
 			await editCategoryPage.clickSaveAndAddAnother();
 
 			const categoryName2: string = getRandomString();
@@ -73,23 +90,54 @@ test.describe('Category tests that focus on creation', () => {
 
 			await categoriesPage.assertBreadcrumbItemText(0, 'Categorization');
 
+			await checkAccessibility({
+				page: categoriesPage.page,
+				selectors: ['.content'],
+				selectorsToExclude: [
+					'.control-menu-container',
+					'.fds',
+					'.sidebar-container',
+					'.top-bar',
+				],
+			});
+
 			await expect(categoriesPage.getItem(categoryName1)).toBeVisible();
 			await expect(categoriesPage.getItem(categoryName2)).toBeVisible();
 		}
 	);
 
 	test(
-		'Validate the create Category form inputs when saving',
-		{tag: '@LPD-32753'},
+		'Validate category inputs',
+		{tag: ['@LPD-32753', '@LPD-69687']},
 		async ({editCategoryPage, page}) => {
 			await editCategoryPage.gotoCreateCategory(vocabularyId);
 
-			// Shouldn't be able to save if Name field is empty
+			await expect(editCategoryPage.saveButton).toBeDisabled();
+
+			await expect(
+				editCategoryPage.saveAndAddAnotherButton
+			).toBeDisabled();
+
+			await editCategoryPage.fillName(getRandomString());
+
+			await expect(editCategoryPage.saveButton).not.toBeDisabled();
+
+			await expect(
+				editCategoryPage.saveAndAddAnotherButton
+			).not.toBeDisabled();
+
+			await editCategoryPage.fillName('');
 
 			await clickAndExpectToBeVisible({
 				target: page.getByText('The Name field is required'),
-				trigger: editCategoryPage.saveButton,
+				trigger: page.getByTestId('description-input'),
 			});
+
+			await expect(editCategoryPage.saveButton).toBeDisabled();
+
+			await expect(
+				editCategoryPage.saveAndAddAnotherButton
+			).toBeDisabled();
 		}
 	);
 
@@ -251,6 +299,12 @@ test.describe("Category tests that don't focus on creation", () => {
 
 			await expect(page.getByText(`Edit ${categoryName}`)).toBeVisible();
 
+			await checkAccessibility({
+				page: editCategoryPage.page,
+				selectors: ['.categorization-section'],
+				selectorsToExclude: ['.control-menu-container'],
+			});
+
 			await editCategoryPage.clickSidebarTab('Properties');
 
 			await editCategoryPage.fillProperties([
@@ -283,6 +337,15 @@ test.describe("Category tests that don't focus on creation", () => {
 			]);
 
 			await page.waitForTimeout(2000);
+
+			await checkAccessibility({
+				page: editCategoryPage.page,
+				selectors: ['.cms-section'],
+				selectorsToExclude: [
+					'categorization-vertical-nav',
+					'.control-menu-container',
+				],
+			});
 
 			await editCategoryPage.clickSave();
 			await editCategoryPage.handleEditConfirmationModal(true);
@@ -336,6 +399,16 @@ test.describe("Category tests that don't focus on creation", () => {
 			});
 
 			const dataSetPage = new DataSetPage(page);
+
+			await checkAccessibility({
+				page: dataSetPage.page,
+				selectors: ['.content'],
+				selectorsToExclude: [
+					'.control-menu-container',
+					'.sidebar-container',
+					'.top-bar',
+				],
+			});
 
 			await expect(
 				dataSetPage.getRow(basicWebContentObjectEntry.title)
@@ -402,6 +475,11 @@ test.describe('Move category tests', () => {
 				.locator('span')
 				.nth(1)
 				.click();
+
+			await checkAccessibility({
+				page,
+				selectors: ['.category-selector-modal'],
+			});
 
 			await page.getByRole('button', {name: 'move'}).click();
 

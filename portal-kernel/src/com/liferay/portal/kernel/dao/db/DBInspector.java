@@ -19,6 +19,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,20 +64,13 @@ public class DBInspector {
 	public List<String> getTableNames(String tableNamePattern)
 		throws SQLException {
 
-		List<String> tableNames = new ArrayList<>();
+		return _getNames(tableNamePattern, "TABLE");
+	}
 
-		DatabaseMetaData databaseMetaData = _connection.getMetaData();
+	public List<String> getViewNames(String viewNamePattern)
+		throws SQLException {
 
-		try (ResultSet resultSet = databaseMetaData.getTables(
-				_connection.getCatalog(), _connection.getSchema(),
-				tableNamePattern, new String[] {"TABLE"})) {
-
-			while (resultSet.next()) {
-				tableNames.add(resultSet.getString("TABLE_NAME"));
-			}
-		}
-
-		return tableNames;
+		return _getNames(viewNamePattern, "VIEW");
 	}
 
 	public boolean hasColumn(String tableName, String columnName)
@@ -223,17 +217,6 @@ public class DBInspector {
 		return _hasElement(tableName, "TABLE");
 	}
 
-	/**
-	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
-	 *             DBInspector#hasTable(String)}
-	 */
-	@Deprecated
-	public boolean hasTable(String tableName, boolean caseSensitive)
-		throws Exception {
-
-		return _hasElement(tableName, "TABLE");
-	}
-
 	public boolean hasView(String viewName) throws Exception {
 		return _hasElement(viewName, "VIEW");
 	}
@@ -267,6 +250,32 @@ public class DBInspector {
 
 			if (resultSet.getInt("NULLABLE") ==
 					DatabaseMetaData.columnNullable) {
+
+				return true;
+			}
+
+			return false;
+		}
+	}
+
+	public boolean isNumeric(String tableName, String columnName)
+		throws Exception {
+
+		try (ResultSet resultSet = _getColumnsResultSet(
+				tableName, columnName)) {
+
+			if (!resultSet.next()) {
+				return false;
+			}
+
+			int columnType = resultSet.getInt("DATA_TYPE");
+
+			if ((columnType == Types.BIGINT) || (columnType == Types.DECIMAL) ||
+				(columnType == Types.DOUBLE) || (columnType == Types.FLOAT) ||
+				(columnType == Types.INTEGER) ||
+				(columnType == Types.NUMERIC) || (columnType == Types.REAL) ||
+				(columnType == Types.SMALLINT) ||
+				(columnType == Types.TINYINT)) {
 
 				return true;
 			}
@@ -398,6 +407,25 @@ public class DBInspector {
 		return databaseMetaData.getColumns(
 			getCatalog(), getSchema(),
 			normalizeName(tableName, databaseMetaData), columnName);
+	}
+
+	private List<String> _getNames(String namePattern, String elementType)
+		throws SQLException {
+
+		List<String> names = new ArrayList<>();
+
+		DatabaseMetaData databaseMetaData = _connection.getMetaData();
+
+		try (ResultSet resultSet = databaseMetaData.getTables(
+				_connection.getCatalog(), _connection.getSchema(), namePattern,
+				new String[] {elementType})) {
+
+			while (resultSet.next()) {
+				names.add(resultSet.getString("TABLE_NAME"));
+			}
+		}
+
+		return names;
 	}
 
 	private boolean _hasElement(String elementName, String elementType)

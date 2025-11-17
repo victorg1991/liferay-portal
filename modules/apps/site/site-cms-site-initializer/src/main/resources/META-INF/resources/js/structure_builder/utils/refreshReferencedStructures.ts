@@ -25,7 +25,7 @@ export default function refreshReferencedStructures({
 	ancestors?: Array<ObjectDefinition['externalReferenceCode']>;
 	objectDefinition?: ObjectDefinition;
 	objectDefinitions: ObjectDefinitions;
-	root: Structure | ReferencedStructure | RepeatableGroup;
+	root: ReferencedStructure | RepeatableGroup | Structure;
 }) {
 	const children = new Map();
 
@@ -50,7 +50,7 @@ export default function refreshReferencedStructures({
 
 			// Insert it with updated data and refresh its children
 
-			const relatedObjectDefinition = objectDefinitions.get(child.erc)!;
+			const relatedObjectDefinition = objectDefinitions[child.erc]!;
 
 			const referencedStructure: ReferencedStructure = {
 				...child,
@@ -84,7 +84,7 @@ export default function refreshReferencedStructures({
 
 			// Insert it with updated data and refresh its children
 
-			const relatedObjectDefinition = objectDefinitions.get(child.erc)!;
+			const relatedObjectDefinition = objectDefinitions[child.erc]!;
 
 			const repeatableGroup: RepeatableGroup = {
 				...child,

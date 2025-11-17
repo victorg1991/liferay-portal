@@ -1,0 +1,76 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2025 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+package com.liferay.exportimport.internal.data.handler;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * @author Vendel Toreki
+ */
+public class BatchEnginePortletDataHandlerRegistryUtil {
+
+	public static BatchEnginePortletDataHandler getByClassName(
+		String className) {
+
+		String portletId = _getPortletId(className);
+
+		if (portletId == null) {
+			return null;
+		}
+
+		return _batchEnginePortletDataHandlers.get(portletId);
+	}
+
+	public static BatchEnginePortletDataHandler getByPortletId(
+		String portletId) {
+
+		return _batchEnginePortletDataHandlers.get(portletId);
+	}
+
+	public static boolean hasByClassName(String className) {
+		if (_getPortletId(className) != null) {
+			return true;
+		}
+
+		return false;
+	}
+
+	protected static void put(
+		String portletId,
+		BatchEnginePortletDataHandler batchEnginePortletDataHandler) {
+
+		_batchEnginePortletDataHandlers.put(
+			portletId, batchEnginePortletDataHandler);
+	}
+
+	protected static void remove(String portletId) {
+		_batchEnginePortletDataHandlers.remove(portletId);
+	}
+
+	private static String _getPortletId(String className) {
+		for (Map.Entry<String, BatchEnginePortletDataHandler> entry :
+				_batchEnginePortletDataHandlers.entrySet()) {
+
+			BatchEnginePortletDataHandler batchEnginePortletDataHandler =
+				entry.getValue();
+
+			String[] classNames = batchEnginePortletDataHandler.getClassNames();
+
+			for (String currentClassName : classNames) {
+				if (currentClassName.equals(className)) {
+					return entry.getKey();
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private static final Map<String, BatchEnginePortletDataHandler>
+		_batchEnginePortletDataHandlers = new ConcurrentHashMap<>();
+
+}

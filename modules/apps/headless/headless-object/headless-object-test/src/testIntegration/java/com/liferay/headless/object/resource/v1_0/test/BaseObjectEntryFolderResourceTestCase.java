@@ -49,6 +49,7 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.odata.entity.EntityField;
@@ -57,7 +58,6 @@ import com.liferay.portal.search.test.rule.SearchTestRule;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.crud.VulcanCRUDItemDelegate;
 import com.liferay.portal.vulcan.crud.VulcanCRUDItemDelegateBuilderRegistry;
@@ -313,7 +313,7 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 								objectEntryFolder1.getId());
 						}
 					},
-					new GraphQLField("id"))),
+					getGraphQLFields())),
 			"JSONArray/errors");
 
 		Assert.assertTrue(errorsJSONArray1.length() > 0);
@@ -353,7 +353,7 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 									objectEntryFolder2.getId());
 							}
 						},
-						new GraphQLField("id")))),
+						getGraphQLFields()))),
 			"JSONArray/errors");
 
 		Assert.assertTrue(errorsJSONArray2.length() > 0);
@@ -455,6 +455,132 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode()
+		throws Exception {
+
+		// No namespace
+
+		ObjectEntryFolder objectEntryFolder1 =
+			testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_addObjectEntryFolder();
+
+		Assert.assertTrue(
+			JSONUtil.getValueAsBoolean(
+				invokeGraphQLMutation(
+					new GraphQLField(
+						"deleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode",
+						new HashMap<String, Object>() {
+							{
+								put(
+									"scopeKey",
+									"\"" +
+										testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_getScopeKey(
+											objectEntryFolder1) + "\"");
+								put(
+									"externalReferenceCode",
+									"\"" +
+										objectEntryFolder1.
+											getExternalReferenceCode() + "\"");
+							}
+						})),
+				"JSONObject/data",
+				"Object/deleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode"));
+
+		JSONArray errorsJSONArray1 = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"scopeScopeKeyObjectEntryFolderByExternalReferenceCode",
+					new HashMap<String, Object>() {
+						{
+							put(
+								"scopeKey",
+								"\"" +
+									testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_getScopeKey(
+										objectEntryFolder1) + "\"");
+							put(
+								"externalReferenceCode",
+								"\"" +
+									objectEntryFolder1.
+										getExternalReferenceCode() + "\"");
+						}
+					},
+					getGraphQLFields())),
+			"JSONArray/errors");
+
+		Assert.assertTrue(errorsJSONArray1.length() > 0);
+
+		// Using the namespace headlessObject_v1_0
+
+		ObjectEntryFolder objectEntryFolder2 =
+			testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_addObjectEntryFolder();
+
+		Assert.assertTrue(
+			JSONUtil.getValueAsBoolean(
+				invokeGraphQLMutation(
+					new GraphQLField(
+						"headlessObject_v1_0",
+						new GraphQLField(
+							"deleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode",
+							new HashMap<String, Object>() {
+								{
+									put(
+										"scopeKey",
+										"\"" +
+											testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_getScopeKey(
+												objectEntryFolder2) + "\"");
+									put(
+										"externalReferenceCode",
+										"\"" +
+											objectEntryFolder2.
+												getExternalReferenceCode() +
+													"\"");
+								}
+							}))),
+				"JSONObject/data", "JSONObject/headlessObject_v1_0",
+				"Object/deleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode"));
+
+		JSONArray errorsJSONArray2 = JSONUtil.getValueAsJSONArray(
+			invokeGraphQLQuery(
+				new GraphQLField(
+					"headlessObject_v1_0",
+					new GraphQLField(
+						"scopeScopeKeyObjectEntryFolderByExternalReferenceCode",
+						new HashMap<String, Object>() {
+							{
+								put(
+									"scopeKey",
+									"\"" +
+										testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_getScopeKey(
+											objectEntryFolder2) + "\"");
+								put(
+									"externalReferenceCode",
+									"\"" +
+										objectEntryFolder2.
+											getExternalReferenceCode() + "\"");
+							}
+						},
+						getGraphQLFields()))),
+			"JSONArray/errors");
+
+		Assert.assertTrue(errorsJSONArray2.length() > 0);
+	}
+
+	protected String
+			testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_getScopeKey(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	protected ObjectEntryFolder
+			testGraphQLDeleteScopeScopeKeyObjectEntryFolderByExternalReferenceCode_addObjectEntryFolder()
+		throws Exception {
+
+		return testGraphQLObjectEntryFolder_addObjectEntryFolder();
 	}
 
 	@Test
@@ -1523,6 +1649,98 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 	}
 
 	@Test
+	public void testPostObjectEntryFolderByParentObjectEntryFolderCopy()
+		throws Exception {
+
+		ObjectEntryFolder randomObjectEntryFolder = randomObjectEntryFolder();
+
+		ObjectEntryFolder postObjectEntryFolder =
+			testPostObjectEntryFolderByParentObjectEntryFolderCopy_addObjectEntryFolder(
+				randomObjectEntryFolder);
+
+		assertEquals(randomObjectEntryFolder, postObjectEntryFolder);
+		assertValid(postObjectEntryFolder);
+	}
+
+	protected ObjectEntryFolder
+			testPostObjectEntryFolderByParentObjectEntryFolderCopy_addObjectEntryFolder(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testPostObjectEntryFolderByParentObjectEntryFolderCopyReplace()
+		throws Exception {
+
+		ObjectEntryFolder randomObjectEntryFolder = randomObjectEntryFolder();
+
+		ObjectEntryFolder postObjectEntryFolder =
+			testPostObjectEntryFolderByParentObjectEntryFolderCopyReplace_addObjectEntryFolder(
+				randomObjectEntryFolder);
+
+		assertEquals(randomObjectEntryFolder, postObjectEntryFolder);
+		assertValid(postObjectEntryFolder);
+	}
+
+	protected ObjectEntryFolder
+			testPostObjectEntryFolderByParentObjectEntryFolderCopyReplace_addObjectEntryFolder(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testPostObjectEntryFolderByParentObjectEntryFolderMove()
+		throws Exception {
+
+		ObjectEntryFolder randomObjectEntryFolder = randomObjectEntryFolder();
+
+		ObjectEntryFolder postObjectEntryFolder =
+			testPostObjectEntryFolderByParentObjectEntryFolderMove_addObjectEntryFolder(
+				randomObjectEntryFolder);
+
+		assertEquals(randomObjectEntryFolder, postObjectEntryFolder);
+		assertValid(postObjectEntryFolder);
+	}
+
+	protected ObjectEntryFolder
+			testPostObjectEntryFolderByParentObjectEntryFolderMove_addObjectEntryFolder(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testPostObjectEntryFolderByParentObjectEntryFolderMoveReplace()
+		throws Exception {
+
+		ObjectEntryFolder randomObjectEntryFolder = randomObjectEntryFolder();
+
+		ObjectEntryFolder postObjectEntryFolder =
+			testPostObjectEntryFolderByParentObjectEntryFolderMoveReplace_addObjectEntryFolder(
+				randomObjectEntryFolder);
+
+		assertEquals(randomObjectEntryFolder, postObjectEntryFolder);
+		assertValid(postObjectEntryFolder);
+	}
+
+	protected ObjectEntryFolder
+			testPostObjectEntryFolderByParentObjectEntryFolderMoveReplace_addObjectEntryFolder(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
 	public void testPostScopeScopeKeyObjectEntryFolder() throws Exception {
 		ObjectEntryFolder randomObjectEntryFolder = randomObjectEntryFolder();
 
@@ -1537,6 +1755,113 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 	protected ObjectEntryFolder
 			testPostScopeScopeKeyObjectEntryFolder_addObjectEntryFolder(
 				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestore()
+		throws Exception {
+
+		ObjectEntryFolder randomObjectEntryFolder = randomObjectEntryFolder();
+
+		ObjectEntryFolder postObjectEntryFolder =
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestore_addObjectEntryFolder(
+				randomObjectEntryFolder);
+
+		assertEquals(randomObjectEntryFolder, postObjectEntryFolder);
+		assertValid(postObjectEntryFolder);
+	}
+
+	protected ObjectEntryFolder
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeRestore_addObjectEntryFolder(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe()
+		throws Exception {
+
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		ObjectEntryFolder objectEntryFolder =
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe_addObjectEntryFolder();
+
+		assertHttpResponseStatusCode(
+			204,
+			objectEntryFolderResource.
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribeHttpResponse(
+					testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe_getScopeKey(
+						objectEntryFolder),
+					objectEntryFolder.getExternalReferenceCode()));
+
+		assertHttpResponseStatusCode(
+			404,
+			objectEntryFolderResource.
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribeHttpResponse(
+					testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe_getScopeKey(
+						objectEntryFolder),
+					"-"));
+	}
+
+	protected String
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe_getScopeKey(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	protected ObjectEntryFolder
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeSubscribe_addObjectEntryFolder()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe()
+		throws Exception {
+
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		ObjectEntryFolder objectEntryFolder =
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe_addObjectEntryFolder();
+
+		assertHttpResponseStatusCode(
+			204,
+			objectEntryFolderResource.
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribeHttpResponse(
+					testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe_getScopeKey(
+						objectEntryFolder),
+					objectEntryFolder.getExternalReferenceCode()));
+
+		assertHttpResponseStatusCode(
+			404,
+			objectEntryFolderResource.
+				postScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribeHttpResponse(
+					testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe_getScopeKey(
+						objectEntryFolder),
+					"-"));
+	}
+
+	protected String
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe_getScopeKey(
+				ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	protected ObjectEntryFolder
+			testPostScopeScopeKeyObjectEntryFolderByExternalReferenceCodeUnsubscribe_addObjectEntryFolder()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
@@ -1998,8 +2323,48 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("removedBy", additionalAssertFieldName)) {
+				if (objectEntryFolder.getRemovedBy() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("removedDate", additionalAssertFieldName)) {
+				if (objectEntryFolder.getRemovedDate() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("scope", additionalAssertFieldName)) {
+				if (objectEntryFolder.getScope() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("scopeId", additionalAssertFieldName)) {
+				if (objectEntryFolder.getScopeId() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("scopeKey", additionalAssertFieldName)) {
 				if (objectEntryFolder.getScopeKey() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("status", additionalAssertFieldName)) {
+				if (objectEntryFolder.getStatus() == null) {
 					valid = false;
 				}
 
@@ -2080,6 +2445,10 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
+
+		graphQLFields.add(new GraphQLField("externalReferenceCode"));
+
+		graphQLFields.add(new GraphQLField("id"));
 
 		for (java.lang.reflect.Field field :
 				getDeclaredFields(
@@ -2324,10 +2693,65 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("removedBy", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						objectEntryFolder1.getRemovedBy(),
+						objectEntryFolder2.getRemovedBy())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("removedDate", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						objectEntryFolder1.getRemovedDate(),
+						objectEntryFolder2.getRemovedDate())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("scope", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						objectEntryFolder1.getScope(),
+						objectEntryFolder2.getScope())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("scopeId", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						objectEntryFolder1.getScopeId(),
+						objectEntryFolder2.getScopeId())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("scopeKey", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						objectEntryFolder1.getScopeKey(),
 						objectEntryFolder2.getScopeKey())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("status", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						objectEntryFolder1.getStatus(),
+						objectEntryFolder2.getStatus())) {
 
 					return false;
 				}
@@ -2761,6 +3185,50 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("removedBy")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("removedDate")) {
+			if (operator.equals("between")) {
+				Date date = objectEntryFolder.getRemovedDate();
+
+				sb = new StringBundler();
+
+				sb.append("(");
+				sb.append(entityFieldName);
+				sb.append(" gt ");
+				sb.append(_format.format(date.getTime() - (2 * Time.SECOND)));
+				sb.append(" and ");
+				sb.append(entityFieldName);
+				sb.append(" lt ");
+				sb.append(_format.format(date.getTime() + (2 * Time.SECOND)));
+				sb.append(")");
+			}
+			else {
+				sb.append(entityFieldName);
+
+				sb.append(" ");
+				sb.append(operator);
+				sb.append(" ");
+
+				sb.append(_format.format(objectEntryFolder.getRemovedDate()));
+			}
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("scope")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("scopeId")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("scopeKey")) {
 			Object object = objectEntryFolder.getScopeKey();
 
@@ -2805,6 +3273,11 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 			}
 
 			return sb.toString();
+		}
+
+		if (entityFieldName.equals("status")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("title")) {
@@ -2916,6 +3389,8 @@ public abstract class BaseObjectEntryFolderResourceTestCase {
 				parentObjectEntryFolderExternalReferenceCode =
 					StringUtil.toLowerCase(RandomTestUtil.randomString());
 				parentObjectEntryFolderId = RandomTestUtil.randomLong();
+				removedDate = RandomTestUtil.nextDate();
+				scopeId = RandomTestUtil.randomLong();
 				scopeKey = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				title = StringUtil.toLowerCase(RandomTestUtil.randomString());

@@ -20,6 +20,8 @@ import com.liferay.change.tracking.service.CTProcessLocalService;
 import com.liferay.expando.kernel.model.ExpandoBridge;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
+import com.liferay.layout.manager.LayoutLockManager;
+import com.liferay.layout.model.LockedLayout;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.layout.util.BulkLayoutConverter;
 import com.liferay.petra.lang.SafeCloseable;
@@ -29,10 +31,12 @@ import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.change.tracking.CTRequiredModelException;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.exception.NoSuchResourcePermissionException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
@@ -43,6 +47,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.LayoutPermission;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
+import com.liferay.portal.kernel.test.portlet.MockActionRequest;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
@@ -50,9 +55,12 @@ import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
 import com.liferay.portal.kernel.util.Time;
+import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -69,7 +77,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -98,11 +105,6 @@ public class LayoutCTTest {
 		_group = GroupTestUtil.addGroup();
 		_layoutClassNameId = _classNameLocalService.getClassNameId(
 			Layout.class);
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		GroupTestUtil.deleteGroup(_group);
 	}
 
 	@Test
@@ -170,11 +172,13 @@ public class LayoutCTTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select * from Layout where ctCollectionId = " +
-					_ctCollection.getCtCollectionId());
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select * from Layout where ctCollectionId = ?")) {
 
-			Assert.assertFalse(resultSet.next());
+			preparedStatement.setLong(1, _ctCollection.getCtCollectionId());
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				Assert.assertFalse(resultSet.next());
+			}
 		}
 		finally {
 			_ctCollection = null;
@@ -198,11 +202,13 @@ public class LayoutCTTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select * from Layout where ctCollectionId = " +
-					_ctCollection.getCtCollectionId());
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select * from Layout where ctCollectionId = ?")) {
 
-			Assert.assertFalse(resultSet.next());
+			preparedStatement.setLong(1, _ctCollection.getCtCollectionId());
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				Assert.assertFalse(resultSet.next());
+			}
 		}
 		finally {
 			_ctCollection = null;
@@ -227,11 +233,13 @@ public class LayoutCTTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select * from Layout where ctCollectionId = " +
-					_ctCollection.getCtCollectionId());
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select * from Layout where ctCollectionId = ?")) {
 
-			Assert.assertFalse(resultSet.next());
+			preparedStatement.setLong(1, _ctCollection.getCtCollectionId());
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				Assert.assertFalse(resultSet.next());
+			}
 		}
 		finally {
 			_ctCollection = null;
@@ -258,11 +266,13 @@ public class LayoutCTTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select * from Layout where ctCollectionId = " +
-					_ctCollection.getCtCollectionId());
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select * from Layout where ctCollectionId = ?")) {
 
-			Assert.assertFalse(resultSet.next());
+			preparedStatement.setLong(1, _ctCollection.getCtCollectionId());
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				Assert.assertFalse(resultSet.next());
+			}
 		}
 		finally {
 			_ctCollection = null;
@@ -334,6 +344,29 @@ public class LayoutCTTest {
 	}
 
 	@Test
+	public void testDeleteLayoutWithModificationInProduction()
+		throws Exception {
+
+		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					_ctCollection.getCtCollectionId())) {
+
+			_layoutLocalService.deleteLayout(layout.getPlid());
+		}
+
+		layout = _layoutLocalService.updateName(
+			layout, RandomTestUtil.randomString(),
+			LocaleUtil.toLanguageId(LocaleUtil.BRAZIL));
+
+		_ctProcessLocalService.addCTProcess(
+			TestPropsValues.getUserId(), _ctCollection.getCtCollectionId());
+
+		Assert.assertNull(_layoutLocalService.fetchLayout(layout.getPlid()));
+	}
+
+	@Test
 	public void testGetLayoutsWithDeletedLayoutInProduction() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
 
@@ -391,6 +424,38 @@ public class LayoutCTTest {
 					throwable.getClass());
 			}
 		}
+	}
+
+	@Test
+	public void testGetLockedLayoutsInProductionWithModificationInPublication()
+		throws Exception {
+
+		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+		Layout draftLayout = null;
+
+		try (SafeCloseable safeCloseable1 =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					_ctCollection.getCtCollectionId())) {
+
+			draftLayout = layout.fetchDraftLayout();
+
+			draftLayout.setStatus(WorkflowConstants.STATUS_DRAFT);
+
+			draftLayout = _layoutLocalService.updateLayout(draftLayout);
+
+			_lockLayout(draftLayout, TestPropsValues.getUser());
+		}
+
+		List<LockedLayout> lockedLayouts = _layoutLockManager.getLockedLayouts(
+			TestPropsValues.getCompanyId(), _group.getGroupId(),
+			LocaleUtil.getDefault());
+
+		Assert.assertEquals(lockedLayouts.toString(), 1, lockedLayouts.size());
+
+		LockedLayout lockedLayout = lockedLayouts.get(0);
+
+		Assert.assertEquals(draftLayout.getPlid(), lockedLayout.getPlid());
 	}
 
 	@Test
@@ -586,53 +651,57 @@ public class LayoutCTTest {
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select changeType from CTEntry inner join Layout on ",
-					"CTEntry.modelClassNameId = ",
-					_classNameLocalService.getClassNameId(Layout.class),
-					" and CTEntry.modelClassPK = Layout.plid and ",
-					"CTEntry.modelMvccVersion = Layout.mvccVersion and ",
-					"CTEntry.ctCollectionId = Layout.ctCollectionId where ",
-					"CTEntry.ctCollectionId = ",
-					_ctCollection.getCtCollectionId(),
-					" order by ctEntryId ASC"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+					"CTEntry.modelClassNameId = ? and CTEntry.modelClassPK = ",
+					"Layout.plid and CTEntry.modelMvccVersion = Layout.",
+					"mvccVersion and CTEntry.ctCollectionId = Layout.",
+					"ctCollectionId where CTEntry.ctCollectionId = ? order by ",
+					"ctEntryId ASC"))) {
 
-			Assert.assertTrue(resultSet.next());
+			preparedStatement.setLong(
+				1, _classNameLocalService.getClassNameId(Layout.class));
+			preparedStatement.setLong(2, _ctCollection.getCtCollectionId());
 
-			Assert.assertEquals(
-				CTConstants.CT_CHANGE_TYPE_DELETION,
-				resultSet.getLong("changeType"));
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				Assert.assertTrue(resultSet.next());
 
-			Assert.assertFalse(resultSet.next());
+				Assert.assertEquals(
+					CTConstants.CT_CHANGE_TYPE_DELETION,
+					resultSet.getLong("changeType"));
+
+				Assert.assertFalse(resultSet.next());
+			}
 		}
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
 				StringBundler.concat(
 					"select changeType from CTEntry inner join Layout on ",
-					"CTEntry.modelClassNameId = ",
-					_classNameLocalService.getClassNameId(Layout.class),
-					" and CTEntry.modelClassPK = Layout.plid and ",
-					"CTEntry.modelMvccVersion = Layout.mvccVersion where ",
-					"CTEntry.ctCollectionId = ",
-					_ctCollection.getCtCollectionId(),
-					" and Layout.ctCollectionId = ",
-					CTConstants.CT_COLLECTION_ID_PRODUCTION,
-					" order by ctEntryId ASC"));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+					"CTEntry.modelClassNameId = ? and CTEntry.modelClassPK = ",
+					"Layout.plid and CTEntry.modelMvccVersion = Layout.",
+					"mvccVersion where CTEntry.ctCollectionId = ? and Layout.",
+					"ctCollectionId = ? order by ctEntryId ASC"))) {
 
-			Assert.assertTrue(resultSet.next());
+			preparedStatement.setLong(
+				1, _classNameLocalService.getClassNameId(Layout.class));
+			preparedStatement.setLong(2, _ctCollection.getCtCollectionId());
+			preparedStatement.setLong(
+				3, CTConstants.CT_COLLECTION_ID_PRODUCTION);
 
-			Assert.assertEquals(
-				CTConstants.CT_CHANGE_TYPE_ADDITION,
-				resultSet.getLong("changeType"));
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				Assert.assertTrue(resultSet.next());
 
-			Assert.assertTrue(resultSet.next());
+				Assert.assertEquals(
+					CTConstants.CT_CHANGE_TYPE_ADDITION,
+					resultSet.getLong("changeType"));
 
-			Assert.assertEquals(
-				CTConstants.CT_CHANGE_TYPE_MODIFICATION,
-				resultSet.getLong("changeType"));
+				Assert.assertTrue(resultSet.next());
 
-			Assert.assertFalse(resultSet.next());
+				Assert.assertEquals(
+					CTConstants.CT_CHANGE_TYPE_MODIFICATION,
+					resultSet.getLong("changeType"));
+
+				Assert.assertFalse(resultSet.next());
+			}
 		}
 	}
 
@@ -1156,17 +1225,19 @@ public class LayoutCTTest {
 			try (Connection connection = DataAccess.getConnection();
 				PreparedStatement preparedStatement =
 					connection.prepareStatement(
-						"select ctCollectionId from Layout where plid = " +
-							layout.getPlid());
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+						"select ctCollectionId from Layout where plid = ?")) {
 
-				Assert.assertTrue(resultSet.next());
+				preparedStatement.setLong(1, layout.getPlid());
 
-				Assert.assertEquals(
-					_ctCollection.getCtCollectionId(),
-					resultSet.getLong("ctCollectionId"));
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					Assert.assertTrue(resultSet.next());
 
-				Assert.assertFalse(resultSet.next());
+					Assert.assertEquals(
+						_ctCollection.getCtCollectionId(),
+						resultSet.getLong("ctCollectionId"));
+
+					Assert.assertFalse(resultSet.next());
+				}
 			}
 
 			_layoutLocalService.deleteLayout(layout);
@@ -1181,11 +1252,13 @@ public class LayoutCTTest {
 			try (Connection connection = DataAccess.getConnection();
 				PreparedStatement preparedStatement =
 					connection.prepareStatement(
-						"select * from Layout where plid = " +
-							layout.getPlid());
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+						"select * from Layout where plid = ?")) {
 
-				Assert.assertFalse(resultSet.next());
+				preparedStatement.setLong(1, layout.getPlid());
+
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					Assert.assertFalse(resultSet.next());
+				}
 			}
 		}
 	}
@@ -1205,15 +1278,17 @@ public class LayoutCTTest {
 			try (Connection connection = DataAccess.getConnection();
 				PreparedStatement preparedStatement =
 					connection.prepareStatement(
-						"select COUNT(*) from Layout where plid = " +
-							layout.getPlid());
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+						"select COUNT(*) from Layout where plid = ?")) {
 
-				Assert.assertTrue(resultSet.next());
+				preparedStatement.setLong(1, layout.getPlid());
 
-				Assert.assertEquals(2, resultSet.getLong(1));
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					Assert.assertTrue(resultSet.next());
 
-				Assert.assertFalse(resultSet.next());
+					Assert.assertEquals(2, resultSet.getLong(1));
+
+					Assert.assertFalse(resultSet.next());
+				}
 			}
 
 			_layoutLocalService.deleteLayout(layout);
@@ -1231,17 +1306,19 @@ public class LayoutCTTest {
 			try (Connection connection = DataAccess.getConnection();
 				PreparedStatement preparedStatement =
 					connection.prepareStatement(
-						"select ctCollectionId from Layout where plid = " +
-							layout.getPlid());
-				ResultSet resultSet = preparedStatement.executeQuery()) {
+						"select ctCollectionId from Layout where plid = ?")) {
 
-				Assert.assertTrue(resultSet.next());
+				preparedStatement.setLong(1, layout.getPlid());
 
-				Assert.assertEquals(
-					CTConstants.CT_COLLECTION_ID_PRODUCTION,
-					resultSet.getLong("ctCollectionId"));
+				try (ResultSet resultSet = preparedStatement.executeQuery()) {
+					Assert.assertTrue(resultSet.next());
 
-				Assert.assertFalse(resultSet.next());
+					Assert.assertEquals(
+						CTConstants.CT_COLLECTION_ID_PRODUCTION,
+						resultSet.getLong("ctCollectionId"));
+
+					Assert.assertFalse(resultSet.next());
+				}
 			}
 		}
 	}
@@ -1294,7 +1371,7 @@ public class LayoutCTTest {
 					layout.getDescriptionMap(), layout.getKeywordsMap(),
 					layout.getRobotsMap(), layout.getType(), layout.isHidden(),
 					layout.getFriendlyURLMap(), false, null,
-					layout.getStyleBookEntryId(),
+					layout.getStyleBookEntryERC(),
 					layout.getFaviconFileEntryId(),
 					layout.getMasterLayoutPlid(), serviceContext);
 			}
@@ -1302,6 +1379,19 @@ public class LayoutCTTest {
 		finally {
 			CacheRegistryUtil.setActive(active);
 		}
+	}
+
+	private void _lockLayout(Layout layout, User user) throws PortalException {
+		MockActionRequest mockActionRequest = new MockActionRequest();
+
+		ThemeDisplay themeDisplay = new ThemeDisplay();
+
+		themeDisplay.setLayout(layout);
+		themeDisplay.setUser(user);
+
+		mockActionRequest.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
+
+		_layoutLockManager.getLock(mockActionRequest);
 	}
 
 	@Inject
@@ -1341,5 +1431,8 @@ public class LayoutCTTest {
 
 	@DeleteAfterTestRun
 	private Group _group;
+
+	@Inject
+	private LayoutLockManager _layoutLockManager;
 
 }

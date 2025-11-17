@@ -22,7 +22,7 @@ const UNEXPECTED_ERROR_MESSAGE = Liferay.Language.get(
 	'an-unexpected-error-occurred'
 );
 
-type RequestResult<T> =
+export type RequestResult<T> =
 	| {
 			data: null;
 			error: string;
@@ -77,7 +77,15 @@ async function handleRequest<T>(
 			};
 		}
 
-		const data: T = await response.json();
+		const data: T | {error: string} = await response.json();
+
+		if (data && typeof data === 'object' && 'error' in data) {
+			return {
+				data: null,
+				error: data.error || UNEXPECTED_ERROR_MESSAGE,
+				status: null,
+			};
+		}
 
 		return {
 			data,
@@ -103,6 +111,43 @@ async function get<T>(url: string) {
 	);
 }
 
+/**
+ * Fetches all items from a paginated API endpoint. It will keep requesting pages
+ * until it reaches the last one, accumulating all items into a single array
+ */
+
+async function getAll<T>({
+	filter,
+	url,
+}: {
+	filter?: string;
+	url: string;
+}): Promise<T[]> {
+	const items: T[] = [];
+
+	let page = 1;
+	let lastPage = 1;
+
+	while (page <= lastPage) {
+		const {data, error} = await get<{
+			items: T[];
+			lastPage: number;
+		}>(`${url}?pageSize=-1&page=${page}&filter=${filter || ''}`);
+
+		if (error !== null) {
+			return Promise.reject(error);
+		}
+
+		lastPage = data.lastPage;
+
+		items.push(...data.items);
+
+		page = page + 1;
+	}
+
+	return items;
+}
+
 async function post<T>(url: string, data?: Record<string, any>) {
 	return handleRequest<T>(() =>
 		fetch(url, {
@@ -123,8 +168,8 @@ async function put<T>(url: string, data?: Record<string, any>) {
 	);
 }
 
-async function postFormData(formData: FormData, url: string) {
-	return handleRequest(() =>
+async function postFormData<T>(formData: FormData, url: string) {
+	return handleRequest<T>(() =>
 		fetch(url, {
 			body: formData,
 			method: 'POST',
@@ -142,4 +187,12 @@ async function patch<T>(data: any, url: string) {
 	);
 }
 
-export default {delete: deleteRequest, get, patch, post, postFormData, put};
+export default {
+	delete: deleteRequest,
+	get,
+	getAll,
+	patch,
+	post,
+	postFormData,
+	put,
+};

@@ -51,13 +51,26 @@ public interface FragmentEntryLink
 
 			};
 
+	public com.liferay.portal.kernel.json.JSONObject
+		getConfigurationJSONObject();
+
+	public com.liferay.portal.kernel.json.JSONObject getConfigurationJSONObject(
+		boolean strict);
+
+	public com.liferay.portal.kernel.json.JSONObject
+		getEditableValuesJSONObject();
+
+	public com.liferay.portal.kernel.json.JSONObject
+		getEditableValuesJSONObject(boolean strict);
+
+	public long getFragmentEntryGroupId();
+
 	public boolean isCacheable();
 
 	public boolean isLatestVersion()
 		throws com.liferay.portal.kernel.exception.PortalException;
 
-	public boolean isSystem()
-		throws com.liferay.portal.kernel.exception.PortalException;
+	public boolean isSystem();
 
 	public boolean isTypeComponent();
 

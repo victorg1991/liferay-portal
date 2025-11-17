@@ -9,12 +9,13 @@ import com.liferay.batch.engine.BatchEngineTaskItemDelegate;
 import com.liferay.batch.engine.exception.handler.BatchEngineImportTaskExceptionHandler;
 import com.liferay.batch.engine.model.BatchEngineImportTask;
 import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
+import com.liferay.exportimport.report.constants.ExportImportReportEntryConstants;
+import com.liferay.exportimport.report.internal.util.ExportImportReportEntryUtil;
 import com.liferay.exportimport.report.service.ExportImportReportEntryLocalService;
-import com.liferay.exportimport.vulcan.batch.engine.ExportImportVulcanBatchEngineTaskItemDelegate;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
-import com.liferay.portal.kernel.util.ClassUtil;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -43,31 +44,34 @@ public class ExportImportBatchEngineImportTaskExceptionHandler
 			return;
 		}
 
-		long groupId = 0;
+		long groupId = GetterUtil.getLong(
+			batchEngineImportTask.getParameterValue("siteId"));
 
-		if (batchEngineTaskItemDelegate instanceof
-				ExportImportVulcanBatchEngineTaskItemDelegate) {
+		if (ExportImportReportEntryUtil.isCompanyScoped(
+				groupId, _groupLocalService)) {
 
-			ExportImportVulcanBatchEngineTaskItemDelegate<?>
-				exportImportVulcanBatchEngineTaskItemDelegate =
-					(ExportImportVulcanBatchEngineTaskItemDelegate)
-						batchEngineImportTask;
-
-			if (exportImportVulcanBatchEngineTaskItemDelegate.getScope() ==
-					ExportImportVulcanBatchEngineTaskItemDelegate.Scope.SITE) {
-
-				groupId = GetterUtil.getLong(
-					batchEngineImportTask.getParameterValue("siteId"));
-			}
+			groupId = 0;
 		}
 
 		_exportImportReportEntryLocalService.addErrorExportImportReportEntry(
 			groupId, batchEngineImportTask.getCompanyId(),
 			_getExternalReferenceCode(item),
-			_classNameLocalService.getClassNameId(ClassUtil.getClassName(item)),
+			_classNameLocalService.getClassNameId(
+				batchEngineImportTask.getParameterValue("modelClassName")),
+			_getId(item),
 			GetterUtil.getLong(
 				ExportImportThreadLocal.getExportImportConfigurationId()),
-			exception.getMessage(), _getTraceString(exception));
+			exception.getMessage(), _getErrorStackTrace(exception),
+			batchEngineImportTask.getParameterValue("modelName"),
+			ExportImportReportEntryConstants.ORIGIN_BATCH);
+	}
+
+	private String _getErrorStackTrace(Throwable throwable) {
+		OutputStream outputStream = new ByteArrayOutputStream();
+
+		throwable.printStackTrace(new PrintStream(outputStream));
+
+		return outputStream.toString();
 	}
 
 	private String _getExternalReferenceCode(Object item) {
@@ -87,12 +91,21 @@ public class ExportImportBatchEngineImportTaskExceptionHandler
 		}
 	}
 
-	private String _getTraceString(Throwable throwable) {
-		OutputStream outputStream = new ByteArrayOutputStream();
+	private long _getId(Object item) {
+		try {
+			Class<?> clazz = item.getClass();
 
-		throwable.printStackTrace(new PrintStream(outputStream));
+			Method method = clazz.getDeclaredMethod("getId");
 
-		return outputStream.toString();
+			return GetterUtil.getLong(method.invoke(item));
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(exception);
+			}
+
+			return 0L;
+		}
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
@@ -104,5 +117,8 @@ public class ExportImportBatchEngineImportTaskExceptionHandler
 	@Reference
 	private ExportImportReportEntryLocalService
 		_exportImportReportEntryLocalService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 }

@@ -59,7 +59,6 @@ import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.struts.Definition;
 import com.liferay.portal.struts.TilesUtil;
@@ -197,13 +196,13 @@ public class ContentObjectFragmentRendererTest {
 
 		ContentLayoutTestUtil.publishLayout(draftLayout, _layout);
 
+		String html = ContentLayoutTestUtil.getRenderLayoutHTML(
+			_layout, _layoutServiceContextHelper, _layoutStructureProvider,
+			segmentsExperienceId);
+
 		Assert.assertTrue(
-			StringUtil.contains(
-				ContentLayoutTestUtil.getRenderLayoutHTML(
-					_layout, _layoutServiceContextHelper,
-					_layoutStructureProvider, segmentsExperienceId),
-				_journalArticle.getTitle(LocaleUtil.getSiteDefault()),
-				StringPool.BLANK));
+			html.contains(
+				_journalArticle.getTitle(LocaleUtil.getSiteDefault())));
 	}
 
 	@Test
@@ -458,7 +457,8 @@ public class ContentObjectFragmentRendererTest {
 		throws Exception {
 
 		return _fragmentEntryLinkLocalService.addFragmentEntryLink(
-			null, TestPropsValues.getUserId(), _group.getGroupId(), 0, 0,
+			null, TestPropsValues.getUserId(), _group.getGroupId(), null, null,
+			null,
 			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
 				plid),
 			plid, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,

@@ -11,7 +11,7 @@ import com.liferay.oauth.client.persistence.model.OAuthClientEntry;
 import com.liferay.oauth.client.persistence.service.OAuthClientASLocalMetadataLocalService;
 import com.liferay.oauth.client.persistence.service.OAuthClientEntryLocalService;
 import com.liferay.petra.lang.SafeCloseable;
-import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.instance.lifecycle.BasePortalInstanceLifecycleListener;
 import com.liferay.portal.instance.lifecycle.EveryNodeEveryStartup;
 import com.liferay.portal.instance.lifecycle.PortalInstanceLifecycleListener;
@@ -28,15 +28,10 @@ import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
-import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.sso.openid.connect.internal.util.OpenIdConnectProviderUtil;
-
-import java.net.URI;
-
-import java.security.MessageDigest;
 
 import java.util.Dictionary;
 import java.util.Map;
@@ -113,9 +108,10 @@ public class OpenIdConnectProviderPortalInstanceLifecycleListener
 		_oAuthClientEntryLocalService.addOAuthClientEntry(
 			guestUserId, _generateAuthRequestParametersJSON(properties),
 			_updateOAuthClientASLocalMetadata(guestUserId, properties),
+			_generateCustomClaimsJSON(properties),
 			_generateInfoJSON(properties),
 			GetterUtil.getLong(
-				properties.get("discoveryEndPointCacheInMillis")),
+				properties.get("discoveryEndpointCacheInMillis")),
 			OAuthClientEntryConstants.OIDC_USER_INFO_MAPPER_JSON,
 			_generateTokenRequestParametersJSON(properties));
 	}
@@ -124,16 +120,17 @@ public class OpenIdConnectProviderPortalInstanceLifecycleListener
 			Dictionary<String, ?> properties)
 		throws Exception {
 
-		String discoveryEndPoint = _getPropertyAsString(
-			"discoveryEndPoint", properties);
+		String discoveryEndpoint = _getPropertyAsString(
+			"discoveryEndpoint", properties);
 
-		if (Validator.isNotNull(discoveryEndPoint)) {
-			return discoveryEndPoint;
+		if (Validator.isNotNull(discoveryEndpoint)) {
+			return discoveryEndpoint;
 		}
 
-		String localWellKnownURI = _generateLocalWellKnownURI(
-			_getPropertyAsString("issuerURL", properties),
-			_getPropertyAsString("tokenEndPoint", properties));
+		String localWellKnownURI =
+			OpenIdConnectProviderUtil.generateLocalWellKnownURI(
+				_getPropertyAsString("issuerURL", properties),
+				_getPropertyAsString("tokenEndpoint", properties));
 
 		_oAuthClientASLocalMetadataLocalService.
 			deleteOAuthClientASLocalMetadata(localWellKnownURI);
@@ -196,6 +193,25 @@ public class OpenIdConnectProviderPortalInstanceLifecycleListener
 		return _CLIENT_TO + providerName;
 	}
 
+	private String _generateCustomClaimsJSON(Dictionary<String, ?> properties) {
+		JSONObject customClaimsJSONObject = _jsonFactory.createJSONObject();
+
+		String[] customClaims = GetterUtil.getStringValues(
+			properties.get("customClaims"));
+
+		for (String customClaim : customClaims) {
+			if (customClaim.isEmpty()) {
+				continue;
+			}
+
+			String[] parts = customClaim.split(StringPool.EQUAL);
+
+			customClaimsJSONObject.put(parts[0], parts[1]);
+		}
+
+		return customClaimsJSONObject.toString();
+	}
+
 	private String _generateInfoJSON(Dictionary<String, ?> properties) {
 		return JSONUtil.put(
 			"client_id",
@@ -218,24 +234,10 @@ public class OpenIdConnectProviderPortalInstanceLifecycleListener
 		).toString();
 	}
 
-	private String _generateLocalWellKnownURI(
-			String issuer, String tokenEndPoint)
-		throws Exception {
-
-		URI issuerURI = URI.create(issuer);
-		MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-
-		return StringBundler.concat(
-			issuerURI.getScheme(), "://", issuerURI.getAuthority(),
-			"/.well-known/openid-configuration", issuerURI.getPath(), '/',
-			Base64.encodeToURL(messageDigest.digest(tokenEndPoint.getBytes())),
-			"/local");
-	}
-
 	private String _generateMetadataJSON(Dictionary<String, ?> properties) {
 		return JSONUtil.put(
 			"authorization_endpoint",
-			_getPropertyAsString("authorizationEndPoint", properties)
+			_getPropertyAsString("authorizationEndpoint", properties)
 		).put(
 			"id_token_signing_alg_values_supported",
 			_getPropertyAsJSONArray("idTokenSigningAlgValues", properties)
@@ -249,10 +251,10 @@ public class OpenIdConnectProviderPortalInstanceLifecycleListener
 			"subject_types_supported",
 			_getPropertyAsJSONArray("subjectTypes", properties)
 		).put(
-			"token_endpoint", _getPropertyAsString("tokenEndPoint", properties)
+			"token_endpoint", _getPropertyAsString("tokenEndpoint", properties)
 		).put(
 			"userinfo_endpoint",
-			_getPropertyAsString("userInfoEndPoint", properties)
+			_getPropertyAsString("userInfoEndpoint", properties)
 		).toString();
 	}
 
@@ -380,16 +382,17 @@ public class OpenIdConnectProviderPortalInstanceLifecycleListener
 			long guestUserId, Dictionary<String, ?> properties)
 		throws Exception {
 
-		String discoveryEndPoint = _getPropertyAsString(
-			"discoveryEndPoint", properties);
+		String discoveryEndpoint = _getPropertyAsString(
+			"discoveryEndpoint", properties);
 
-		if (Validator.isNotNull(discoveryEndPoint)) {
-			return discoveryEndPoint;
+		if (Validator.isNotNull(discoveryEndpoint)) {
+			return discoveryEndpoint;
 		}
 
-		String localWellKnownURI = _generateLocalWellKnownURI(
-			_getPropertyAsString("issuerURL", properties),
-			_getPropertyAsString("tokenEndPoint", properties));
+		String localWellKnownURI =
+			OpenIdConnectProviderUtil.generateLocalWellKnownURI(
+				_getPropertyAsString("issuerURL", properties),
+				_getPropertyAsString("tokenEndpoint", properties));
 
 		OAuthClientASLocalMetadata oAuthClientASLocalMetadata =
 			_oAuthClientASLocalMetadataLocalService.
@@ -447,9 +450,10 @@ public class OpenIdConnectProviderPortalInstanceLifecycleListener
 						_generateAuthRequestParametersJSON(properties),
 						_updateOAuthClientASLocalMetadata(
 							guestUserId, properties),
+						_generateCustomClaimsJSON(properties),
 						_generateInfoJSON(properties),
 						GetterUtil.getLong(
-							properties.get("discoveryEndPointCacheInMillis")),
+							properties.get("discoveryEndpointCacheInMillis")),
 						oldOAuthClientEntry.getOIDCUserInfoMapperJSON(),
 						_generateTokenRequestParametersJSON(properties));
 				}

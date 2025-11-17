@@ -307,8 +307,9 @@ public class CPDefinitionLocalServiceImpl
 		// Commerce product definition localization
 
 		_addCPDefinitionLocalizedFields(
-			user.getCompanyId(), cpDefinitionId, nameMap, shortDescriptionMap,
-			descriptionMap, metaTitleMap, metaDescriptionMap, metaKeywordsMap);
+			user.getCompanyId(), cpDefinitionId, cProduct.getCProductId(),
+			nameMap, shortDescriptionMap, descriptionMap, metaTitleMap,
+			metaDescriptionMap, metaKeywordsMap);
 
 		// Commerce product instance
 
@@ -418,8 +419,8 @@ public class CPDefinitionLocalServiceImpl
 
 	@Override
 	public CPDefinition addOrUpdateCPDefinition(
-			String externalReferenceCode, long userId, long groupId,
-			Map<Locale, String> nameMap,
+			String externalReferenceCode, long userId, long cpDefinitionId,
+			long groupId, Map<Locale, String> nameMap,
 			Map<Locale, String> shortDescriptionMap,
 			Map<Locale, String> descriptionMap, Map<Locale, String> urlTitleMap,
 			Map<Locale, String> metaTitleMap,
@@ -451,11 +452,15 @@ public class CPDefinitionLocalServiceImpl
 					externalReferenceCode, serviceContext.getCompanyId());
 
 			if (cProduct != null) {
+				if (cpDefinitionId == 0) {
+					cpDefinitionId = cProduct.getPublishedCPDefinitionId();
+				}
+
 				CPDefinition cpDefinition =
 					cpDefinitionLocalService.updateCPDefinition(
-						cProduct.getPublishedCPDefinitionId(), nameMap,
-						shortDescriptionMap, descriptionMap, urlTitleMap,
-						metaTitleMap, metaDescriptionMap, metaKeywordsMap,
+						cpDefinitionId, nameMap, shortDescriptionMap,
+						descriptionMap, urlTitleMap, metaTitleMap,
+						metaDescriptionMap, metaKeywordsMap,
 						ignoreSKUCombinations, shippable, freeShipping,
 						shipSeparately, shippingExtraPrice, width, height,
 						depth, weight, cpTaxCategoryId, taxExempt,
@@ -475,6 +480,9 @@ public class CPDefinitionLocalServiceImpl
 					deliverySubscriptionTypeSettingsUnicodeProperties,
 					deliveryMaxSubscriptionCycles);
 			}
+		}
+		else {
+			externalReferenceCode = null;
 		}
 
 		return cpDefinitionLocalService.addCPDefinition(
@@ -522,7 +530,7 @@ public class CPDefinitionLocalServiceImpl
 		throws PortalException {
 
 		return cpDefinitionLocalService.addOrUpdateCPDefinition(
-			externalReferenceCode, userId, groupId, nameMap,
+			externalReferenceCode, userId, 0, groupId, nameMap,
 			shortDescriptionMap, descriptionMap, urlTitleMap, metaTitleMap,
 			metaDescriptionMap, metaKeywordsMap, productTypeName,
 			ignoreSKUCombinations, shippable, freeShipping, shipSeparately,
@@ -1514,6 +1522,23 @@ public class CPDefinitionLocalServiceImpl
 	}
 
 	@Override
+	public CPDefinition getCPDefinitionByCProductId(long cProductId)
+		throws PortalException {
+
+		CProduct cProduct = _cProductLocalService.getCProduct(cProductId);
+
+		CPDefinition cpDefinition = cpDefinitionPersistence.fetchByPrimaryKey(
+			cProduct.getPublishedCPDefinitionId());
+
+		if (cpDefinition != null) {
+			return cpDefinition;
+		}
+
+		return cpDefinitionPersistence.findByC_V(
+			cProduct.getCProductId(), cProduct.getLatestVersion());
+	}
+
+	@Override
 	public Map<Locale, String> getCPDefinitionDescriptionMap(
 		long cpDefinitionId) {
 
@@ -2232,8 +2257,8 @@ public class CPDefinitionLocalServiceImpl
 
 		_updateCPDefinitionLocalizedFields(
 			cpDefinition.getCompanyId(), cpDefinition.getCPDefinitionId(),
-			nameMap, shortDescriptionMap, descriptionMap, metaTitleMap,
-			metaDescriptionMap, metaKeywordsMap);
+			cProduct.getCProductId(), nameMap, shortDescriptionMap,
+			descriptionMap, metaTitleMap, metaDescriptionMap, metaKeywordsMap);
 
 		// Commerce product friendly URL entries
 
@@ -2659,7 +2684,8 @@ public class CPDefinitionLocalServiceImpl
 	}
 
 	private List<CPDefinitionLocalization> _addCPDefinitionLocalizedFields(
-			long companyId, long cpDefinitionId, Map<Locale, String> nameMap,
+			long companyId, long cpDefinitionId, long cProductId,
+			Map<Locale, String> nameMap,
 			Map<Locale, String> shortDescriptionMap,
 			Map<Locale, String> descriptionMap,
 			Map<Locale, String> metaTitleMap,
@@ -2732,16 +2758,17 @@ public class CPDefinitionLocalServiceImpl
 				}
 
 				return _addCPDefinitionLocalizedFields(
-					companyId, cpDefinitionId, name, shortDescription,
-					description, metaTitle, metaDescription, metaKeywords,
-					LocaleUtil.toLanguageId(locale));
+					companyId, cpDefinitionId, LocaleUtil.toLanguageId(locale),
+					cProductId, name, shortDescription, description, metaTitle,
+					metaDescription, metaKeywords);
 			});
 	}
 
 	private CPDefinitionLocalization _addCPDefinitionLocalizedFields(
-			long companyId, long cpDefinitionId, String name,
-			String shortDescription, String description, String metaTitle,
-			String metaDescription, String metaKeywords, String languageId)
+			long companyId, long cpDefinitionId, String languageId,
+			long cProductId, String name, String shortDescription,
+			String description, String metaTitle, String metaDescription,
+			String metaKeywords)
 		throws PortalException {
 
 		CPDefinitionLocalization cpDefinitionLocalization =
@@ -2758,6 +2785,7 @@ public class CPDefinitionLocalServiceImpl
 			cpDefinitionLocalization.setCompanyId(companyId);
 			cpDefinitionLocalization.setCPDefinitionId(cpDefinitionId);
 			cpDefinitionLocalization.setLanguageId(languageId);
+			cpDefinitionLocalization.setCProductId(cProductId);
 			cpDefinitionLocalization.setName(name);
 			cpDefinitionLocalization.setShortDescription(shortDescription);
 			cpDefinitionLocalization.setDescription(description);
@@ -3129,7 +3157,8 @@ public class CPDefinitionLocalServiceImpl
 	}
 
 	private List<CPDefinitionLocalization> _updateCPDefinitionLocalizedFields(
-			long companyId, long cpDefinitionId, Map<Locale, String> nameMap,
+			long companyId, long cpDefinitionId, long cProductId,
+			Map<Locale, String> nameMap,
 			Map<Locale, String> shortDescriptionMap,
 			Map<Locale, String> descriptionMap,
 			Map<Locale, String> metaTitleMap,
@@ -3144,9 +3173,9 @@ public class CPDefinitionLocalServiceImpl
 
 		List<CPDefinitionLocalization> newCPDefinitionLocalizations =
 			_addCPDefinitionLocalizedFields(
-				companyId, cpDefinitionId, nameMap, shortDescriptionMap,
-				descriptionMap, metaTitleMap, metaDescriptionMap,
-				metaKeywordsMap);
+				companyId, cpDefinitionId, cProductId, nameMap,
+				shortDescriptionMap, descriptionMap, metaTitleMap,
+				metaDescriptionMap, metaKeywordsMap);
 
 		oldCPDefinitionLocalizations.removeAll(newCPDefinitionLocalizations);
 

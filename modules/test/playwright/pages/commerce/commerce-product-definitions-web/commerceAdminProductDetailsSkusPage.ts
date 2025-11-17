@@ -12,6 +12,7 @@ import {
 
 export class CommerceAdminProductDetailsSkusPage extends CommerceDNDTablePage {
 	readonly closeSidePanelFrame: (isNestedFrame: boolean) => Promise<Locator>;
+	readonly incrementalOrderQuantity: Locator;
 	readonly inventoryTableRow: (
 		colPosition: number,
 		value: number | string,
@@ -30,12 +31,18 @@ export class CommerceAdminProductDetailsSkusPage extends CommerceDNDTablePage {
 	readonly sidePanelSkuInventoryQuantity: Locator;
 	readonly sidePanelSaveButton: Locator;
 	readonly sidePanelSkuPriceTableRowLink: (priceListName: string) => Locator;
-	readonly skusLink: Locator;
+	readonly skuAddButton: Locator;
+	readonly skuAddModal: FrameLocator;
+	readonly skuAddModalSkuInput: Locator;
+	readonly skuAddModalSkuPublishButton: Locator;
+	readonly skuAddModalSkuPurchasableToggle: Locator;
+	readonly skuAddModalSuccessMessage: Locator;
 	readonly skuPriceAddButton: Locator;
 	readonly skuPriceAddModal: FrameLocator;
 	readonly skuPriceFrame: FrameLocator;
 	readonly skuPriceListSelect: Locator;
 	readonly skuTab: (tabName: string) => Locator;
+	readonly skusLink: Locator;
 	readonly skusTable: Locator;
 	readonly skusTableRowBasePrice: (price: string) => Promise<Locator>;
 	readonly skusTableRow: (
@@ -77,6 +84,11 @@ export class CommerceAdminProductDetailsSkusPage extends CommerceDNDTablePage {
 				strictEqual
 			);
 		};
+		this.incrementalOrderQuantity = page
+			.frameLocator('iframe')
+			.first()
+			.frameLocator('iframe')
+			.getByLabel('Base Unit Quantity');
 		this.inventoryTableRowAction = async (warehouseName: string) => {
 			const inventoriesTableRow = await this.inventoryTableRow(
 				0,
@@ -135,6 +147,24 @@ export class CommerceAdminProductDetailsSkusPage extends CommerceDNDTablePage {
 			exact: true,
 			name: 'SKUs',
 		});
+		this.skuAddButton = page.locator(
+			'[data-testid="fdsCreationActionButton"]'
+		);
+		this.skuAddModal = page.frameLocator('iframe').first();
+		this.skuAddModalSkuInput = this.skuAddModal.getByLabel('SKU Required');
+		this.skuAddModalSkuPublishButton = this.skuAddModal.getByRole(
+			'button',
+			{
+				name: 'Publish',
+			}
+		);
+		this.skuAddModalSkuPurchasableToggle = this.skuAddModal.getByLabel(
+			'Purchasable',
+			{exact: true}
+		);
+		this.skuAddModalSuccessMessage = this.skuAddModal.getByText(
+			'Success:Your request completed successfully.'
+		);
 		this.skuPriceFrame = page.frameLocator('iframe').first();
 		this.skuPriceAddButton = this.skuPriceFrame.locator(
 			'[data-testid="fdsCreationActionButton"]'

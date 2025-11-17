@@ -206,7 +206,7 @@ export default function ViewObjectDefinitions({
 
 		if (selectedObjectFolderExternalReferenceCode) {
 			url = `/o/object-admin/v1.0/object-definitions?${stringUtils.stringToURLParameterFormat(
-				`filter=objectFolderExternalReferenceCode eq '${selectedObjectFolderExternalReferenceCode}'`
+				`filter=hidden eq false and objectFolderExternalReferenceCode eq '${selectedObjectFolderExternalReferenceCode}'`
 			)}`;
 		}
 
@@ -235,7 +235,11 @@ export default function ViewObjectDefinitions({
 
 			if (action.data.id === 'deleteObjectDefinition') {
 				if (
-					itemData.rootObjectDefinitionExternalReferenceCode &&
+					itemData.objectDefinitionSettings?.some(
+						(setting) =>
+							setting.name ===
+							'rootObjectDefinitionExternalReferenceCodes'
+					) &&
 					Liferay.FeatureFlags['LPD-34594']
 				) {
 					setSelectedObjectDefinition(itemData);

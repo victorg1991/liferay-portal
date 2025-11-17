@@ -7,6 +7,7 @@ import {expect, mergeTests} from '@playwright/test';
 
 import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
 import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
+import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {usersAndOrganizationsPagesTest} from '../../../fixtures/usersAndOrganizationsPagesTest';
 import {createCategories} from '../../../helpers/CreateCategories';
@@ -16,6 +17,9 @@ import {waitForAlert} from '../../../utils/waitForAlert';
 export const test = mergeTests(
 	apiHelpersTest,
 	dataApiHelpersTest,
+	featureFlagsTest({
+		'LPD-35914': {enabled: true},
+	}),
 	loginTest(),
 	usersAndOrganizationsPagesTest
 );
@@ -232,5 +236,115 @@ test(
 		await test.step('Delete organization created via UI', async () => {
 			await deleteOrganization();
 		});
+	}
+);
+
+test(
+	'Can view status when assigning an organization role',
+	{tag: ['@@LPD-59032']},
+	async ({apiHelpers, usersAndOrganizationsPage}) => {
+		const organization =
+			await apiHelpers.headlessAdminUser.postOrganization();
+
+		await usersAndOrganizationsPage.goToOrganizations();
+		await (
+			await usersAndOrganizationsPage.organizationsTable.rowActions(
+				organization.name
+			)
+		).click();
+		await usersAndOrganizationsPage.assignOrganizationRolesMenuItem.click();
+
+		await expect(
+			await usersAndOrganizationsPage.assignOrganizationRolesTableStatus(
+				'Account Manager',
+				'Approved'
+			)
+		).toBeVisible();
+	}
+);
+
+test(
+	'Country and region should not be required for a default organization.',
+	{tag: '@LPD-63206'},
+	async ({editOrganizationPage, usersAndOrganizationsPage}) => {
+		await usersAndOrganizationsPage.goToOrganizations();
+
+		await usersAndOrganizationsPage.addOrganizationButton.click();
+
+		await expect(editOrganizationPage.countrySelect).not.toHaveAttribute(
+			'required'
+		);
+		await expect(editOrganizationPage.regionSelect).not.toHaveAttribute(
+			'required'
+		);
+	}
+);
+
+test(
+	'User should not be able to trigger stored XSS using organization name via info panel',
+	{tag: ['@LPD-70029']},
+	async ({
+		editOrganizationPage,
+		page,
+		sitesAdminPage,
+		usersAndOrganizationsPage,
+	}) => {
+		await usersAndOrganizationsPage.goToOrganizations();
+
+		await usersAndOrganizationsPage.organizationsLink.click();
+		await usersAndOrganizationsPage.addOrganizationButton.click();
+
+		const organizationName =
+			'"><img src=x onerror=prompt(document.cookie)></img>';
+
+		await editOrganizationPage.nameInput.fill(organizationName);
+		await editOrganizationPage.saveButton.click();
+
+		await waitForAlert(page);
+
+		try {
+			await editOrganizationPage.organizationSiteLink.click();
+			await editOrganizationPage.createSiteToggle.click();
+			await editOrganizationPage.organizationSiteSaveButton.click();
+
+			await waitForAlert(page);
+
+			await sitesAdminPage.goto();
+			await sitesAdminPage.searchSite(organizationName);
+
+			await sitesAdminPage.infoPanelButton.click();
+
+			await page.getByTitle('Select', {exact: true}).check();
+
+			let dialogTriggered = false;
+
+			await page
+				.waitForEvent('dialog', {timeout: 500})
+				.then(async (dialog) => {
+					dialogTriggered = true;
+					await dialog.dismiss();
+				})
+				.catch(() => {});
+
+			await expect(sitesAdminPage.componentTitle).toContainText(
+				organizationName
+			);
+
+			expect(dialogTriggered).toBe(false);
+		}
+		finally {
+			page.once('dialog', async (dialog) => {
+				await dialog.accept();
+			});
+
+			await usersAndOrganizationsPage.goToOrganizations();
+
+			await (
+				await usersAndOrganizationsPage.organizationsTable.rowActions(
+					organizationName
+				)
+			).click();
+			await usersAndOrganizationsPage.deleteOrganizationMenuItem.click();
+		}
 	}
 );

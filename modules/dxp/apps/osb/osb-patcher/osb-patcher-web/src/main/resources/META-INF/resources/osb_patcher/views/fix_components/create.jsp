@@ -7,27 +7,33 @@
 
 <%@ include file="/osb_patcher/views/init.jsp" %>
 
-<liferay-util:include page="/osb_patcher/views/header.jsp" servletContext="<%= application %>">
-	<liferay-util:param name="title" value="add-fix-component" />
-	<liferay-util:param name="mvcRenderCommandName" value="/patcher/index_fix_components" />
-</liferay-util:include>
+<%
+String redirect = ParamUtil.getString(request, "redirect");
+%>
+
+<liferay-ui:header
+	title="add-fix-component"
+/>
 
 <aui:model-context bean="<%= null %>" model="<%= PatcherFixComponent.class %>" />
 
 <portlet:actionURL name="/patcher/add_fix_components" var="addPatcherFixComponentURL" />
 
-<aui:form action="<%= addPatcherFixComponentURL %>" method="post">
-	<portlet:renderURL var="viewPatcherFixComponentsURL">
-		<portlet:param name="mvcRenderCommandName" value="/patcher/index_fix_components" />
-	</portlet:renderURL>
+<liferay-frontend:edit-form
+	action="<%= addPatcherFixComponentURL %>"
+	fluid="<%= true %>"
+	method="post"
+	name="fm"
+>
+	<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
 
-	<aui:input name="redirect" type="hidden" value="<%= viewPatcherFixComponentsURL %>" />
+	<liferay-frontend:edit-form-body>
+		<aui:input name="name" type="text" />
+	</liferay-frontend:edit-form-body>
 
-	<aui:input name="name" type="text" />
-
-	<aui:button-row>
-		<aui:button type="submit" value="add" />
-
-		<aui:button href="<%= viewPatcherFixComponentsURL %>" value="cancel" />
-	</aui:button-row>
-</aui:form>
+	<liferay-frontend:edit-form-footer>
+		<liferay-frontend:edit-form-buttons
+			redirect="<%= redirect %>"
+		/>
+	</liferay-frontend:edit-form-footer>
+</liferay-frontend:edit-form>

@@ -440,6 +440,20 @@ public class LayoutServiceWrapper
 	}
 
 	@Override
+	public Layout getLayout(long plid)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutService.getLayout(plid);
+	}
+
+	@Override
+	public Layout getLayout(long groupId, boolean privateLayout, long layoutId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutService.getLayout(groupId, privateLayout, layoutId);
+	}
+
+	@Override
 	public Layout getLayoutByExternalReferenceCode(
 			String externalReferenceCode, long groupId)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -669,6 +683,16 @@ public class LayoutServiceWrapper
 		return _layoutService.getLayoutsCount(groupId, type);
 	}
 
+	@Override
+	public Layout getOrAddEmptyLayout(
+			String externalReferenceCode, long groupId,
+			ServiceContext serviceContext)
+		throws Exception {
+
+		return _layoutService.getOrAddEmptyLayout(
+			externalReferenceCode, groupId, serviceContext);
+	}
+
 	/**
 	 * Returns the OSGi service identifier.
 	 *
@@ -887,7 +911,7 @@ public class LayoutServiceWrapper
 	 String)}.
 	 * @param hasIconImage if the layout has a custom icon image
 	 * @param iconBytes the byte array of the layout's new icon image
-	 * @param styleBookEntryId the primary key of the style book entry
+	 * @param styleBookEntryERC the external reference code of the style book entry
 	 * @param faviconFileEntryId the file entry ID of the layout's new favicon
 	 * @param masterLayoutPlid the primary key of the master layout
 	 * @param serviceContext the service context to be applied. Can set the
@@ -906,7 +930,7 @@ public class LayoutServiceWrapper
 			java.util.Map<java.util.Locale, String> robotsMap, String type,
 			boolean hidden,
 			java.util.Map<java.util.Locale, String> friendlyURLMap,
-			boolean hasIconImage, byte[] iconBytes, long styleBookEntryId,
+			boolean hasIconImage, byte[] iconBytes, String styleBookEntryERC,
 			long faviconFileEntryId, long masterLayoutPlid,
 			ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -914,30 +938,8 @@ public class LayoutServiceWrapper
 		return _layoutService.updateLayout(
 			groupId, privateLayout, layoutId, parentLayoutId, localeNamesMap,
 			localeTitlesMap, descriptionMap, keywordsMap, robotsMap, type,
-			hidden, friendlyURLMap, hasIconImage, iconBytes, styleBookEntryId,
+			hidden, friendlyURLMap, hasIconImage, iconBytes, styleBookEntryERC,
 			faviconFileEntryId, masterLayoutPlid, serviceContext);
-	}
-
-	/**
-	 * Updates the layout replacing its type settings.
-	 *
-	 * @param groupId the primary key of the group
-	 * @param privateLayout whether the layout is private to the group
-	 * @param layoutId the layout ID of the layout
-	 * @param typeSettings the settings to load the unicode properties object.
-	 See {@link com.liferay.portal.kernel.util.UnicodeProperties
-	 #fastLoad(String)}.
-	 * @return the updated layout
-	 * @throws PortalException if a portal exception occurred
-	 */
-	@Override
-	public Layout updateLayout(
-			long groupId, boolean privateLayout, long layoutId,
-			String typeSettings)
-		throws com.liferay.portal.kernel.exception.PortalException {
-
-		return _layoutService.updateLayout(
-			groupId, privateLayout, layoutId, typeSettings);
 	}
 
 	/**
@@ -1122,6 +1124,28 @@ public class LayoutServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _layoutService.updateType(plid, type);
+	}
+
+	/**
+	 * Updates the layout replacing its type settings.
+	 *
+	 * @param groupId the primary key of the group
+	 * @param privateLayout whether the layout is private to the group
+	 * @param layoutId the layout ID of the layout
+	 * @param typeSettings the settings to load the unicode properties object.
+	 See {@link com.liferay.portal.kernel.util.UnicodeProperties
+	 #fastLoad(String)}.
+	 * @return the updated layout
+	 * @throws PortalException if a portal exception occurred
+	 */
+	@Override
+	public Layout updateTypeSettings(
+			long groupId, boolean privateLayout, long layoutId,
+			String typeSettings)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _layoutService.updateTypeSettings(
+			groupId, privateLayout, layoutId, typeSettings);
 	}
 
 	@Override

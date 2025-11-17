@@ -22,12 +22,13 @@ function AppDropdownActions({placedOrder}: AppDropdownActionsProps) {
 	const {canDownload, dxpProvisioningEnabled, isFreeApp, isOrderCompleted} =
 		new MarketplaceDeliveryOrder(placedOrder);
 
-	const [placedOrderItem] = placedOrder.placedOrderItems;
-	const {name, virtualItemURLs} = placedOrderItem;
+	const [placedOrderItem] = placedOrder.placedOrderItems || [{}];
+
+	const {name, virtualItemURLs} = placedOrderItem || {};
 	const virtualURL = virtualItemURLs?.[0] || '';
 
 	const {account, id} = placedOrder;
-	const metadata = {account, productName: name};
+	const metadata = {account, productName: name || ''};
 
 	return (
 		<DropDown.ItemList>
@@ -75,8 +76,7 @@ function AppDropdownActions({placedOrder}: AppDropdownActionsProps) {
 						data-tooltip-align="left"
 						disabled={!isOrderCompleted}
 						onClick={() => {
-							navigate(`/order/${id}/cloud-provisioning`);
-
+							navigate(`/order/${id}/download`);
 							if (!virtualURL?.trim()) {
 								Analytics.track(
 									'VIRTUAL_URL_NOT_FOUND',

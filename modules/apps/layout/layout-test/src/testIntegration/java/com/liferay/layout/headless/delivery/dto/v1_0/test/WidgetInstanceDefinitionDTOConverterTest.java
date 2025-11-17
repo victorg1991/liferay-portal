@@ -12,6 +12,7 @@ import com.liferay.fragment.processor.FragmentEntryProcessorRegistry;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.headless.delivery.dto.v1_0.WidgetInstance;
 import com.liferay.headless.delivery.dto.v1_0.WidgetPermission;
+import com.liferay.layout.exporter.PortletPermissionsExporter;
 import com.liferay.layout.exporter.PortletPreferencesPortletConfigurationExporter;
 import com.liferay.layout.importer.PortletPreferencesPortletConfigurationImporter;
 import com.liferay.layout.test.util.LayoutTestUtil;
@@ -23,15 +24,13 @@ import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.module.util.BundleUtil;
 import com.liferay.portal.kernel.portlet.PortletIdCodec;
-import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
-import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
-import com.liferay.portal.kernel.service.TeamLocalService;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -42,7 +41,6 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
-import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -133,7 +131,7 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 
 		JSONObject editableValueJSONObject =
 			_fragmentEntryProcessorRegistry.getDefaultEditableValuesJSONObject(
-				StringPool.BLANK, StringPool.BLANK);
+				StringPool.BLANK, null);
 
 		editableValueJSONObject.put(
 			"instanceId", instanceId
@@ -146,7 +144,7 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
 				null, _serviceContext.getUserId(),
-				_serviceContext.getScopeGroupId(), 0, 0,
+				_serviceContext.getScopeGroupId(), null, null, null,
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(layout.getPlid()),
 				layout.getPlid(), StringPool.BLANK, StringPool.BLANK,
@@ -228,7 +226,7 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 
 		Assert.assertEquals("VIEW", actionKeys[0]);
 
-		_layoutLocalService.deleteLayout(layout.getPlid());
+		_layoutService.deleteLayout(layout.getPlid(), _serviceContext);
 		_resourceActionLocalService.deleteResourceAction(
 			resourceAction.getResourceActionId());
 	}
@@ -239,17 +237,13 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 				"WidgetInstanceMapper");
 
 		Constructor<?> constructor = clazz.getDeclaredConstructor(
-			LayoutLocalService.class, Portal.class, PortletLocalService.class,
-			PortletPreferencesPortletConfigurationExporter.class,
-			ResourceActionLocalService.class,
-			ResourcePermissionLocalService.class, RoleLocalService.class,
-			TeamLocalService.class);
+			LayoutService.class, PortletLocalService.class,
+			PortletPermissionsExporter.class,
+			PortletPreferencesPortletConfigurationExporter.class);
 
 		return constructor.newInstance(
-			_layoutLocalService, _portal, _portletLocalService,
-			_portletPreferencesPortletConfigurationExporter,
-			_resourceActionLocalService, _resourcePermissionLocalService,
-			_roleLocalService, _teamLocalService);
+			_layoutService, _portletLocalService, _portletPermissionsExporter,
+			_portletPreferencesPortletConfigurationExporter);
 	}
 
 	private void _registerTestPortlet(String portletId) throws Exception {
@@ -276,13 +270,13 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 	private Group _group;
 
 	@Inject
-	private LayoutLocalService _layoutLocalService;
-
-	@Inject
-	private Portal _portal;
+	private LayoutService _layoutService;
 
 	@Inject
 	private PortletLocalService _portletLocalService;
+
+	@Inject
+	private PortletPermissionsExporter _portletPermissionsExporter;
 
 	@Inject
 	private PortletPreferencesPortletConfigurationExporter
@@ -296,9 +290,6 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 	private ResourceActionLocalService _resourceActionLocalService;
 
 	@Inject
-	private ResourcePermissionLocalService _resourcePermissionLocalService;
-
-	@Inject
 	private ResourcePermissionService _resourcePermissionService;
 
 	@Inject
@@ -310,10 +301,6 @@ public class WidgetInstanceDefinitionDTOConverterTest {
 	private ServiceContext _serviceContext;
 	private final List<ServiceRegistration<?>> _serviceRegistrations =
 		new CopyOnWriteArrayList<>();
-
-	@Inject
-	private TeamLocalService _teamLocalService;
-
 	private String _testPortletName;
 
 	private class TestPortlet extends GenericPortlet {

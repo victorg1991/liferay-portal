@@ -12,19 +12,19 @@ import ClayTabs from '@clayui/tabs';
 import {sub} from 'frontend-js-web';
 import React from 'react';
 
+import getLocalizedValue from '../../../common/utils/getLocalizedValue';
 import {ReferencedStructure} from '../../types/Structure';
 import Breadcrumb from '../Breadcrumb';
 import ERCInput from '../ERCInput';
 import Input from '../Input';
-import Spaces from '../Spaces';
+import SpacesSelector from '../SpacesSelector';
 
 export default function ReferencedStructureSettings({
 	referencedStructure,
 }: {
 	referencedStructure: ReferencedStructure;
 }) {
-	const label =
-		referencedStructure.label[Liferay.ThemeDisplay.getDefaultLanguageId()]!;
+	const label = getLocalizedValue(referencedStructure.label);
 
 	return (
 		<ClayLayout.ContainerFluid className="px-4" size="md" view>
@@ -38,7 +38,9 @@ export default function ReferencedStructureSettings({
 			>
 				<span>
 					{sub(
-						Liferay.Language.get('x-is-a-referenced-structure'),
+						Liferay.Language.get(
+							'x-is-a-referenced-content-structure'
+						),
 						label
 					)}
 				</span>
@@ -65,17 +67,13 @@ export default function ReferencedStructureSettings({
 					</ClayTabs.Item>
 
 					<ClayTabs.Item>
-						{Liferay.Language.get('validations')}
+						{Liferay.Language.get('workflow')}
 					</ClayTabs.Item>
 				</ClayTabs.List>
 
 				<ClayTabs.Panels fade>
 					<ClayTabs.TabPane className="px-0">
 						<GeneralTab referencedStructure={referencedStructure} />
-					</ClayTabs.TabPane>
-
-					<ClayTabs.TabPane className="px-0">
-						<ValidationsTab />
 					</ClayTabs.TabPane>
 				</ClayTabs.Panels>
 			</ClayTabs>
@@ -98,13 +96,13 @@ function GeneralTab({
 				</p>
 
 				<ClayLabel displayType="warning">
-					{Liferay.Language.get('referenced-structure')}
+					{Liferay.Language.get('referenced-content-structure')}
 				</ClayLabel>
 			</div>
 
 			<Input
 				disabled
-				label={Liferay.Language.get('structure-name')}
+				label={Liferay.Language.get('content-structure-name')}
 				onValueChange={() => {}}
 				required
 				value={name}
@@ -112,11 +110,7 @@ function GeneralTab({
 
 			<ERCInput disabled onValueChange={() => {}} value={erc} />
 
-			<Spaces disabled structure={referencedStructure} />
+			<SpacesSelector disabled structure={referencedStructure} />
 		</div>
 	);
-}
-
-function ValidationsTab() {
-	return <div></div>;
 }

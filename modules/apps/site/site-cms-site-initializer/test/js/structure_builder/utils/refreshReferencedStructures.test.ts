@@ -27,6 +27,7 @@ describe('refreshReferencedStructures', () => {
 				en_US: 'Field',
 			},
 			localized: false,
+			locked: false,
 			name: 'field-name',
 			parent: referencedStructureUuid,
 			required: false,
@@ -48,6 +49,7 @@ describe('refreshReferencedStructures', () => {
 			spaces: [],
 			type: 'referenced-structure',
 			uuid: referencedStructureUuid,
+			workflows: {},
 		};
 
 		const root: Structure = {
@@ -55,21 +57,25 @@ describe('refreshReferencedStructures', () => {
 				[referencedStructure.uuid, referencedStructure],
 			]),
 			erc: 'structure-erc',
-			id: 1,
 			label: {
 				en_US: 'Structure',
 			},
 			name: 'structure-name',
 			spaces: [],
 			status: 'published',
+			system: false,
 			uuid: structureUuid,
+			workflows: {},
 		};
 
 		const objectDefinition: ObjectDefinition = {
+			enableComments: true,
 			enableFriendlyURLCustomization: true,
 			enableIndexSearch: true,
 			enableLocalization: true,
 			enableObjectEntryDraft: true,
+			enableObjectEntryHistory: true,
+			enableObjectEntrySchedule: true,
 			enableObjectEntryVersioning: true,
 			externalReferenceCode: 'referenced-structure-erc',
 			id: 1,
@@ -92,6 +98,7 @@ describe('refreshReferencedStructures', () => {
 					name: 'field-name',
 					objectFieldSettings: [],
 					required: false,
+					system: false,
 				},
 				{
 					DBType: 'String',
@@ -107,6 +114,7 @@ describe('refreshReferencedStructures', () => {
 					name: 'new-field-name',
 					objectFieldSettings: [],
 					required: false,
+					system: false,
 				},
 			],
 			objectRelationships: [],
@@ -114,9 +122,9 @@ describe('refreshReferencedStructures', () => {
 			scope: 'depot',
 		};
 
-		const objectDefinitions = new Map<string, ObjectDefinition>([
-			[objectDefinition.externalReferenceCode, objectDefinition],
-		]);
+		const objectDefinitions = {
+			[objectDefinition.externalReferenceCode]: objectDefinition,
+		};
 
 		const result = refreshReferencedStructures({
 			objectDefinitions,

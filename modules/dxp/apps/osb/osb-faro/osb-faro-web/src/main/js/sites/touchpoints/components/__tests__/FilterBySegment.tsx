@@ -67,7 +67,7 @@ const MOCK_SEGMENT = (id: string, name: string) => ({
 	name,
 	properties: {},
 	referencedObjects: {},
-	segmentType: 'DYNAMIC',
+	segmentType: 'BATCH',
 	state: 'READY',
 	status: 'ACTIVE',
 	type: 4,
@@ -143,7 +143,7 @@ describe('FilterBySegment', () => {
 		expect(getByText('Start by creating a segment.')).toBeInTheDocument();
 		expect(getByText('Learn more about segments.')).toHaveAttribute(
 			'href',
-			'https://learn.liferay.com/analytics-cloud/latest/en/people/segments/segments.html'
+			'https://learn.liferay.com/w/dxp/personalization/analytics-cloud/people/segments-analytics'
 		);
 	});
 

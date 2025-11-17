@@ -14,7 +14,6 @@ import com.liferay.object.admin.rest.resource.v1_0.ObjectDefinitionResource;
 import com.liferay.object.constants.ObjectFolderConstants;
 import com.liferay.object.service.ObjectRelationshipLocalServiceUtil;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -131,6 +130,11 @@ public class StructureBuilderDisplayContext {
 					_themeDisplay.getPortalURL(), _themeDisplay.getPathMain(),
 					"/cms/reset_structure_display_page")
 			).put(
+				"resetTranslationDisplayPageURL",
+				() -> StringBundler.concat(
+					_themeDisplay.getPortalURL(), _themeDisplay.getPathMain(),
+					"/cms/reset_translation_display_page")
+			).put(
 				"structureBuilderURL",
 				() -> PortalUtil.getLayoutFullURL(
 					LayoutLocalServiceUtil.getLayoutByFriendlyURL(
@@ -144,7 +148,7 @@ public class StructureBuilderDisplayContext {
 				"mainObjectDefinition",
 				_getObjectDefinitionJSONObject(_getObjectDefinition())
 			).put(
-				"objectDefinitions", _getObjectDefinitionsJSONArray()
+				"objectDefinitions", _getObjectDefinitionsJSONObject()
 			)
 		).build();
 	}
@@ -154,10 +158,10 @@ public class StructureBuilderDisplayContext {
 			return _objectDefinition;
 		}
 
-		long objectDefinitionId = ParamUtil.getLong(
+		Long objectDefinitionId = ParamUtil.getLong(
 			_httpServletRequest, "objectDefinitionId");
 
-		if (objectDefinitionId <= 0) {
+		if (Validator.isNull(objectDefinitionId)) {
 			return null;
 		}
 
@@ -205,13 +209,16 @@ public class StructureBuilderDisplayContext {
 				null, null,
 				objectDefinitionResource.toFilter(
 					StringBundler.concat(
-						"(objectFolderExternalReferenceCode eq '",
+						"((objectFolderExternalReferenceCode eq '",
 						ObjectFolderConstants.
 							EXTERNAL_REFERENCE_CODE_CONTENT_STRUCTURES,
 						"') or (objectFolderExternalReferenceCode eq '",
 						ObjectFolderConstants.
 							EXTERNAL_REFERENCE_CODE_FILE_TYPES,
-						"')"),
+						"') or (objectFolderExternalReferenceCode eq '",
+						ObjectFolderConstants.
+							EXTERNAL_REFERENCE_CODE_STRUCTURE_REPEATABLE_GROUPS,
+						"')) and (status/any(x:(x eq 0)))"),
 					Collections.emptyMap()),
 				null, null);
 
@@ -220,25 +227,28 @@ public class StructureBuilderDisplayContext {
 		return _objectDefinitions;
 	}
 
-	private JSONArray _getObjectDefinitionsJSONArray() throws Exception {
+	private JSONObject _getObjectDefinitionsJSONObject() throws Exception {
 		List<ObjectDefinition> objectDefinitions = _getObjectDefinitions();
 
 		if (objectDefinitions == null) {
 			return null;
 		}
 
-		JSONArray jsonArray = _jsonFactory.createJSONArray();
+		JSONObject jsonObject = _jsonFactory.createJSONObject();
 
 		for (ObjectDefinition objectDefinition : objectDefinitions) {
 			JSONObject objectDefinitionJSONObject =
 				_getObjectDefinitionJSONObject(objectDefinition);
 
 			if (objectDefinitionJSONObject != null) {
-				jsonArray.put(objectDefinitionJSONObject);
+				jsonObject.put(
+					objectDefinitionJSONObject.getString(
+						"externalReferenceCode"),
+					objectDefinitionJSONObject);
 			}
 		}
 
-		return jsonArray;
+		return jsonObject;
 	}
 
 	private String _getObjectFolderExternalReferenceCode() throws Exception {

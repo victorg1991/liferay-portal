@@ -80,6 +80,13 @@ public interface ObjectEntryFolderLocalService
 			ServiceContext serviceContext)
 		throws PortalException;
 
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectEntryFolder copyObjectEntryFolder(
+			long userId, long objectEntryFolderId,
+			long parentObjectEntryFolderId, boolean replace,
+			ServiceContext serviceContext)
+		throws PortalException;
+
 	/**
 	 * Creates a new object entry folder with the primary key. Does not add the object entry folder to the database.
 	 *
@@ -286,6 +293,10 @@ public interface ObjectEntryFolderLocalService
 		long groupId, long companyId, long parentObjectEntryFolderId, int start,
 		int end);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<ObjectEntryFolder> getObjectEntryFoldersByExternalReferenceCode(
+		String externalReferenceCode, List<Long> groupIds, long companyId);
+
 	/**
 	 * Returns all the object entry folders matching the UUID and company.
 	 *
@@ -326,7 +337,7 @@ public interface ObjectEntryFolderLocalService
 
 	@Indexable(type = IndexableType.REINDEX)
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public ObjectEntryFolder getOrAddIncompleteObjectEntryFolder(
+	public ObjectEntryFolder getOrAddEmptyObjectEntryFolder(
 			String externalReferenceCode, long groupId, long companyId,
 			long userId, ServiceContext serviceContext)
 		throws PortalException;
@@ -344,6 +355,43 @@ public interface ObjectEntryFolderLocalService
 	@Override
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectEntryFolder moveObjectEntryFolder(
+			long userId, long objectEntryFolderId,
+			long parentObjectEntryFolderId, boolean replace,
+			ServiceContext serviceContext)
+		throws PortalException;
+
+	public void moveObjectEntryFoldersToTrash(
+			long userId, ObjectEntryFolder parentObjectEntryFolder,
+			ServiceContext serviceContext)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectEntryFolder moveObjectEntryFolderToTrash(
+			long userId, ObjectEntryFolder objectEntryFolder,
+			ServiceContext serviceContext)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectEntryFolder restoreObjectEntryFolderFromTrash(
+			long userId, ObjectEntryFolder objectEntryFolder,
+			ServiceContext serviceContext)
+		throws PortalException;
+
+	public void restoreObjectEntryFoldersFromTrash(
+			long userId, ObjectEntryFolder parentObjectEntryFolder,
+			ServiceContext serviceContext)
+		throws PortalException;
+
+	public void subscribeObjectEntryFolder(
+			long userId, long groupId, long objectEntryFolderId)
+		throws PortalException;
+
+	public void unsubscribeObjectEntryFolder(
+			long userId, long groupId, long objectEntryFolderId)
 		throws PortalException;
 
 	public ObjectEntryFolder updateObjectEntryFolder(
@@ -366,5 +414,9 @@ public interface ObjectEntryFolderLocalService
 	@Indexable(type = IndexableType.REINDEX)
 	public ObjectEntryFolder updateObjectEntryFolder(
 		ObjectEntryFolder objectEntryFolder);
+
+	public ObjectEntryFolder updateStatus(
+			ObjectEntryFolder objectEntryFolder, int status)
+		throws PortalException;
 
 }

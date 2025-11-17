@@ -64,7 +64,7 @@ public class LayoutWrapper
 		attributes.put("iconImageId", getIconImageId());
 		attributes.put("themeId", getThemeId());
 		attributes.put("colorSchemeId", getColorSchemeId());
-		attributes.put("styleBookEntryId", getStyleBookEntryId());
+		attributes.put("styleBookEntryERC", getStyleBookEntryERC());
 		attributes.put("css", getCss());
 		attributes.put("priority", getPriority());
 		attributes.put("faviconFileEntryId", getFaviconFileEntryId());
@@ -73,7 +73,7 @@ public class LayoutWrapper
 		attributes.put(
 			"layoutPrototypeLinkEnabled", isLayoutPrototypeLinkEnabled());
 		attributes.put(
-			"sourcePrototypeLayoutUuid", getSourcePrototypeLayoutUuid());
+			"layoutSetPrototypeLayoutERC", getLayoutSetPrototypeLayoutERC());
 		attributes.put("publishDate", getPublishDate());
 		attributes.put("lastPublishDate", getLastPublishDate());
 		attributes.put("status", getStatus());
@@ -267,10 +267,10 @@ public class LayoutWrapper
 			setColorSchemeId(colorSchemeId);
 		}
 
-		Long styleBookEntryId = (Long)attributes.get("styleBookEntryId");
+		String styleBookEntryERC = (String)attributes.get("styleBookEntryERC");
 
-		if (styleBookEntryId != null) {
-			setStyleBookEntryId(styleBookEntryId);
+		if (styleBookEntryERC != null) {
+			setStyleBookEntryERC(styleBookEntryERC);
 		}
 
 		String css = (String)attributes.get("css");
@@ -311,11 +311,11 @@ public class LayoutWrapper
 			setLayoutPrototypeLinkEnabled(layoutPrototypeLinkEnabled);
 		}
 
-		String sourcePrototypeLayoutUuid = (String)attributes.get(
-			"sourcePrototypeLayoutUuid");
+		String layoutSetPrototypeLayoutERC = (String)attributes.get(
+			"layoutSetPrototypeLayoutERC");
 
-		if (sourcePrototypeLayoutUuid != null) {
-			setSourcePrototypeLayoutUuid(sourcePrototypeLayoutUuid);
+		if (layoutSetPrototypeLayoutERC != null) {
+			setLayoutSetPrototypeLayoutERC(layoutSetPrototypeLayoutERC);
 		}
 
 		Date publishDate = (Date)attributes.get("publishDate");
@@ -952,6 +952,16 @@ public class LayoutWrapper
 	}
 
 	/**
+	 * Returns the layout set prototype layout erc of this layout.
+	 *
+	 * @return the layout set prototype layout erc of this layout
+	 */
+	@Override
+	public String getLayoutSetPrototypeLayoutERC() {
+		return model.getLayoutSetPrototypeLayoutERC();
+	}
+
+	/**
 	 * Returns the current layout's {@link LayoutType}.
 	 *
 	 * @return the current layout's layout type
@@ -1256,16 +1266,6 @@ public class LayoutWrapper
 	}
 
 	/**
-	 * Returns the source prototype layout uuid of this layout.
-	 *
-	 * @return the source prototype layout uuid of this layout
-	 */
-	@Override
-	public String getSourcePrototypeLayoutUuid() {
-		return model.getSourcePrototypeLayoutUuid();
-	}
-
-	/**
 	 * Returns the status of this layout.
 	 *
 	 * @return the status of this layout
@@ -1316,13 +1316,13 @@ public class LayoutWrapper
 	}
 
 	/**
-	 * Returns the style book entry ID of this layout.
+	 * Returns the style book entry erc of this layout.
 	 *
-	 * @return the style book entry ID of this layout
+	 * @return the style book entry erc of this layout
 	 */
 	@Override
-	public long getStyleBookEntryId() {
-		return model.getStyleBookEntryId();
+	public String getStyleBookEntryERC() {
+		return model.getStyleBookEntryERC();
 	}
 
 	/**
@@ -1886,6 +1886,11 @@ public class LayoutWrapper
 	}
 
 	@Override
+	public boolean isTypeEmpty() {
+		return model.isTypeEmpty();
+	}
+
+	@Override
 	public boolean isTypeLinkToLayout() {
 		return model.isTypeLinkToLayout();
 	}
@@ -2258,6 +2263,18 @@ public class LayoutWrapper
 	}
 
 	/**
+	 * Sets the layout set prototype layout erc of this layout.
+	 *
+	 * @param layoutSetPrototypeLayoutERC the layout set prototype layout erc of this layout
+	 */
+	@Override
+	public void setLayoutSetPrototypeLayoutERC(
+		String layoutSetPrototypeLayoutERC) {
+
+		model.setLayoutSetPrototypeLayoutERC(layoutSetPrototypeLayoutERC);
+	}
+
+	/**
 	 * Sets the master layout plid of this layout.
 	 *
 	 * @param masterLayoutPlid the master layout plid of this layout
@@ -2486,16 +2503,6 @@ public class LayoutWrapper
 	}
 
 	/**
-	 * Sets the source prototype layout uuid of this layout.
-	 *
-	 * @param sourcePrototypeLayoutUuid the source prototype layout uuid of this layout
-	 */
-	@Override
-	public void setSourcePrototypeLayoutUuid(String sourcePrototypeLayoutUuid) {
-		model.setSourcePrototypeLayoutUuid(sourcePrototypeLayoutUuid);
-	}
-
-	/**
 	 * Sets the status of this layout.
 	 *
 	 * @param status the status of this layout
@@ -2546,13 +2553,13 @@ public class LayoutWrapper
 	}
 
 	/**
-	 * Sets the style book entry ID of this layout.
+	 * Sets the style book entry erc of this layout.
 	 *
-	 * @param styleBookEntryId the style book entry ID of this layout
+	 * @param styleBookEntryERC the style book entry erc of this layout
 	 */
 	@Override
-	public void setStyleBookEntryId(long styleBookEntryId) {
-		model.setStyleBookEntryId(styleBookEntryId);
+	public void setStyleBookEntryERC(String styleBookEntryERC) {
+		model.setStyleBookEntryERC(styleBookEntryERC);
 	}
 
 	/**

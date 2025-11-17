@@ -6,7 +6,7 @@
 package com.liferay.portal.dao.jdbc;
 
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.dao.jdbc.DataSourceFactory;
+import com.liferay.portal.kernel.dao.jdbc.DataSourceFactoryUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -74,7 +74,7 @@ public class DataSourceFactoryTest {
 
 		// Destroy JDNI data source
 
-		DataSource dataSource1 = _dataSourceFactory.initDataSource(
+		DataSource dataSource1 = DataSourceFactoryUtil.initDataSource(
 			"org.hsqldb.jdbc.JDBCDriver",
 			"jdbc:hsqldb:" + _tempDir.getAbsolutePath() + "/lportal;", "sa",
 			StringPool.BLANK, StringPool.BLANK);
@@ -89,7 +89,7 @@ public class DataSourceFactoryTest {
 
 			});
 
-		DataSource dataSource2 = _dataSourceFactory.initDataSource(
+		DataSource dataSource2 = DataSourceFactoryUtil.initDataSource(
 			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
 			StringPool.BLANK, "jdbc/test");
 
@@ -97,7 +97,7 @@ public class DataSourceFactoryTest {
 			Assert.assertFalse(connection.isClosed());
 		}
 
-		_dataSourceFactory.destroyDataSource(dataSource2);
+		DataSourceFactoryUtil.destroyDataSource(dataSource2);
 
 		try (Connection connection = dataSource2.getConnection()) {
 			Assert.assertFalse(connection.isClosed());
@@ -105,7 +105,7 @@ public class DataSourceFactoryTest {
 
 		// Destroy other data source
 
-		_dataSourceFactory.destroyDataSource(dataSource1);
+		DataSourceFactoryUtil.destroyDataSource(dataSource1);
 
 		try (Connection connection = dataSource1.getConnection()) {
 			Assert.fail();
@@ -131,9 +131,9 @@ public class DataSourceFactoryTest {
 		properties.setProperty("jndi.name", jndiName);
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				DataSourceFactoryImpl.class.getName(), LoggerTestUtil.ERROR)) {
+				DataSourceFactoryUtil.class.getName(), LoggerTestUtil.ERROR)) {
 
-			_dataSourceFactory.initDataSource(properties);
+			DataSourceFactoryUtil.initDataSource(properties);
 
 			Assert.fail();
 		}
@@ -149,8 +149,6 @@ public class DataSourceFactoryTest {
 		}
 	}
 
-	private final DataSourceFactory _dataSourceFactory =
-		new DataSourceFactoryImpl();
 	private File _tempDir;
 
 }

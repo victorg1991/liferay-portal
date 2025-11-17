@@ -46,12 +46,7 @@ const APIGUI = () => {
 
 	useEffect(() => {
 		apiFetch(contextPath + '/o/openapi', 'get', {}).then((response) => {
-			setOrigin(
-				Object.values(response)[0][0].substring(
-					0,
-					Object.values(response)[0][0].indexOf('/o/')
-				)
-			);
+			setOrigin(new URL(Object.values(response)[0][0]).origin);
 			setEndpoints(
 				Object.keys(response)
 					.flatMap((key) => response[key])
@@ -70,6 +65,16 @@ const APIGUI = () => {
 				headers
 			),
 		[contextPath, headers]
+	);
+
+	const LoadingSpinner = () => (
+		<div className="swagger-ui">
+			<div className="loading-container">
+				<div className="info">
+					<div className="loading"></div>
+				</div>
+			</div>
+		</div>
 	);
 
 	const requestInterceptor = (req) => {
@@ -224,7 +229,11 @@ const APIGUI = () => {
 			<ClayLayout.ContainerFluid>
 				{showHeaders && (
 					<ClayModal observer={observer} size="lg" status="info">
-						<ClayModal.Header>Headers</ClayModal.Header>
+						<ClayModal.Header
+							closeButtonAriaLabel={Liferay.Language.get('close')}
+						>
+							Headers
+						</ClayModal.Header>
 
 						<ClayModal.Body>
 							<h1>
@@ -303,7 +312,9 @@ const APIGUI = () => {
 					</ClayModal>
 				)}
 
-				{showGraphQL ? (
+				{!origin ? (
+					<LoadingSpinner />
+				) : showGraphQL ? (
 					<ClayLayout.Row className="vh-100">
 						<GraphiQL fetcher={graphQLFetcher} />
 					</ClayLayout.Row>

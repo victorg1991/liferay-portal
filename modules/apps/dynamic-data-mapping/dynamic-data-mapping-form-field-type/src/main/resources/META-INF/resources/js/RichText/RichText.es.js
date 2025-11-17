@@ -12,6 +12,7 @@ import {
 } from 'frontend-editor-ckeditor-web';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
+import {getImagesSrcFromHtml} from '../util/getImageSrcFromHtml.ts';
 import LocalesDropdown from '../util/localizable/LocalesDropdown';
 import {
 	convertStringToObject,
@@ -21,6 +22,7 @@ import {
 	normalizeLocaleId,
 	transformAvailableLocalesAndValue,
 } from '../util/localizable/transform.es';
+import {sanitizeHTML} from '../util/sanitize.ts';
 
 const INITIAL_DEFAULT_LOCALE = {
 	icon: themeDisplay.getDefaultLanguageId(),
@@ -30,15 +32,6 @@ const INITIAL_EDITING_LOCALE = {
 	icon: normalizeLocaleId(themeDisplay.getDefaultLanguageId()),
 	localeId: themeDisplay.getDefaultLanguageId(),
 };
-
-const ALERT_REGEX = /alert\((.*?)\)/;
-const INNER_HTML_REGEX = /innerHTML\s*=\s*.*?/;
-const PHP_CODE_REGEX = /<\?[\s\S]*?\?>/g;
-const ASP_CODE_REGEX = /<%[\s\S]*?%>/g;
-const ASP_NET_CODE_REGEX = /(<asp:[^]+>[\s|\S]*?<\/asp:[^]+>)|(<asp:[^]+\/>)/gi;
-const HTML_TAG_WITH_ON_ATTRIBUTE_REGEX =
-	/<[^>]+?(\s+\bon\w+=(?:'[^']*'|"[^"]*"|[^'"\s>]+))*\s*\/?>/gi;
-const ON_ATTRIBUTE_REGEX = /(\s+\bon\w+=(?:'[^']*'|"[^"]*"|[^'"\s>]+))/gi;
 
 const ddmFormAdminPortlet =
 	'_com_liferay_dynamic_data_mapping_form_web_portlet_DDMFormAdminPortlet_';
@@ -51,6 +44,7 @@ const skipsChangeValidation = (fieldName) => {
 
 const RichText = ({
 	defaultLocale = INITIAL_DEFAULT_LOCALE,
+	displayErrors,
 	editable,
 	editingLocale = INITIAL_EDITING_LOCALE,
 	editorConfig,
@@ -67,6 +61,7 @@ const RichText = ({
 	predefinedValue = '',
 	readOnly,
 	tip = '',
+	valid,
 	value,
 	visible,
 	...otherProps
@@ -231,6 +226,22 @@ const RichText = ({
 		}
 	};
 
+	const handleFileDrop = (event) => {
+		const files = event.data.dataTransfer.$.files;
+
+		if (files.length) {
+			event.stop();
+		}
+	};
+
+	const handleFilePaste = (event) => {
+		const imagesSources = getImagesSrcFromHtml(event.data.dataValue);
+
+		if (imagesSources.length) {
+			event.stop();
+		}
+	};
+
 	const onReady = (editor) => {
 		const sourceEditingPlugin = editor.plugins.get('SourceEditing');
 
@@ -263,24 +274,6 @@ const RichText = ({
 			}
 		});
 	};
-
-	function sanitezeHTML(html) {
-		if (Liferay.FeatureFlags['LPD-31212']) {
-			return html;
-		}
-
-		const sanitizedHtml = html
-			.replace(HTML_TAG_WITH_ON_ATTRIBUTE_REGEX, (match) => {
-				return match.replace(ON_ATTRIBUTE_REGEX, '');
-			})
-			.replace(ALERT_REGEX, '')
-			.replace(INNER_HTML_REGEX, '')
-			.replace(PHP_CODE_REGEX, '')
-			.replace(ASP_CODE_REGEX, '')
-			.replace(ASP_NET_CODE_REGEX, '');
-
-		return sanitizedHtml;
-	}
 
 	const resetTranslation = useCallback(() => {
 		const data = currentValue[defaultLocale.localeId];
@@ -330,12 +323,14 @@ const RichText = ({
 	return (
 		<FieldBase
 			{...otherProps}
+			displayErrors={displayErrors}
 			fieldName={fieldName}
 			id={id}
 			label={label}
 			name={name}
 			readOnly={readOnly}
 			tip={tip}
+			valid={valid}
 			visible={visible}
 		>
 			<ClayInput.Group>
@@ -344,6 +339,7 @@ const RichText = ({
 						<CKEditor5ClassicEditor
 							className="w-100"
 							config={ckEditor5Config}
+							disabled={readOnly}
 							key={JSON.stringify(ckEditor5Config)}
 							onChange={(event, editor) =>
 								handleContentChange(editor.getData())
@@ -352,6 +348,7 @@ const RichText = ({
 						/>
 					) : (
 						<ClassicEditor
+							ariaInvalid={displayErrors && !valid}
 							ariaLabel={label}
 							ariaRequired={otherProps.required}
 							className="w-100"
@@ -385,14 +382,16 @@ const RichText = ({
 							name={name}
 							onBlur={onBlur}
 							onChange={(content) => handleContentChange(content)}
+							onDrop={(event) => handleFileDrop(event)}
 							onFocus={onFocus}
+							onPaste={(event) => handleFilePaste(event)}
 							onSetData={(event) => {
 								const editor = event.editor;
 
 								if (editor.mode === 'source') {
 									const value = event.data.dataValue;
 
-									const sanitizedValue = sanitezeHTML(value);
+									const sanitizedValue = sanitizeHTML(value);
 
 									handleContentChange(sanitizedValue);
 

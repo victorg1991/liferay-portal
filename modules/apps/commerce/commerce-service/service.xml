@@ -417,6 +417,10 @@
 			<finder-column name="commerceOrderId" />
 			<finder-column name="CPInstanceId" />
 		</finder>
+		<finder name="C_PCOI" return-type="Collection">
+			<finder-column name="commerceOrderId" />
+			<finder-column name="parentCommerceOrderItemId" />
+		</finder>
 		<finder name="C_S" return-type="Collection">
 			<finder-column name="commerceOrderId" />
 			<finder-column name="subscription" />
@@ -973,6 +977,7 @@
 		<exception>CommerceSubscriptionEntryStartDate</exception>
 		<exception>CommerceSubscriptionEntrySubscriptionStatus</exception>
 		<exception>CommerceSubscriptionType</exception>
+		<exception>CPDefinitionInventoryAllowedOrderQuantities</exception>
 		<exception>CPDefinitionInventoryMaxOrderQuantity</exception>
 		<exception>CPDefinitionInventoryMinOrderQuantity</exception>
 		<exception>CPDefinitionInventoryMultipleOrderQuantity</exception>

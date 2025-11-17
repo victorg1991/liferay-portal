@@ -4,42 +4,42 @@
  */
 
 const changeButton = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-change-button`
+	`${fragmentElementId}-drag-and-drop-upload-change-button`
 );
 const dropzone = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-dropzone`
+	`${fragmentElementId}-drag-and-drop-upload-dropzone`
 );
 const dropzoneText = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-dropzone-text`
+	`${fragmentElementId}-drag-and-drop-upload-dropzone-text`
 );
 const defaultDropzone = dropzone.querySelector('.dropzone-default-content');
 const fileInput = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload`
+	`${fragmentElementId}-drag-and-drop-upload`
 );
 const fileNameLabel = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-file-name-label`
+	`${fragmentElementId}-drag-and-drop-upload-file-name-label`
 );
 const helpText = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-help-text`
+	`${fragmentElementId}-drag-and-drop-upload-help-text`
 );
 const hiddenFileInput = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-hidden`
+	`${fragmentElementId}-drag-and-drop-upload-hidden`
 );
 const noPreviewDropzone = dropzone.querySelector('.dropzone-no-preview');
 const previewContainer = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-preview`
+	`${fragmentElementId}-drag-and-drop-upload-preview`
 );
 const previewContent = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-preview-content`
+	`${fragmentElementId}-drag-and-drop-upload-preview-content`
 );
 const removeButton = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-remove-button`
+	`${fragmentElementId}-drag-and-drop-upload-remove-button`
 );
 const selectButton = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-button`
+	`${fragmentElementId}-drag-and-drop-upload-button`
 );
 const previewButtons = document.getElementById(
-	`${fragmentNamespace}-drag-and-drop-upload-preview-buttons`
+	`${fragmentElementId}-drag-and-drop-upload-preview-buttons`
 );
 
 let hasSelectedFile = false;
@@ -152,7 +152,7 @@ function onInputChange() {
 	changeButton.focus();
 }
 
-function getTranslationInput(namespace, languageId, inputId) {
+function getFragmentTranslationInput(namespace, languageId, inputId) {
 	return document.getElementById(`${namespace}${inputId}_${languageId}`);
 }
 
@@ -203,7 +203,7 @@ else {
 
 	import('@liferay/fragment-impl/api').then(
 		({
-			getOrCreateTranslationInput,
+			getTranslationInput,
 			registerLocalizedInput,
 			registerUnlocalizedInput,
 		}) => {
@@ -240,13 +240,13 @@ else {
 				);
 
 				initialValues.forEach(([languageId, value]) => {
-					const translationInput = getOrCreateTranslationInput(
-						inputElement.id,
-						input.name,
+					const translationInput = getTranslationInput({
+						inputId: inputElement.id,
+						inputName: input.name,
 						languageId,
-						inputElement.parentNode,
-						fragmentNamespace
-					);
+						localizationInputsContainer: inputElement.parentNode,
+						namespace: fragmentElementId,
+					});
 
 					translationInput.value = value.fileEntryId;
 					translationInput.dataset.fileName = value.fileName;
@@ -264,11 +264,15 @@ else {
 					changeTextDirection: false,
 					customLocaleChangeHandler: true,
 					defaultLanguageId,
+					inputElement: fileInput,
+					inputName: input.name,
+					localizationInputsContainer: inputElement.parentNode,
+					namespace: fragmentElementId,
 					onLocaleChange: ({languageId}) => {
 						currentLanguageId = languageId;
 
-						const translationInput = getTranslationInput(
-							fragmentNamespace,
+						const translationInput = getFragmentTranslationInput(
+							fragmentElementId,
 							languageId,
 							inputElement.id
 						);
@@ -282,13 +286,14 @@ else {
 							showPreview(previewURL, fileName);
 						}
 						else {
-							const defaultInput = getOrCreateTranslationInput(
-								inputElement.id,
-								input.name,
-								defaultLanguageId,
-								inputElement.parentNode,
-								fragmentNamespace
-							);
+							const defaultInput = getTranslationInput({
+								inputId: inputElement.id,
+								inputName: input.name,
+								languageId: defaultLanguageId,
+								localizationInputsContainer:
+									inputElement.parentNode,
+								namespace: fragmentElementId,
+							});
 
 							previewURL = defaultInput?.dataset?.previewURL;
 
@@ -303,26 +308,86 @@ else {
 							}
 						}
 					},
+					onMarkAsTranslated: () => {
+						const defaultTranslationInput =
+							getFragmentTranslationInput(
+								fragmentElementId,
+								defaultLanguageId,
+								inputElement.id
+							);
+
+						if (defaultTranslationInput.type === 'file') {
+							setTranslationInputValue({
+								previewURL:
+									defaultTranslationInput.dataset.previewURL,
+								title: defaultTranslationInput.dataset.fileName,
+								type: 'file',
+								value: defaultTranslationInput.files[0],
+							});
+						}
+						else {
+							setTranslationInputValue({
+								previewURL:
+									defaultTranslationInput.dataset.previewURL,
+								title: defaultTranslationInput.dataset.fileName,
+								type: 'document',
+								value: defaultTranslationInput.value,
+							});
+						}
+					},
+					onResetTranslation: () => {
+						const defaultTranslationInput =
+							getFragmentTranslationInput(
+								fragmentElementId,
+								defaultLanguageId,
+								inputElement.id
+							);
+
+						const translationInput = getFragmentTranslationInput(
+							fragmentElementId,
+							currentLanguageId,
+							fileInput.id
+						);
+
+						const previewURL =
+							defaultTranslationInput?.dataset?.previewURL;
+
+						if (previewURL) {
+							showPreview(
+								defaultTranslationInput?.dataset?.previewURL,
+								defaultTranslationInput?.dataset?.fileName
+							);
+						}
+
+						if (translationInput.type === 'file') {
+							translationInput.parentNode.removeChild(
+								translationInput
+							);
+						}
+						else {
+							translationInput.removeAttribute('data-file-name');
+							translationInput.removeAttribute('value');
+						}
+					},
 				});
 
-				const setTranslationInputValue = ({
-					previewURL,
-					title,
-					value,
-				}) => {
+				const setTranslationInputValue = (props) => {
+					const {previewURL, title, value} = props;
+
 					const type =
-						isFromDocumentLibrary === false ? 'file' : 'hidden';
+						props.type ||
+						(isFromDocumentLibrary ? 'document' : 'file');
 
-					const translationInput = getOrCreateTranslationInput(
-						inputElement.id,
-						input.name,
-						currentLanguageId,
-						inputElement.parentNode,
-						fragmentNamespace,
-						type
-					);
+					const translationInput = getTranslationInput({
+						inputId: inputElement.id,
+						inputName: input.name,
+						languageId: currentLanguageId,
+						localizationInputsContainer: inputElement.parentNode,
+						namespace: fragmentElementId,
+						type: type === 'file' ? 'file' : 'hidden',
+					});
 
-					if (isFromDocumentLibrary) {
+					if (type === 'document') {
 						translationInput.value = value;
 						translationInput.dataset.previewURL = previewURL;
 						translationInput.dataset.fileName = title;
@@ -395,13 +460,13 @@ else {
 					fileInput.value = '';
 					hiddenFileInput.value = '';
 
-					const translationInput = getOrCreateTranslationInput(
-						inputElement.id,
-						input.name,
-						currentLanguageId,
-						inputElement.parentNode,
-						fragmentNamespace
-					);
+					const translationInput = getTranslationInput({
+						inputId: inputElement.id,
+						inputName: input.name,
+						languageId: currentLanguageId,
+						localizationInputsContainer: inputElement.parentNode,
+						namespace: fragmentElementId,
+					});
 
 					translationInput.value = '';
 					translationInput.dataset.previewURL = '';
@@ -410,13 +475,14 @@ else {
 						showDropzone(DROP_ZONE_CONTAINER_TYPE.DEFAULT);
 					}
 					else {
-						const defaultInput = getOrCreateTranslationInput(
-							inputElement.id,
-							input.name,
-							defaultLanguageId,
-							inputElement.parentNode,
-							fragmentNamespace
-						);
+						const defaultInput = getTranslationInput({
+							inputId: inputElement.id,
+							inputName: input.name,
+							languageId: defaultLanguageId,
+							localizationInputsContainer:
+								inputElement.parentNode,
+							namespace: fragmentElementId,
+						});
 
 						if (defaultInput.dataset?.previewURL) {
 							showPreview(
@@ -511,11 +577,11 @@ else {
 						}
 					},
 					readOnlyInputLabel: document.getElementById(
-						`${fragmentEntryLinkNamespace}-drag-and-drop-upload-read-only`
+						`${fragmentElementId}-drag-and-drop-upload-read-only`
 					),
 					unlocalizedFieldsState,
 					unlocalizedMessageContainer: document.getElementById(
-						`${fragmentNamespace}-unlocalized-info`
+						`${fragmentElementId}-unlocalized-info`
 					),
 				});
 

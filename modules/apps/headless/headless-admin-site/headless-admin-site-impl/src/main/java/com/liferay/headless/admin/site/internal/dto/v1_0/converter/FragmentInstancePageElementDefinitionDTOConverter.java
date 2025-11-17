@@ -5,22 +5,19 @@
 
 package com.liferay.headless.admin.site.internal.dto.v1_0.converter;
 
-import com.liferay.fragment.contributor.FragmentCollectionContributorRegistry;
-import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
-import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.headless.admin.site.dto.v1_0.DefaultFragmentReference;
 import com.liferay.headless.admin.site.dto.v1_0.FragmentInstancePageElementDefinition;
-import com.liferay.headless.admin.site.dto.v1_0.ItemExternalReference;
+import com.liferay.headless.admin.site.dto.v1_0.FragmentItemExternalReference;
 import com.liferay.headless.admin.site.dto.v1_0.PageElementDefinition;
+import com.liferay.headless.admin.site.internal.dto.v1_0.util.ItemScopeUtil;
 import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
-
-import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -58,6 +55,8 @@ public class FragmentInstancePageElementDefinitionDTOConverter
 
 		return new FragmentInstancePageElementDefinition() {
 			{
+				setConfiguration(fragmentEntryLink::getConfiguration);
+				setCss(fragmentEntryLink::getCss);
 				setCssClasses(
 					() -> {
 						if (SetUtil.isEmpty(
@@ -71,55 +70,97 @@ public class FragmentInstancePageElementDefinitionDTOConverter
 							fragmentStyledLayoutStructureItem.getCssClasses());
 					});
 				setCustomCSS(fragmentStyledLayoutStructureItem::getCustomCSS);
+				setDatePropagated(fragmentEntryLink::getLastPropagationDate);
+				setDraftFragmentInstanceExternalReferenceCode(
+					() -> _getDraftFragmentInstanceExternalReferenceCode(
+						fragmentEntryLink));
+				setFragmentInstanceExternalReferenceCode(
+					fragmentEntryLink::getExternalReferenceCode);
 				setFragmentReference(
 					() -> {
-						FragmentEntry fragmentEntry =
-							_fragmentEntryLocalService.fetchFragmentEntry(
-								fragmentEntryLink.getFragmentEntryId());
-
-						if (fragmentEntry != null) {
-							return new ItemExternalReference() {
-								{
-									setExternalReferenceCode(
-										fragmentEntry::
-											getExternalReferenceCode);
-								}
-							};
-						}
-
-						Map<String, FragmentEntry> fragmentEntries =
-							_fragmentCollectionContributorRegistry.
-								getFragmentEntries();
-
-						if (!fragmentEntries.containsKey(
+						if (Validator.isNull(
+								fragmentEntryLink.getFragmentEntryERC()) &&
+							Validator.isNull(
 								fragmentEntryLink.getRendererKey())) {
 
 							return null;
+						}
+
+						if (Validator.isNotNull(
+								fragmentEntryLink.getFragmentEntryERC())) {
+
+							return new FragmentItemExternalReference() {
+								{
+									setExternalReferenceCode(
+										fragmentEntryLink::getFragmentEntryERC);
+									setFragmentReferenceType(
+										() ->
+											FragmentReferenceType.
+												FRAGMENT_ITEM_EXTERNAL_REFERENCE);
+									setScope(
+										() -> ItemScopeUtil.getItemScope(
+											fragmentEntryLink.getCompanyId(),
+											fragmentEntryLink.
+												getFragmentEntryScopeERC(),
+											fragmentEntryLink.getGroupId()));
+								}
+							};
 						}
 
 						return new DefaultFragmentReference() {
 							{
 								setDefaultFragmentKey(
 									fragmentEntryLink::getRendererKey);
+								setFragmentReferenceType(
+									() ->
+										FragmentReferenceType.
+											DEFAULT_FRAGMENT_REFERENCE);
 							}
 						};
 					});
+				setFragmentType(
+					() -> {
+						if (fragmentEntryLink.isTypeComponent()) {
+							return FragmentType.BASIC;
+						}
+
+						return FragmentType.FORM;
+					});
+				setHtml(fragmentEntryLink::getHtml);
 				setIndexed(fragmentStyledLayoutStructureItem::isIndexed);
+				setJs(fragmentEntryLink::getJs);
 				setName(fragmentStyledLayoutStructureItem::getName);
 				setNamespace(fragmentEntryLink::getNamespace);
 				setType(PageElementDefinition.Type.FRAGMENT);
+				setUuid(fragmentEntryLink::getUuid);
 			}
 		};
 	}
 
-	@Reference
-	private FragmentCollectionContributorRegistry
-		_fragmentCollectionContributorRegistry;
+	private String _getDraftFragmentInstanceExternalReferenceCode(
+		FragmentEntryLink fragmentEntryLink) {
+
+		String originalFragmentEntryLinkERC =
+			fragmentEntryLink.getOriginalFragmentEntryLinkERC();
+
+		if (Validator.isNull(originalFragmentEntryLinkERC)) {
+			return null;
+		}
+
+		FragmentEntryLink originalFragmentEntryLink =
+			_fragmentEntryLinkLocalService.
+				fetchFragmentEntryLinkByExternalReferenceCode(
+					originalFragmentEntryLinkERC,
+					fragmentEntryLink.getGroupId());
+
+		if (originalFragmentEntryLink == null) {
+			return null;
+		}
+
+		return originalFragmentEntryLink.getExternalReferenceCode();
+	}
 
 	@Reference
 	private FragmentEntryLinkLocalService _fragmentEntryLinkLocalService;
-
-	@Reference
-	private FragmentEntryLocalService _fragmentEntryLocalService;
 
 }

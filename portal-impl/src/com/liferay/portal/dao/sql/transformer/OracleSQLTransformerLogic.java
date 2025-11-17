@@ -23,12 +23,13 @@ public class OracleSQLTransformerLogic extends BaseSQLTransformerLogic {
 		super(db);
 
 		Function[] functions = {
-			getAggregationFunction(), getBooleanFunction(),
-			getCastClobTextFunction(), getCastDecimalFunction(),
-			getCastLongFunction(), getCastTextFunction(), getConcatFunction(),
+			getAggregationFunction(), getBitwiseOrFunction(),
+			getBooleanFunction(), getCastClobTextFunction(),
+			getCastDecimalFunction(), getCastLongFunction(),
+			getCastTextFunction(), getConcatFunction(),
 			getDropTableIfExistsTextFunction(), getIntegerDivisionFunction(),
 			getNullDateFunction(), _getEscapeFunction(),
-			_getNotEqualsBlankStringFunction()
+			getTruncateTableFunction(), _getNotEqualsBlankStringFunction()
 		};
 
 		if (!db.isSupportsStringCaseSensitiveQuery()) {
@@ -45,6 +46,10 @@ public class OracleSQLTransformerLogic extends BaseSQLTransformerLogic {
 				"CONCAT(", StringPool.BLANK, " || ", StringPool.BLANK);
 
 		return sqlFunctionTransformer::transform;
+	}
+
+	protected String replaceBitwiseOr(Matcher matcher) {
+		return matcher.replaceAll("($1 + $2 - BITAND($1, $2))");
 	}
 
 	@Override

@@ -239,10 +239,11 @@ public abstract class BaseMockContactsEngineClientImpl
 	}
 
 	@Override
-	public void deleteIndividualSegment(FaroProject faroProject, String id)
+	public void deleteIndividualSegments(
+			FaroProject faroProject, List<String> ids)
 		throws Exception {
 
-		contactsEngineClient.deleteIndividualSegment(faroProject, id);
+		contactsEngineClient.deleteIndividualSegments(faroProject, ids);
 	}
 
 	@Override
@@ -827,13 +828,13 @@ public abstract class BaseMockContactsEngineClientImpl
 	@Override
 	public Results<IndividualSegment> getIndividualSegments(
 		FaroProject faroProject, String channelId, String dataSourceId,
-		String query, List<String> fields, String name, String segmentType,
-		String state, String status, int cur, int delta,
-		List<OrderByField> orderByFields) {
+		String query, List<String> fields, String name,
+		List<String> segmentTypes, String state, String status, int cur,
+		int delta, List<OrderByField> orderByFields) {
 
 		return contactsEngineClient.getIndividualSegments(
 			faroProject, channelId, dataSourceId, query, fields, name,
-			segmentType, state, status, cur, delta, orderByFields);
+			segmentTypes, state, status, cur, delta, orderByFields);
 	}
 
 	@Override

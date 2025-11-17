@@ -29,6 +29,10 @@
 			},
 			"FileEntry": {
 				"properties": {
+					"alternativeText": {
+						"readOnly": true,
+						"type": "string"
+					},
 					"externalReferenceCode": {
 						"type": "string"
 					},
@@ -49,6 +53,19 @@
 					},
 					"link": {
 						"$ref": "#/components/schemas/Link"
+					},
+					"metadata": {
+						"additionalProperties": {
+							"description": "optional field that specifies the metadata of the file, can be embedded with nestedFields (the format of the nested field must be `<attachment field name>.metadata`)",
+							"type": "object"
+						},
+						"description": "optional field that specifies the metadata of the file, can be embedded with nestedFields (the format of the nested field must be `<attachment field name>.metadata`)",
+						"readOnly": true,
+						"type": "object"
+					},
+					"mimeType": {
+						"readOnly": true,
+						"type": "string"
 					},
 					"name": {
 						"type": "string"
@@ -343,12 +360,13 @@
 					"type": {
 						"enum": [
 							"AssetLibrary",
+							"CMS",
 							"Site"
 						],
 						"type": "string"
 					},
 					"x-class-name": {
-						"default": "com.liferay.object.rest.dto.v1_0.Scope",
+						"default": "com.liferay.headless.object.dto.v1_0.Scope",
 						"readOnly": true,
 						"type": "string"
 					}

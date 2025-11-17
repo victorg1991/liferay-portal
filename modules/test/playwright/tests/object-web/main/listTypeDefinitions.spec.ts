@@ -19,7 +19,8 @@ import {objectPagesTest} from '../../../fixtures/objectPagesTest';
 import {siteSettingsPagesTest} from '../../../fixtures/siteSettingsPagesTest';
 import {getRandomInt} from '../../../utils/getRandomInt';
 import {waitForAlert} from '../../../utils/waitForAlert';
-import {mockObjectFields} from './utils/mockObjectFields';
+import {generateObjectFields} from './utils/generateObjectFields';
+import {postListTypeDefinitionListTypeEntries} from './utils/postListTypeDefinitionListTypeEntries';
 
 export const test = mergeTests(
 	accountSettingsPagesTest,
@@ -252,14 +253,17 @@ test.describe('ensure picklist translation', () => {
 		page,
 		viewObjectEntriesPage,
 	}) => {
-		const {
-			objectFields,
-			titleObjectFieldName,
-			translatedListTypeDefinitionItems,
-		} = await mockObjectFields({
-			apiHelpers,
-			localeToTranslateListTypeItems: 'pt_BR',
-			objectFieldBusinessTypes: ['multiselectPicklist'],
+		const {listTypeDefinition, listTypeEntries} =
+			await postListTypeDefinitionListTypeEntries({
+				apiHelpers,
+				listTypeEntriesLength: 4,
+				locale: 'pt_BR',
+			});
+
+		const objectFields = generateObjectFields({
+			listTypeDefinitionExternalReferenceCode:
+				listTypeDefinition.externalReferenceCode,
+			objectFieldBusinessTypes: ['MultiselectPicklist'],
 		});
 
 		const objectDefinitionAPIClient =
@@ -282,7 +286,6 @@ test.describe('ensure picklist translation', () => {
 				status: {
 					code: 0,
 				},
-				titleObjectFieldName,
 			});
 
 		apiHelpers.data.push({
@@ -292,13 +295,20 @@ test.describe('ensure picklist translation', () => {
 
 		await viewObjectEntriesPage.goto(objectDefinition.className, 'pt');
 
-		await viewObjectEntriesPage.addObjectEntryButton.click();
+		await page
+			.getByLabel('Adicionar ' + objectDefinition.label['en_US'])
+			.first()
+			.click();
 
-		await formFieldsPage.addSelectItem(
-			translatedListTypeDefinitionItems[0]
-		);
+		await viewObjectEntriesPage.editObjectEntryForm.waitFor({
+			state: 'visible',
+		});
 
-		await expect(page.getByTitle('Remover Tudo')).toBeVisible();
+		const [{name_i18n: listTypeEntry_i18n}] = listTypeEntries;
+
+		await formFieldsPage.addSelectItem(listTypeEntry_i18n['pt-BR']);
+
+		await expect(page.getByTitle('Limpar Todos')).toBeVisible();
 	});
 
 	test('verify if translated picklist will be displayed on object admin', async ({
@@ -334,7 +344,6 @@ test.describe('ensure picklist translation', () => {
 
 		const objectDefinition: ObjectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -410,10 +419,12 @@ test.describe('ensure picklist translation', () => {
 
 		const listTypeEntryName: string = 'picklistItem' + getRandomInt();
 
-		await apiHelpers.listTypeAdmin.postListTypeEntry(
-			listTypeDefinition.externalReferenceCode,
-			listTypeEntryName
-		);
+		await apiHelpers.listTypeAdmin.postListTypeEntry({
+			key: listTypeEntryName,
+			listTypeDefinitionExternalReferenceCode:
+				listTypeDefinition.externalReferenceCode,
+			name_i18n: {en_US: listTypeEntryName},
+		});
 
 		// Translate picklist item
 
@@ -431,7 +442,6 @@ test.describe('ensure picklist translation', () => {
 
 		const objectDefinition: ObjectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 		apiHelpers.data.push({

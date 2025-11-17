@@ -9,6 +9,7 @@ import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
 import {changeTrackingPagesTest} from '../../../fixtures/changeTrackingPagesTest';
 import {customFieldsPagesTest} from '../../../fixtures/customFieldsPagesTest';
 import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
+import {displayPageTemplatesPagesTest} from '../../../fixtures/displayPageTemplatesPagesTest';
 import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {masterPagesPagesTest} from '../../../fixtures/masterPagesPagesTest';
@@ -28,6 +29,7 @@ import {templatesPageTest} from '../../template-web/main/fixtures/templatesPageT
 export const test = mergeTests(
 	apiHelpersTest,
 	dataApiHelpersTest,
+	displayPageTemplatesPagesTest,
 	changeTrackingPagesTest,
 	customFieldsPagesTest,
 	featureFlagsTest({
@@ -100,6 +102,8 @@ test('Add and apply content template', async ({
 		template: contentPageTemplateName,
 	});
 
+	await pageEditorPage.publishPage();
+
 	// Review publication changes and publish
 
 	await changeTrackingPage.goToReviewChanges(ctCollection.body.name);
@@ -110,6 +114,15 @@ test('Add and apply content template', async ({
 		title: contentPageTemplateName,
 		type: 'Layout Page Template Entry',
 	});
+
+	await page
+		.getByRole('link', {exact: true, name: contentPageTemplateName})
+		.click();
+	await expect(
+		page.locator(
+			'//td[contains(@class,"publications-render-view-content")]'
+		)
+	).toBeVisible();
 
 	await apiHelpers.headlessChangeTracking.publishCTCollection(
 		ctCollection.body.id
@@ -131,6 +144,83 @@ test('Add and apply content template', async ({
 		pageTemplateCollectionName
 	);
 });
+
+test(
+	'Add and apply display page template',
+	{tag: '@LPD-60041'},
+	async ({
+		apiHelpers,
+		changeTrackingPage,
+		ctCollection,
+		displayPageTemplatesPage,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+		await changeTrackingPage.workOnPublication(ctCollection);
+
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+
+		const displayPageTemplateName = getRandomString();
+
+		// Create a display page template for Basic Web Content
+
+		await displayPageTemplatesPage.createTemplate({
+			contentSubtype: 'Basic Web Content',
+			contentType: 'Web Content Article',
+			name: displayPageTemplateName,
+		});
+
+		await displayPageTemplatesPage.editTemplate(displayPageTemplateName);
+
+		// Add heading fragment to the template
+
+		await pageEditorPage.addFragment('Basic Components', 'Heading');
+
+		await pageEditorPage.publishPage();
+
+		// Review publication changes
+
+		await changeTrackingPage.goToReviewChanges(ctCollection.body.name);
+
+		await changeTrackingPage.viewChanges({
+			changed: 'Added',
+			site: site.name,
+			title: displayPageTemplateName,
+			type: 'Layout Page Template Entry',
+		});
+
+		await page
+			.getByRole('link', {exact: true, name: displayPageTemplateName})
+			.click();
+		await expect(
+			page.locator(
+				'//td[contains(@class,"publications-render-view-content")]'
+			)
+		).toBeVisible();
+
+		await apiHelpers.headlessChangeTracking.publishCTCollection(
+			ctCollection.body.id
+		);
+
+		await changeTrackingPage.assertStatus(
+			'Published',
+			ctCollection.body.name
+		);
+
+		// Verify that the fragment is present
+
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+		await displayPageTemplatesPage.editTemplate(displayPageTemplateName);
+		await expect(page.getByText('Heading Example')).toBeVisible();
+
+		// Delete display page template
+
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+
+		await displayPageTemplatesPage.deleteAllDisplayPageTemplates();
+	}
+);
 
 test('Add and apply information template', async ({
 	apiHelpers,
@@ -370,6 +460,15 @@ test('Add new page with master template', async ({
 		title: masterPageTemplateEntryName,
 		type: 'Fragment Entry Link',
 	});
+
+	await page
+		.getByRole('link', {exact: true, name: masterPageTemplateEntryName})
+		.click();
+	await expect(
+		page.locator(
+			'//td[contains(@class,"publications-render-view-content")]'
+		)
+	).toBeVisible();
 
 	await apiHelpers.headlessChangeTracking.publishCTCollection(
 		ctCollection.body.id
@@ -1058,7 +1157,7 @@ test('Publish with asset publisher configuration', async ({
 		.getByLabel('Dynamic')
 		.click();
 
-	await page.getByLabel('close', {exact: true}).click();
+	await page.locator('.modal').getByLabel('Close', {exact: true}).click();
 
 	await page.reload();
 

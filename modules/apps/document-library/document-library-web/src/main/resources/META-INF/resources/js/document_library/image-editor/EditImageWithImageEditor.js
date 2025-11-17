@@ -16,6 +16,7 @@ export default function EditImageWithImageEditor({
 	const fileEntryIdRef = useRef();
 
 	const [imageURL, setImageURL] = useState();
+	const [mimeType, setMimeType] = useState('');
 	const [showModal, setShowModal] = useState();
 
 	const handleOnClose = () => {
@@ -36,10 +37,12 @@ export default function EditImageWithImageEditor({
 		window[`${portletNamespace}editWithImageEditor`] = ({
 			fileEntryId,
 			imageURL,
+			mimeType,
 		}) => {
 			fileEntryIdRef.current = fileEntryId;
 
 			setImageURL(imageURL);
+			setMimeType(mimeType);
 			setShowModal(true);
 		};
 
@@ -56,7 +59,9 @@ export default function EditImageWithImageEditor({
 					observer={observer}
 					size="full-screen"
 				>
-					<ClayModal.Header>
+					<ClayModal.Header
+						closeButtonAriaLabel={Liferay.Language.get('close')}
+					>
 						{Liferay.Language.get('editing-image')}
 					</ClayModal.Header>
 
@@ -65,6 +70,7 @@ export default function EditImageWithImageEditor({
 							<ImageEditor
 								imageId={fileEntryIdRef.current}
 								imageSrc={imageURL}
+								mimeType={mimeType}
 								onCancel={onClose}
 								onSave={handleSave}
 								saveURL={editImageURL}

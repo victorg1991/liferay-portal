@@ -3,49 +3,44 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 
 import {
-	IAssetInformation,
-	IAssetObjectEntry,
-	getBaseAssetInformation,
-} from '../../structure_builder/types/AssetType';
+	ISearchAssetObjectEntry,
+	ISearchAssetTypeInformation,
+} from '../../common/types/AssetType';
 import AssetTypeInfoPanelBody from './AssetTypeInfoPanelBody';
 import AssetTypeInfoPanelHeader from './AssetTypeInfoPanelHeader';
 import {AssetTypeInfoPanelContext, IAssetTypeInfoPanelContext} from './context';
 
 import '../../../css/components/AssetTypeInfoPanel.scss';
-import {EVENTS} from './util/constants';
+import {getBaseAssetInformation} from './util';
 
-const AssetTypeInfoPanelContent = () => {
-	const [assetInfo, setAssetInfo] = useState({} as IAssetInformation);
-	const [objectEntries, setObjectEntries] = useState(
-		[] as IAssetObjectEntry[]
+const AssetTypeInfoPanelContent = ({
+	additionalProps: {assetLibraries, cmsGroupId, commentsProps},
+	items: objectEntries,
+}: {
+	additionalProps: any;
+	items: ISearchAssetObjectEntry[];
+}) => {
+	const assetInfo: ISearchAssetTypeInformation =
+		objectEntries?.length === 1 && objectEntries[0]?.actions
+			? getBaseAssetInformation(objectEntries[0])
+			: {};
+
+	const assetLibrary = assetLibraries.find(
+		({groupId}: {groupId: number}) =>
+			Number(groupId) === Number(objectEntries?.[0]?.embedded?.scopeId)
 	);
-
-	useEffect(() => {
-		const handler = ({items}: {items: IAssetObjectEntry[]}): void => {
-			setObjectEntries(items as IAssetObjectEntry[]);
-		};
-
-		Liferay.on(EVENTS.ASSET_DATA, handler);
-
-		return () => {
-			Liferay.detach(EVENTS.ASSET_DATA, handler);
-		};
-	}, [setObjectEntries]);
-
-	useEffect(() => {
-		if (objectEntries.length === 1) {
-			setAssetInfo(getBaseAssetInformation(objectEntries[0]));
-		}
-	}, [objectEntries]);
 
 	return (
 		<>
 			<AssetTypeInfoPanelContext.Provider
 				value={
 					{
+						assetLibrary,
+						cmsGroupId,
+						commentsProps,
 						objectEntries,
 						...assetInfo,
 					} as IAssetTypeInfoPanelContext

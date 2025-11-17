@@ -2081,7 +2081,7 @@ definition {
 	@description = "This is a test for COMMERCE-11392. Can see timestamps from payment transaction history"
 	@priority = 3
 	test CanViewTimestampsInOrderTransactionHistory {
-		property portal.acceptance = "true";
+		property portal.acceptance = "false";
 
 		task ("Given a Minium site with an Account is created") {
 			CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
@@ -2445,7 +2445,7 @@ definition {
 			accountName = "Commerce Account 1",
 			locator1 = "CommerceAccelerators#ACCOUNT_ORDER_NAME");
 
-		Button.click(button = "Reset Filters");
+		Button.click(button = "Clear");
 
 		Click(locator1 = "CommerceEntry#FILTER_DROPDOWN_MENU");
 
@@ -2463,7 +2463,7 @@ definition {
 			accountName = "Commerce Account 2",
 			locator1 = "CommerceAccelerators#ACCOUNT_ORDER_NAME");
 
-		Button.click(button = "Reset Filters");
+		Button.click(button = "Clear");
 
 		Click(locator1 = "CommerceEntry#FILTER_DROPDOWN_MENU");
 
@@ -2485,7 +2485,7 @@ definition {
 			accountName = "Commerce Account 2",
 			locator1 = "CommerceAccelerators#ACCOUNT_ORDER_NAME");
 
-		Button.click(button = "Reset Filters");
+		Button.click(button = "Clear");
 
 		Click(locator1 = "CommerceEntry#FILTER_DROPDOWN_MENU");
 
@@ -2501,7 +2501,7 @@ definition {
 			accountName = "Commerce Account 2",
 			locator1 = "CommerceAccelerators#ACCOUNT_ORDER_NAME");
 
-		Button.click(button = "Reset Filters");
+		Button.click(button = "Clear");
 
 		Click(locator1 = "CommerceEntry#FILTER_DROPDOWN_MENU");
 
@@ -2525,7 +2525,7 @@ definition {
 			accountName = "Commerce Account 2",
 			locator1 = "CommerceAccelerators#ACCOUNT_ORDER_NAME");
 
-		Button.click(button = "Reset Filters");
+		Button.click(button = "Clear");
 
 		Click(locator1 = "CommerceEntry#FILTER_DROPDOWN_MENU");
 

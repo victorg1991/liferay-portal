@@ -31,6 +31,33 @@ import org.json.JSONObject;
  */
 public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 
+	public File archive(String fileName) {
+		File archiveFile = super.archive(fileName);
+
+		if (!JenkinsResultsParserUtil.isCloudCINode()) {
+			return archiveFile;
+		}
+
+		setUpYarn();
+
+		GitUtil.ExecutionResult executionResult = executeBashCommands(
+			3, GitUtil.MILLIS_RETRY_DELAY, 1000 * 60 * 10,
+			JenkinsResultsParserUtil.combine(
+				"zip -r -y ", fileName,
+				" $(git ls-files --directory --no-empty-directory --others | ",
+				"grep -v \\\\.gradle/)"));
+
+		if (executionResult.getExitValue() != 0) {
+			throw new GitWorkingDirectoryRuntimeException(
+				this,
+				JenkinsResultsParserUtil.combine(
+					"Failed to add build/node to ", fileName, "\n",
+					executionResult.getStandardError()));
+		}
+
+		return archiveFile;
+	}
+
 	public Properties getAppServerProperties() {
 		if (_appServerProperties != null) {
 			return _appServerProperties;
@@ -40,6 +67,17 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 			new File(getWorkingDirectory(), "app.server.properties"));
 
 		return _appServerProperties;
+	}
+
+	public List<File> getJSUnitFiles() {
+		if (_jsUnitFiles != null) {
+			return _jsUnitFiles;
+		}
+
+		_jsUnitFiles = new ArrayList<>(
+			findFiles(null, "describe\\( -- '*.js' '*.jsx' '*.ts' '*.tsx'"));
+
+		return _jsUnitFiles;
 	}
 
 	public String getMajorPortalVersion() {
@@ -314,66 +352,35 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 		return _testProperties;
 	}
 
-	protected PortalGitWorkingDirectory(
-			String upstreamBranchName, String workingDirectoryPath)
-		throws IOException {
+	public void setUpYarn() {
+		File workingDirectory = getWorkingDirectory();
 
-		super(upstreamBranchName, workingDirectoryPath);
-	}
+		try {
+			Map<String, String> filteredEnv = new HashMap<>();
 
-	protected PortalGitWorkingDirectory(
-			String upstreamBranchName, String workingDirectoryPath,
-			String gitRepositoryName)
-		throws IOException {
+			Map<String, String> env = System.getenv();
 
-		super(upstreamBranchName, workingDirectoryPath, gitRepositoryName);
-	}
+			for (Map.Entry<String, String> entry : env.entrySet()) {
+				String key = entry.getKey();
 
-	private boolean _isNPMTestModuleDir(File moduleDir) {
-		List<File> packageJSONFiles = JenkinsResultsParserUtil.findFiles(
-			moduleDir, "package\\.json");
+				if (!key.startsWith("ANT_") && !key.startsWith("JAVA_")) {
+					continue;
+				}
 
-		for (File packageJSONFile : packageJSONFiles) {
-			JSONObject jsonObject = null;
-
-			try {
-				jsonObject = JenkinsResultsParserUtil.createJSONObject(
-					JenkinsResultsParserUtil.read(packageJSONFile));
-			}
-			catch (IOException ioException) {
-				System.out.println(
-					"Unable to read invalid JSON " + packageJSONFile.getPath());
-
-				continue;
-			}
-			catch (JSONException jsonException) {
-				System.out.println(
-					"Invalid JSON file " + packageJSONFile.getPath());
-
-				continue;
+				filteredEnv.put(key, entry.getValue());
 			}
 
-			if (!jsonObject.has("scripts")) {
-				continue;
-			}
-
-			JSONObject scriptsJSONObject = jsonObject.getJSONObject("scripts");
-
-			if (!scriptsJSONObject.has("test")) {
-				continue;
-			}
-
-			return true;
+			AntUtil.callTarget(
+				workingDirectory, "build.xml", "setup-sdk setup-yarn", null,
+				filteredEnv);
 		}
-
-		return false;
+		catch (AntException antException) {
+			throw new GitWorkingDirectoryRuntimeException(
+				this, "Failed to run setup-yarn in " + workingDirectory);
+		}
 	}
 
-	private Properties _appServerProperties;
-	private Properties _releaseProperties;
-	private Properties _testProperties;
-
-	private static class Module {
+	public static class Module {
 
 		public static Module getModule(Path path) {
 			File file = path.toFile();
@@ -430,5 +437,65 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 		private final int _priority;
 
 	}
+
+	protected PortalGitWorkingDirectory(
+			String upstreamBranchName, String workingDirectoryPath)
+		throws IOException {
+
+		super(upstreamBranchName, workingDirectoryPath);
+	}
+
+	protected PortalGitWorkingDirectory(
+			String upstreamBranchName, String workingDirectoryPath,
+			String gitRepositoryName)
+		throws IOException {
+
+		super(upstreamBranchName, workingDirectoryPath, gitRepositoryName);
+	}
+
+	private boolean _isNPMTestModuleDir(File moduleDir) {
+		List<File> packageJSONFiles = JenkinsResultsParserUtil.findFiles(
+			moduleDir, "package\\.json");
+
+		for (File packageJSONFile : packageJSONFiles) {
+			JSONObject jsonObject = null;
+
+			try {
+				jsonObject = JenkinsResultsParserUtil.createJSONObject(
+					JenkinsResultsParserUtil.read(packageJSONFile));
+			}
+			catch (IOException ioException) {
+				System.out.println(
+					"Unable to read invalid JSON " + packageJSONFile.getPath());
+
+				continue;
+			}
+			catch (JSONException jsonException) {
+				System.out.println(
+					"Invalid JSON file " + packageJSONFile.getPath());
+
+				continue;
+			}
+
+			if (!jsonObject.has("scripts")) {
+				continue;
+			}
+
+			JSONObject scriptsJSONObject = jsonObject.getJSONObject("scripts");
+
+			if (!scriptsJSONObject.has("test")) {
+				continue;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private Properties _appServerProperties;
+	private List<File> _jsUnitFiles;
+	private Properties _releaseProperties;
+	private Properties _testProperties;
 
 }

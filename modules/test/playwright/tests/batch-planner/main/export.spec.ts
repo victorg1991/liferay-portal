@@ -355,12 +355,14 @@ test('can export as JSON with all field types mapped', async ({
 				name: 'Test Test',
 			},
 			customAttachment: {
+				alternativeText: expect.any(String),
 				externalReferenceCode: expect.any(String),
 				id: expect.any(Number),
 				link: {
 					href: expect.any(String),
 					label: expect.any(String),
 				},
+				mimeType: expect.any(String),
 				name: expect.any(String),
 				scope: {
 					externalReferenceCode: expect.any(String),

@@ -109,9 +109,6 @@ public class ImportSystemDataSetMVCResourceCommand
 			fdsName, 0, dataSetObjectDefinition.getObjectDefinitionId(),
 			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
 			HashMapBuilder.<String, Serializable>put(
-				"additionalAPIURLParameters",
-				systemFDSEntry.getAdditionalAPIURLParameters()
-			).put(
 				"defaultItemsPerPage", systemFDSEntry.getDefaultItemsPerPage()
 			).put(
 				"description", systemFDSEntry.getDescription()
@@ -245,7 +242,9 @@ public class ImportSystemDataSetMVCResourceCommand
 			values.put("defaultVisualizationMode", "cards");
 
 			_objectEntryService.updateObjectEntry(
-				objectEntry.getObjectEntryId(), values, new ServiceContext());
+				objectEntry.getObjectEntryId(),
+				objectEntry.getObjectEntryFolderId(), values,
+				new ServiceContext());
 		}
 	}
 
@@ -297,7 +296,9 @@ public class ImportSystemDataSetMVCResourceCommand
 			values.put("defaultVisualizationMode", "list");
 
 			_objectEntryService.updateObjectEntry(
-				objectEntry.getObjectEntryId(), values, new ServiceContext());
+				objectEntry.getObjectEntryId(),
+				objectEntry.getObjectEntryFolderId(), values,
+				new ServiceContext());
 		}
 	}
 
@@ -396,7 +397,9 @@ public class ImportSystemDataSetMVCResourceCommand
 			values.put("defaultVisualizationMode", "table");
 
 			_objectEntryService.updateObjectEntry(
-				objectEntry.getObjectEntryId(), values, new ServiceContext());
+				objectEntry.getObjectEntryId(),
+				objectEntry.getObjectEntryFolderId(), values,
+				new ServiceContext());
 		}
 	}
 

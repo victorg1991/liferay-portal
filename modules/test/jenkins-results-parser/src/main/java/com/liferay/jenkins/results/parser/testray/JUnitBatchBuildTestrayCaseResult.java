@@ -13,6 +13,7 @@ import com.liferay.jenkins.results.parser.TestReport;
 import com.liferay.jenkins.results.parser.TopLevelBuildReport;
 import com.liferay.jenkins.results.parser.test.clazz.JUnitTestClass;
 import com.liferay.jenkins.results.parser.test.clazz.TestClass;
+import com.liferay.jenkins.results.parser.test.clazz.TestClassMethod;
 import com.liferay.jenkins.results.parser.test.clazz.group.AxisTestClassGroup;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class JUnitBatchBuildTestrayCaseResult
 
 	@Override
 	public BuildReport getBuildReport() {
-		if (JenkinsResultsParserUtil.isBuildCachingEnabled()) {
+		if (_jUnitTestClass.isBuildCachingEnabled()) {
 			DownstreamBuildReport cachedDownstreamBuildReport =
 				_jUnitTestClass.getCachedDownstreamBuildReport();
 
@@ -195,6 +196,59 @@ public class JUnitBatchBuildTestrayCaseResult
 	}
 
 	@Override
+	public String getIssues() {
+		List<String> testClassIssues = new ArrayList<>();
+
+		for (TestClassMethod testClassMethod :
+				_jUnitTestClass.getTestClassMethods()) {
+
+			testClassIssues.add(testClassMethod.getIssues());
+		}
+
+		return String.join(", ", testClassIssues);
+	}
+
+	public String getMethodIssues(String testName) {
+		for (TestClassMethod testClassMethod :
+				_jUnitTestClass.getTestClassMethods()) {
+
+			String testClassMethodName = testClassMethod.getName();
+
+			if (testClassMethodName.equals(testName)) {
+				return testClassMethod.getIssues();
+			}
+		}
+
+		return null;
+	}
+
+	public List<String> getMethodNames() {
+		List<String> testClassMethodNames = new ArrayList<>();
+
+		for (TestClassMethod testClassMethod :
+				_jUnitTestClass.getTestClassMethods()) {
+
+			testClassMethodNames.add(testClassMethod.getName());
+		}
+
+		return testClassMethodNames;
+	}
+
+	public String getMethodStatus(String testName) {
+		List<TestReport> testReportList = getTestReports();
+
+		for (TestReport testReport : testReportList) {
+			String testReportName = testReport.getTestName();
+
+			if (testReportName.equals(testName)) {
+				return testReport.getStatus();
+			}
+		}
+
+		return null;
+	}
+
+	@Override
 	public String getName() {
 		String testClassName = JenkinsResultsParserUtil.getCanonicalPath(
 			_jUnitTestClass.getTestClassFile());
@@ -301,7 +355,7 @@ public class JUnitBatchBuildTestrayCaseResult
 			return _testClassReports;
 		}
 
-		if (JenkinsResultsParserUtil.isBuildCachingEnabled()) {
+		if (_jUnitTestClass.isBuildCachingEnabled()) {
 			List<TestClassReport> cachedTestClassReports =
 				_jUnitTestClass.getCachedTestClassReports();
 

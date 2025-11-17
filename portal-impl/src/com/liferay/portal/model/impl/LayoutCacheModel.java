@@ -129,8 +129,8 @@ public class LayoutCacheModel
 		sb.append(themeId);
 		sb.append(", colorSchemeId=");
 		sb.append(colorSchemeId);
-		sb.append(", styleBookEntryId=");
-		sb.append(styleBookEntryId);
+		sb.append(", styleBookEntryERC=");
+		sb.append(styleBookEntryERC);
 		sb.append(", css=");
 		sb.append(css);
 		sb.append(", priority=");
@@ -143,8 +143,8 @@ public class LayoutCacheModel
 		sb.append(layoutPrototypeUuid);
 		sb.append(", layoutPrototypeLinkEnabled=");
 		sb.append(layoutPrototypeLinkEnabled);
-		sb.append(", sourcePrototypeLayoutUuid=");
-		sb.append(sourcePrototypeLayoutUuid);
+		sb.append(", layoutSetPrototypeLayoutERC=");
+		sb.append(layoutSetPrototypeLayoutERC);
 		sb.append(", publishDate=");
 		sb.append(publishDate);
 		sb.append(", lastPublishDate=");
@@ -291,7 +291,12 @@ public class LayoutCacheModel
 			layoutImpl.setColorSchemeId(colorSchemeId);
 		}
 
-		layoutImpl.setStyleBookEntryId(styleBookEntryId);
+		if (styleBookEntryERC == null) {
+			layoutImpl.setStyleBookEntryERC("");
+		}
+		else {
+			layoutImpl.setStyleBookEntryERC(styleBookEntryERC);
+		}
 
 		if (css == null) {
 			layoutImpl.setCss("");
@@ -313,11 +318,12 @@ public class LayoutCacheModel
 
 		layoutImpl.setLayoutPrototypeLinkEnabled(layoutPrototypeLinkEnabled);
 
-		if (sourcePrototypeLayoutUuid == null) {
-			layoutImpl.setSourcePrototypeLayoutUuid("");
+		if (layoutSetPrototypeLayoutERC == null) {
+			layoutImpl.setLayoutSetPrototypeLayoutERC("");
 		}
 		else {
-			layoutImpl.setSourcePrototypeLayoutUuid(sourcePrototypeLayoutUuid);
+			layoutImpl.setLayoutSetPrototypeLayoutERC(
+				layoutSetPrototypeLayoutERC);
 		}
 
 		if (publishDate == Long.MIN_VALUE) {
@@ -404,8 +410,7 @@ public class LayoutCacheModel
 		iconImageId = objectInput.readLong();
 		themeId = objectInput.readUTF();
 		colorSchemeId = objectInput.readUTF();
-
-		styleBookEntryId = objectInput.readLong();
+		styleBookEntryERC = objectInput.readUTF();
 		css = (String)objectInput.readObject();
 
 		priority = objectInput.readInt();
@@ -416,7 +421,7 @@ public class LayoutCacheModel
 		layoutPrototypeUuid = objectInput.readUTF();
 
 		layoutPrototypeLinkEnabled = objectInput.readBoolean();
-		sourcePrototypeLayoutUuid = objectInput.readUTF();
+		layoutSetPrototypeLayoutERC = objectInput.readUTF();
 		publishDate = objectInput.readLong();
 		lastPublishDate = objectInput.readLong();
 
@@ -553,7 +558,12 @@ public class LayoutCacheModel
 			objectOutput.writeUTF(colorSchemeId);
 		}
 
-		objectOutput.writeLong(styleBookEntryId);
+		if (styleBookEntryERC == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(styleBookEntryERC);
+		}
 
 		if (css == null) {
 			objectOutput.writeObject("");
@@ -577,11 +587,11 @@ public class LayoutCacheModel
 
 		objectOutput.writeBoolean(layoutPrototypeLinkEnabled);
 
-		if (sourcePrototypeLayoutUuid == null) {
+		if (layoutSetPrototypeLayoutERC == null) {
 			objectOutput.writeUTF("");
 		}
 		else {
-			objectOutput.writeUTF(sourcePrototypeLayoutUuid);
+			objectOutput.writeUTF(layoutSetPrototypeLayoutERC);
 		}
 
 		objectOutput.writeLong(publishDate);
@@ -631,14 +641,14 @@ public class LayoutCacheModel
 	public long iconImageId;
 	public String themeId;
 	public String colorSchemeId;
-	public long styleBookEntryId;
+	public String styleBookEntryERC;
 	public String css;
 	public int priority;
 	public long faviconFileEntryId;
 	public long masterLayoutPlid;
 	public String layoutPrototypeUuid;
 	public boolean layoutPrototypeLinkEnabled;
-	public String sourcePrototypeLayoutUuid;
+	public String layoutSetPrototypeLayoutERC;
 	public long publishDate;
 	public long lastPublishDate;
 	public int status;

@@ -9,58 +9,69 @@
 
 <%
 String redirect = ParamUtil.getString(request, "redirect");
-
-long patcherProductVersionId = ParamUtil.getLong(request, "patcherProductVersionId");
 %>
 
-<liferay-util:include page="/osb_patcher/views/header.jsp" servletContext="<%= application %>">
-	<liferay-util:param name="title" value="create-fix" />
-	<liferay-util:param name="mvcRenderCommandName" value="/patcher/index_fixes" />
-	<liferay-util:param name="patcherProductVersionId" value="<%= String.valueOf(patcherProductVersionId) %>" />
-</liferay-util:include>
+<liferay-ui:header
+	title="create-fix"
+/>
 
 <aui:model-context bean="<%= null %>" model="<%= PatcherFix.class %>" />
 
 <portlet:actionURL name="/patcher/add_fixes" var="addPatcherFixURL" />
 
-<aui:form action="<%= addPatcherFixURL %>" method="post" name="fm">
-	<portlet:renderURL var="viewPatcherFixesURL">
-		<portlet:param name="mvcRenderCommandName" value="/patcher/index_fixes" />
-		<portlet:param name="patcherProductVersionId" value="<%= String.valueOf(patcherProductVersionId) %>" />
-	</portlet:renderURL>
+<liferay-frontend:edit-form
+	action="<%= addPatcherFixURL %>"
+	fluid="<%= true %>"
+	method="post"
+	name="fm"
+>
+	<liferay-frontend:edit-form-body>
+		<aui:input name="redirect" type="hidden" value="<%= redirect %>" />
 
-	<aui:input name="redirect" type="hidden" value="<%= viewPatcherFixesURL %>" />
+		<aui:select label="product-version" name="patcherProductVersionId" onChange='<%= liferayPortletResponse.getNamespace() + "productVersionOnChange(this.value);" %>' required="<%= true %>" showEmptyOption="<%= true %>">
 
-	<aui:select label="product-version" name="patcherProductVersionId" onChange='<%= liferayPortletResponse.getNamespace() + "productVersionOnChange(this.value);" %>' required="<%= true %>" showEmptyOption="<%= true %>">
+			<%
+			for (PatcherProductVersion patcherProductVersion : PatcherProductVersionUtil.getPatcherProductVersions()) {
+			%>
 
-		<%
-		for (PatcherProductVersion patcherProductVersion : PatcherProductVersionUtil.getPatcherProductVersions()) {
-		%>
+				<aui:option label="<%= patcherProductVersion.getName() %>" value="<%= patcherProductVersion.getPatcherProductVersionId() %>" />
 
-			<aui:option label="<%= patcherProductVersion.getName() %>" value="<%= patcherProductVersion.getPatcherProductVersionId() %>" />
+			<%
+			}
+			%>
 
-		<%
-		}
-		%>
+		</aui:select>
 
-	</aui:select>
+		<aui:select label="project-version" name="patcherProjectVersionId" required="<%= true %>" />
 
-	<aui:select label="project-version" name="patcherProjectVersionId" required="<%= true %>" />
+		<div>
+			<aui:input label="content" name="patcherFixName" type="textarea" />
 
-	<aui:input label="content" name="name" type="textarea" />
+			<react:component
+				module="{PopoverTooltip} from osb-patcher-web"
+				props='<%=
+					HashMapBuilder.<String, Object>put(
+						"label", LanguageUtil.get(request, "content")
+					).put(
+						"name", "patcherFixName"
+					).build()
+				%>'
+			/>
+		</div>
 
-	<aui:input label="branch-name" name="committish" />
+		<aui:input label="branch-name" name="committish" />
 
-	<aui:input label="github-url" name="gitRemoteURL" />
+		<aui:input label="github-url" name="gitRemoteURL" />
 
-	<aui:input name="workaround" type="checkbox" />
+		<aui:input name="workaround" type="checkbox" />
+	</liferay-frontend:edit-form-body>
 
-	<aui:button-row>
-		<aui:button type="submit" value="add" />
-
-		<aui:button href="<%= Validator.isNotNull(redirect) ? redirect : viewPatcherFixesURL %>" value="cancel" />
-	</aui:button-row>
-</aui:form>
+	<liferay-frontend:edit-form-footer>
+		<liferay-frontend:edit-form-buttons
+			redirect="<%= redirect %>"
+		/>
+	</liferay-frontend:edit-form-footer>
+</liferay-frontend:edit-form>
 
 <aui:script>
 	var select = document.getElementById(
@@ -74,7 +85,7 @@ long patcherProductVersionId = ParamUtil.getLong(request, "patcherProductVersion
 			Liferay.Patcher.populateProjectVersionField(
 				productVersionId,
 				select,
-				<%= PatcherProjectVersionUtil.getPatcherProjectVersionsJSONObject() %>
+				<%= PatcherProjectVersionUtil.getPatcherProjectVersionsJSONObject(themeDisplay.getCompanyId()) %>
 			);
 		},
 		['aui-base']
@@ -90,15 +101,7 @@ long patcherProductVersionId = ParamUtil.getLong(request, "patcherProductVersion
 		Liferay.Patcher.populateProjectVersionField(
 			productVersionId,
 			select,
-			<%= PatcherProjectVersionUtil.getPatcherProjectVersionsJSONObject() %>
+			<%= PatcherProjectVersionUtil.getPatcherProjectVersionsJSONObject(themeDisplay.getCompanyId()) %>
 		);
-	});
-
-	YUI().ready('aui-popover', function (Y) {
-		var align_points = [Y.WidgetPositionAlign.LC, Y.WidgetPositionAlign.RC];
-		var tickets = document.getElementById('<portlet:namespace />name');
-		var trigger = Y.one('#<portlet:namespace />name');
-
-		Liferay.Patcher.getTicketLinksPopover(Y, align_points, tickets, trigger);
 	});
 </aui:script>

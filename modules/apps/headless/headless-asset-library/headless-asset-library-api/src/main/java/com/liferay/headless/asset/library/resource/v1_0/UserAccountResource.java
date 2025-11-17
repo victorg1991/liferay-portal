@@ -14,6 +14,7 @@ import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.odata.sort.SortParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
+import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineExportTaskResource;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
@@ -23,6 +24,7 @@ import jakarta.annotation.Generated;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import java.util.Collections;
@@ -44,46 +46,31 @@ import org.osgi.annotation.versioning.ProviderType;
 @ProviderType
 public interface UserAccountResource {
 
-	public void
-			deleteAssetLibraryByExternalReferenceCodeAssetLibraryExternalReferenceCodeUserAccountByExternalReferenceCodeUserExternalReferenceCode(
-				String assetLibraryExternalReferenceCode,
-				String userExternalReferenceCode)
-		throws Exception;
-
-	public void deleteAssetLibraryUserAccount(Long assetLibraryId, Long userId)
-		throws Exception;
-
-	public UserAccount
-			getAssetLibraryByExternalReferenceCodeAssetLibraryExternalReferenceCodeUserAccountByExternalReferenceCodeUserExternalReferenceCode(
-				String assetLibraryExternalReferenceCode,
-				String userExternalReferenceCode)
-		throws Exception;
-
-	public Page<UserAccount>
-			getAssetLibraryByExternalReferenceCodeUserAccountsPage(
-				String externalReferenceCode, String keywords, String search,
-				Pagination pagination,
-				com.liferay.portal.kernel.search.Sort[] sorts)
+	public void deleteAssetLibraryUserAccount(
+			String assetLibraryExternalReferenceCode,
+			String userAccountExternalReferenceCode)
 		throws Exception;
 
 	public UserAccount getAssetLibraryUserAccount(
-			Long assetLibraryId, Long userId)
+			String assetLibraryExternalReferenceCode,
+			String userAccountExternalReferenceCode)
 		throws Exception;
 
 	public Page<UserAccount> getAssetLibraryUserAccountsPage(
-			Long assetLibraryId, String keywords, String search,
-			Pagination pagination,
+			String assetLibraryExternalReferenceCode, String keywords,
+			String search, Pagination pagination,
 			com.liferay.portal.kernel.search.Sort[] sorts)
 		throws Exception;
 
-	public UserAccount
-			putAssetLibraryByExternalReferenceCodeAssetLibraryExternalReferenceCodeUserAccountByExternalReferenceCodeUserExternalReferenceCode(
-				String assetLibraryExternalReferenceCode,
-				String userExternalReferenceCode)
+	public Response postAssetLibraryUserAccountsPageExportBatch(
+			String assetLibraryExternalReferenceCode, String keywords,
+			String search, com.liferay.portal.kernel.search.Sort[] sorts,
+			String callbackURL, String contentType, String fieldNames)
 		throws Exception;
 
 	public UserAccount putAssetLibraryUserAccount(
-			Long assetLibraryId, Long userId)
+			String assetLibraryExternalReferenceCode,
+			String userAccountExternalReferenceCode)
 		throws Exception;
 
 	public default void setContextAcceptLanguage(
@@ -125,6 +112,10 @@ public interface UserAccountResource {
 	public void setRoleLocalService(RoleLocalService roleLocalService);
 
 	public void setSortParserProvider(SortParserProvider sortParserProvider);
+
+	public void setVulcanBatchEngineExportTaskResource(
+		VulcanBatchEngineExportTaskResource
+			vulcanBatchEngineExportTaskResource);
 
 	public void setVulcanBatchEngineImportTaskResource(
 		VulcanBatchEngineImportTaskResource

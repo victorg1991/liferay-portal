@@ -524,6 +524,8 @@ autoSaveTest(
 
 		await page.getByRole('button', {exact: true, name: 'Publish'}).click();
 
+		await journalPage.changeView('list');
+
 		await expect(page.getByTitle(title)).toBeVisible();
 
 		await journalPage.assertJournalArticlePermissions(title, [
@@ -537,7 +539,7 @@ autoSaveTest(
 	{
 		tag: '@LPD-32874',
 	},
-	async ({journalEditArticlePage, page, site}) => {
+	async ({journalEditArticlePage, journalPage, page, site}) => {
 		await journalEditArticlePage.goto({siteUrl: site.friendlyUrlPath});
 
 		const title = getRandomString();
@@ -555,6 +557,8 @@ autoSaveTest(
 		await expect(page.getByText('ID', {exact: true})).toBeVisible();
 
 		await journalEditArticlePage.publishArticle();
+
+		await journalPage.changeView('list');
 
 		await page.getByLabel(`Actions for ${title}`).waitFor();
 
@@ -582,6 +586,70 @@ autoSaveTest(
 		await expect(page.getByText('1.1')).toBeVisible();
 
 		await expect(page.getByText('Draft', {exact: true})).toBeVisible();
+	}
+);
+
+autoSaveTest(
+	'Web Content version and ID for structures with default value are hidden until auto save',
+	{
+		tag: '@LPD-70290',
+	},
+	async ({
+		apiHelpers,
+		journalEditArticlePage,
+		journalEditStructureDefaultValuesPage,
+		page,
+		site,
+	}) => {
+		const fieldName = 'Text1';
+		const structureName = getRandomString();
+
+		const dataDefinition = getDataStructureDefinition({
+			defaultLanguageId: 'en_US',
+			fields: [{name: fieldName, repeatable: true}],
+			name: structureName,
+		});
+
+		await apiHelpers.dataEngine.createStructure(site.id, dataDefinition);
+
+		await journalEditStructureDefaultValuesPage.goto({
+			siteUrl: site.friendlyUrlPath,
+			structureName,
+		});
+
+		const content = getRandomString();
+
+		await journalEditStructureDefaultValuesPage.fillTextField(
+			fieldName,
+			content
+		);
+
+		await journalEditStructureDefaultValuesPage.save();
+
+		await journalEditArticlePage.goto({
+			siteUrl: site.friendlyUrlPath,
+			structureName,
+		});
+
+		await expect(page.getByText('Version', {exact: true})).toBeHidden();
+
+		await expect(page.getByText('0.0', {exact: true})).toBeHidden();
+
+		await expect(page.getByText('ID', {exact: true})).toBeHidden();
+
+		const title = getRandomString();
+
+		await journalEditArticlePage.fillTitle(title);
+
+		await journalEditArticlePage.changesSavedIndicator.waitFor();
+
+		await openFieldset(page, 'Basic Information');
+
+		await expect(page.getByText('1.0')).toBeVisible();
+
+		await expect(page.getByText('Draft', {exact: true})).toBeVisible();
+
+		await expect(page.getByText('ID', {exact: true})).toBeVisible();
 	}
 );
 
@@ -689,12 +757,14 @@ autosaveWithoutPermissionsTest(
 	{
 		tag: '@LPD-37606',
 	},
-	async ({journalEditArticlePage, page, site}) => {
+	async ({journalEditArticlePage, journalPage, page, site}) => {
 		await journalEditArticlePage.goto({siteUrl: site.friendlyUrlPath});
 
 		const articleTitle = 'Web Content Title';
 
-		journalEditArticlePage.createAndPublishBasicArticle(articleTitle);
+		await journalEditArticlePage.createAndPublishBasicArticle(articleTitle);
+
+		await journalPage.changeView('list');
 
 		await expect(page.getByTitle(articleTitle)).toBeVisible();
 	}
@@ -705,7 +775,7 @@ autosaveWithoutPermissionsTest(
 	{
 		tag: '@LPD-40531',
 	},
-	async ({journalEditArticlePage, page, site}) => {
+	async ({journalEditArticlePage, journalPage, page, site}) => {
 		await journalEditArticlePage.goto({siteUrl: site.friendlyUrlPath});
 
 		const articleTitle = 'Web Content Title';
@@ -728,6 +798,8 @@ autosaveWithoutPermissionsTest(
 		await journalEditArticlePage.fillTitle(articleTitle);
 
 		await journalEditArticlePage.publishArticle();
+
+		await journalPage.changeView('list');
 
 		await expect(page.getByTitle(articleTitle)).toBeVisible();
 	}

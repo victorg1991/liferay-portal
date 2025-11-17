@@ -21,7 +21,6 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServ
 import com.liferay.layout.page.template.test.util.DisplayPageTemplateTestUtil;
 import com.liferay.layout.test.util.ContentLayoutTestUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -117,7 +116,8 @@ public class DisplayPageTemplateStagedModelDataHandlerTest
 						"element-text", JSONUtil.put(languageId, originalText))
 				).toString(),
 				fragmentEntry.getCss(), fragmentEntry.getConfiguration(),
-				fragmentEntry.getFragmentEntryId(), fragmentEntry.getHtml(),
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), fragmentEntry.getHtml(),
 				fragmentEntry.getJs(), draftLayout,
 				fragmentEntry.getFragmentEntryKey(), fragmentEntry.getType(),
 				null, 0,
@@ -157,7 +157,8 @@ public class DisplayPageTemplateStagedModelDataHandlerTest
 					KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
 				JSONUtil.put(
 					"element-text", JSONUtil.put(languageId, updatedText))
-			).toString());
+			).toString(),
+			true);
 
 		importedFragmentEntryLink =
 			_fragmentEntryLinkLocalService.
@@ -256,8 +257,7 @@ public class DisplayPageTemplateStagedModelDataHandlerTest
 			FragmentEntryLink fragmentEntryLink, String languageId)
 		throws Exception {
 
-		JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-			fragmentEntryLink.getEditableValues());
+		JSONObject jsonObject = fragmentEntryLink.getEditableValuesJSONObject();
 
 		JSONObject editableJSONObject = jsonObject.getJSONObject(
 			FragmentEntryProcessorConstants.

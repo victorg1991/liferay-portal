@@ -9,6 +9,9 @@ import com.liferay.asset.display.page.portlet.AssetDisplayPageFriendlyURLProvide
 import com.liferay.asset.display.page.util.AssetDisplayPageUtil;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.frontend.taglib.servlet.taglib.util.JSPRenderer;
+import com.liferay.info.item.ERCInfoItemIdentifier;
+import com.liferay.info.item.InfoItemIdentifier;
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.provider.InfoItemPermissionProvider;
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.InfoItemItemSelectorReturnType;
@@ -107,6 +110,11 @@ public class DisplayPageTypeSiteNavigationMenuItemType
 				_displayPageTypeContext.getClassName());
 			siteNavigationMenuItemElement.addAttribute(
 				"display-page-class-pk", String.valueOf(classPK));
+			siteNavigationMenuItemElement.addAttribute(
+				"display-page-external-reference-code",
+				GetterUtil.getString(
+					typeSettingsUnicodeProperties.get(
+						"externalReferenceCode")));
 
 			portletDataContext.addReferenceElement(
 				siteNavigationMenuItem, siteNavigationMenuItemElement,
@@ -354,10 +362,10 @@ public class DisplayPageTypeSiteNavigationMenuItemType
 		Element element = portletDataContext.getImportDataElement(
 			siteNavigationMenuItem);
 
-		long classPK = GetterUtil.getLong(
-			element.attributeValue("display-page-class-pk"));
+		String externalReferenceCode = GetterUtil.getString(
+			element.attributeValue("display-page-external-reference-code"));
 
-		if (classPK <= 0) {
+		if (externalReferenceCode == null) {
 			return false;
 		}
 
@@ -376,7 +384,12 @@ public class DisplayPageTypeSiteNavigationMenuItemType
 						(Map<Long, Long>)
 							portletDataContext.getNewPrimaryKeysMap(
 								_displayPageTypeContext.getClassName()),
-						classPK, classPK))
+						GetterUtil.getLong(
+							element.attributeValue("display-page-class-pk")),
+						GetterUtil.getLong(
+							element.attributeValue("display-page-class-pk"))))
+			).put(
+				"externalReferenceCode", externalReferenceCode
 			).buildString());
 
 		return true;
@@ -439,13 +452,16 @@ public class DisplayPageTypeSiteNavigationMenuItemType
 				siteNavigationMenuItem.getTypeSettings()
 			).build();
 
+		InfoItemIdentifier infoItemIdentifier = new ERCInfoItemIdentifier(
+			GetterUtil.getString(
+				typeSettingsUnicodeProperties.get("externalReferenceCode")));
+
 		return AssetDisplayPageUtil.hasAssetDisplayPage(
 			siteNavigationMenuItem.getGroupId(),
-			GetterUtil.getLong(
-				typeSettingsUnicodeProperties.get("classNameId")),
-			GetterUtil.getLong(typeSettingsUnicodeProperties.get("classPK")),
-			GetterUtil.getLong(
-				typeSettingsUnicodeProperties.get("classTypeId")));
+			new InfoItemReference(
+				GetterUtil.getString(
+					typeSettingsUnicodeProperties.get("className")),
+				infoItemIdentifier));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -11,6 +11,7 @@ import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import {KeyedMutator} from 'swr';
 
+import ButtonWithIcon from '../../../components/ButtonWithIcon';
 import {Action, SortDirection, SortOption} from '../../../utils/constants';
 import {Sort} from '../hooks/ListViewContext';
 
@@ -106,18 +107,32 @@ const Table = <T extends Record<string, any>>({
 								typeof action.disabled === 'boolean'
 									? action.disabled
 									: action?.disabled?.(item),
+							hidden:
+								typeof action.hidden === 'boolean'
+									? action.hidden
+									: action?.hidden?.(item),
 							onClick: () => {
 								if (action.onClick) {
 									return action?.onClick(item, mutate);
 								}
 							},
 						}))}
-						trigger={<ClayIcon symbol="ellipsis-v" />}
+						trigger={
+							<ButtonWithIcon
+								aria-label="actions"
+								className="btn-monospaced"
+								displayType="unstyled"
+								onClick={(event) => event.stopPropagation()}
+								symbol="ellipsis-v"
+							/>
+						}
 					>
-						{(item) => (
+						{(item, index) => (
 							<ClayDropDown.Item
 								disabled={item.disabled}
+								hidden={!!item.hidden}
 								onClick={() => item.onClick()}
+								{...{['keyValue']: index}}
 							>
 								{item.icon && (
 									<ClayIcon

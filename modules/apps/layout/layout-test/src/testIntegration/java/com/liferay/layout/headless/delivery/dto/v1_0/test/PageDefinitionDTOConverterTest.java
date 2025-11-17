@@ -617,7 +617,8 @@ public class PageDefinitionDTOConverterTest {
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			_layoutPageTemplateStructureLocalService.
 				updateLayoutPageTemplateStructureData(
-					_group.getGroupId(), _layoutPageTemplateEntry.getPlid(),
+					TestPropsValues.getUserId(), _group.getGroupId(),
+					_layoutPageTemplateEntry.getPlid(),
 					defaultSegmentsExperienceId,
 					StringUtil.replace(_read(fileName), "${", "}", valuesMap));
 
@@ -665,8 +666,9 @@ public class PageDefinitionDTOConverterTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), _group.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(),
+				null, TestPropsValues.getUserId(), _group.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(),
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(
 						_layoutPageTemplateEntry.getPlid()),

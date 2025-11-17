@@ -6,6 +6,7 @@
 package com.liferay.portal.configuration.persistence.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.persistence.ConfigurationOverridePropertiesUtil;
 import com.liferay.portal.configuration.persistence.InMemoryOnlyConfigurationThreadLocal;
@@ -14,7 +15,7 @@ import com.liferay.portal.file.install.constants.FileInstallConstants;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
@@ -27,6 +28,7 @@ import java.sql.ResultSet;
 
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 
@@ -213,13 +215,11 @@ public class ConfigurationPersistenceManagerTest {
 
 	@Test
 	public void testMemoryOnlyConfiguration() throws Exception {
-		InMemoryOnlyConfigurationThreadLocal.setInMemoryOnly(true);
+		try (SafeCloseable safeCloseable =
+				InMemoryOnlyConfigurationThreadLocal.
+					setInMemoryOnlyWithSafeCloseable(true)) {
 
-		try {
 			_assertConfiguration(false, false);
-		}
-		finally {
-			InMemoryOnlyConfigurationThreadLocal.setInMemoryOnly(false);
 		}
 	}
 
@@ -233,6 +233,14 @@ public class ConfigurationPersistenceManagerTest {
 	}
 
 	private void _assertConfiguration(boolean factory, boolean shouldBeStored)
+		throws Exception {
+
+		_assertConfiguration(new Hashtable<>(), factory, shouldBeStored);
+	}
+
+	private void _assertConfiguration(
+			Map<String, Object> additionalProperties, boolean factory,
+			boolean shouldBeStored)
 		throws Exception {
 
 		Configuration configuration = null;
@@ -250,7 +258,12 @@ public class ConfigurationPersistenceManagerTest {
 		String pid = configuration.getPid();
 
 		ConfigurationTestUtil.saveConfiguration(
-			configuration, MapUtil.singletonDictionary("foo", "bar"));
+			configuration,
+			HashMapDictionaryBuilder.putAll(
+				additionalProperties
+			).put(
+				"foo", "bar"
+			).build());
 
 		Assert.assertTrue(_persistenceManager.exists(pid));
 

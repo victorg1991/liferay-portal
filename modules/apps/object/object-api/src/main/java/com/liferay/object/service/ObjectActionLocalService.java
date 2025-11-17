@@ -7,6 +7,7 @@ package com.liferay.object.service;
 
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.object.model.ObjectAction;
+import com.liferay.object.model.ObjectDefinition;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
@@ -91,6 +92,10 @@ public interface ObjectActionLocalService
 			Map<Locale, String> labelMap, String name,
 			String objectActionExecutorKey, String objectActionTriggerKey,
 			UnicodeProperties parametersUnicodeProperties, boolean system)
+		throws PortalException;
+
+	public void addOrUpdateSubscriptionObjectActions(
+			ObjectDefinition objectDefinition)
 		throws PortalException;
 
 	/**
@@ -225,6 +230,9 @@ public interface ObjectActionLocalService
 	public ObjectAction fetchObjectAction(long objectActionId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectAction fetchObjectAction(long objectDefinitionId, String name);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ObjectAction fetchObjectAction(
 		String externalReferenceCode, long objectDefinitionId);
 
@@ -328,6 +336,10 @@ public interface ObjectActionLocalService
 	@Override
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.REINDEX)
+	public ObjectAction updateActive(ObjectAction objectAction, boolean active)
 		throws PortalException;
 
 	/**

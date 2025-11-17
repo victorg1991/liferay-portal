@@ -11,9 +11,11 @@ import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.util.AssetRendererFactoryLookup;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.model.ClassName;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.DocumentHelper;
 import com.liferay.portal.kernel.search.DocumentImpl;
@@ -21,8 +23,10 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistry;
 import com.liferay.portal.kernel.search.Summary;
+import com.liferay.portal.kernel.search.result.SearchResultContributor;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -34,6 +38,7 @@ import com.liferay.portal.search.internal.summary.SummaryBuilderFactoryImpl;
 import com.liferay.portal.search.web.internal.display.context.PortletURLFactory;
 import com.liferay.portal.search.web.internal.display.context.SearchResultPreferences;
 import com.liferay.portal.search.web.internal.result.display.context.SearchResultSummaryDisplayContext;
+import com.liferay.portal.search.web.internal.util.SearchUtil;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.util.FastDateFormatFactoryImpl;
 
@@ -43,13 +48,20 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Locale;
 
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Lino Alves
@@ -62,15 +74,38 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 	public static final LiferayUnitTestRule liferayUnitTestRule =
 		LiferayUnitTestRule.INSTANCE;
 
+	@BeforeClass
+	public static void setUpClass() throws Exception {
+		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
+
+		_searchResultContributorServiceRegistration =
+			bundleContext.registerService(
+				SearchResultContributor.class,
+				Mockito.mock(SearchResultContributor.class), null);
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+		if (_searchResultContributorServiceRegistration != null) {
+			_searchResultContributorServiceRegistration.unregister();
+		}
+	}
+
 	@Before
 	public void setUp() throws Exception {
-		setUpAssetRenderer();
+		_setUpAssetRenderer();
+		_setUpAssetRendererFactory();
 		_setUpGroupLocalService();
 		_setUpLocaleThreadLocal();
 		_setUpUser();
 		_setUpUserLocalService();
 
-		themeDisplay = _createThemeDisplay();
+		_themeDisplay = _createThemeDisplay();
+	}
+
+	@After
+	public void tearDown() {
+		_searchUtilMockedStatic.close();
 	}
 
 	@Test
@@ -80,75 +115,48 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		Mockito.doReturn(
 			portletURL
 		).when(
-			portletURLFactory
+			_portletURLFactory
 		).getPortletURL();
 
-		String entryClassName = RandomTestUtil.randomString();
-
-		long entryClassPK = RandomTestUtil.randomLong();
-
-		_whenAssetRendererFactoryGetAssetRenderer(entryClassPK, assetRenderer);
-
-		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
-			entryClassName);
-
 		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(_createDocument(entryClassName, entryClassPK));
+			_build(_createDocument());
 
 		Assert.assertEquals(
-			entryClassName, searchResultSummaryDisplayContext.getClassName());
+			_className, searchResultSummaryDisplayContext.getClassName());
 		Assert.assertEquals(
-			entryClassPK, searchResultSummaryDisplayContext.getClassPK());
+			_classPK, searchResultSummaryDisplayContext.getClassPK());
 		Assert.assertEquals(
 			portletURL, searchResultSummaryDisplayContext.getPortletURL());
 	}
 
 	@Test
 	public void testCreationDate() throws Exception {
-		String entryClassName = RandomTestUtil.randomString();
-
-		long entryClassPK = RandomTestUtil.randomLong();
-
-		_whenAssetRendererFactoryGetAssetRenderer(entryClassPK, assetRenderer);
-
-		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
-			entryClassName);
-
-		Document document = _createDocument(entryClassName, entryClassPK);
+		Document document = _createDocument();
 
 		_assertCreationDateMissing(document);
 
 		document.addKeyword(Field.CREATE_DATE, "20180425171442");
 
-		_assertCreationDate("Apr 25, 18, 5:14 PM", document);
+		_assertCreationDate(document, "Apr 25, 18, 5:14 PM");
 
 		_assertCreationDate(
-			LocaleUtil.BRAZIL, "25 de abr. de 18 17:14", document);
-		_assertCreationDate(LocaleUtil.CHINA, "18年4月25日 下午5:14", document);
-		_assertCreationDate(LocaleUtil.GERMANY, "25.04.18, 17:14", document);
-		_assertCreationDate(LocaleUtil.HUNGARY, "18. ápr. 25. 17:14", document);
-		_assertCreationDate(LocaleUtil.ITALY, "25 apr 18, 17:14", document);
-		_assertCreationDate(LocaleUtil.JAPAN, "18/04/25 17:14", document);
+			document, "25 de abr. de 18 17:14", LocaleUtil.BRAZIL);
+		_assertCreationDate(document, "18年4月25日 下午5:14", LocaleUtil.CHINA);
+		_assertCreationDate(document, "25.04.18, 17:14", LocaleUtil.GERMANY);
+		_assertCreationDate(document, "18. ápr. 25. 17:14", LocaleUtil.HUNGARY);
+		_assertCreationDate(document, "25 apr 18, 17:14", LocaleUtil.ITALY);
+		_assertCreationDate(document, "18/04/25 17:14", LocaleUtil.JAPAN);
 		_assertCreationDate(
-			LocaleUtil.NETHERLANDS, "25 apr. 18 17:14", document);
-		_assertCreationDate(LocaleUtil.SPAIN, "25 abr 18 17:14", document);
+			document, "25 apr. 18 17:14", LocaleUtil.NETHERLANDS);
+		_assertCreationDate(document, "25 abr 18 17:14", LocaleUtil.SPAIN);
 	}
 
 	@Test
 	public void testNoStagingLabel() throws Exception {
-		String entryClassName = RandomTestUtil.randomString();
-
-		long entryClassPK = RandomTestUtil.randomLong();
-
-		_whenAssetRendererFactoryGetAssetRenderer(entryClassPK, assetRenderer);
-
-		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
-			entryClassName);
-
-		_whenGroupLocalServiceGetGroup(false);
+		_setUpGroup(false);
 
 		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(_createDocument(entryClassName, entryClassPK));
+			_build(_createDocument());
 
 		Assert.assertEquals(
 			_SUMMARY_TITLE,
@@ -160,7 +168,7 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		_ruinAssetRendererFactoryLookup();
 
 		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(Mockito.mock(Document.class));
+			_build(Mockito.mock(Document.class));
 
 		Assert.assertTrue(
 			searchResultSummaryDisplayContext.isTemporarilyUnavailable());
@@ -168,20 +176,11 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 
 	@Test
 	public void testStagingLabel() throws Exception {
-		String entryClassName = RandomTestUtil.randomString();
-
-		long entryClassPK = RandomTestUtil.randomLong();
-
-		_whenAssetRendererFactoryGetAssetRenderer(entryClassPK, assetRenderer);
-
-		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
-			entryClassName);
-
-		_whenGroupLocalServiceGetGroup(true);
-		_whenLanguageGet("staged");
+		_setUpGroup(true);
+		_setUpLanguage("staged");
 
 		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(_createDocument(entryClassName, entryClassPK));
+			_build(_createDocument());
 
 		Assert.assertEquals(
 			_SUMMARY_TITLE + " (staged)",
@@ -192,67 +191,42 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 	public void testTagsURLDownloadAndUserPortraitFromResult()
 		throws Exception {
 
+		_setUpIndexerRegistry();
+
 		long userId = RandomTestUtil.randomLong();
 
-		AssetEntry assetEntry = _createAssetEntryWithTagsPresent(userId);
-
-		String className = RandomTestUtil.randomString();
-		long entryClassPK = RandomTestUtil.randomLong();
-
 		_whenAssetEntryLocalServiceFetchEntry(
-			className, entryClassPK, assetEntry);
-
-		_whenAssetRendererFactoryGetAssetRenderer(entryClassPK, assetRenderer);
+			_createAssetEntryWithTagsPresent(userId));
 
 		_whenAssetRendererFactoryHasPermission(true);
 
-		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
-			className);
-
 		String urlDownload = RandomTestUtil.randomString();
 
-		_whenAssetRendererGetURLDownload(assetRenderer, urlDownload);
-
-		_whenIndexerRegistryGetIndexer(className, _createIndexer());
+		_whenAssetRendererGetURLDownload(_assetRenderer, urlDownload);
 
 		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(_createDocument(className, entryClassPK));
+			_build(_createDocument());
 
 		_assertAssetRendererURLDownloadVisible(
-			urlDownload, searchResultSummaryDisplayContext);
-
-		_assertTagsVisible(entryClassPK, searchResultSummaryDisplayContext);
-
-		_assertUserPortraitVisible(userId, searchResultSummaryDisplayContext);
+			searchResultSummaryDisplayContext, urlDownload);
+		_assertTagsVisible(_classPK, searchResultSummaryDisplayContext);
+		_assertUserPortraitVisible(searchResultSummaryDisplayContext, userId);
 	}
 
 	@Test
 	public void testURLDownloadHiddenFromResult() throws Exception {
-		long userId = RandomTestUtil.randomLong();
-
-		AssetEntry assetEntry = _createAssetEntryWithTagsPresent(userId);
-
-		String className = RandomTestUtil.randomString();
-		long entryClassPK = RandomTestUtil.randomLong();
+		_setUpIndexerRegistry();
 
 		_whenAssetEntryLocalServiceFetchEntry(
-			className, entryClassPK, assetEntry);
-
-		_whenAssetRendererFactoryGetAssetRenderer(entryClassPK, assetRenderer);
-
+			_createAssetEntryWithTagsPresent(RandomTestUtil.randomLong()));
 		_whenAssetRendererFactoryHasPermission(false);
-
-		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
-			className);
 
 		String urlDownload = RandomTestUtil.randomString();
 
-		_whenAssetRendererGetURLDownload(assetRenderer, urlDownload);
-
-		_whenIndexerRegistryGetIndexer(className, _createIndexer());
+		_whenAssetRendererGetURLDownload(_assetRenderer, urlDownload);
 
 		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(_createDocument(className, entryClassPK));
+			_build(_createDocument());
 
 		Assert.assertEquals(
 			urlDownload,
@@ -266,61 +240,162 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 	public void testUserPortraitFromResultButTagsAndURLDownloadFromRoot()
 		throws Exception {
 
+		_setUpIndexerRegistry();
+
+		long classPK = RandomTestUtil.randomInt(2, Integer.MAX_VALUE);
+
+		_whenAssetRendererFactoryGetAssetRenderer(_assetRenderer, classPK);
+
 		long userId = RandomTestUtil.randomInt(2, Integer.MAX_VALUE);
 
-		AssetEntry assetEntry = _createAssetEntry(userId);
+		_whenAssetEntryLocalServiceFetchEntry(
+			_createAssetEntry(userId), classPK);
 
-		long rootUserId = userId - 1;
-
-		AssetEntry rootAssetEntry = _createAssetEntryWithTagsPresent(
-			rootUserId);
-
-		String className = RandomTestUtil.randomString();
-
-		long entryClassPK = RandomTestUtil.randomInt(2, Integer.MAX_VALUE);
-
-		long rootEntryClassPK = entryClassPK - 1;
+		long rootClassPK = classPK - 1;
 
 		_whenAssetEntryLocalServiceFetchEntry(
-			className, entryClassPK, assetEntry);
+			_createAssetEntryWithTagsPresent(userId - 1), rootClassPK);
 
-		_whenAssetEntryLocalServiceFetchEntry(
-			className, rootEntryClassPK, rootAssetEntry);
+		AssetRenderer<?> assetRenderer = Mockito.mock(AssetRenderer.class);
 
-		_whenAssetRendererFactoryGetAssetRenderer(entryClassPK, assetRenderer);
-
-		AssetRenderer<?> rootAssetRenderer = Mockito.mock(AssetRenderer.class);
-
-		_whenAssetRendererFactoryGetAssetRenderer(
-			rootEntryClassPK, rootAssetRenderer);
+		_whenAssetRendererFactoryGetAssetRenderer(assetRenderer, rootClassPK);
 
 		_whenAssetRendererFactoryHasPermission(true);
+
+		String urlDownload = RandomTestUtil.randomString();
+
+		_whenAssetRendererGetURLDownload(assetRenderer, urlDownload);
+
+		Document document = _createDocument(classPK);
+
+		document.addKeyword(Field.ROOT_ENTRY_CLASS_PK, rootClassPK);
+
+		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
+			_build(document);
+
+		_assertAssetRendererURLDownloadVisible(
+			searchResultSummaryDisplayContext, urlDownload);
+		_assertTagsVisible(rootClassPK, searchResultSummaryDisplayContext);
+		_assertUserPortraitVisible(searchResultSummaryDisplayContext, userId);
+	}
+
+	@Test
+	public void testViewURL1() throws Exception {
+		long classNameId = RandomTestUtil.randomLong();
+
+		_setUpClassNameLocalService(classNameId, RandomTestUtil.randomString());
+
+		_setUpSearchUtilMockedStatic(_className, _classPK);
+
+		Document document = _createDocument();
+
+		document.addKeyword(Field.CLASS_NAME_ID, classNameId);
+		document.addKeyword(Field.CLASS_PK, RandomTestUtil.randomLong());
+
+		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
+			_build(document);
+
+		Assert.assertEquals(
+			_className + _classPK,
+			searchResultSummaryDisplayContext.getViewURL());
+	}
+
+	@Test
+	public void testViewURL2() throws Exception {
+		String className = RandomTestUtil.randomString();
+		long classNameId = RandomTestUtil.randomLong();
+
+		_setUpClassNameLocalService(classNameId, className);
+
+		long classPK = RandomTestUtil.randomLong();
+
+		_setUpSearchUtilMockedStatic(className, classPK);
 
 		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
 			className);
 
-		String rootURLDownload = RandomTestUtil.randomString();
+		Document document = _createDocument();
 
-		_whenAssetRendererGetURLDownload(rootAssetRenderer, rootURLDownload);
-
-		_whenIndexerRegistryGetIndexer(className, _createIndexer());
-
-		Document document = _createDocument(className, entryClassPK);
-
-		document.addKeyword(Field.ROOT_ENTRY_CLASS_PK, rootEntryClassPK);
+		document.addKeyword(Field.CLASS_NAME_ID, classNameId);
+		document.addKeyword(Field.CLASS_PK, classPK);
 
 		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(document);
+			_build(document);
 
-		_assertAssetRendererURLDownloadVisible(
-			rootURLDownload, searchResultSummaryDisplayContext);
-
-		_assertTagsVisible(rootEntryClassPK, searchResultSummaryDisplayContext);
-
-		_assertUserPortraitVisible(userId, searchResultSummaryDisplayContext);
+		Assert.assertEquals(
+			className + classPK,
+			searchResultSummaryDisplayContext.getViewURL());
 	}
 
-	protected SearchResultSummaryDisplayContext build(Document document)
+	private void _assertAssetRendererURLDownloadVisible(
+		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext,
+		String urlDownload) {
+
+		Assert.assertTrue(
+			searchResultSummaryDisplayContext.
+				isAssetRendererURLDownloadVisible());
+		Assert.assertEquals(
+			urlDownload,
+			searchResultSummaryDisplayContext.getAssetRendererURLDownload());
+	}
+
+	private void _assertCreationDate(
+			Document document, String expectedCreationDateString)
+		throws Exception {
+
+		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
+			_build(document);
+
+		Assert.assertEquals(
+			expectedCreationDateString,
+			searchResultSummaryDisplayContext.getCreationDateString());
+		Assert.assertTrue(
+			searchResultSummaryDisplayContext.isCreationDateVisible());
+	}
+
+	private void _assertCreationDate(
+			Document document, String expectedCreationDateString,
+			Locale locale1)
+		throws Exception {
+
+		_locale = locale1;
+
+		_assertCreationDate(document, expectedCreationDateString);
+	}
+
+	private void _assertCreationDateMissing(Document document)
+		throws Exception {
+
+		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
+			_build(document);
+
+		Assert.assertNull(
+			searchResultSummaryDisplayContext.getCreationDateString());
+		Assert.assertFalse(
+			searchResultSummaryDisplayContext.isCreationDateVisible());
+	}
+
+	private void _assertTagsVisible(
+		long classPK,
+		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext) {
+
+		Assert.assertTrue(
+			searchResultSummaryDisplayContext.isAssetCategoriesOrTagsVisible());
+		Assert.assertEquals(
+			classPK, searchResultSummaryDisplayContext.getClassPK());
+	}
+
+	private void _assertUserPortraitVisible(
+		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext,
+		long userId) {
+
+		Assert.assertTrue(
+			searchResultSummaryDisplayContext.isUserPortraitVisible());
+		Assert.assertEquals(
+			userId, searchResultSummaryDisplayContext.getAssetEntryUserId());
+	}
+
+	private SearchResultSummaryDisplayContext _build(Document document)
 		throws Exception {
 
 		SearchResultSummaryDisplayContextBuilder
@@ -332,134 +407,17 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		return searchResultSummaryDisplayContextBuilder.build();
 	}
 
-	protected void setUpAssetRenderer() throws Exception {
-		Mockito.doReturn(
-			_SUMMARY_CONTENT
-		).when(
-			assetRenderer
-		).getSearchSummary(
-			Mockito.nullable(Locale.class)
-		);
-
-		Mockito.doReturn(
-			_SUMMARY_TITLE
-		).when(
-			assetRenderer
-		).getTitle(
-			Mockito.nullable(Locale.class)
-		);
-	}
-
-	protected AssetEntryLocalService assetEntryLocalService = Mockito.mock(
-		AssetEntryLocalService.class);
-	protected AssetRenderer<?> assetRenderer = Mockito.mock(
-		AssetRenderer.class);
-	protected AssetRendererFactory<?> assetRendererFactory = Mockito.mock(
-		AssetRendererFactory.class);
-	protected AssetRendererFactoryLookup assetRendererFactoryLookup =
-		Mockito.mock(AssetRendererFactoryLookup.class);
-	protected FastDateFormatFactory fastDateFormatFactory =
-		new FastDateFormatFactoryImpl();
-	protected Group group = Mockito.mock(Group.class);
-	protected GroupLocalService groupLocalService = Mockito.mock(
-		GroupLocalService.class);
-	protected IndexerRegistry indexerRegistry = Mockito.mock(
-		IndexerRegistry.class);
-	protected Language language = Mockito.mock(Language.class);
-	protected Locale locale = LocaleUtil.US;
-	protected PermissionChecker permissionChecker = Mockito.mock(
-		PermissionChecker.class);
-	protected PortletURLFactory portletURLFactory = Mockito.mock(
-		PortletURLFactory.class);
-	protected ThemeDisplay themeDisplay;
-	protected User user = Mockito.mock(User.class);
-	protected UserLocalService userLocalService = Mockito.mock(
-		UserLocalService.class);
-
-	private void _assertAssetRendererURLDownloadVisible(
-		String urlDownload,
-		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext) {
-
-		Assert.assertTrue(
-			searchResultSummaryDisplayContext.
-				isAssetRendererURLDownloadVisible());
-
-		Assert.assertEquals(
-			urlDownload,
-			searchResultSummaryDisplayContext.getAssetRendererURLDownload());
-	}
-
-	private void _assertCreationDate(
-			Locale locale1, String expectedCreationDateString,
-			Document document)
-		throws Exception {
-
-		locale = locale1;
-
-		_assertCreationDate(expectedCreationDateString, document);
-	}
-
-	private void _assertCreationDate(
-			String expectedCreationDateString, Document document)
-		throws Exception {
-
-		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(document);
-
-		Assert.assertEquals(
-			expectedCreationDateString,
-			searchResultSummaryDisplayContext.getCreationDateString());
-
-		Assert.assertTrue(
-			searchResultSummaryDisplayContext.isCreationDateVisible());
-	}
-
-	private void _assertCreationDateMissing(Document document)
-		throws Exception {
-
-		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext =
-			build(document);
-
-		Assert.assertNull(
-			searchResultSummaryDisplayContext.getCreationDateString());
-
-		Assert.assertFalse(
-			searchResultSummaryDisplayContext.isCreationDateVisible());
-	}
-
-	private void _assertTagsVisible(
-		long entryClassPK,
-		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext) {
-
-		Assert.assertTrue(
-			searchResultSummaryDisplayContext.isAssetCategoriesOrTagsVisible());
-
-		Assert.assertEquals(
-			entryClassPK, searchResultSummaryDisplayContext.getClassPK());
-	}
-
-	private void _assertUserPortraitVisible(
-		long userId,
-		SearchResultSummaryDisplayContext searchResultSummaryDisplayContext) {
-
-		Assert.assertTrue(
-			searchResultSummaryDisplayContext.isUserPortraitVisible());
-
-		Assert.assertEquals(
-			userId, searchResultSummaryDisplayContext.getAssetEntryUserId());
-	}
-
 	private AssetEntry _createAssetEntry(long userId) {
 		AssetEntry assetEntry = Mockito.mock(AssetEntry.class);
 
 		Mockito.doReturn(
-			assetRenderer
+			_assetRenderer
 		).when(
 			assetEntry
 		).getAssetRenderer();
 
 		Mockito.doReturn(
-			assetRendererFactory
+			_assetRendererFactory
 		).when(
 			assetEntry
 		).getAssetRendererFactory();
@@ -473,24 +431,28 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		return assetEntry;
 	}
 
-	private AssetEntry _createAssetEntryWithTagsPresent(long rootUserId) {
-		AssetEntry rootAssetEntry = _createAssetEntry(rootUserId);
+	private AssetEntry _createAssetEntryWithTagsPresent(long userId) {
+		AssetEntry assetEntry = _createAssetEntry(userId);
 
 		Mockito.doReturn(
 			new String[] {RandomTestUtil.randomString()}
 		).when(
-			rootAssetEntry
+			assetEntry
 		).getTagNames();
 
-		return rootAssetEntry;
+		return assetEntry;
 	}
 
-	private Document _createDocument(String entryClassName, long entryClassPK) {
+	private Document _createDocument() {
+		return _createDocument(_classPK);
+	}
+
+	private Document _createDocument(long classPK) {
 		Document document = new DocumentImpl();
 
 		DocumentHelper documentHelper = new DocumentHelper(document);
 
-		documentHelper.setEntryKey(entryClassName, entryClassPK);
+		documentHelper.setEntryKey(_className, classPK);
 
 		return document;
 	}
@@ -517,30 +479,30 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 				new SearchResultSummaryDisplayContextBuilder();
 
 		searchResultSummaryDisplayContextBuilder.setAssetEntryLocalService(
-			assetEntryLocalService);
+			_assetEntryLocalService);
 		searchResultSummaryDisplayContextBuilder.setAssetRendererFactoryLookup(
-			assetRendererFactoryLookup);
+			_assetRendererFactoryLookup);
+		searchResultSummaryDisplayContextBuilder.setClassNameLocalService(
+			_classNameLocalService);
 		searchResultSummaryDisplayContextBuilder.setFastDateFormatFactory(
-			fastDateFormatFactory);
+			_fastDateFormatFactory);
 		searchResultSummaryDisplayContextBuilder.setGroupLocalService(
-			groupLocalService);
+			_groupLocalService);
 		searchResultSummaryDisplayContextBuilder.setIndexerRegistry(
-			indexerRegistry);
-		searchResultSummaryDisplayContextBuilder.setLanguage(language);
-		searchResultSummaryDisplayContextBuilder.setLocale(locale);
+			_indexerRegistry);
+		searchResultSummaryDisplayContextBuilder.setLanguage(_language);
+		searchResultSummaryDisplayContextBuilder.setLocale(_locale);
 		searchResultSummaryDisplayContextBuilder.setPortletURLFactory(
-			portletURLFactory);
+			_portletURLFactory);
 		searchResultSummaryDisplayContextBuilder.setResourceActions(
 			Mockito.mock(ResourceActions.class));
 		searchResultSummaryDisplayContextBuilder.setSearchResultPreferences(
 			Mockito.mock(SearchResultPreferences.class));
-		searchResultSummaryDisplayContextBuilder.setSearchResultViewURLSupplier(
-			Mockito.mock(SearchResultViewURLSupplier.class));
 		searchResultSummaryDisplayContextBuilder.setSummaryBuilderFactory(
 			new SummaryBuilderFactoryImpl());
-		searchResultSummaryDisplayContextBuilder.setThemeDisplay(themeDisplay);
+		searchResultSummaryDisplayContextBuilder.setThemeDisplay(_themeDisplay);
 		searchResultSummaryDisplayContextBuilder.setUserLocalService(
-			userLocalService);
+			_userLocalService);
 
 		return searchResultSummaryDisplayContextBuilder;
 	}
@@ -549,7 +511,7 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		ThemeDisplay themeDisplay = new ThemeDisplay();
 
 		themeDisplay.setCompany(Mockito.mock(Company.class));
-		themeDisplay.setPermissionChecker(permissionChecker);
+		themeDisplay.setPermissionChecker(_permissionChecker);
 		themeDisplay.setUser(Mockito.mock(User.class));
 
 		return themeDisplay;
@@ -559,19 +521,96 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		Mockito.doThrow(
 			RuntimeException.class
 		).when(
-			assetRendererFactoryLookup
+			_assetRendererFactoryLookup
 		).getAssetRendererFactoryByClassName(
 			Mockito.anyString()
 		);
 	}
 
+	private void _setUpAssetRenderer() throws Exception {
+		Mockito.doReturn(
+			_SUMMARY_CONTENT
+		).when(
+			_assetRenderer
+		).getSearchSummary(
+			Mockito.nullable(Locale.class)
+		);
+
+		Mockito.doReturn(
+			_SUMMARY_TITLE
+		).when(
+			_assetRenderer
+		).getTitle(
+			Mockito.nullable(Locale.class)
+		);
+	}
+
+	private void _setUpAssetRendererFactory() throws Exception {
+		_classPK = RandomTestUtil.randomLong();
+
+		_whenAssetRendererFactoryGetAssetRenderer(_assetRenderer, _classPK);
+
+		_className = RandomTestUtil.randomString();
+
+		_whenAssetRendererFactoryLookupGetAssetRendererFactoryByClassName(
+			_className);
+	}
+
+	private void _setUpClassNameLocalService(long classNameId, String value)
+		throws Exception {
+
+		ClassName className = Mockito.mock(ClassName.class);
+
+		Mockito.doReturn(
+			value
+		).when(
+			className
+		).getClassName();
+
+		Mockito.doReturn(
+			className
+		).when(
+			_classNameLocalService
+		).getClassName(
+			Mockito.eq(classNameId)
+		);
+	}
+
+	private void _setUpGroup(boolean stagingGroup) throws Exception {
+		Mockito.doReturn(
+			stagingGroup
+		).when(
+			_group
+		).isStagingGroup();
+	}
+
 	private void _setUpGroupLocalService() {
 		Mockito.doReturn(
-			group
+			_group
 		).when(
-			groupLocalService
+			_groupLocalService
 		).fetchGroup(
 			Mockito.anyLong()
+		);
+	}
+
+	private void _setUpIndexerRegistry() throws Exception {
+		Mockito.doReturn(
+			_createIndexer()
+		).when(
+			_indexerRegistry
+		).getIndexer(
+			_className
+		);
+	}
+
+	private void _setUpLanguage(String string) {
+		Mockito.doReturn(
+			string
+		).when(
+			_language
+		).get(
+			Mockito.nullable(HttpServletRequest.class), Mockito.anyString()
 		);
 	}
 
@@ -579,11 +618,21 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		LocaleThreadLocal.setThemeDisplayLocale(LocaleUtil.US);
 	}
 
+	private void _setUpSearchUtilMockedStatic(String className, long classPK) {
+		_searchUtilMockedStatic.when(
+			() -> SearchUtil.getSearchResultViewURL(
+				Mockito.any(), Mockito.any(), Mockito.eq(className),
+				Mockito.eq(classPK), Mockito.eq(false), Mockito.isNull())
+		).thenReturn(
+			className + classPK
+		);
+	}
+
 	private void _setUpUser() throws Exception {
 		Mockito.doReturn(
 			RandomTestUtil.randomString()
 		).when(
-			user
+			_user
 		).getPortraitURL(
 			Mockito.any()
 		);
@@ -591,42 +640,46 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		Mockito.doReturn(
 			RandomTestUtil.randomLong()
 		).when(
-			user
+			_user
 		).getPortraitId();
 	}
 
 	private void _setUpUserLocalService() {
 		Mockito.doReturn(
-			user
+			_user
 		).when(
-			userLocalService
+			_userLocalService
 		).fetchUser(
 			Mockito.anyLong()
 		);
 	}
 
+	private void _whenAssetEntryLocalServiceFetchEntry(AssetEntry assetEntry) {
+		_whenAssetEntryLocalServiceFetchEntry(assetEntry, _classPK);
+	}
+
 	private void _whenAssetEntryLocalServiceFetchEntry(
-		String className, long classPK, AssetEntry assetEntry) {
+		AssetEntry assetEntry, long classPK) {
 
 		Mockito.doReturn(
 			assetEntry
 		).when(
-			assetEntryLocalService
+			_assetEntryLocalService
 		).fetchEntry(
-			className, classPK
+			_className, classPK
 		);
 	}
 
 	private void _whenAssetRendererFactoryGetAssetRenderer(
-			long entryClassPK, AssetRenderer<?> assetRenderer)
+			AssetRenderer<?> assetRenderer, long classPK)
 		throws Exception {
 
 		Mockito.doReturn(
 			assetRenderer
 		).when(
-			assetRendererFactory
+			_assetRendererFactory
 		).getAssetRenderer(
-			entryClassPK
+			classPK
 		);
 	}
 
@@ -636,7 +689,7 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		Mockito.doReturn(
 			hasPermission
 		).when(
-			assetRendererFactory
+			_assetRendererFactory
 		).hasPermission(
 			Mockito.any(), Mockito.anyLong(), Mockito.anyString()
 		);
@@ -647,9 +700,9 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 			String className) {
 
 		Mockito.doReturn(
-			assetRendererFactory
+			_assetRendererFactory
 		).when(
-			assetRendererFactoryLookup
+			_assetRendererFactoryLookup
 		).getAssetRendererFactoryByClassName(
 			className
 		);
@@ -663,39 +716,7 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		).when(
 			assetRenderer
 		).getURLDownload(
-			themeDisplay
-		);
-	}
-
-	private void _whenGroupLocalServiceGetGroup(boolean stagingGroup)
-		throws Exception {
-
-		Mockito.doReturn(
-			stagingGroup
-		).when(
-			group
-		).isStagingGroup();
-	}
-
-	private void _whenIndexerRegistryGetIndexer(
-		String className, Indexer<?> indexer) {
-
-		Mockito.doReturn(
-			indexer
-		).when(
-			indexerRegistry
-		).getIndexer(
-			className
-		);
-	}
-
-	private void _whenLanguageGet(String string) {
-		Mockito.doReturn(
-			string
-		).when(
-			language
-		).get(
-			Mockito.nullable(HttpServletRequest.class), Mockito.anyString()
+			_themeDisplay
 		);
 	}
 
@@ -703,5 +724,40 @@ public class SearchResultSummaryDisplayContextBuilderTest {
 		RandomTestUtil.randomString();
 
 	private static final String _SUMMARY_TITLE = RandomTestUtil.randomString();
+
+	private static ServiceRegistration<SearchResultContributor>
+		_searchResultContributorServiceRegistration;
+
+	private final AssetEntryLocalService _assetEntryLocalService = Mockito.mock(
+		AssetEntryLocalService.class);
+	private final AssetRenderer<?> _assetRenderer = Mockito.mock(
+		AssetRenderer.class);
+	private final AssetRendererFactory<?> _assetRendererFactory = Mockito.mock(
+		AssetRendererFactory.class);
+	private final AssetRendererFactoryLookup _assetRendererFactoryLookup =
+		Mockito.mock(AssetRendererFactoryLookup.class);
+	private String _className;
+	private final ClassNameLocalService _classNameLocalService = Mockito.mock(
+		ClassNameLocalService.class);
+	private long _classPK;
+	private final FastDateFormatFactory _fastDateFormatFactory =
+		new FastDateFormatFactoryImpl();
+	private final Group _group = Mockito.mock(Group.class);
+	private final GroupLocalService _groupLocalService = Mockito.mock(
+		GroupLocalService.class);
+	private final IndexerRegistry _indexerRegistry = Mockito.mock(
+		IndexerRegistry.class);
+	private final Language _language = Mockito.mock(Language.class);
+	private Locale _locale = LocaleUtil.US;
+	private final PermissionChecker _permissionChecker = Mockito.mock(
+		PermissionChecker.class);
+	private final PortletURLFactory _portletURLFactory = Mockito.mock(
+		PortletURLFactory.class);
+	private final MockedStatic<SearchUtil> _searchUtilMockedStatic =
+		Mockito.mockStatic(SearchUtil.class);
+	private ThemeDisplay _themeDisplay;
+	private final User _user = Mockito.mock(User.class);
+	private final UserLocalService _userLocalService = Mockito.mock(
+		UserLocalService.class);
 
 }

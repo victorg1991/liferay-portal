@@ -3,12 +3,17 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import ClayButton from '@clayui/button';
 import {Text} from '@clayui/core';
-import React, {useContext, useEffect, useState} from 'react';
+import ClayDropdown from '@clayui/drop-down';
+import ClayEmptyState from '@clayui/empty-state';
+import ClayIcon from '@clayui/icon';
+import {buildQueryString} from '@liferay/analytics-reports-js-components-web';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 
 import ApiHelper from '../../../common/services/ApiHelper';
 import {ViewDashboardContext} from '../ViewDashboardContext';
-import {buildQueryString} from '../utils/buildQueryString';
+import usePagination from '../utils/usePagination';
 import {AllCategoriesDropdown} from './AllCategoriesDropdown';
 import {AllStructureTypesDropdown} from './AllStructureTypesDropdown';
 import {AllTagsDropdown} from './AllTagsDropdown';
@@ -25,6 +30,9 @@ export interface IAllFiltersDropdown extends React.HTMLAttributes<HTMLElement> {
 
 export type InventoryAnalysisDataType = {
 	inventoryAnalysisItems: {count: number; key: string; title: string}[];
+	inventoryAnalysisItemsCount: number;
+	page: number;
+	pageSize: number;
 	totalCount: number;
 };
 
@@ -34,7 +42,7 @@ export const initialFilters = {
 		value: 'all',
 	},
 	structure: {
-		label: Liferay.Language.get('all-structures'),
+		label: Liferay.Language.get('all-content-structures'),
 		value: 'all',
 	},
 	structureType: {
@@ -54,6 +62,8 @@ export const initialFilters = {
 async function fetchStructureData({
 	filters,
 	language,
+	page,
+	pageSize,
 	space,
 }: {
 	filters: {
@@ -64,17 +74,26 @@ async function fetchStructureData({
 		vocabulary: Item;
 	};
 	language: Item;
+	page: number;
+	pageSize: number;
 	space: Item;
 }) {
-	const queryParams = buildQueryString({
-		categoryId: filters.category?.value,
-		groupBy: filters.structureType?.value,
-		languageId: language?.value,
-		spaceId: space?.value,
-		structureId: filters.structure?.value,
-		tagId: filters.tag?.value,
-		vocabularyId: filters.vocabulary?.value,
-	});
+	const queryParams = buildQueryString(
+		{
+			categoryId: filters.category?.value,
+			depotEntryId: space?.value,
+			groupBy: filters.structureType?.value,
+			languageId: language?.value,
+			page: page.toString(),
+			pageSize: pageSize.toString(),
+			structureId: filters.structure?.value,
+			tagId: filters.tag?.value,
+			vocabularyId: filters.vocabulary?.value,
+		},
+		{
+			shouldIgnoreParam: (value) => value === 'all',
+		}
+	);
 
 	const endpoint = `/o/analytics-cms-rest/v1.0/inventory-analysis${queryParams}`;
 
@@ -94,7 +113,7 @@ async function fetchStructureData({
 
 export function filterBySpaces(
 	assetLibraries: {id: number}[],
-	spaceId: string
+	depotEntryId: string
 ) {
 	return assetLibraries.some(({id}) => {
 
@@ -107,9 +126,28 @@ export function filterBySpaces(
 		// Decreasing -1 due a bug where response is increasing +1 in the id.
 		// Returns true if match id with id from space.
 
-		return String(id - 1) === spaceId;
+		return String(id - 1) === depotEntryId;
 	});
 }
+
+type DropdownItem = {
+	icon: string;
+	name: string;
+	value: 'chart' | 'table';
+};
+
+const dropdownItems: DropdownItem[] = [
+	{
+		icon: 'polls',
+		name: Liferay.Language.get('chart'),
+		value: 'chart',
+	},
+	{
+		icon: 'table',
+		name: Liferay.Language.get('table'),
+		value: 'table',
+	},
+];
 
 export function InventoryAnalysisCard() {
 	const {
@@ -127,13 +165,27 @@ export function InventoryAnalysisCard() {
 	const [inventoryAnalysisData, setInventoryAnalysisData] =
 		useState<InventoryAnalysisDataType>();
 
+	const [dropdownActive, setDropdownActive] = useState(false);
+
+	const [selectedItem, setSelectedItem] = useState<DropdownItem>(
+		dropdownItems[0]
+	);
+
+	const {handleDeltaChange, handlePageChange, pagination} = usePagination();
+
 	useEffect(() => {
 		setFilters(initialFilters);
 	}, [space?.value]);
 
 	useEffect(() => {
 		async function fetchData() {
-			const data = await fetchStructureData({filters, language, space});
+			const data = await fetchStructureData({
+				filters,
+				language,
+				page: pagination.page,
+				pageSize: pagination.pageSize,
+				space,
+			});
 
 			if (data) {
 				setInventoryAnalysisData(data);
@@ -141,13 +193,84 @@ export function InventoryAnalysisCard() {
 		}
 
 		fetchData();
-	}, [filters, language, space]);
+	}, [filters, language, pagination, space]);
+
+	const triggerRef = useRef<HTMLButtonElement | null>(null);
 
 	return (
-		<div className="cms-dashboard__inventory-analysis">
+		<div className="cms-dashboard__inventory-analysis mb-3">
 			<BaseCard
+				Preferences={
+					<ClayDropdown
+						active={dropdownActive}
+						closeOnClickOutside={true}
+						onActiveChange={setDropdownActive}
+						trigger={
+							<ClayButton
+								aria-label={selectedItem.name}
+								borderless={true}
+								displayType="secondary"
+								onClick={() => {
+									setDropdownActive(!dropdownActive);
+								}}
+								ref={(node: HTMLButtonElement) => {
+									triggerRef.current = node;
+								}}
+								size="sm"
+							>
+								{selectedItem.icon && (
+									<ClayIcon
+										className="mr-2"
+										symbol={selectedItem.icon}
+									/>
+								)}
+
+								<Text weight="semi-bold">
+									{selectedItem.name}
+								</Text>
+
+								<ClayIcon
+									className="mx-2"
+									symbol="caret-bottom"
+								/>
+							</ClayButton>
+						}
+					>
+						{dropdownItems.map((item) => (
+							<ClayDropdown.Item
+								active={item.value === selectedItem.value}
+								key={item.value}
+								onClick={() => {
+									setSelectedItem(item);
+									setDropdownActive(false);
+									triggerRef?.current?.focus();
+								}}
+							>
+								<div className="align-items-center d-flex">
+									{item.value === selectedItem.value ? (
+										<ClayIcon
+											className="mr-2"
+											symbol="check"
+										/>
+									) : (
+										<ClayIcon className="mr-2" symbol="" />
+									)}
+
+									{item.icon && (
+										<ClayIcon
+											className="mr-2"
+											symbol={item.icon}
+										/>
+									)}
+
+									{item.name}
+								</div>
+							</ClayDropdown.Item>
+						))}
+					</ClayDropdown>
+				}
 				description={Liferay.Language.get(
-					'this-report-provides-a-breakdown-of-total-assets-by-categorization,-structure-type,-or-space'
+					'this-report-provides-a-breakdown-of-total-assets-by-categorization,-content-structure-type,-or-space'
 				)}
 				title={Liferay.Language.get('inventory-analysis')}
 			>
@@ -228,10 +351,28 @@ export function InventoryAnalysisCard() {
 					</div>
 				</div>
 
-				<PaginatedTable
-					currentStructureTypeLabel={filters.structureType.label}
-					inventoryAnalysisData={inventoryAnalysisData}
-				/>
+				{!inventoryAnalysisData ||
+				inventoryAnalysisData.totalCount === 0 ? (
+					<ClayEmptyState
+						className="cms-dashboard__empty-state"
+						description={Liferay.Language.get(
+							'there-are-no-assets-created-in-the-spaces'
+						)}
+						imgSrc={`${Liferay.ThemeDisplay.getPathThemeImages()}/states/cms_empty_state.svg`}
+						imgSrcReducedMotion={`${Liferay.ThemeDisplay.getPathThemeImages()}/states/cms_empty_state.svg`}
+						title={Liferay.Language.get('no-assets-yet')}
+					/>
+				) : (
+					<PaginatedTable
+						currentStructureTypeLabel={filters.structureType.label}
+						deltas={pagination.deltas}
+						handleDeltaChange={handleDeltaChange}
+						handlePageChange={handlePageChange}
+						inventoryAnalysisData={inventoryAnalysisData}
+						pagination={pagination}
+						viewType={selectedItem.value}
+					/>
+				)}
 			</BaseCard>
 		</div>
 	);

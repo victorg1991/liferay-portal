@@ -57,6 +57,10 @@ export class UsersAndOrganizationsPage {
 	readonly assignOrganizationRolesTableRowLink: (
 		roleName: string
 	) => Promise<Locator>;
+	readonly assignOrganizationRolesTableStatus: (
+		roleName: string,
+		status: string
+	) => Promise<Locator>;
 	readonly assignOrganizationRolesUserCell: (
 		userName: string
 	) => Promise<Locator>;
@@ -156,6 +160,7 @@ export class UsersAndOrganizationsPage {
 	readonly tableOrderMenuItem: (option: string) => Locator;
 	readonly userIdInput: Locator;
 	readonly usersCheckbox: (userName: string) => Promise<Locator>;
+	readonly usersDataTable: DataTablePage;
 	readonly usersSearchBar: Locator;
 	readonly usersSearchBarButton: Locator;
 	readonly usersTableRow: (
@@ -228,6 +233,20 @@ export class UsersAndOrganizationsPage {
 			}
 
 			throw new Error(`Cannot locate role row with name ${roleName}`);
+		};
+		this.assignOrganizationRolesTableStatus = async (
+			roleName: string,
+			status: string
+		) => {
+			const assignOrganizationRolesTableRow =
+				await this.assignOrganizationRolesTableRow(0, roleName);
+
+			if (
+				assignOrganizationRolesTableRow &&
+				assignOrganizationRolesTableRow.row
+			) {
+				return assignOrganizationRolesTableRow.row.getByText(status);
+			}
 		};
 		this.assignOrganizationRolesUserCell = async (userName: string) => {
 			return page.getByRole('cell', {
@@ -494,6 +513,12 @@ export class UsersAndOrganizationsPage {
 				return usersTableRow.row.getByRole('checkbox');
 			}
 		};
+		this.usersDataTable = new DataTablePage(
+			page,
+			page.locator(
+				'#_com_liferay_users_admin_web_portlet_UsersAdminPortlet_usersSearchContainer'
+			)
+		);
 		this.usersSearchBar = page.getByPlaceholder('Search for');
 		this.usersSearchBarButton = page.getByRole('button', {
 			name: 'Search for',
@@ -746,6 +771,8 @@ export class UsersAndOrganizationsPage {
 	}
 
 	async goToUser(userName: string) {
-		await this.page.getByRole('link', {name: userName}).click();
+		await this.page
+			.getByRole('link', {exact: true, name: userName})
+			.click();
 	}
 }

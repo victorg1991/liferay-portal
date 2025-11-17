@@ -6,8 +6,8 @@
 package com.liferay.frontend.js.web.internal.js.importmaps.extender;
 
 import com.liferay.frontend.js.importmaps.extender.DynamicJSImportMapsContributor;
-import com.liferay.frontend.js.web.internal.hashed.files.HashedFilesRegistry;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.frontend.hashed.files.HashedFilesRegistry;
 import com.liferay.portal.kernel.util.Portal;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,10 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Writer;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -60,18 +57,7 @@ public class FrontendJsWebDynamicJSImportMapsContributor
 		throws IOException {
 	}
 
-	@Activate
-	protected void activate(BundleContext bundleContext) {
-		_hashedFilesRegistry = new HashedFilesRegistry(bundleContext);
-	}
-
-	@Deactivate
-	protected void deactivate() {
-		_hashedFilesRegistry.close();
-
-		_hashedFilesRegistry = null;
-	}
-
+	@Reference
 	private HashedFilesRegistry _hashedFilesRegistry;
 
 	@Reference

@@ -39,6 +39,7 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalRunMode;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.version.Version;
@@ -48,7 +49,6 @@ import com.liferay.portal.upgrade.data.cleanup.DataCleanupPreupgradeProcessSuite
 import com.liferay.portal.upgrade.log.UpgradeLogContext;
 import com.liferay.portal.util.InitUtil;
 import com.liferay.portal.util.PortalClassPathUtil;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.verify.PreupgradeVerifyProcessSuite;
 import com.liferay.portal.verify.VerifyException;
 import com.liferay.portal.verify.VerifyProcessSuite;
@@ -148,7 +148,9 @@ public class DBUpgrader {
 			return _upgradeDatabaseAutoRun;
 		}
 
-		if (DBManagerUtil.getDBType() == DBType.HYPERSONIC) {
+		if (StartupHelperUtil.isDBNew() ||
+			(DBManagerUtil.getDBType() == DBType.HYPERSONIC)) {
+
 			_upgradeDatabaseAutoRun = false;
 		}
 		else {
@@ -212,9 +214,8 @@ public class DBUpgrader {
 		ServiceLatch serviceLatch = SystemBundleUtil.newServiceLatch();
 
 		serviceLatch.<Appender>waitFor(
-			StringBundler.concat(
-				"(&(appender.name=UpgradeLogAppender)(objectClass=",
-				Appender.class.getName(), "))"),
+			"(&(appender.name=UpgradeLogAppender)(objectClass=" +
+				Appender.class.getName() + "))",
 			appender -> {
 				_appender = appender;
 
@@ -404,6 +405,8 @@ public class DBUpgrader {
 			try {
 				buildNumber = _getBuildNumberForMissedUpgradeProcesses(
 					buildNumber);
+
+				StartupHelperUtil.setRunOnPortalUpgradeVerifiers(true);
 
 				StartupHelperUtil.upgradeProcess(buildNumber);
 

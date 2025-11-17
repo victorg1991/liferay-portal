@@ -6,14 +6,9 @@
 import ClayButton from '@clayui/button';
 import DropDown from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
-import {
-	Link,
-	Outlet,
-	useNavigate,
-	useOutletContext,
-	useParams,
-} from 'react-router-dom';
+import {Outlet, useOutletContext, useParams} from 'react-router-dom';
 
+import BackLink from '../../../../../components/BackLink';
 import Navbar, {NavbarProps} from '../../../../../components/Navbar';
 import {PageRenderer} from '../../../../../components/Page';
 import {MarketplaceDeliveryProduct} from '../../../../../entity/MarketplaceDeliveryProduct';
@@ -36,14 +31,15 @@ type BaseOutletProps = {
 	routes:
 		| NavbarProps['routes']
 		| ((data: ProductAndOrderPayload) => NavbarProps['routes']);
+	showActions?: boolean;
 };
 
 const BaseOutlet: React.FC<BaseOutletProps> = ({
 	backTitle,
 	backURL = '..',
 	routes,
+	showActions = true,
 }) => {
-	const navigate = useNavigate();
 	const {orderId} = useParams();
 	const outletContext = useOutletContext();
 	const {data, error, isLoading} = useGetProductByOrderId(orderId as string);
@@ -57,15 +53,7 @@ const BaseOutlet: React.FC<BaseOutletProps> = ({
 			error={error}
 			isLoading={isLoading}
 		>
-			<Link
-				className="align-items-center d-flex text-dark"
-				onClick={() => navigate('..')}
-				to={backURL}
-			>
-				<ClayIcon className="mr-2" symbol="order-arrow-left" />
-
-				<span className="h5 mt-1">{backTitle}</span>
-			</Link>
+			<BackLink path={backURL}>{backTitle}</BackLink>
 
 			<div className="d-flex justify-content-between">
 				<OrderDetailsHeader
@@ -77,23 +65,27 @@ const BaseOutlet: React.FC<BaseOutletProps> = ({
 					productOwner={productCreatorAccountName}
 				/>
 
-				<DropDown
-					className="align-items-center cursor-pointer d-flex h-100"
-					trigger={
-						<ClayButton displayType="secondary">
-							{i18n.translate('manage-app')}
+				{showActions && (
+					<DropDown
+						className="align-items-center cursor-pointer d-flex h-100"
+						trigger={
+							<ClayButton displayType="secondary">
+								{i18n.translate('manage-app')}
 
-							<ClayIcon
-								className="ml-2"
-								symbol="angle-down-small"
+								<ClayIcon
+									className="ml-2"
+									symbol="angle-down-small"
+								/>
+							</ClayButton>
+						}
+					>
+						{data?.placedOrder && (
+							<AppDropdownActions
+								placedOrder={data.placedOrder}
 							/>
-						</ClayButton>
-					}
-				>
-					{data?.placedOrder && (
-						<AppDropdownActions placedOrder={data.placedOrder} />
-					)}
-				</DropDown>
+						)}
+					</DropDown>
+				)}
 			</div>
 
 			<Navbar

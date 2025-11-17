@@ -48,15 +48,16 @@ import com.liferay.layout.admin.constants.LayoutAdminPortletKeys;
 import com.liferay.layout.importer.LayoutsImportStrategy;
 import com.liferay.layout.importer.LayoutsImporter;
 import com.liferay.layout.importer.LayoutsImporterResultEntry;
+import com.liferay.layout.importer.PortletPermissionsImporter;
 import com.liferay.layout.internal.importer.exception.DropzoneLayoutStructureItemException;
 import com.liferay.layout.internal.importer.helper.PortletConfigurationImporterHelper;
-import com.liferay.layout.internal.importer.helper.PortletPermissionsImporterHelper;
 import com.liferay.layout.internal.importer.structure.util.CollectionItemLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.CollectionLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.ColumnLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.ContainerLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.DropZoneLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.FormLayoutStructureItemImporter;
+import com.liferay.layout.internal.importer.structure.util.FormRelationshipLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.FormStepContainerLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.FormStepItemLayoutStructureItemImporter;
 import com.liferay.layout.internal.importer.structure.util.FragmentDropZoneLayoutStructureItemImporter;
@@ -98,7 +99,6 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -254,16 +254,16 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 	@Override
 	public List<FragmentEntryLink> importPageElement(
-			Layout layout, LayoutStructure layoutStructure, String parentItemId,
-			String pageElementJSON, int position, boolean preserveItemIds,
-			long segmentsExperienceId)
+			long userId, Layout layout, LayoutStructure layoutStructure,
+			String parentItemId, String pageElementJSON, int position,
+			boolean preserveItemIds, long segmentsExperienceId)
 		throws Exception {
 
 		Consumer<LayoutStructure> consumer = processedLayoutStructure -> {
 			try {
 				_layoutPageTemplateStructureLocalService.
 					updateLayoutPageTemplateStructureData(
-						layout.getGroupId(), layout.getPlid(),
+						userId, layout.getGroupId(), layout.getPlid(),
 						segmentsExperienceId,
 						processedLayoutStructure.toString());
 			}
@@ -355,6 +355,8 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				_fragmentRendererRegistry));
 		_addLayoutStructureItemImporter(new FormLayoutStructureItemImporter());
 		_addLayoutStructureItemImporter(
+			new FormRelationshipLayoutStructureItemImporter());
+		_addLayoutStructureItemImporter(
 			new FormStepContainerLayoutStructureItemImporter());
 		_addLayoutStructureItemImporter(
 			new FormStepItemLayoutStructureItemImporter());
@@ -367,14 +369,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				_fragmentEntryLocalService, _fragmentEntryProcessorRegistry,
 				_fragmentEntryValidator, _fragmentRendererRegistry,
 				_portletConfigurationImporterHelper, _portletFileRepository,
-				_portletLocalService, _portletPermissionsImporterHelper,
+				_portletLocalService, _portletPermissionsImporter,
 				_segmentsExperienceLocalService));
 		_addLayoutStructureItemImporter(new RowLayoutStructureItemImporter());
 		_addLayoutStructureItemImporter(
 			new WidgetLayoutStructureItemImporter(
 				_fragmentEntryLinkLocalService, _fragmentEntryProcessorRegistry,
 				_portletConfigurationImporterHelper, _portletLocalService,
-				_portletPermissionsImporterHelper, _portletRegistry));
+				_portletPermissionsImporter, _portletRegistry));
 	}
 
 	private void _addClientExtensionEntryRel(
@@ -1672,17 +1674,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				continue;
 			}
 
-			if (!FeatureFlagManagerUtil.isEnabled("LPD-6378") &&
-				((utilityPageTemplate.getType() ==
-					UtilityPageTemplate.Type.CREATE_ACCOUNT) ||
-				 (utilityPageTemplate.getType() ==
-					 UtilityPageTemplate.Type.FORGOT_PASSWORD) ||
-				 (utilityPageTemplate.getType() ==
-					 UtilityPageTemplate.Type.LOGIN))) {
-
-				continue;
-			}
-
 			String pageDefinitionJSON = null;
 
 			try {
@@ -2225,8 +2216,8 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 					layout.getGroupId(), styleBook.getKey());
 
 			if (styleBookEntry != null) {
-				layout.setStyleBookEntryId(
-					styleBookEntry.getStyleBookEntryId());
+				layout.setStyleBookEntryERC(
+					styleBookEntry.getExternalReferenceCode());
 			}
 		}
 
@@ -2438,7 +2429,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	private PortletLocalService _portletLocalService;
 
 	@Reference
-	private PortletPermissionsImporterHelper _portletPermissionsImporterHelper;
+	private PortletPermissionsImporter _portletPermissionsImporter;
 
 	@Reference
 	private PortletPreferencesLocalService _portletPreferencesLocalService;

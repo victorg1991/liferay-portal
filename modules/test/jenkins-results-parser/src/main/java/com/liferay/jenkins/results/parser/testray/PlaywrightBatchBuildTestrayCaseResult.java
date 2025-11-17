@@ -46,6 +46,20 @@ public class PlaywrightBatchBuildTestrayCaseResult
 	}
 
 	@Override
+	public BuildReport getBuildReport() {
+		if (_playwrightTestClassMethod.isBuildCachingEnabled()) {
+			DownstreamBuildReport cachedDownstreamBuildReport =
+				_playwrightTestClassMethod.getCachedDownstreamBuildReport();
+
+			if (cachedDownstreamBuildReport != null) {
+				return cachedDownstreamBuildReport;
+			}
+		}
+
+		return super.getBuildReport();
+	}
+
+	@Override
 	public String getComponentName() {
 		String componentName =
 			_playwrightJUnitTestClass.getTestrayMainComponentName();
@@ -101,6 +115,10 @@ public class PlaywrightBatchBuildTestrayCaseResult
 		}
 
 		if (testReport.isSkipped()) {
+			if (_playwrightTestClassMethod.isIgnored()) {
+				return "Test run skipped on CI";
+			}
+
 			return "Failed to run test on CI";
 		}
 
@@ -140,6 +158,11 @@ public class PlaywrightBatchBuildTestrayCaseResult
 	}
 
 	@Override
+	public String getIssues() {
+		return _playwrightTestClassMethod.getIssues();
+	}
+
+	@Override
 	public String getName() {
 		if (_playwrightJUnitTestClass == null) {
 			return super.getName();
@@ -158,14 +181,10 @@ public class PlaywrightBatchBuildTestrayCaseResult
 		List<TestrayAttachment> testrayAttachments =
 			super.getTestrayAttachments();
 
+		testrayAttachments.addAll(getLiferayLogTestrayAttachments());
+
 		testrayAttachments.add(getPlaywrightReportTestrayAttachment());
-
-		TestrayAttachment playwrightTraceViewerTestrayAttachment =
-			getPlaywrightTraceViewerTestrayAttachment();
-
-		if (playwrightTraceViewerTestrayAttachment != null) {
-			testrayAttachments.add(playwrightTraceViewerTestrayAttachment);
-		}
+		testrayAttachments.add(getPlaywrightTraceViewerTestrayAttachment());
 
 		testrayAttachments.removeAll(Collections.singleton(null));
 
@@ -174,6 +193,15 @@ public class PlaywrightBatchBuildTestrayCaseResult
 
 	@Override
 	public TestReport getTestReport() {
+		if (_playwrightTestClassMethod.isBuildCachingEnabled()) {
+			TestReport cachedTestReport =
+				_playwrightTestClassMethod.getCachedTestReport();
+
+			if (cachedTestReport != null) {
+				return cachedTestReport;
+			}
+		}
+
 		DownstreamBuildReport downstreamBuildReport =
 			getDownstreamBuildReport();
 

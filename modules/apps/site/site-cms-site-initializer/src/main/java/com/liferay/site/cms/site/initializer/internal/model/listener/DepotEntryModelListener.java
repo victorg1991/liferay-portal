@@ -5,25 +5,37 @@
 
 package com.liferay.site.cms.site.initializer.internal.model.listener;
 
+import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
-import com.liferay.object.constants.ObjectEntryFolderConstants;
-import com.liferay.object.entry.folder.util.ObjectEntryFolderThreadLocal;
-import com.liferay.object.service.ObjectEntryFolderLocalService;
+import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.document.library.kernel.util.DLAppHelperThreadLocal;
+import com.liferay.object.field.attachment.AttachmentManager;
+import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.ModelListenerException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.ModelListener;
+import com.liferay.portal.kernel.model.Repository;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.RepositoryLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
-import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.TempFileEntryUtil;
+import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.repository.temporaryrepository.TemporaryFileEntryRepository;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 /**
- * @author Adolfo Pérez
+ * @author Fábio Alves
  */
 @Component(service = ModelListener.class)
 public class DepotEntryModelListener extends BaseModelListener<DepotEntry> {
@@ -32,81 +44,76 @@ public class DepotEntryModelListener extends BaseModelListener<DepotEntry> {
 	public void onAfterCreate(DepotEntry depotEntry)
 		throws ModelListenerException {
 
-		try {
-			_onAfterCreate(depotEntry);
-		}
-		catch (Exception exception) {
-			throw new ModelListenerException(exception);
-		}
-	}
-
-	@Override
-	public void onBeforeRemove(DepotEntry depotEntry)
-		throws ModelListenerException {
-
-		try {
-			_onBeforeRemove(depotEntry);
-		}
-		catch (Exception exception) {
-			throw new ModelListenerException(exception);
-		}
-	}
-
-	private void _onAfterCreate(DepotEntry depotEntry) throws Exception {
 		if (!FeatureFlagManagerUtil.isEnabled(
-				depotEntry.getCompanyId(), "LPD-17564")) {
+				depotEntry.getCompanyId(), "LPD-17564") ||
+			(depotEntry.getType() != DepotConstants.TYPE_SPACE)) {
 
 			return;
 		}
 
-		Group group = depotEntry.getGroup();
+		ObjectDefinition objectDefinition =
+			_objectDefinitionLocalService.
+				fetchObjectDefinitionByExternalReferenceCode(
+					"L_CMS_BASIC_DOCUMENT", depotEntry.getCompanyId());
 
-		_objectEntryFolderLocalService.addObjectEntryFolder(
-			ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
-			group.getGroupId(), group.getCreatorUserId(),
-			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
-			"",
-			HashMapBuilder.put(
-				LocaleUtil.ENGLISH, "Contents"
-			).build(),
-			"Contents", ServiceContextThreadLocal.getServiceContext());
-		_objectEntryFolderLocalService.addObjectEntryFolder(
-			ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES,
-			group.getGroupId(), group.getCreatorUserId(),
-			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
-			"",
-			HashMapBuilder.put(
-				LocaleUtil.ENGLISH, "Files"
-			).build(),
-			"Files", ServiceContextThreadLocal.getServiceContext());
-	}
-
-	private void _onBeforeRemove(DepotEntry depotEntry) throws Exception {
-		if (!FeatureFlagManagerUtil.isEnabled(
-				depotEntry.getCompanyId(), "LPD-17564")) {
-
+		if (objectDefinition == null) {
 			return;
 		}
 
-		try (SafeCloseable safeCloseable =
-				ObjectEntryFolderThreadLocal.
-					setForceDeleteSystemObjectEntryFolderWithSafeCloseable(
-						true)) {
+		try {
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
 
-			Group group = depotEntry.getGroup();
+			if (serviceContext == null) {
+				serviceContext = new ServiceContext();
+			}
 
-			_objectEntryFolderLocalService.
-				deleteObjectEntryFolderByExternalReferenceCode(
-					ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
-					group.getGroupId(), group.getCompanyId());
-			_objectEntryFolderLocalService.
-				deleteObjectEntryFolderByExternalReferenceCode(
-					ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES,
-					group.getGroupId(), group.getCompanyId());
+			Group group = _groupLocalService.getGroup(depotEntry.getGroupId());
+
+			_attachmentManager.getDLFolder(
+				objectDefinition.getCompanyId(), group.getGroupId(),
+				objectDefinition.getPortletId(), serviceContext,
+				PrincipalThreadLocal.getUserId());
+
+			try (SafeCloseable safeCloseable =
+					DLAppHelperThreadLocal.setEnabledWithSafeCloseable(false)) {
+
+				Repository repository = _repositoryLocalService.fetchRepository(
+					group.getGroupId(), TempFileEntryUtil.class.getName(),
+					TempFileEntryUtil.class.getName());
+
+				if (repository != null) {
+					return;
+				}
+
+				_repositoryLocalService.addRepository(
+					null, PrincipalThreadLocal.getUserId(), group.getGroupId(),
+					_portal.getClassNameId(
+						TemporaryFileEntryRepository.class.getName()),
+					DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+					TempFileEntryUtil.class.getName(), StringPool.BLANK,
+					TempFileEntryUtil.class.getName(), new UnicodeProperties(),
+					true, serviceContext);
+			}
+		}
+		catch (PortalException portalException) {
+			throw new ModelListenerException(portalException);
 		}
 	}
 
 	@Reference
-	private ObjectEntryFolderLocalService _objectEntryFolderLocalService;
+	private AttachmentManager _attachmentManager;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Reference
+	private Portal _portal;
+
+	@Reference
+	private RepositoryLocalService _repositoryLocalService;
 
 }

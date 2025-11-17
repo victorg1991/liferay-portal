@@ -88,6 +88,14 @@ const ProjectRoutes = () => {
 		[subscriptionGroups]
 	);
 
+	const hasSLASubscription = useMemo(
+		() =>
+			koroneikiAccount?.slaCurrent ||
+			koroneikiAccount?.slaExpired ||
+			koroneikiAccount?.slaFuture,
+		[koroneikiAccount]
+	);
+
 	useEffect(() => {
 		if (project && subscriptionGroups) {
 			dispatch({
@@ -108,36 +116,6 @@ const ProjectRoutes = () => {
 
 				<Route element={<Layout />} path="/:accountKey">
 					<Route element={<Overview />} index />
-
-					{featureFlags.includes('LPS-153478') && (
-						<Route
-							element={
-								<ProductOutlet
-									product={
-										PRODUCT_TYPES.liferayExperienceCloud
-									}
-								/>
-							}
-						>
-							<Route
-								element={<LiferayExperienceCloud />}
-								path={getKebabCase(
-									PRODUCT_TYPES.liferayExperienceCloud
-								)}
-							/>
-						</Route>
-					)}
-
-					<Route
-						element={
-							<ProductOutlet product={PRODUCT_TYPES.dxpCloud} />
-						}
-					>
-						<Route
-							element={<DXPCloud />}
-							path={getKebabCase(PRODUCT_TYPES.dxpCloud)}
-						/>
-					</Route>
 
 					<Route element={<ActivationOutlet />} path="activation">
 						<Route
@@ -255,6 +233,34 @@ const ProjectRoutes = () => {
 
 						<Route
 							element={
+								<ProductOutlet product={PRODUCT_TYPES.dxpCloud} />
+							}
+						>
+							<Route
+								element={<DXPCloud />}
+								path={getKebabCase(PRODUCT_TYPES.dxpCloud)}
+							/>
+						</Route>
+
+						<Route
+							element={
+								<ProductOutlet
+									product={
+										PRODUCT_TYPES.liferayExperienceCloud
+									}
+								/>
+							}
+						>
+							<Route
+								element={<LiferayExperienceCloud />}
+								path={getKebabCase(
+									PRODUCT_TYPES.liferayExperienceCloud
+								)}
+							/>
+						</Route>
+
+						<Route
+							element={
 								<ProductOutlet
 									product={PRODUCT_TYPES.analyticsCloud}
 								/>
@@ -293,7 +299,7 @@ const ProjectRoutes = () => {
 
 					<Route element={<TeamMembers />} path="team-members" />
 					
-					{featureFlags.includes('LRSD-5119') && (
+					{hasSLASubscription && (
 						<Route path="business-events">
 							<Route element={<BusinessEvents />} index />
 							<Route element={<BusinessEventAdd />} path="new"/>

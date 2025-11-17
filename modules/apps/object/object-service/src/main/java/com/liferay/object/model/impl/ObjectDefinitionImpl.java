@@ -7,7 +7,10 @@ package com.liferay.object.model.impl;
 
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectDefinitionSettingConstants;
+import com.liferay.object.constants.ObjectFolderConstants;
 import com.liferay.object.constants.ObjectPortletKeys;
+import com.liferay.object.definition.setting.util.ObjectDefinitionSettingUtil;
+import com.liferay.object.definition.tree.util.ObjectDefinitionTreeUtil;
 import com.liferay.object.definition.util.ObjectDefinitionUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectDefinitionSetting;
@@ -17,10 +20,8 @@ import com.liferay.object.service.ObjectDefinitionSettingLocalServiceUtil;
 import com.liferay.object.service.ObjectFolderLocalServiceUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -135,11 +136,6 @@ public class ObjectDefinitionImpl extends ObjectDefinitionBaseImpl {
 	}
 
 	@Override
-	public String getPreviousRESTContextPath() {
-		return _previousRESTContextPath;
-	}
-
-	@Override
 	public String getResourceName() {
 		if (isUnmodifiableSystemObject()) {
 			throw new UnsupportedOperationException();
@@ -154,45 +150,13 @@ public class ObjectDefinitionImpl extends ObjectDefinitionBaseImpl {
 			throw new UnsupportedOperationException();
 		}
 
-		if (!isRootDescendantNode()) {
-			if (isModifiableAndSystem()) {
-				return ObjectDefinitionUtil.
-					getModifiableSystemObjectDefinitionRESTContextPath(
-						getName());
-			}
-
-			String lowerCaseShortName = StringUtil.toLowerCase(getShortName());
-
-			return "/c/" + TextFormatter.formatPlural(lowerCaseShortName);
-		}
-
-		ObjectDefinition rootObjectDefinition =
-			ObjectDefinitionLocalServiceUtil.fetchObjectDefinition(
-				getRootObjectDefinitionId());
-
 		if (isModifiableAndSystem()) {
-			String rootRESTContextPath =
-				ObjectDefinitionUtil.
-					getModifiableSystemObjectDefinitionRESTContextPath(
-						rootObjectDefinition.getName());
-
-			String restContextPath =
-				ObjectDefinitionUtil.
-					getModifiableSystemObjectDefinitionRESTContextPath(
-						getName());
-
-			restContextPath = restContextPath.substring(
-				restContextPath.lastIndexOf(StringPool.SLASH));
-
-			return rootRESTContextPath + restContextPath;
+			return ObjectDefinitionUtil.
+				getModifiableSystemObjectDefinitionRESTContextPath(getName());
 		}
 
-		return StringBundler.concat(
-			"/c/",
-			TextFormatter.formatPlural(
-				StringUtil.toLowerCase(rootObjectDefinition.getShortName())),
-			StringPool.SLASH,
-			TextFormatter.formatPlural(StringUtil.toLowerCase(getShortName())));
+		return "/c/" +
+			TextFormatter.formatPlural(StringUtil.toLowerCase(getShortName()));
 	}
 
 	@Override
@@ -210,18 +174,28 @@ public class ObjectDefinitionImpl extends ObjectDefinitionBaseImpl {
 
 	@Override
 	public long getRootObjectDefinitionId() {
-		ObjectDefinitionSetting objectDefinitionSetting =
-			ObjectDefinitionSettingLocalServiceUtil.
-				fetchObjectDefinitionSetting(
-					getObjectDefinitionId(),
-					ObjectDefinitionSettingConstants.
-						NAME_ROOT_OBJECT_DEFINITION_IDS);
-
-		if (objectDefinitionSetting == null) {
+		if (!FeatureFlagManagerUtil.isEnabled(getCompanyId(), "LPD-34594")) {
 			return 0L;
 		}
 
-		return GetterUtil.getLong(objectDefinitionSetting.getValue());
+		long[] rootObjectDefinitionIds = getRootObjectDefinitionIds();
+
+		if (ArrayUtil.isEmpty(rootObjectDefinitionIds)) {
+			return 0L;
+		}
+
+		return rootObjectDefinitionIds[0];
+	}
+
+	@Override
+	public long[] getRootObjectDefinitionIds() {
+		if (!FeatureFlagManagerUtil.isEnabled(getCompanyId(), "LPD-34594")) {
+			return new long[0];
+		}
+
+		return ObjectDefinitionTreeUtil.getRootObjectDefinitionIds(
+			getObjectDefinitionId(),
+			ObjectDefinitionSettingLocalServiceUtil.getService());
 	}
 
 	@Override
@@ -232,6 +206,26 @@ public class ObjectDefinitionImpl extends ObjectDefinitionBaseImpl {
 	@Override
 	public boolean isApproved() {
 		if (getStatus() == WorkflowConstants.STATUS_APPROVED) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean isCMS() {
+		if (!FeatureFlagManagerUtil.isEnabled(getCompanyId(), "LPD-17564")) {
+			return false;
+		}
+
+		if (Objects.equals(
+				getObjectFolderExternalReferenceCode(),
+				ObjectFolderConstants.
+					EXTERNAL_REFERENCE_CODE_CONTENT_STRUCTURES) ||
+			Objects.equals(
+				getObjectFolderExternalReferenceCode(),
+				ObjectFolderConstants.EXTERNAL_REFERENCE_CODE_FILE_TYPES)) {
+
 			return true;
 		}
 
@@ -264,15 +258,27 @@ public class ObjectDefinitionImpl extends ObjectDefinitionBaseImpl {
 
 	@Override
 	public boolean isRootDescendantNode() {
-		if (!FeatureFlagManagerUtil.isEnabled(getCompanyId(), "LPD-34594")) {
+		if (isRootNode()) {
 			return false;
 		}
 
-		if ((getRootObjectDefinitionId() > 0) && !isRootNode()) {
+		long[] rootObjectDefinitionIds = getRootObjectDefinitionIds();
+
+		if (rootObjectDefinitionIds.length > 0) {
 			return true;
 		}
 
 		return false;
+	}
+
+	@Override
+	public boolean isRootDescendantNode(long rootObjectDefinitionId) {
+		if (!FeatureFlagManagerUtil.isEnabled(getCompanyId(), "LPD-34594")) {
+			return false;
+		}
+
+		return ArrayUtil.contains(
+			getRootObjectDefinitionIds(), rootObjectDefinitionId);
 	}
 
 	@Override
@@ -281,11 +287,8 @@ public class ObjectDefinitionImpl extends ObjectDefinitionBaseImpl {
 			return false;
 		}
 
-		if (getObjectDefinitionId() == getRootObjectDefinitionId()) {
-			return true;
-		}
-
-		return false;
+		return ArrayUtil.contains(
+			getRootObjectDefinitionIds(), getObjectDefinitionId());
 	}
 
 	@Override
@@ -298,54 +301,24 @@ public class ObjectDefinitionImpl extends ObjectDefinitionBaseImpl {
 	}
 
 	@Override
+	public boolean isVisible() {
+		if (!isModifiableAndSystem()) {
+			return true;
+		}
+
+		return GetterUtil.getBoolean(
+			ObjectDefinitionSettingUtil.getValue(
+				ObjectDefinitionSettingConstants.NAME_VISIBLE,
+				getObjectDefinitionSettings()));
+	}
+
+	@Override
 	public void setObjectDefinitionSettings(
 		List<ObjectDefinitionSetting> objectDefinitionSettings) {
 
 		_objectDefinitionSettings = objectDefinitionSettings;
 	}
 
-	@Override
-	public void setPreviousRESTContextPath(String previousRESTContextPath) {
-		_previousRESTContextPath = previousRESTContextPath;
-	}
-
-	@Override
-	public void setRootObjectDefinitionId(long rootObjectDefinitionId) {
-		ObjectDefinitionSetting objectDefinitionSetting =
-			ObjectDefinitionSettingLocalServiceUtil.
-				fetchObjectDefinitionSetting(
-					getObjectDefinitionId(),
-					ObjectDefinitionSettingConstants.
-						NAME_ROOT_OBJECT_DEFINITION_IDS);
-
-		try {
-			if (objectDefinitionSetting == null) {
-				ObjectDefinitionSettingLocalServiceUtil.
-					addObjectDefinitionSetting(
-						getUserId(), getObjectDefinitionId(),
-						ObjectDefinitionSettingConstants.
-							NAME_ROOT_OBJECT_DEFINITION_IDS,
-						String.valueOf(rootObjectDefinitionId));
-			}
-			else {
-				objectDefinitionSetting.setValue(
-					String.valueOf(rootObjectDefinitionId));
-
-				ObjectDefinitionSettingLocalServiceUtil.
-					updateObjectDefinitionSetting(objectDefinitionSetting);
-			}
-		}
-		catch (PortalException portalException) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(portalException);
-			}
-		}
-	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		ObjectDefinitionImpl.class);
-
 	private List<ObjectDefinitionSetting> _objectDefinitionSettings;
-	private String _previousRESTContextPath;
 
 }

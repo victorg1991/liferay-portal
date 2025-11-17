@@ -320,8 +320,9 @@ public class AddFragmentCompositionMVCActionCommandTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), _group.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), defaultSegmentsExperienceId,
+				null, TestPropsValues.getUserId(), _group.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), defaultSegmentsExperienceId,
 				_layout.getPlid(), StringPool.BLANK, html, StringPool.BLANK,
 				_read("fragment_configuration.json"), editableValues,
 				StringPool.BLANK, 0, null, fragmentEntry.getType(),
@@ -342,8 +343,9 @@ public class AddFragmentCompositionMVCActionCommandTest {
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
-				_group.getGroupId(), _layout.getPlid(),
-				defaultSegmentsExperienceId, layoutStructure.toString());
+				TestPropsValues.getUserId(), _group.getGroupId(),
+				_layout.getPlid(), defaultSegmentsExperienceId,
+				layoutStructure.toString());
 
 		FragmentComposition fragmentComposition = _testAddFragmentComposition(
 			fragmentCollection, containerStyledLayoutStructureItem.getItemId(),
@@ -426,6 +428,90 @@ public class AddFragmentCompositionMVCActionCommandTest {
 
 		_testAddFragmentCompositionWithItemSelectorTypeFragmentConfigurationField(
 			fragmentCollection, fragmentEntry, _jsonFactory.createJSONObject());
+	}
+
+	@Test
+	@TestInfo("LPD-61879")
+	public void testAddFragmentCompositionWithNamespaceInEditableID()
+		throws Exception {
+
+		_layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+		FragmentCollection fragmentCollection =
+			_fragmentCollectionLocalService.addFragmentCollection(
+				null, TestPropsValues.getUserId(), _group.getGroupId(),
+				RandomTestUtil.randomString(), StringPool.BLANK,
+				_serviceContext);
+
+		String html =
+			"<div> data-lfr-editable-id=\"${fragmentEntryLinkNamespace}-" +
+				"element-text\"\n\tdata-lfr-editable-type=\"text\">\n" +
+					"\tHeading Example</div>";
+
+		FragmentEntry fragmentEntry =
+			_fragmentEntryLocalService.addFragmentEntry(
+				null, TestPropsValues.getUserId(), _group.getGroupId(),
+				fragmentCollection.getFragmentCollectionId(),
+				"example-fragment-entry-key", RandomTestUtil.randomString(),
+				StringPool.BLANK, html, StringPool.BLANK, false,
+				StringPool.BLANK, null, 0, false, false,
+				FragmentConstants.TYPE_COMPONENT, null,
+				WorkflowConstants.STATUS_APPROVED, _serviceContext);
+
+		long defaultSegmentsExperienceId =
+			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
+				_layout.getPlid());
+
+		FragmentEntryLink fragmentEntryLink =
+			_fragmentEntryLinkLocalService.addFragmentEntryLink(
+				null, TestPropsValues.getUserId(), _group.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), defaultSegmentsExperienceId,
+				_layout.getPlid(), StringPool.BLANK, html, StringPool.BLANK,
+				StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, 0, null,
+				fragmentEntry.getType(), _serviceContext);
+
+		_fragmentEntryLinkLocalService.updateFragmentEntryLink(
+			TestPropsValues.getUserId(),
+			fragmentEntryLink.getFragmentEntryLinkId(),
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					fragmentEntryLink.getNamespace() + "-element-text",
+					JSONUtil.put(
+						LocaleUtil.toLanguageId(
+							_portal.getSiteDefaultLocale(_group)),
+						RandomTestUtil.randomString()))
+			).toString(),
+			true);
+
+		LayoutStructure layoutStructure = new LayoutStructure();
+
+		LayoutStructureItem rootLayoutStructureItem =
+			layoutStructure.addRootLayoutStructureItem();
+
+		LayoutStructureItem containerStyledLayoutStructureItem =
+			layoutStructure.addContainerStyledLayoutStructureItem(
+				"item1", rootLayoutStructureItem.getItemId(), 0);
+
+		layoutStructure.addFragmentStyledLayoutStructureItem(
+			fragmentEntryLink.getFragmentEntryLinkId(), "item2",
+			containerStyledLayoutStructureItem.getItemId(), 0);
+
+		_layoutPageTemplateStructureLocalService.
+			updateLayoutPageTemplateStructureData(
+				TestPropsValues.getUserId(), _group.getGroupId(),
+				_layout.getPlid(), defaultSegmentsExperienceId,
+				layoutStructure.toString());
+
+		FragmentComposition fragmentComposition = _testAddFragmentComposition(
+			fragmentCollection, containerStyledLayoutStructureItem.getItemId(),
+			_getMockLiferayPortletActionRequest());
+
+		String data = fragmentComposition.getData();
+
+		Assert.assertTrue(data.contains("[$NAMESPACE$]"));
 	}
 
 	@Test
@@ -624,8 +710,9 @@ public class AddFragmentCompositionMVCActionCommandTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), _group.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), segmentsExperienceId,
+				null, TestPropsValues.getUserId(), _group.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), segmentsExperienceId,
 				draftLayout.getPlid(), fragmentEntry.getCss(),
 				fragmentEntry.getHtml(), fragmentEntry.getConfiguration(),
 				fragmentEntry.getConfiguration(),

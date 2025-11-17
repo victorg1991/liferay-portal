@@ -91,22 +91,6 @@ public class ContentPageTemplate extends PageTemplate implements Serializable {
 			sb.append(creator);
 		}
 
-		String creatorExternalReferenceCode = getCreatorExternalReferenceCode();
-
-		if (creatorExternalReferenceCode != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"creatorExternalReferenceCode\": ");
-
-			sb.append("\"");
-
-			sb.append(_escape(creatorExternalReferenceCode));
-
-			sb.append("\"");
-		}
-
 		Date dateCreated = getDateCreated();
 
 		if (dateCreated != null) {
@@ -275,6 +259,29 @@ public class ContentPageTemplate extends PageTemplate implements Serializable {
 			sb.append(String.valueOf(pageTemplateSettings));
 		}
 
+		com.liferay.portal.vulcan.permission.Permission[] permissions =
+			getPermissions();
+
+		if (permissions != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"permissions\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < permissions.length; i++) {
+				sb.append(permissions[i]);
+
+				if ((i + 1) < permissions.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		ItemExternalReference[] taxonomyCategoryItemExternalReferences =
 			getTaxonomyCategoryItemExternalReferences();
 
@@ -311,9 +318,7 @@ public class ContentPageTemplate extends PageTemplate implements Serializable {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(type);
-
 			sb.append("\"");
 		}
 

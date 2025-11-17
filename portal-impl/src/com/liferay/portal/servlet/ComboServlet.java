@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
@@ -39,7 +40,6 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.minifier.MinifierUtil;
 import com.liferay.portal.servlet.filters.dynamiccss.DynamicCSSUtil;
 import com.liferay.portal.util.AggregateUtil;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.documentlibrary.constants.DLFriendlyURLConstants;
 
 import jakarta.servlet.RequestDispatcher;
@@ -60,7 +60,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -426,11 +425,6 @@ public class ComboServlet extends HttpServlet {
 
 			String stringFileContent = bufferCacheServletResponse.getString();
 
-			if (_textReplacerBiFunction != null) {
-				stringFileContent = _textReplacerBiFunction.apply(
-					"ComboServlet#" + modulePath, stringFileContent);
-			}
-
 			if (!StringUtil.endsWith(resourcePath, _CSS_MINIFIED_DASH_SUFFIX) &&
 				!StringUtil.endsWith(resourcePath, _CSS_MINIFIED_DOT_SUFFIX) &&
 				!StringUtil.endsWith(
@@ -468,13 +462,8 @@ public class ComboServlet extends HttpServlet {
 
 					baseURL = PortalUtil.getPathProxy() + baseURL;
 
-					if (StringUtil.contains(
-							stringFileContent, _CSS_CHARSET_UTF_8,
-							StringPool.BLANK)) {
-
-						stringFileContent = StringUtil.removeSubstring(
-							stringFileContent, _CSS_CHARSET_UTF_8);
-					}
+					stringFileContent = StringUtil.removeSubstring(
+						stringFileContent, _CSS_CHARSET_UTF_8);
 
 					stringFileContent = AggregateUtil.updateRelativeURLs(
 						stringFileContent, baseURL);
@@ -673,32 +662,6 @@ public class ComboServlet extends HttpServlet {
 	private static final Pattern _importModulePattern = Pattern.compile(
 		"(import\\s*\\*\\s*as\\s*\\w*\\s*from\\s*[\"'])((?:\\.\\./)+)(.*)",
 		Pattern.DOTALL);
-	private static final BiFunction<String, String, String>
-		_textReplacerBiFunction;
-
-	static {
-		ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-
-		Object instance = null;
-
-		try {
-			Class<?> clazz = classLoader.loadClass(
-				"com.liferay.portal.tools.jakarta.ee.transformer.function." +
-					"TextReplacerBiFunction");
-
-			instance = clazz.newInstance();
-		}
-		catch (ReflectiveOperationException reflectiveOperationException) {
-			if (!(reflectiveOperationException instanceof
-					ClassNotFoundException)) {
-
-				throw new ExceptionInInitializerError(
-					reflectiveOperationException);
-			}
-		}
-
-		_textReplacerBiFunction = (BiFunction<String, String, String>)instance;
-	}
 
 	private final Set<String> _protectedParameters = SetUtil.fromArray(
 		"browserId", "minifierType", "languageId", "t", "themeId", "zx");

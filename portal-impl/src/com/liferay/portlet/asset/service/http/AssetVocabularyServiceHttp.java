@@ -1110,16 +1110,15 @@ public class AssetVocabularyServiceHttp {
 	}
 
 	public static com.liferay.asset.kernel.model.AssetVocabulary
-			getOrAddIncompleteVocabulary(
+			getOrAddEmptyVocabulary(
 				HttpPrincipal httpPrincipal, String externalReferenceCode,
 				long groupId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		try {
 			MethodKey methodKey = new MethodKey(
-				AssetVocabularyServiceUtil.class,
-				"getOrAddIncompleteVocabulary",
-				_getOrAddIncompleteVocabularyParameterTypes27);
+				AssetVocabularyServiceUtil.class, "getOrAddEmptyVocabulary",
+				_getOrAddEmptyVocabularyParameterTypes27);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, externalReferenceCode, groupId);
@@ -1374,7 +1373,7 @@ public class AssetVocabularyServiceHttp {
 				HttpPrincipal httpPrincipal, long vocabularyId, String title,
 				java.util.Map<java.util.Locale, String> titleMap,
 				java.util.Map<java.util.Locale, String> descriptionMap,
-				String settings,
+				String settings, int visibilityType,
 				com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
@@ -1385,7 +1384,7 @@ public class AssetVocabularyServiceHttp {
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, vocabularyId, title, titleMap, descriptionMap,
-				settings, serviceContext);
+				settings, visibilityType, serviceContext);
 
 			Object returnObj = null;
 
@@ -1512,10 +1511,8 @@ public class AssetVocabularyServiceHttp {
 			long.class, String.class, int.class, int.class,
 			com.liferay.portal.kernel.util.OrderByComparator.class
 		};
-	private static final Class<?>[]
-		_getOrAddIncompleteVocabularyParameterTypes27 = new Class[] {
-			String.class, long.class
-		};
+	private static final Class<?>[] _getOrAddEmptyVocabularyParameterTypes27 =
+		new Class[] {String.class, long.class};
 	private static final Class<?>[] _getVocabularyParameterTypes28 =
 		new Class[] {long.class};
 	private static final Class<?>[] _searchVocabulariesDisplayParameterTypes29 =
@@ -1539,7 +1536,8 @@ public class AssetVocabularyServiceHttp {
 	private static final Class<?>[] _updateVocabularyParameterTypes33 =
 		new Class[] {
 			long.class, String.class, java.util.Map.class, java.util.Map.class,
-			String.class, com.liferay.portal.kernel.service.ServiceContext.class
+			String.class, int.class,
+			com.liferay.portal.kernel.service.ServiceContext.class
 		};
 
 }

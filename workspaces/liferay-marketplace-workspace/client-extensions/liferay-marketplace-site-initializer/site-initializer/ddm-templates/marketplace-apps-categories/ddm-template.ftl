@@ -6,10 +6,8 @@
 	}
 
 	.app-category {
-		display: block;
 		flex: 1;
-		max-width: 200px;
-		overflow: hidden;
+		font-size: 11px;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
@@ -17,14 +15,25 @@
 	.app-container .app-category {
 		background-color: #e6ebf5;
 		color: #1c3667;
-		padding: 4px 8px;
+		font-weight: 600;
+		height: 20px;
+		padding: 3px 8px;
 	}
 
 	.app-container .app-product-type {
+		font-size: 11px;
+		font-weight: 600;
+		height: 20px;
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.app-details-category-badge .app-type-badge {
+	  	position: relative !important;
+		right: 2px !important;
+		top: 0px !important;
 	}
 
 	.client-extension-product-type {
@@ -122,16 +131,16 @@
 <div class="app-container color-neutral-3 d-flex flex-wrap font-size-paragraph-small justify-content-between w-100">
 	<div class="d-flex">
 		<#if productSpecifications?has_content>
-			<#assign productTypes = productSpecifications?filter(item -> stringUtil.equals(item.specificationKey, "type")) />
-
-			<#list productTypes as productType>
-				<#if productType?has_content>
-					<#assign appType = (productTypeValues[productType.value]!) />
-
-					<#if appType?has_content>
-						<div class="align-items-center app-product-type border border-radius-small d-flex mb-1 mr-2 px-2 rounded-lg ${productType.value}-product-type">
-							<div class="bg-neutral-8">${appType}</div>
-						</div>
+			<#assign productTypes = categories?filter(category -> category.vocabulary?upper_case?replace(" ", "-") == "MARKETPLACE CATEGORY")![] />
+			<#list categories as category>
+				<#if category.vocabulary?upper_case == "MARKETPLACE CATEGORY">
+				<#assign badgeType = category.name?lower_case?replace(" ", "-", "r") />
+					<#if category.name == 'Other'>
+						<div></div>
+					<#else>
+						<span class="app-type-badge ${badgeType} d-flex align-items-center bg-neutral-8 border-radius-small mb-1 mr-2 px-3 rounded-lg" title="${category.name}">
+							${category.name}
+						</span>
 					</#if>
 				</#if>
 			</#list>

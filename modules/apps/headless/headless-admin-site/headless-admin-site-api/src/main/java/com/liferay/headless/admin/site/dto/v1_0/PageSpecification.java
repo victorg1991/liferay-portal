@@ -73,6 +73,59 @@ public abstract class PageSpecification implements Serializable {
 	}
 
 	@io.swagger.v3.oas.annotations.media.Schema(
+		description = "Custom fields associated with the page specification. Not available if this page specification belongs to a utility page."
+	)
+	@Valid
+	public com.liferay.portal.vulcan.custom.field.CustomField[]
+		getCustomFields() {
+
+		if (_customFieldsSupplier != null) {
+			customFields = _customFieldsSupplier.get();
+
+			_customFieldsSupplier = null;
+		}
+
+		return customFields;
+	}
+
+	public void setCustomFields(
+		com.liferay.portal.vulcan.custom.field.CustomField[] customFields) {
+
+		this.customFields = customFields;
+
+		_customFieldsSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setCustomFields(
+		UnsafeSupplier
+			<com.liferay.portal.vulcan.custom.field.CustomField[], Exception>
+				customFieldsUnsafeSupplier) {
+
+		_customFieldsSupplier = () -> {
+			try {
+				return customFieldsUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField(
+		description = "Custom fields associated with the page specification. Not available if this page specification belongs to a utility page."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected com.liferay.portal.vulcan.custom.field.CustomField[] customFields;
+
+	@JsonIgnore
+	private Supplier<com.liferay.portal.vulcan.custom.field.CustomField[]>
+		_customFieldsSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema(
 		description = "The page specification's external reference code, unique per site."
 	)
 	public String getExternalReferenceCode() {
@@ -351,6 +404,29 @@ public abstract class PageSpecification implements Serializable {
 
 		sb.append("{");
 
+		com.liferay.portal.vulcan.custom.field.CustomField[] customFields =
+			getCustomFields();
+
+		if (customFields != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"customFields\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < customFields.length; i++) {
+				sb.append(customFields[i]);
+
+				if ((i + 1) < customFields.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		String externalReferenceCode = getExternalReferenceCode();
 
 		if (externalReferenceCode != null) {
@@ -408,9 +484,7 @@ public abstract class PageSpecification implements Serializable {
 			sb.append("\"status\": ");
 
 			sb.append("\"");
-
 			sb.append(status);
-
 			sb.append("\"");
 		}
 
@@ -424,9 +498,7 @@ public abstract class PageSpecification implements Serializable {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(type);
-
 			sb.append("\"");
 		}
 

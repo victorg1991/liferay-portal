@@ -20,6 +20,12 @@ defaultStartTimeJCalendar.add(java.util.Calendar.HOUR, 1);
 
 defaultStartTimeJCalendar.set(java.util.Calendar.MINUTE, 0);
 
+java.util.Calendar userStartTimeJCalendar = CalendarFactoryUtil.getCalendar(userTimeZone);
+
+userStartTimeJCalendar.add(java.util.Calendar.HOUR, 1);
+
+userStartTimeJCalendar.set(java.util.Calendar.MINUTE, 0);
+
 long calendarBookingId = BeanPropertiesUtil.getLong(calendarBooking, "calendarBookingId");
 
 int instanceIndex = BeanParamUtil.getInteger(calendarBooking, request, "instanceIndex");
@@ -589,10 +595,6 @@ while (manageableCalendarsIterator.hasNext()) {
 		['liferay-calendar-message-util', 'json']
 	);
 
-	Liferay.Util.focusFormField(
-		document.<portlet:namespace />fm.<portlet:namespace />title
-	);
-
 	<%
 	String titleCurrentValue = ParamUtil.getString(request, "titleCurrentValue");
 	%>
@@ -1043,13 +1045,17 @@ while (manageableCalendarsIterator.hasNext()) {
 				endDateContainer.style.display = 'block';
 
 				startTimeHours =
-					<%= defaultStartTimeJCalendar.get(java.util.Calendar.HOUR_OF_DAY) %>;
-				startTimeMinutes =
-					<%= defaultStartTimeJCalendar.get(java.util.Calendar.MINUTE) %>;
-				endTimeHours =
-					<%= defaultEndTimeJCalendar.get(java.util.Calendar.HOUR_OF_DAY) %>;
-				endTimeMinutes =
-					<%= defaultEndTimeJCalendar.get(java.util.Calendar.MINUTE) %>;
+					<%= userStartTimeJCalendar.get(java.util.Calendar.HOUR_OF_DAY) %>;
+				startTimeMinutes = 0;
+
+				if (startTimeHours === 23) {
+					endTimeHours = 23;
+					endTimeMinutes = 59;
+				}
+				else {
+					endTimeHours = (startTimeHours + 1) % 24;
+					endTimeMinutes = 0;
+				}
 			}
 
 			updateTimePickersValues(

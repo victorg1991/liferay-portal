@@ -130,9 +130,7 @@ public class ContentPageSettingsSerDes {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(contentPageSettings.getType());
-
 			sb.append("\"");
 		}
 
@@ -298,7 +296,7 @@ public class ContentPageSettingsSerDes {
 
 				if (jsonParserFieldValue != null) {
 					contentPageSettings.setNavigationSettings(
-						NavigationSettingsSerDes.toDTO(
+						SitePageNavigationSettingsSerDes.toDTO(
 							(String)jsonParserFieldValue));
 				}
 			}

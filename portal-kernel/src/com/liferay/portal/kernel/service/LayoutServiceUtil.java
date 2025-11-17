@@ -424,6 +424,17 @@ public class LayoutServiceUtil {
 		return getService().getDefaultPlid(groupId, scopeGroupId, portletId);
 	}
 
+	public static Layout getLayout(long plid) throws PortalException {
+		return getService().getLayout(plid);
+	}
+
+	public static Layout getLayout(
+			long groupId, boolean privateLayout, long layoutId)
+		throws PortalException {
+
+		return getService().getLayout(groupId, privateLayout, layoutId);
+	}
+
 	public static Layout getLayoutByExternalReferenceCode(
 			String externalReferenceCode, long groupId)
 		throws PortalException {
@@ -626,6 +637,15 @@ public class LayoutServiceUtil {
 
 	public static int getLayoutsCount(long groupId, String type) {
 		return getService().getLayoutsCount(groupId, type);
+	}
+
+	public static Layout getOrAddEmptyLayout(
+			String externalReferenceCode, long groupId,
+			ServiceContext serviceContext)
+		throws Exception {
+
+		return getService().getOrAddEmptyLayout(
+			externalReferenceCode, groupId, serviceContext);
 	}
 
 	/**
@@ -836,7 +856,7 @@ public class LayoutServiceUtil {
 	 String)}.
 	 * @param hasIconImage if the layout has a custom icon image
 	 * @param iconBytes the byte array of the layout's new icon image
-	 * @param styleBookEntryId the primary key of the style book entry
+	 * @param styleBookEntryERC the external reference code of the style book entry
 	 * @param faviconFileEntryId the file entry ID of the layout's new favicon
 	 * @param masterLayoutPlid the primary key of the master layout
 	 * @param serviceContext the service context to be applied. Can set the
@@ -852,7 +872,7 @@ public class LayoutServiceUtil {
 			Map<java.util.Locale, String> keywordsMap,
 			Map<java.util.Locale, String> robotsMap, String type,
 			boolean hidden, Map<java.util.Locale, String> friendlyURLMap,
-			boolean hasIconImage, byte[] iconBytes, long styleBookEntryId,
+			boolean hasIconImage, byte[] iconBytes, String styleBookEntryERC,
 			long faviconFileEntryId, long masterLayoutPlid,
 			ServiceContext serviceContext)
 		throws PortalException {
@@ -860,29 +880,8 @@ public class LayoutServiceUtil {
 		return getService().updateLayout(
 			groupId, privateLayout, layoutId, parentLayoutId, localeNamesMap,
 			localeTitlesMap, descriptionMap, keywordsMap, robotsMap, type,
-			hidden, friendlyURLMap, hasIconImage, iconBytes, styleBookEntryId,
+			hidden, friendlyURLMap, hasIconImage, iconBytes, styleBookEntryERC,
 			faviconFileEntryId, masterLayoutPlid, serviceContext);
-	}
-
-	/**
-	 * Updates the layout replacing its type settings.
-	 *
-	 * @param groupId the primary key of the group
-	 * @param privateLayout whether the layout is private to the group
-	 * @param layoutId the layout ID of the layout
-	 * @param typeSettings the settings to load the unicode properties object.
-	 See {@link com.liferay.portal.kernel.util.UnicodeProperties
-	 #fastLoad(String)}.
-	 * @return the updated layout
-	 * @throws PortalException if a portal exception occurred
-	 */
-	public static Layout updateLayout(
-			long groupId, boolean privateLayout, long layoutId,
-			String typeSettings)
-		throws PortalException {
-
-		return getService().updateLayout(
-			groupId, privateLayout, layoutId, typeSettings);
 	}
 
 	/**
@@ -1057,6 +1056,27 @@ public class LayoutServiceUtil {
 		throws PortalException {
 
 		return getService().updateType(plid, type);
+	}
+
+	/**
+	 * Updates the layout replacing its type settings.
+	 *
+	 * @param groupId the primary key of the group
+	 * @param privateLayout whether the layout is private to the group
+	 * @param layoutId the layout ID of the layout
+	 * @param typeSettings the settings to load the unicode properties object.
+	 See {@link com.liferay.portal.kernel.util.UnicodeProperties
+	 #fastLoad(String)}.
+	 * @return the updated layout
+	 * @throws PortalException if a portal exception occurred
+	 */
+	public static Layout updateTypeSettings(
+			long groupId, boolean privateLayout, long layoutId,
+			String typeSettings)
+		throws PortalException {
+
+		return getService().updateTypeSettings(
+			groupId, privateLayout, layoutId, typeSettings);
 	}
 
 	public static LayoutService getService() {

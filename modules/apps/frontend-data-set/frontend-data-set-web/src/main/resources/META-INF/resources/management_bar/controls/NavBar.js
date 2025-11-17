@@ -16,14 +16,11 @@ import CreationMenu from './CreationMenu';
 import CustomViewsControls from './CustomViewsControls';
 import InfoPanelToggleButton from './InfoPanelToggleButton';
 import MainSearch from './MainSearch';
-import SelectionCheckbox from './SelectionCheckbox';
 import SortDropdown from './SortDropdown';
 import FiltersDropdown from './filters/FiltersDropdown';
 
-function NavBar({creationMenu, handleCheckboxClick, items, showSearch}) {
-	const {selectable, selectionType, showInfoPanel} = useContext(
-		FrontendDataSetContext
-	);
+function NavBar({creationMenu, showSearch}) {
+	const {showInfoPanel} = useContext(FrontendDataSetContext);
 
 	const [{customViewsEnabled, filters, sorts, views}] =
 		useContext(ViewsContext);
@@ -31,23 +28,11 @@ function NavBar({creationMenu, handleCheckboxClick, items, showSearch}) {
 	const [showMobile, setShowMobile] = useState(false);
 
 	return (
-		<ManagementToolbar.Container
-			className="justify-content-space-between"
+		<ManagementToolbar.ItemList
+			className="container-fluid ml-2 navbar navbar-expand-md"
 			data-qa-id="managementToolbar"
 		>
 			<ManagementToolbar.ItemList>
-				{!!items.length &&
-					selectable &&
-					selectionType === 'multiple' && (
-						<ManagementToolbar.Item>
-							<SelectionCheckbox
-								handleCheckboxClick={handleCheckboxClick}
-								items={items}
-								selectedItemsValue={[]}
-							/>
-						</ManagementToolbar.Item>
-					)}
-
 				{!!filters.length && (
 					<ManagementToolbar.Item>
 						<FiltersDropdown />
@@ -108,11 +93,11 @@ function NavBar({creationMenu, handleCheckboxClick, items, showSearch}) {
 
 				{showInfoPanel && (
 					<ManagementToolbar.Item>
-						<InfoPanelToggleButton symbol="info-panel-closed" />
+						<InfoPanelToggleButton symbol="info-circle-open" />
 					</ManagementToolbar.Item>
 				)}
 			</ManagementToolbar.ItemList>
-		</ManagementToolbar.Container>
+		</ManagementToolbar.ItemList>
 	);
 }
 
@@ -121,8 +106,6 @@ NavBar.propTypes = {
 		primaryItems: PropTypes.array,
 		secondaryItems: PropTypes.array,
 	}),
-	handleCheckboxClick: PropTypes.func.isRequired,
-	items: PropTypes.array.isRequired,
 	showSearch: PropTypes.bool,
 };
 

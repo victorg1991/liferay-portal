@@ -13,22 +13,29 @@ export type TCategory = Omit<
 
 export async function createCategories({
 	apiHelpers,
+	assetLibraries,
 	assetTypes,
 	categoryNames,
 	siteId,
 	vocabularyName,
+	vocabularyVisibility,
 }: {
 	apiHelpers: ApiHelpers;
+	assetLibraries?: AssetLibrary[];
 	assetTypes?: AssetType[];
 	categoryNames: TCategory[];
-	siteId: string;
+	siteId?: string;
 	vocabularyName: string;
+	vocabularyVisibility?: boolean;
 }): Promise<({id: number} & TCategory)[]> {
 	const {id: vocabularyId} =
 		await apiHelpers.headlessAdminTaxonomy.postSiteTaxonomyVocabulary({
+			assetLibraries,
 			assetTypes,
 			name: vocabularyName,
 			siteId,
+			visibilityType:
+				vocabularyVisibility === true ? 'INTERNAL' : 'PUBLIC',
 		});
 
 	const categories = [];

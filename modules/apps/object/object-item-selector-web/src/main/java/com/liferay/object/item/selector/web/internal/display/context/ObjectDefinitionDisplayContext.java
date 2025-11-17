@@ -52,12 +52,18 @@ public class ObjectDefinitionDisplayContext {
 
 		SearchContainer<ObjectDefinition> objectDefinitionSearchContainer =
 			new SearchContainer<>(
-				_renderRequest, _portletURL, null,
-				"there-are-no-object-definitions");
+				_renderRequest, _portletURL, null, "there-are-no-objects");
 
 		objectDefinitionSearchContainer.setId("selectObjectDefinition");
 		objectDefinitionSearchContainer.setOrderByCol(_getOrderByCol());
 		objectDefinitionSearchContainer.setOrderByType(_getOrderByType());
+
+		String columnName = objectDefinitionSearchContainer.getOrderByCol();
+
+		if (columnName.equals("modified-date")) {
+			columnName = "modifiedDate";
+		}
+
 		objectDefinitionSearchContainer.setResultsAndTotal(
 			_objectDefinitionLocalService.getObjectDefinitions(
 				_themeDisplay.getCompanyId(), true, false,
@@ -65,7 +71,7 @@ public class ObjectDefinitionDisplayContext {
 				objectDefinitionSearchContainer.getStart(),
 				objectDefinitionSearchContainer.getEnd(),
 				OrderByComparatorFactoryUtil.create(
-					"ObjectDefinition", "label",
+					"ObjectDefinition", columnName,
 					Objects.equals(_getOrderByType(), "asc"))));
 
 		_objectDefinitionSearchContainer = objectDefinitionSearchContainer;

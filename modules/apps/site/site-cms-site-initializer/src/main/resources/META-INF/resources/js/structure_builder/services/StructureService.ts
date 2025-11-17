@@ -5,6 +5,7 @@
 
 import ApiHelper from '../../common/services/ApiHelper';
 import {Structure} from '../types/Structure';
+import buildGroupObjectDefinitions from '../utils/buildGroupObjectDefinitions';
 import buildObjectDefinition from '../utils/buildObjectDefinition';
 import getRandomId from '../utils/getRandomId';
 
@@ -15,6 +16,7 @@ async function createStructure({
 	name,
 	spaces,
 	status,
+	workflows,
 }: {
 	children: Structure['children'];
 	erc?: Structure['erc'];
@@ -22,19 +24,44 @@ async function createStructure({
 	name: Structure['name'];
 	spaces: Structure['spaces'];
 	status: Structure['status'];
+	workflows: Structure['workflows'];
 }) {
-	const objectDefinition = buildObjectDefinition({
+
+	// Publish object definitions for repeatable groups
+
+	const objectDefinitions = buildGroupObjectDefinitions({children});
+
+	for (const objectDefinition of objectDefinitions) {
+		const {error} = await ApiHelper.put(
+			`/o/object-admin/v1.0/object-definitions/by-external-reference-code/${objectDefinition.externalReferenceCode}`,
+			objectDefinition
+		);
+
+		if (error) {
+			return {
+				data: null,
+				error: Liferay.Language.get(
+					'an-unexpected-error-occurred-while-saving-or-publishing-the-content-structure'
+				),
+			};
+		}
+	}
+
+	// Publish the main object definition
+
+	const mainObjectDefinition = buildObjectDefinition({
 		children,
 		erc,
 		label,
 		name,
 		spaces,
 		status,
+		workflows,
 	});
 
 	return await ApiHelper.post<{id: number}>(
 		'/o/object-admin/v1.0/object-definitions',
-		objectDefinition
+		mainObjectDefinition
 	);
 }
 
@@ -46,6 +73,7 @@ async function updateStructure({
 	name,
 	spaces,
 	status,
+	workflows,
 }: {
 	children: Structure['children'];
 	erc: Structure['erc'];
@@ -54,8 +82,31 @@ async function updateStructure({
 	name: Structure['name'];
 	spaces: Structure['spaces'];
 	status: Structure['status'];
+	workflows: Structure['workflows'];
 }) {
-	const objectDefinition = buildObjectDefinition({
+
+	// Publish object definitions for repeatable groups
+
+	const objectDefinitions = buildGroupObjectDefinitions({children});
+
+	for (const objectDefinition of objectDefinitions) {
+		const {error} = await ApiHelper.put(
+			`/o/object-admin/v1.0/object-definitions/by-external-reference-code/${objectDefinition.externalReferenceCode}`,
+			objectDefinition
+		);
+
+		if (error) {
+			return {
+				error: Liferay.Language.get(
+					'an-unexpected-error-occurred-while-saving-or-publishing-the-content-structure'
+				),
+			};
+		}
+	}
+
+	// Publish the main object definition
+
+	const mainObjectDefinition = buildObjectDefinition({
 		children,
 		erc,
 		id,
@@ -63,11 +114,12 @@ async function updateStructure({
 		name,
 		spaces,
 		status,
+		workflows,
 	});
 
 	return await ApiHelper.put(
 		`/o/object-admin/v1.0/object-definitions/${id}`,
-		objectDefinition
+		mainObjectDefinition
 	);
 }
 

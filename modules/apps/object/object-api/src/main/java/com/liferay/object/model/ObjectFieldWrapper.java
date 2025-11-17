@@ -245,6 +245,11 @@ public class ObjectFieldWrapper
 	}
 
 	@Override
+	public String getAttachmentDownloadActionKey() {
+		return model.getAttachmentDownloadActionKey();
+	}
+
+	@Override
 	public String[] getAvailableLanguageIds() {
 		return model.getAvailableLanguageIds();
 	}
@@ -287,6 +292,11 @@ public class ObjectFieldWrapper
 	@Override
 	public String getDBColumnName() {
 		return model.getDBColumnName();
+	}
+
+	@Override
+	public String[] getDBColumnNames() {
+		return model.getDBColumnNames();
 	}
 
 	/**
@@ -515,6 +525,11 @@ public class ObjectFieldWrapper
 	@Override
 	public java.util.List<ObjectFieldSetting> getObjectFieldSettings() {
 		return model.getObjectFieldSettings();
+	}
+
+	@Override
+	public ObjectRelationship getObjectRelationship() {
+		return model.getObjectRelationship();
 	}
 
 	/**

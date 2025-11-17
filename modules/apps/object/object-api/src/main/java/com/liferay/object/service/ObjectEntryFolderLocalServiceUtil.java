@@ -66,6 +66,17 @@ public class ObjectEntryFolderLocalServiceUtil {
 			description, labelMap, name, serviceContext);
 	}
 
+	public static ObjectEntryFolder copyObjectEntryFolder(
+			long userId, long objectEntryFolderId,
+			long parentObjectEntryFolderId, boolean replace,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().copyObjectEntryFolder(
+			userId, objectEntryFolderId, parentObjectEntryFolderId, replace,
+			serviceContext);
+	}
+
 	/**
 	 * Creates a new object entry folder with the primary key. Does not add the object entry folder to the database.
 	 *
@@ -339,6 +350,14 @@ public class ObjectEntryFolderLocalServiceUtil {
 			groupId, companyId, parentObjectEntryFolderId, start, end);
 	}
 
+	public static List<ObjectEntryFolder>
+		getObjectEntryFoldersByExternalReferenceCode(
+			String externalReferenceCode, List<Long> groupIds, long companyId) {
+
+		return getService().getObjectEntryFoldersByExternalReferenceCode(
+			externalReferenceCode, groupIds, companyId);
+	}
+
 	/**
 	 * Returns all the object entry folders matching the UUID and company.
 	 *
@@ -388,13 +407,13 @@ public class ObjectEntryFolderLocalServiceUtil {
 			groupId, companyId, parentObjectEntryFolderId);
 	}
 
-	public static ObjectEntryFolder getOrAddIncompleteObjectEntryFolder(
+	public static ObjectEntryFolder getOrAddEmptyObjectEntryFolder(
 			String externalReferenceCode, long groupId, long companyId,
 			long userId,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
-		return getService().getOrAddIncompleteObjectEntryFolder(
+		return getService().getOrAddEmptyObjectEntryFolder(
 			externalReferenceCode, groupId, companyId, userId, serviceContext);
 	}
 
@@ -414,6 +433,69 @@ public class ObjectEntryFolderLocalServiceUtil {
 		throws PortalException {
 
 		return getService().getPersistedModel(primaryKeyObj);
+	}
+
+	public static ObjectEntryFolder moveObjectEntryFolder(
+			long userId, long objectEntryFolderId,
+			long parentObjectEntryFolderId, boolean replace,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().moveObjectEntryFolder(
+			userId, objectEntryFolderId, parentObjectEntryFolderId, replace,
+			serviceContext);
+	}
+
+	public static void moveObjectEntryFoldersToTrash(
+			long userId, ObjectEntryFolder parentObjectEntryFolder,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		getService().moveObjectEntryFoldersToTrash(
+			userId, parentObjectEntryFolder, serviceContext);
+	}
+
+	public static ObjectEntryFolder moveObjectEntryFolderToTrash(
+			long userId, ObjectEntryFolder objectEntryFolder,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().moveObjectEntryFolderToTrash(
+			userId, objectEntryFolder, serviceContext);
+	}
+
+	public static ObjectEntryFolder restoreObjectEntryFolderFromTrash(
+			long userId, ObjectEntryFolder objectEntryFolder,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().restoreObjectEntryFolderFromTrash(
+			userId, objectEntryFolder, serviceContext);
+	}
+
+	public static void restoreObjectEntryFoldersFromTrash(
+			long userId, ObjectEntryFolder parentObjectEntryFolder,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		getService().restoreObjectEntryFoldersFromTrash(
+			userId, parentObjectEntryFolder, serviceContext);
+	}
+
+	public static void subscribeObjectEntryFolder(
+			long userId, long groupId, long objectEntryFolderId)
+		throws PortalException {
+
+		getService().subscribeObjectEntryFolder(
+			userId, groupId, objectEntryFolderId);
+	}
+
+	public static void unsubscribeObjectEntryFolder(
+			long userId, long groupId, long objectEntryFolderId)
+		throws PortalException {
+
+		getService().unsubscribeObjectEntryFolder(
+			userId, groupId, objectEntryFolderId);
 	}
 
 	public static ObjectEntryFolder updateObjectEntryFolder(
@@ -442,6 +524,13 @@ public class ObjectEntryFolderLocalServiceUtil {
 		ObjectEntryFolder objectEntryFolder) {
 
 		return getService().updateObjectEntryFolder(objectEntryFolder);
+	}
+
+	public static ObjectEntryFolder updateStatus(
+			ObjectEntryFolder objectEntryFolder, int status)
+		throws PortalException {
+
+		return getService().updateStatus(objectEntryFolder, status);
 	}
 
 	public static ObjectEntryFolderLocalService getService() {

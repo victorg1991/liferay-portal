@@ -7,6 +7,8 @@ package com.liferay.analytics.cms.rest.internal.resource.v1_0;
 
 import com.liferay.analytics.cms.rest.dto.v1_0.InventoryAnalysis;
 import com.liferay.analytics.cms.rest.dto.v1_0.InventoryAnalysisItem;
+import com.liferay.analytics.cms.rest.internal.depot.entry.util.DepotEntryUtil;
+import com.liferay.analytics.cms.rest.internal.resource.v1_0.util.ObjectEntryVersionTitleExpressionUtil;
 import com.liferay.analytics.cms.rest.resource.v1_0.InventoryAnalysisResource;
 import com.liferay.asset.entry.rel.model.AssetEntryAssetCategoryRelTable;
 import com.liferay.asset.kernel.model.AssetCategoryTable;
@@ -16,10 +18,6 @@ import com.liferay.asset.kernel.model.AssetTagGroupRelTable;
 import com.liferay.asset.kernel.model.AssetTagTable;
 import com.liferay.asset.kernel.model.AssetVocabularyGroupRelTable;
 import com.liferay.asset.kernel.model.AssetVocabularyTable;
-import com.liferay.depot.model.DepotEntry;
-import com.liferay.depot.model.DepotEntryGroupRel;
-import com.liferay.depot.service.DepotEntryGroupRelLocalService;
-import com.liferay.depot.service.DepotEntryService;
 import com.liferay.object.model.ObjectDefinitionTable;
 import com.liferay.object.model.ObjectEntryTable;
 import com.liferay.object.model.ObjectEntryVersionTable;
@@ -31,18 +29,9 @@ import com.liferay.petra.sql.dsl.expression.Expression;
 import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.petra.sql.dsl.query.FromStep;
 import com.liferay.petra.sql.dsl.query.GroupByStep;
-import com.liferay.petra.sql.dsl.spi.expression.DSLFunction;
-import com.liferay.petra.sql.dsl.spi.expression.DSLFunctionType;
-import com.liferay.petra.sql.dsl.spi.expression.Scalar;
-import com.liferay.portal.kernel.dao.db.DB;
-import com.liferay.portal.kernel.dao.db.DBManagerUtil;
-import com.liferay.portal.kernel.dao.db.DBType;
-import com.liferay.portal.kernel.dao.orm.QueryUtil;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -51,14 +40,11 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.vulcan.pagination.Pagination;
-import com.liferay.portal.vulcan.util.SearchUtil;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -78,14 +64,17 @@ public class InventoryAnalysisResourceImpl
 
 	@Override
 	public InventoryAnalysis getInventoryAnalysis(
-			Long categoryId, String groupBy, String languageId, String rangeEnd,
-			Integer rangeKey, String rangeStart, Long spaceId, Long structureId,
-			Long tagId, Long vocabularyId, Pagination pagination)
+			Long categoryId, Long depotEntryId, String groupBy,
+			String languageId, String rangeEnd, Integer rangeKey,
+			String rangeStart, Long structureId, Long tagId, Long vocabularyId,
+			Pagination pagination)
 		throws Exception {
 
 		InventoryAnalysis inventoryAnalysis = new InventoryAnalysis();
 
-		Long[] groupIds = _getGroupIds(_getDepotEntries(spaceId));
+		Long[] groupIds = DepotEntryUtil.getGroupIds(
+			DepotEntryUtil.getDepotEntries(
+				contextCompany.getCompanyId(), depotEntryId));
 
 		inventoryAnalysis.setInventoryAnalysisItems(
 			() -> transformToArray(
@@ -125,6 +114,22 @@ public class InventoryAnalysisResourceImpl
 					return inventoryAnalysisItem;
 				},
 				InventoryAnalysisItem.class));
+		inventoryAnalysis.setInventoryAnalysisItemsCount(
+			() -> (long)_objectEntryLocalService.dslQueryCount(
+				DSLQueryFactoryUtil.count(
+				).from(
+					_getGroupByStep(
+						categoryId,
+						DSLQueryFactoryUtil.select(
+							_getSelectExpressions(groupBy)),
+						groupIds, languageId, rangeEnd, rangeKey, rangeStart,
+						structureId, tagId, vocabularyId
+					).groupBy(
+						_getGroupByExpressions(groupBy)
+					).as(
+						"InventoryAnalysisItems"
+					)
+				)));
 		inventoryAnalysis.setTotalCount(
 			() -> (long)_objectEntryLocalService.dslQueryCount(
 				_getGroupByStep(
@@ -139,19 +144,6 @@ public class InventoryAnalysisResourceImpl
 
 	private DateFormat _getDateFormat() {
 		return DateFormatFactoryUtil.getSimpleDateFormat("yyyy-MM-dd");
-	}
-
-	private List<DepotEntry> _getDepotEntries(Long spaceId) throws Exception {
-		List<DepotEntry> depotEntries = new ArrayList<>();
-
-		if (spaceId == null) {
-			depotEntries.addAll(_getViewableDepotEntries());
-		}
-		else {
-			depotEntries.add(_depotEntryService.getDepotEntry(spaceId));
-		}
-
-		return depotEntries;
 	}
 
 	private Date _getEndDate(String rangeEnd) {
@@ -297,25 +289,6 @@ public class InventoryAnalysisResourceImpl
 		);
 	}
 
-	private Long[] _getGroupIds(List<DepotEntry> depotEntries) {
-		Long[] groupIds = new Long[0];
-
-		for (DepotEntry depotEntry : depotEntries) {
-			groupIds = ArrayUtil.append(groupIds, depotEntry.getGroupId());
-
-			List<DepotEntryGroupRel> depotEntryGroupRels =
-				_depotEntryGroupRelLocalService.getDepotEntryGroupRels(
-					depotEntry);
-
-			for (DepotEntryGroupRel depotEntryGroupRel : depotEntryGroupRels) {
-				groupIds = ArrayUtil.append(
-					groupIds, depotEntryGroupRel.getGroupId());
-			}
-		}
-
-		return groupIds;
-	}
-
 	private Predicate _getPredicate(
 		Long categoryId, Long[] groupIds, String languageId, String rangeEnd,
 		Integer rangeKey, String rangeStart, Long structureId, Long tagId,
@@ -342,11 +315,10 @@ public class InventoryAnalysisResourceImpl
 
 		if (Validator.isNotNull(languageId)) {
 			predicate = predicate.and(
-				_getPropertyValueExpression(
-					ObjectEntryVersionTable.INSTANCE.content, "$.properties"
-				).like(
-					"%\"" + languageId + "\":%"
-				));
+				DSLFunctionFactoryUtil.castClobText(
+					ObjectEntryVersionTitleExpressionUtil.
+						getLocalizedTitleExpression(languageId)
+				).isNotNull());
 		}
 
 		if (Validator.isNotNull(rangeStart)) {
@@ -379,24 +351,6 @@ public class InventoryAnalysisResourceImpl
 		}
 
 		return predicate;
-	}
-
-	private <T> Expression<T> _getPropertyValueExpression(
-		Expression<T> expression, String propertyName) {
-
-		DB db = DBManagerUtil.getDB();
-
-		if ((db.getDBType() == DBType.MYSQL) ||
-			(db.getDBType() == DBType.MARIADB)) {
-
-			return new DSLFunction<>(
-				new DSLFunctionType("JSON_EXTRACT(", ")"), expression,
-				new Scalar<>(propertyName));
-		}
-
-		return new DSLFunction<>(
-			new DSLFunctionType("JSON_QUERY(", ")"), expression,
-			new Scalar<>(propertyName));
 	}
 
 	private Expression<?>[] _getSelectExpressions(String groupBy) {
@@ -472,50 +426,8 @@ public class InventoryAnalysisResourceImpl
 		return calendar.getTime();
 	}
 
-	private List<DepotEntry> _getViewableDepotEntries() throws Exception {
-		List<DepotEntry> depotEntries = new ArrayList<>();
-
-		SearchUtil.search(
-			Collections.emptyMap(),
-			booleanQuery -> {
-			},
-			null, DepotEntry.class.getName(), null,
-			Pagination.of(QueryUtil.ALL_POS, QueryUtil.ALL_POS),
-			queryConfig -> {
-			},
-			searchContext -> searchContext.setCompanyId(
-				contextCompany.getCompanyId()),
-			null,
-			document -> {
-				try {
-					depotEntries.add(
-						_depotEntryService.getDepotEntry(
-							GetterUtil.getLong(
-								document.get(Field.ENTRY_CLASS_PK))));
-				}
-				catch (PortalException portalException) {
-					if (_log.isInfoEnabled()) {
-						_log.info(
-							"User does not have access to view space " +
-								document.get(Field.ENTRY_CLASS_PK),
-							portalException);
-					}
-				}
-
-				return null;
-			});
-
-		return depotEntries;
-	}
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		InventoryAnalysisResourceImpl.class);
-
-	@Reference
-	private DepotEntryGroupRelLocalService _depotEntryGroupRelLocalService;
-
-	@Reference
-	private DepotEntryService _depotEntryService;
 
 	@Reference
 	private Localization _localization;

@@ -261,10 +261,24 @@ public class ObjectEntryVersionLocalServiceUtil {
 			userId, objectEntry, serviceContext);
 	}
 
+	public static ObjectEntryVersion fetchLatestApprovedObjectEntryVersion(
+		long objectEntryId,
+		OrderByComparator<ObjectEntryVersion> orderByComparator) {
+
+		return getService().fetchLatestApprovedObjectEntryVersion(
+			objectEntryId, orderByComparator);
+	}
+
 	public static ObjectEntryVersion fetchObjectEntryVersion(
 		long objectEntryVersionId) {
 
 		return getService().fetchObjectEntryVersion(objectEntryVersionId);
+	}
+
+	public static ObjectEntryVersion fetchObjectEntryVersion(
+		long objectEntryId, int version) {
+
+		return getService().fetchObjectEntryVersion(objectEntryId, version);
 	}
 
 	/**
@@ -397,6 +411,13 @@ public class ObjectEntryVersionLocalServiceUtil {
 		throws PortalException {
 
 		return getService().getPersistedModel(primaryKeyObj);
+	}
+
+	public static boolean isLatestObjectEntryVersion(
+			long objectEntryId, int version)
+		throws PortalException {
+
+		return getService().isLatestObjectEntryVersion(objectEntryId, version);
 	}
 
 	public static ObjectEntryVersion updateLatestObjectEntryVersion(

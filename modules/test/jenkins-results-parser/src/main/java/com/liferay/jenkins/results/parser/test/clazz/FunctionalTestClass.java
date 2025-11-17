@@ -13,7 +13,6 @@ import com.liferay.poshi.core.PoshiContext;
 
 import java.io.File;
 
-import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,7 +43,7 @@ public class FunctionalTestClass extends BaseTestClass {
 	}
 
 	public DownstreamBuildReport getCachedDownstreamBuildReport() {
-		if (!JenkinsResultsParserUtil.isBuildCachingEnabled()) {
+		if (!isBuildCachingEnabled()) {
 			return null;
 		}
 
@@ -58,34 +57,14 @@ public class FunctionalTestClass extends BaseTestClass {
 	}
 
 	public TestReport getCachedTestReport() {
-		if (!JenkinsResultsParserUtil.isBuildCachingEnabled() ||
-			_cachedTestReportSearched) {
-
+		if (!isBuildCachingEnabled() || _cachedTestReportSearched) {
 			return _cachedTestReport;
 		}
 
 		BatchTestClassGroup batchTestClassGroup = getBatchTestClassGroup();
 
-		for (DownstreamBuildReport cachedDownstreamBuildReport :
-				batchTestClassGroup.getCachedDownstreamBuildReports()) {
-
-			for (TestReport cachedTestReport :
-					cachedDownstreamBuildReport.getTestReports()) {
-
-				if (!Objects.equals(
-						cachedTestReport.getTestName(),
-						getTestClassMethodName())) {
-
-					continue;
-				}
-
-				_cachedTestReport = cachedTestReport;
-
-				_cachedTestReportSearched = true;
-
-				return _cachedTestReport;
-			}
-		}
+		_cachedTestReport = batchTestClassGroup.getCachedTestReport(
+			getTestClassMethodName());
 
 		_cachedTestReportSearched = true;
 

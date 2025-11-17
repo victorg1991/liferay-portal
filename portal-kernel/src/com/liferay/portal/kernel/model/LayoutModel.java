@@ -984,18 +984,19 @@ public interface LayoutModel
 	public void setColorSchemeId(String colorSchemeId);
 
 	/**
-	 * Returns the style book entry ID of this layout.
+	 * Returns the style book entry erc of this layout.
 	 *
-	 * @return the style book entry ID of this layout
+	 * @return the style book entry erc of this layout
 	 */
-	public long getStyleBookEntryId();
+	@AutoEscape
+	public String getStyleBookEntryERC();
 
 	/**
-	 * Sets the style book entry ID of this layout.
+	 * Sets the style book entry erc of this layout.
 	 *
-	 * @param styleBookEntryId the style book entry ID of this layout
+	 * @param styleBookEntryERC the style book entry erc of this layout
 	 */
-	public void setStyleBookEntryId(long styleBookEntryId);
+	public void setStyleBookEntryERC(String styleBookEntryERC);
 
 	/**
 	 * Returns the css of this layout.
@@ -1092,19 +1093,20 @@ public interface LayoutModel
 		boolean layoutPrototypeLinkEnabled);
 
 	/**
-	 * Returns the source prototype layout uuid of this layout.
+	 * Returns the layout set prototype layout erc of this layout.
 	 *
-	 * @return the source prototype layout uuid of this layout
+	 * @return the layout set prototype layout erc of this layout
 	 */
 	@AutoEscape
-	public String getSourcePrototypeLayoutUuid();
+	public String getLayoutSetPrototypeLayoutERC();
 
 	/**
-	 * Sets the source prototype layout uuid of this layout.
+	 * Sets the layout set prototype layout erc of this layout.
 	 *
-	 * @param sourcePrototypeLayoutUuid the source prototype layout uuid of this layout
+	 * @param layoutSetPrototypeLayoutERC the layout set prototype layout erc of this layout
 	 */
-	public void setSourcePrototypeLayoutUuid(String sourcePrototypeLayoutUuid);
+	public void setLayoutSetPrototypeLayoutERC(
+		String layoutSetPrototypeLayoutERC);
 
 	/**
 	 * Returns the publish date of this layout.

@@ -6,10 +6,11 @@ liferay-marketplace-custom-element:
         -   "**/index*.css"
     friendlyURLMapping: liferay-marketplace-custom-element
     htmlElementName: liferay-marketplace-custom-element
-    instanceable: false
+    instanceable: true
     name: Liferay Marketplace
     portletCategoryName: category.client-extensions
     properties:
+        accountExternalReferenceCode: SSA-ACCOUNT
         analyticsCloudURL: https://analytics-internal.liferay.com
         cloudConsoleURL: https://console.liferay.cloud
         contactSupportURL: https://www.liferay.com/contact-us

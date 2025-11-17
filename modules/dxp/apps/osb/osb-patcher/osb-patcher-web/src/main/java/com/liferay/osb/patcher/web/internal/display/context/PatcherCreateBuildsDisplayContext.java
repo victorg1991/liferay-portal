@@ -27,7 +27,21 @@ public class PatcherCreateBuildsDisplayContext {
 		_httpServletRequest = httpServletRequest;
 	}
 
-	public PatcherBuild getPatcherBuild() {
+	public String getAccountEntryCode() throws Exception {
+		PatcherBuild templatePatcherBuild = _getTemplatePatcherBuild();
+
+		if (templatePatcherBuild != null) {
+			PatcherAccount patcherAccount =
+				PatcherAccountLocalServiceUtil.getPatcherAccount(
+					templatePatcherBuild.getPatcherAccountId());
+
+			return patcherAccount.getAccountEntryCode();
+		}
+
+		return StringPool.BLANK;
+	}
+
+	public PatcherBuild getPatcherBuild() throws Exception {
 		PatcherBuild patcherBuild =
 			PatcherBuildLocalServiceUtil.createPatcherBuild(0);
 
@@ -36,6 +50,7 @@ public class PatcherCreateBuildsDisplayContext {
 		PatcherBuild templatePatcherBuild = _getTemplatePatcherBuild();
 
 		if (templatePatcherBuild != null) {
+			patcherBuild.setAccountEntryCode(getAccountEntryCode());
 			patcherBuild.setPatcherAccountId(
 				templatePatcherBuild.getPatcherAccountId());
 			patcherBuild.setPatcherProductVersionId(
@@ -51,20 +66,6 @@ public class PatcherCreateBuildsDisplayContext {
 		}
 
 		return patcherBuild;
-	}
-
-	public String getPatcherBuildAccountEntryCode() throws Exception {
-		PatcherBuild templatePatcherBuild = _getTemplatePatcherBuild();
-
-		if (templatePatcherBuild != null) {
-			PatcherAccount patcherAccount =
-				PatcherAccountLocalServiceUtil.getPatcherAccount(
-					templatePatcherBuild.getPatcherAccountId());
-
-			return patcherAccount.getAccountEntryCode();
-		}
-
-		return StringPool.BLANK;
 	}
 
 	public long getPatcherProductVersionId() {

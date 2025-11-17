@@ -350,7 +350,8 @@ test('Selection filter of type "Object Picklist" can be configured to use single
 	await test.step('Update filter and make it "active"', async () => {
 		await dataSetManagerApiHelpers.updateDataSetSelectionFilter({
 			active: true,
-			erc: selectionFilter.externalReferenceCode,
+			dataSetERC,
+			selectionFilterERC: selectionFilter.externalReferenceCode,
 		});
 	});
 
@@ -434,13 +435,14 @@ test('Selection filter of type "Object Picklist" can be configured to include or
 
 	await test.step('Update filter to use preselected values exclude mode', async () => {
 		await dataSetManagerApiHelpers.updateDataSetSelectionFilter({
-			erc: selectionFilter.externalReferenceCode,
+			dataSetERC,
 			preselectedValues: JSON.stringify([
 				{
 					label: getRandomString(),
 					value: picklistBooleanOption.externalReferenceCode,
 				},
 			]),
+			selectionFilterERC: selectionFilter.externalReferenceCode,
 		});
 	});
 
@@ -720,7 +722,8 @@ test('Selection filter of type "API REST Application" is displayed in fragment @
 		await dataSetFragmentPage.filterItem
 			.getByRole('checkbox', {name: 'boolean'})
 			.check();
-		await dataSetFragmentPage.addFilterButton.click();
+
+		await dataSetFragmentPage.showResultsButton.click();
 	});
 
 	await test.step('Assert that the filter is hidden', async () => {
@@ -755,7 +758,7 @@ test('Selection filter of type "API REST Application" is displayed in fragment @
 	});
 
 	await test.step('Can reset applied filters', async () => {
-		await dataSetFragmentPage.resetFilterButton.click();
+		await dataSetFragmentPage.removeFilterButton.click();
 	});
 
 	await test.step('Check initial items in the Frontend Data Set', async () => {
@@ -782,7 +785,7 @@ test(
 			await dataSetManagerApiHelpers.createDataSet({
 				erc: customDataSetERC,
 				label: customDataSetLabel,
-				restApplication: `${API_ENDPOINT_PATH}`,
+				restEndpoint: '/',
 				restSchema: 'DataSet',
 			});
 		});
@@ -803,7 +806,7 @@ test(
 				itemLabel: 'fieldName',
 				label_i18n: {en_US: filterLabel},
 				multiple: true,
-				source: `/o${API_ENDPOINT_PATH}/cards-sections/`,
+				source: `/o${API_ENDPOINT_PATH}/by-external-reference-code/${customDataSetERC}/dataSetToDataSetCardsSections`,
 				sourceType: 'API_REST_APPLICATION',
 			});
 		});

@@ -69,7 +69,7 @@ public class ObjectDefinitionCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(83);
+		StringBundler sb = new StringBundler(87);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -109,6 +109,8 @@ public class ObjectDefinitionCacheModel
 		sb.append(enableCategorization);
 		sb.append(", enableComments=");
 		sb.append(enableComments);
+		sb.append(", enableFormContainer=");
+		sb.append(enableFormContainer);
 		sb.append(", enableFriendlyURLCustomization=");
 		sb.append(enableFriendlyURLCustomization);
 		sb.append(", enableIndexSearch=");
@@ -121,6 +123,8 @@ public class ObjectDefinitionCacheModel
 		sb.append(enableObjectEntryHistory);
 		sb.append(", enableObjectEntrySchedule=");
 		sb.append(enableObjectEntrySchedule);
+		sb.append(", enableObjectEntrySubscription=");
+		sb.append(enableObjectEntrySubscription);
 		sb.append(", enableObjectEntryVersioning=");
 		sb.append(enableObjectEntryVersioning);
 		sb.append(", friendlyURLSeparator=");
@@ -229,6 +233,7 @@ public class ObjectDefinitionCacheModel
 
 		objectDefinitionImpl.setEnableCategorization(enableCategorization);
 		objectDefinitionImpl.setEnableComments(enableComments);
+		objectDefinitionImpl.setEnableFormContainer(enableFormContainer);
 		objectDefinitionImpl.setEnableFriendlyURLCustomization(
 			enableFriendlyURLCustomization);
 		objectDefinitionImpl.setEnableIndexSearch(enableIndexSearch);
@@ -238,6 +243,8 @@ public class ObjectDefinitionCacheModel
 			enableObjectEntryHistory);
 		objectDefinitionImpl.setEnableObjectEntrySchedule(
 			enableObjectEntrySchedule);
+		objectDefinitionImpl.setEnableObjectEntrySubscription(
+			enableObjectEntrySubscription);
 		objectDefinitionImpl.setEnableObjectEntryVersioning(
 			enableObjectEntryVersioning);
 
@@ -358,6 +365,8 @@ public class ObjectDefinitionCacheModel
 
 		enableComments = objectInput.readBoolean();
 
+		enableFormContainer = objectInput.readBoolean();
+
 		enableFriendlyURLCustomization = objectInput.readBoolean();
 
 		enableIndexSearch = objectInput.readBoolean();
@@ -369,6 +378,8 @@ public class ObjectDefinitionCacheModel
 		enableObjectEntryHistory = objectInput.readBoolean();
 
 		enableObjectEntrySchedule = objectInput.readBoolean();
+
+		enableObjectEntrySubscription = objectInput.readBoolean();
 
 		enableObjectEntryVersioning = objectInput.readBoolean();
 		friendlyURLSeparator = objectInput.readUTF();
@@ -457,6 +468,8 @@ public class ObjectDefinitionCacheModel
 
 		objectOutput.writeBoolean(enableComments);
 
+		objectOutput.writeBoolean(enableFormContainer);
+
 		objectOutput.writeBoolean(enableFriendlyURLCustomization);
 
 		objectOutput.writeBoolean(enableIndexSearch);
@@ -468,6 +481,8 @@ public class ObjectDefinitionCacheModel
 		objectOutput.writeBoolean(enableObjectEntryHistory);
 
 		objectOutput.writeBoolean(enableObjectEntrySchedule);
+
+		objectOutput.writeBoolean(enableObjectEntrySubscription);
 
 		objectOutput.writeBoolean(enableObjectEntryVersioning);
 
@@ -571,12 +586,14 @@ public class ObjectDefinitionCacheModel
 	public String dbTableName;
 	public boolean enableCategorization;
 	public boolean enableComments;
+	public boolean enableFormContainer;
 	public boolean enableFriendlyURLCustomization;
 	public boolean enableIndexSearch;
 	public boolean enableLocalization;
 	public boolean enableObjectEntryDraft;
 	public boolean enableObjectEntryHistory;
 	public boolean enableObjectEntrySchedule;
+	public boolean enableObjectEntrySubscription;
 	public boolean enableObjectEntryVersioning;
 	public String friendlyURLSeparator;
 	public String label;

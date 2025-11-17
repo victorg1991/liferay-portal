@@ -87,7 +87,7 @@ public class EditLayoutDesignMVCActionCommand extends BaseMVCActionCommand {
 		ClientExtensionEntryRel clientExtensionEntryRel =
 			_clientExtensionEntryRelLocalService.
 				fetchClientExtensionEntryRelByExternalReferenceCode(
-					cetExternalReferenceCode, layout.getCompanyId());
+					cetExternalReferenceCode, layout.getGroupId());
 
 		if (clientExtensionEntryRel != null) {
 			return;
@@ -212,9 +212,10 @@ public class EditLayoutDesignMVCActionCommand extends BaseMVCActionCommand {
 
 			Layout layout = _layoutLocalService.getLayout(selPlid);
 
-			long styleBookEntryId = ParamUtil.getLong(
-				uploadPortletRequest, "styleBookEntryId",
-				layout.getStyleBookEntryId());
+			String styleBookEntryERC = ParamUtil.getString(
+				uploadPortletRequest, "styleBookEntryERC",
+				layout.getStyleBookEntryERC());
+
 			long faviconFileEntryId = ParamUtil.getLong(
 				uploadPortletRequest, "faviconFileEntryId",
 				layout.getFaviconFileEntryId());
@@ -254,7 +255,7 @@ public class EditLayoutDesignMVCActionCommand extends BaseMVCActionCommand {
 				layout.getTitleMap(), layout.getDescriptionMap(),
 				layout.getKeywordsMap(), layout.getRobotsMap(),
 				layout.getType(), layout.isHidden(), layout.getFriendlyURLMap(),
-				!deleteLogo, iconBytes, styleBookEntryId, faviconFileEntryId,
+				!deleteLogo, iconBytes, styleBookEntryERC, faviconFileEntryId,
 				masterLayoutPlid, serviceContext);
 
 			_updateClientExtensionEntryRels(
@@ -280,7 +281,7 @@ public class EditLayoutDesignMVCActionCommand extends BaseMVCActionCommand {
 					draftLayout.getKeywordsMap(), draftLayout.getRobotsMap(),
 					draftLayout.getType(), draftLayout.isHidden(),
 					draftLayout.getFriendlyURLMap(), !deleteLogo, iconBytes,
-					styleBookEntryId, faviconFileEntryId,
+					styleBookEntryERC, faviconFileEntryId,
 					draftLayout.getMasterLayoutPlid(), serviceContext);
 
 				_updateClientExtensionEntryRels(
@@ -303,7 +304,7 @@ public class EditLayoutDesignMVCActionCommand extends BaseMVCActionCommand {
 					Boolean.TRUE.toString());
 			}
 
-			layout = _layoutService.updateLayout(
+			layout = _layoutService.updateTypeSettings(
 				groupId, layout.isPrivateLayout(), layout.getLayoutId(),
 				layoutTypeSettingsUnicodeProperties.toString());
 

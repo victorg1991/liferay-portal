@@ -417,7 +417,7 @@ public interface AssetVocabularyLocalService
 	public IndexableActionableDynamicQuery getIndexableActionableDynamicQuery();
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public AssetVocabulary getOrAddIncompleteVocabulary(
+	public AssetVocabulary getOrAddEmptyVocabulary(
 			String externalReferenceCode, long userId, long groupId)
 		throws PortalException;
 
@@ -484,7 +484,7 @@ public interface AssetVocabularyLocalService
 	public AssetVocabulary updateVocabulary(
 			long vocabularyId, String title, Map<Locale, String> titleMap,
 			Map<Locale, String> descriptionMap, String settings,
-			ServiceContext serviceContext)
+			int visibilityType, ServiceContext serviceContext)
 		throws PortalException;
 
 	@Override

@@ -7,15 +7,24 @@ package com.liferay.site.cms.site.initializer.internal.display.context;
 
 import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.object.model.ObjectDefinition;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import jakarta.portlet.ActionRequest;
 
@@ -23,6 +32,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Marco Galluzzi
@@ -30,24 +40,56 @@ import java.util.List;
 public class ViewStructureUsagesDisplayContext {
 
 	public ViewStructureUsagesDisplayContext(
-		HttpServletRequest httpServletRequest, Language language) {
+		HttpServletRequest httpServletRequest, Language language,
+		ObjectDefinition objectDefinition) {
 
 		_httpServletRequest = httpServletRequest;
 		_language = language;
+		_objectDefinition = objectDefinition;
 
 		_themeDisplay = (ThemeDisplay)httpServletRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 	}
 
 	public String getAPIURL() {
-		StringBundler sb = new StringBundler(4);
+		return StringBundler.concat(
+			"/o/search/v1.0/search?emptySearch=true&",
+			"filter=(objectDefinitionId eq ",
+			ParamUtil.getLong(_httpServletRequest, "objectDefinitionId"),
+			" and status in (", _STATUSES, "))&nestedFields=embedded");
+	}
 
-		sb.append("/o/search/v1.0/search?emptySearch=true&");
-		sb.append("filter=(objectDefinitionId eq ");
-		sb.append(ParamUtil.getLong(_httpServletRequest, "objectDefinitionId"));
-		sb.append(")&nestedFields=embedded");
-
-		return sb.toString();
+	public Map<String, Object> getBreadcrumbProps() throws PortalException {
+		return HashMapBuilder.<String, Object>put(
+			"breadcrumbItems",
+			JSONUtil.putAll(
+				JSONUtil.put(
+					"active", false
+				).put(
+					"href",
+					() -> PortalUtil.getLayoutFullURL(
+						LayoutLocalServiceUtil.getLayoutByFriendlyURL(
+							_themeDisplay.getScopeGroupId(), false,
+							"/structures"),
+						_themeDisplay)
+				).put(
+					"label",
+					LanguageUtil.get(_themeDisplay.getLocale(), "structures")
+				)
+			).put(
+				JSONUtil.put(
+					"active", true
+				).put(
+					"label",
+					LanguageUtil.format(
+						_themeDisplay.getLocale(), "x-usages",
+						_objectDefinition.getLabel(
+							_themeDisplay.getLanguageId()))
+				)
+			)
+		).put(
+			"hideSpace", true
+		).build();
 	}
 
 	public List<DropdownItem> getBulkActionDropdownItems() {
@@ -56,6 +98,14 @@ public class ViewStructureUsagesDisplayContext {
 
 	public List<FDSActionDropdownItem> getFDSActionDropdownItems() {
 		return ListUtil.fromArray(
+			new FDSActionDropdownItem(
+				StringBundler.concat(
+					_themeDisplay.getPortalURL(), _themeDisplay.getPathMain(),
+					GroupConstants.CMS_FRIENDLY_URL,
+					"/edit_content_item?objectEntryId={embedded.id}&",
+					"redirect=", _themeDisplay.getURLCurrent()),
+				"pencil", "edit", LanguageUtil.get(_httpServletRequest, "edit"),
+				"get", "update", null),
 			new FDSActionDropdownItem(
 				PortletURLBuilder.create(
 					PortalUtil.getControlPanelPortletURL(
@@ -71,6 +121,8 @@ public class ViewStructureUsagesDisplayContext {
 					"modelResource", "{entryClassName}"
 				).setParameter(
 					"modelResourceDescription", "{embedded.name}"
+				).setParameter(
+					"resourceGroupId", "{embedded.scopeId}"
 				).setParameter(
 					"resourcePrimKey", "{embedded.id}"
 				).setWindowState(
@@ -88,8 +140,16 @@ public class ViewStructureUsagesDisplayContext {
 				"delete", "headless"));
 	}
 
+	private static final String _STATUSES = StringUtil.merge(
+		new int[] {
+			WorkflowConstants.STATUS_APPROVED, WorkflowConstants.STATUS_DRAFT,
+			WorkflowConstants.STATUS_EXPIRED, WorkflowConstants.STATUS_PENDING,
+			WorkflowConstants.STATUS_SCHEDULED
+		});
+
 	private final HttpServletRequest _httpServletRequest;
 	private final Language _language;
+	private final ObjectDefinition _objectDefinition;
 	private final ThemeDisplay _themeDisplay;
 
 }

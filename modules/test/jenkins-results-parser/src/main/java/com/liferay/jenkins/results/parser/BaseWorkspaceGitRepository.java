@@ -231,6 +231,40 @@ public abstract class BaseWorkspaceGitRepository
 	}
 
 	public boolean isSnapshot() {
+		String directoryName = getDirectoryName();
+
+		String jobVariant = System.getenv("JOB_VARIANT");
+
+		if (directoryName.contains("liferay-portal")) {
+			String jobName = System.getenv("JOB_NAME");
+
+			if (jobName.equals("forward-pullrequest") ||
+				jobName.equals("publish-testray-report") ||
+				jobName.equals("test-portal-source-format") ||
+				jobName.contains("validation")) {
+
+				return false;
+			}
+
+			if (JenkinsResultsParserUtil.isNullOrEmpty(jobVariant)) {
+				return getBoolean("snapshot");
+			}
+
+			if ((jobName.contains("master") &&
+				 jobVariant.contains("modules-unit")) ||
+				jobVariant.contains("service-builder")) {
+
+				return false;
+			}
+		}
+
+		if (directoryName.equals("liferay-release-tool-ee") &&
+			!JenkinsResultsParserUtil.isNullOrEmpty(jobVariant) &&
+			jobVariant.startsWith("portal-license")) {
+
+			return false;
+		}
+
 		return getBoolean("snapshot");
 	}
 
@@ -776,8 +810,9 @@ public abstract class BaseWorkspaceGitRepository
 			CloudBucketUtil.downloadS3File(
 				archiveFile,
 				JenkinsResultsParserUtil.combine(
-					CloudBucketUtil.S3_BUCKET_PATH_FILE_PROPAGATOR,
-					"/git-shallow-clone-archives/", fileName));
+					JenkinsResultsParserUtil.getBuildProperty(
+						"cloud.ci.s3.bucket.git.shallow.clone.archives.path"),
+					"/", fileName));
 
 			File directory = getDirectory();
 
@@ -893,7 +928,8 @@ public abstract class BaseWorkspaceGitRepository
 
 			String directoryPath = directory.getPath();
 
-			if ((jobVariant.contains("rest-builder") ||
+			if ((jobVariant.contains("app-server-bundle-builder") ||
+				 jobVariant.contains("rest-builder") ||
 				 jobVariant.contains("service-builder")) &&
 				directoryPath.contains("liferay-portal")) {
 
@@ -916,11 +952,17 @@ public abstract class BaseWorkspaceGitRepository
 			return;
 		}
 
-		GitWorkingDirectory gitWorkingDirectory = getGitWorkingDirectory();
+		String jobName = System.getenv("JOB_NAME");
 
-		File archiveFile = gitWorkingDirectory.archive(_getGitArchiveName());
+		if (!jobName.contains("-batch") && !jobName.contains("-downstream")) {
+			GitWorkingDirectory gitWorkingDirectory = getGitWorkingDirectory();
 
-		CloudBucketUtil.uploadS3File(_getGitArchiveS3BucketPath(), archiveFile);
+			File archiveFile = gitWorkingDirectory.archive(
+				_getGitArchiveName());
+
+			CloudBucketUtil.uploadS3File(
+				_getGitArchiveS3BucketPath(), archiveFile);
+		}
 
 		_setSnapshot(true);
 

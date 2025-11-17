@@ -23,12 +23,12 @@ import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.language.LanguageResources;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.PortalPreferencesImpl;
 import com.liferay.portlet.PortalPreferencesWrapper;
 
@@ -184,7 +184,9 @@ public class UpgradeGroup extends UpgradeProcess {
 
 		PreparedStatement preparedStatement = connection.prepareStatement(
 			"select ownerId, preferences from PortalPreferences where " +
-				"ownerType = " + PortletKeys.PREFS_OWNER_TYPE_COMPANY);
+				"ownerType = ?");
+
+		preparedStatement.setInt(1, PortletKeys.PREFS_OWNER_TYPE_COMPANY);
 
 		ResultSet resultSet = preparedStatement.executeQuery();
 

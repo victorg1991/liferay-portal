@@ -34,7 +34,6 @@ page import="com.liferay.object.model.ObjectField" %><%@
 page import="com.liferay.object.model.ObjectFolder" %><%@
 page import="com.liferay.object.model.ObjectLayout" %><%@
 page import="com.liferay.object.model.ObjectLayoutBox" %><%@
-page import="com.liferay.object.model.ObjectLayoutTab" %><%@
 page import="com.liferay.object.model.ObjectRelationship" %><%@
 page import="com.liferay.object.model.ObjectValidationRule" %><%@
 page import="com.liferay.object.model.ObjectView" %><%@
@@ -55,7 +54,6 @@ page import="com.liferay.object.web.internal.object.definitions.display.context.
 page import="com.liferay.object.web.internal.object.definitions.display.context.util.LocalizedJSONArrayUtil" %><%@
 page import="com.liferay.object.web.internal.object.entries.constants.ObjectEntriesFDSNames" %><%@
 page import="com.liferay.object.web.internal.object.entries.display.context.ViewObjectEntriesDisplayContext" %><%@
-page import="com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil" %><%@
 page import="com.liferay.portal.kernel.language.LanguageUtil" %><%@
 page import="com.liferay.portal.kernel.model.LayoutConstants" %><%@
 page import="com.liferay.portal.kernel.model.ModelHintsConstants" %><%@
@@ -72,7 +70,8 @@ page import="com.liferay.portal.kernel.util.ParamUtil" %><%@
 page import="com.liferay.portal.kernel.util.PropsKeys" %><%@
 page import="com.liferay.portal.kernel.util.PropsUtil" %><%@
 page import="com.liferay.portal.kernel.util.Validator" %><%@
-page import="com.liferay.portal.kernel.util.WebKeys" %>
+page import="com.liferay.portal.kernel.util.WebKeys" %><%@
+page import="com.liferay.portal.kernel.workflow.WorkflowConstants" %>
 
 <%@ page import="java.util.Objects" %>
 

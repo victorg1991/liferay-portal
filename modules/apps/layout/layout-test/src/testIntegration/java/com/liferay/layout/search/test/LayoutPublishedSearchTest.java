@@ -203,8 +203,9 @@ public class LayoutPublishedSearchTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkService.addFragmentEntryLink(
-				null, _group.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(),
+				null, _group.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(),
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(draftLayout.getPlid()),
 				draftLayout.getPlid(), fragmentEntry.getCss(),
@@ -231,8 +232,9 @@ public class LayoutPublishedSearchTest {
 
 		FragmentEntryLink inlineFragmentEntryLink =
 			_fragmentEntryLinkService.addFragmentEntryLink(
-				null, _group.getGroupId(), 0,
-				contributedFragmentEntry.getFragmentEntryId(),
+				null, _group.getGroupId(), null,
+				contributedFragmentEntry.getExternalReferenceCode(),
+				contributedFragmentEntry.getScopeERC(),
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(draftLayout.getPlid()),
 				draftLayout.getPlid(), contributedFragmentEntry.getCss(),
@@ -266,7 +268,8 @@ public class LayoutPublishedSearchTest {
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
-				_group.getGroupId(), draftLayout.getPlid(),
+				TestPropsValues.getUserId(), _group.getGroupId(),
+				draftLayout.getPlid(),
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(draftLayout.getPlid()),
 				layoutStructure.toString());
@@ -363,8 +366,8 @@ public class LayoutPublishedSearchTest {
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
-				_group.getGroupId(), plid, segmentsExperienceId,
-				layoutStructure.toString());
+				TestPropsValues.getUserId(), _group.getGroupId(), plid,
+				segmentsExperienceId, layoutStructure.toString());
 	}
 
 	private void _addFragmentEntryLinkWithInlineContentToLayout(
@@ -381,8 +384,9 @@ public class LayoutPublishedSearchTest {
 
 		FragmentEntryLink inlineFragmentEntryLink =
 			_fragmentEntryLinkService.addFragmentEntryLink(
-				null, _group.getGroupId(), 0,
-				contributedFragmentEntry.getFragmentEntryId(),
+				null, _group.getGroupId(), null,
+				contributedFragmentEntry.getExternalReferenceCode(),
+				contributedFragmentEntry.getScopeERC(),
 				defaultSegmentsExperienceId, draftLayout.getPlid(),
 				contributedFragmentEntry.getCss(),
 				contributedFragmentEntry.getHtml(),
@@ -443,8 +447,9 @@ public class LayoutPublishedSearchTest {
 
 		FragmentEntryLink inlineFragmentEntryLink =
 			_fragmentEntryLinkService.addFragmentEntryLink(
-				null, _group.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), defaultSegmentsExperienceId,
+				null, _group.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), defaultSegmentsExperienceId,
 				draftLayout.getPlid(), fragmentEntry.getCss(),
 				fragmentEntry.getHtml(), fragmentEntry.getJs(),
 				fragmentEntry.getConfiguration(), StringPool.BLANK,

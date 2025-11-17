@@ -95,7 +95,7 @@ public class StagingLocalServiceTest {
 				stagingLayout.getKeywordsMap(), stagingLayout.getRobotsMap(),
 				stagingLayout.getType(), stagingLayout.isHidden(),
 				stagingLayout.getFriendlyURLMap(), false, null,
-				stagingLayout.getStyleBookEntryId(),
+				stagingLayout.getStyleBookEntryERC(),
 				stagingLayout.getFaviconFileEntryId(),
 				stagingLayout.getMasterLayoutPlid(), new ServiceContext());
 
@@ -110,7 +110,7 @@ public class StagingLocalServiceTest {
 				stagingLayout.getKeywordsMap(), stagingLayout.getRobotsMap(),
 				stagingLayout.getType(), stagingLayout.isHidden(),
 				stagingLayout.getFriendlyURLMap(), false, null,
-				stagingLayout.getStyleBookEntryId(),
+				stagingLayout.getStyleBookEntryERC(),
 				stagingLayout.getFaviconFileEntryId(),
 				stagingLayout.getMasterLayoutPlid(), new ServiceContext());
 
@@ -240,10 +240,8 @@ public class StagingLocalServiceTest {
 
 			updatedUnicodeProperties.remove("column-1");
 
-			_layoutLocalService.updateLayout(
-				stagingGroup.getGroupId(), stagingLayout.isPrivateLayout(),
-				stagingLayout.getLayoutId(),
-				updatedUnicodeProperties.toString());
+			_layoutLocalService.updateTypeSettings(
+				stagingLayout, updatedUnicodeProperties.toString());
 
 			LayoutRevision lastLayoutRevision =
 				LayoutRevisionLocalServiceUtil.fetchLastLayoutRevision(
@@ -312,10 +310,8 @@ public class StagingLocalServiceTest {
 
 			updatedUnicodeProperties.remove("column-1");
 
-			_layoutLocalService.updateLayout(
-				stagingGroup.getGroupId(), stagingLayout.isPrivateLayout(),
-				stagingLayout.getLayoutId(),
-				updatedUnicodeProperties.toString());
+			_layoutLocalService.updateTypeSettings(
+				stagingLayout, updatedUnicodeProperties.toString());
 
 			LayoutRevision lastLayoutRevision =
 				LayoutRevisionLocalServiceUtil.fetchLastLayoutRevision(

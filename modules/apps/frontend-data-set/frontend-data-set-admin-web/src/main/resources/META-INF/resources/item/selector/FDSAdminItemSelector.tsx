@@ -8,9 +8,10 @@ import ClayModal from '@clayui/modal';
 import {FrontendDataSet} from '@liferay/frontend-data-set-web';
 import React, {useState} from 'react';
 
-import {API_URL, FDS_DEFAULT_PROPS} from '../../js/utils/constants';
+import {FDS_DEFAULT_PROPS} from '../../js/utils/constants';
 
 import './FDSAdminItemSelector.scss';
+import getDataSetResourceURL from '../../js/utils/getDataSetResourceURL';
 
 interface ISelectedItem {
 	externalReferenceCode: string;
@@ -24,8 +25,39 @@ const views = [
 		name: 'list',
 		schema: {
 			description: 'description',
+			sticker: 'sticker',
 			symbol: 'symbol',
 			title: 'label',
+			tooltip: 'tooltip',
+		},
+		setItemComponentProps: ({item, props}: {item: any; props: any}) => {
+			if (
+				!item.dataSetToDataSetCardsSections.length &&
+				!item.dataSetToDataSetTableSections.length &&
+				!item.dataSetToDataSetListSections.length
+			) {
+				return {
+					...props,
+					item: {
+						...item,
+						sticker: {displayType: 'warning'},
+						symbol: 'exclamation-circle',
+						tooltip: Liferay.Language.get(
+							'no-visualization-modes-have-been-defined'
+						),
+					},
+				};
+			}
+			else {
+				return {
+					...props,
+					item: {
+						...item,
+						sticker: {displayType: 'unstyled'},
+						symbol: 'catalog',
+					},
+				};
+			}
 		},
 	},
 ];
@@ -66,21 +98,19 @@ const FDSAdminItemSelector = ({
 			<ClayModal.Body>
 				<FrontendDataSet
 					{...FDS_DEFAULT_PROPS}
-					apiURL={API_URL.DATA_SETS}
+					apiURL={getDataSetResourceURL({
+						params: {
+							nestedFields:
+								'dataSetToDataSetCardsSections, dataSetToDataSetTableSections, dataSetToDataSetListSections',
+						},
+					})}
 					id={`${namespace}FDSAdminItemSelector`}
-					onSelect={({
-						selectedItems,
-					}: {
-						selectedItems: Array<ISelectedItem>;
-					}) => {
-						setSelectedItem({
-							externalReferenceCode:
-								selectedItems[0].externalReferenceCode,
-							id: selectedItems[0].id,
-							label: selectedItems[0].label,
-						});
+					onSelectedItemsChange={(
+						selectedItems: Array<ISelectedItem>
+					) => {
+						setSelectedItem(selectedItems[0]);
 					}}
-					selectedItems={[selectedItem?.externalReferenceCode]}
+					selectedItems={[selectedItem]}
 					selectedItemsKey="externalReferenceCode"
 					selectionType="single"
 					views={views}

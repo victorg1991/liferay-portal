@@ -16,12 +16,16 @@ import EditTagsModal from './EditTagsModal';
 import MergeTagsModal from './MergeTagsModal';
 
 export default function ViewTags({
+	cmsGroupId,
 	dataSetId,
+	invalidTagCharacters,
 	tagUsagesURL,
 	tagsURL,
 	vocabulariesURL,
 }: {
+	cmsGroupId: number;
 	dataSetId: string;
+	invalidTagCharacters: string;
 	tagUsagesURL: string;
 	tagsURL: string;
 	vocabulariesURL: string;
@@ -41,7 +45,9 @@ export default function ViewTags({
 						}) =>
 							CreateTagsModal({
 								closeModal,
+								cmsGroupId,
 								dataSetId,
+								invalidTagCharacters,
 							}),
 						size: 'md',
 					});
@@ -178,10 +184,13 @@ export default function ViewTags({
 			contentComponent: ({closeModal}: {closeModal: () => void}) =>
 				MergeTagsModal({
 					closeModal,
+					cmsGroupId,
 					loadData,
-					tagId: itemData.id,
-					tagName: itemData.name,
+					selectIntoTags: [
+						{label: itemData.name, value: itemData.id},
+					],
 				}),
+			id: 'mergeModal',
 			size: 'md',
 		});
 	};
@@ -218,7 +227,7 @@ export default function ViewTags({
 			/>
 
 			<FrontendDataSet
-				apiURL="/o/headless-admin-taxonomy/v1.0/keywords"
+				apiURL={`/o/headless-admin-taxonomy/v1.0/sites/${cmsGroupId}/keywords`}
 				creationMenu={creationMenu}
 				customRenderers={{
 					tableCell: [
@@ -258,6 +267,7 @@ export default function ViewTags({
 						label: Liferay.Language.get('merge'),
 					},
 					{
+						className: 'text-danger',
 						data: {
 							permissionKey: 'delete',
 						},

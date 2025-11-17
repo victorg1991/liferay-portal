@@ -5,31 +5,24 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
-import {apiHelpersTest} from '../../../../../fixtures/apiHelpersTest';
 import {featureFlagsTest} from '../../../../../fixtures/featureFlagsTest';
-import {isolatedSiteTest} from '../../../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../../../fixtures/loginTest';
-import {ckeditorSamplePageTest} from './../../fixtures/ckeditorSamplePageTest';
+import {ckeditorSamplePageTest} from '../../../../frontend-editor-ckeditor-sample-web/fixtures/ckeditorSamplePageTest';
+import {
+	SubTabName,
+	TabName,
+} from '../../../../frontend-editor-ckeditor-sample-web/pages/CKEditorSamplePage';
 
 export const test = mergeTests(
-	apiHelpersTest,
 	ckeditorSamplePageTest,
 	featureFlagsTest({
 		'LPS-178052': {enabled: true},
 	}),
-	isolatedSiteTest,
 	loginTest()
 );
 
-test.beforeEach(async ({ckeditorSamplePage, page, site}) => {
-	await ckeditorSamplePage.createAndGotoSitePage({site});
-
-	await ckeditorSamplePage.selectTab('CKEditor 4');
-	await ckeditorSamplePage.selectTab('React');
-
-	await expect(
-		page.getByText('Classic Editor used from a React component')
-	).toBeVisible();
+test.beforeEach(async ({ckeditorSamplePage}) => {
+	await ckeditorSamplePage.gotoTab(TabName.CK_EDITOR_4, SubTabName.REACT);
 });
 
 test(

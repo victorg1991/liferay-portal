@@ -70,7 +70,6 @@ import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.exception.PortletIdException;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -214,9 +213,10 @@ public class LayoutsImporterTest {
 
 			FragmentEntryLink fragmentEntryLink =
 				_fragmentEntryLinkLocalService.addFragmentEntryLink(
-					null, TestPropsValues.getUserId(), _group1.getGroupId(), 0,
-					0, defaultSegmentsExperienceId, draftLayout.getPlid(),
-					StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
+					null, TestPropsValues.getUserId(), _group1.getGroupId(),
+					null, null, null, defaultSegmentsExperienceId,
+					draftLayout.getPlid(), StringPool.BLANK, StringPool.BLANK,
+					StringPool.BLANK,
 					"com.liferay.fragment.renderer.collection.filter." +
 						"internal.CollectionAppliedFiltersFragmentRenderer",
 					JSONUtil.put(
@@ -485,8 +485,9 @@ public class LayoutsImporterTest {
 			layoutPageTemplateEntry);
 
 		FragmentEntry fragmentEntry = _addFragmentEntry(
-			_fragmentEntryLocalService.getFragmentEntry(
-				fragmentEntryLink.getFragmentEntryId()),
+			_fragmentEntryLocalService.getFragmentEntryByExternalReferenceCode(
+				fragmentEntryLink.getFragmentEntryERC(),
+				fragmentEntryLink.getFragmentEntryGroupId()),
 			_serviceContext2);
 
 		File file = _layoutsExporter.exportLayoutPageTemplateEntries(
@@ -686,8 +687,7 @@ public class LayoutsImporterTest {
 		FragmentEntryLink importedFragmentEntryLink = fragmentEntryLinks.get(0);
 
 		JSONObject importedEditableValuesJSONObject =
-			_jsonFactory.createJSONObject(
-				importedFragmentEntryLink.getEditableValues());
+			importedFragmentEntryLink.getEditableValuesJSONObject();
 
 		String importedPortletId = PortletIdCodec.encode(
 			importedEditableValuesJSONObject.getString("portletId"),
@@ -728,8 +728,8 @@ public class LayoutsImporterTest {
 		StyleBookEntry styleBookEntry = _addStyleBookEntry(
 			_serviceContext1, RandomTestUtil.randomString());
 
-		_updateLayoutStyleBookEntryId(
-			layoutPageTemplateEntry, styleBookEntry.getStyleBookEntryId());
+		_updateLayoutStyleBookEntryERC(
+			layoutPageTemplateEntry, styleBookEntry.getExternalReferenceCode());
 
 		File file = _layoutsExporter.exportLayoutPageTemplateEntries(
 			new long[] {layoutPageTemplateEntry.getLayoutPageTemplateEntryId()},
@@ -768,9 +768,9 @@ public class LayoutsImporterTest {
 
 		_assertFragmentEntryLink(fragmentEntry, curLayoutPageTemplateEntry);
 
-		_assertStyleBookEntryId(
+		_assertStyleBookEntryERC(
 			curLayoutPageTemplateEntry,
-			curStyleBookEntry.getStyleBookEntryId());
+			curStyleBookEntry.getExternalReferenceCode());
 	}
 
 	@Test
@@ -866,8 +866,8 @@ public class LayoutsImporterTest {
 
 		try {
 			_layoutsImporter.importPageElement(
-				draftLayout, layoutStructure, layoutStructure.getMainItemId(),
-				pageElementJSON, 0, true,
+				TestPropsValues.getUserId(), draftLayout, layoutStructure,
+				layoutStructure.getMainItemId(), pageElementJSON, 0, true,
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(draftLayout.getPlid()));
 
@@ -914,8 +914,8 @@ public class LayoutsImporterTest {
 
 		try {
 			_layoutsImporter.importPageElement(
-				draftLayout, layoutStructure, layoutStructure.getMainItemId(),
-				pageElementJSON, 0, true,
+				TestPropsValues.getUserId(), draftLayout, layoutStructure,
+				layoutStructure.getMainItemId(), pageElementJSON, 0, true,
 				segmentsExperience.getSegmentsExperienceId());
 		}
 		finally {
@@ -942,8 +942,7 @@ public class LayoutsImporterTest {
 		Assert.assertEquals(
 			FragmentConstants.TYPE_PORTLET, fragmentEntryLink.getType());
 
-		JSONObject jsonObject = _jsonFactory.createJSONObject(
-			fragmentEntryLink.getEditableValues());
+		JSONObject jsonObject = fragmentEntryLink.getEditableValuesJSONObject();
 
 		Assert.assertEquals(
 			LayoutPageTemplateAdminWebPortletKeys.
@@ -954,8 +953,8 @@ public class LayoutsImporterTest {
 
 		try {
 			_layoutsImporter.importPageElement(
-				draftLayout, layoutStructure, layoutStructure.getMainItemId(),
-				pageElementJSON, 0, true,
+				TestPropsValues.getUserId(), draftLayout, layoutStructure,
+				layoutStructure.getMainItemId(), pageElementJSON, 0, true,
 				segmentsExperience.getSegmentsExperienceId());
 
 			Assert.fail();
@@ -1351,9 +1350,10 @@ public class LayoutsImporterTest {
 					ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 						null, fragmentEntry.getCss(),
 						fragmentEntry.getConfiguration(),
-						fragmentEntry.getFragmentEntryId(),
-						fragmentEntry.getHtml(), fragmentEntry.getJs(),
-						draftLayout, fragmentEntry.getFragmentEntryKey(),
+						fragmentEntry.getExternalReferenceCode(),
+						fragmentEntry.getScopeERC(), fragmentEntry.getHtml(),
+						fragmentEntry.getJs(), draftLayout,
+						fragmentEntry.getFragmentEntryKey(),
 						_segmentsExperienceLocalService.
 							fetchDefaultSegmentsExperienceId(
 								draftLayout.getPlid()),
@@ -1396,7 +1396,11 @@ public class LayoutsImporterTest {
 			StringPool.BLANK, _group1.getGroupId());
 
 		List<InfoField<?>> infoFields = ListUtil.filter(
-			infoForm.getAllInfoFields(), InfoField::isEditable);
+			infoForm.getAllInfoFields(),
+			infoField ->
+				infoField.isEditable() &&
+				!StringUtil.equals(
+					infoField.getName(), "externalReferenceCode"));
 
 		Assert.assertEquals(infoFields.toString(), 1, infoFields.size());
 
@@ -1472,8 +1476,9 @@ public class LayoutsImporterTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), _group1.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), segmentsExperienceId,
+				null, TestPropsValues.getUserId(), _group1.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), segmentsExperienceId,
 				draftLayout.getPlid(), fragmentEntry.getCss(),
 				fragmentEntry.getHtml(), fragmentEntry.getConfiguration(),
 				fragmentEntry.getConfiguration(), editableValues,
@@ -1504,8 +1509,9 @@ public class LayoutsImporterTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), _group1.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), defaultSegmentsExperienceId,
+				null, TestPropsValues.getUserId(), _group1.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), defaultSegmentsExperienceId,
 				layoutPageTemplateEntry.getPlid(), StringPool.BLANK, html,
 				StringPool.BLANK,
 				_read("export_import_fragment_field_text_config.json"),
@@ -1515,8 +1521,8 @@ public class LayoutsImporterTest {
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
-				_group1.getGroupId(), layoutPageTemplateEntry.getPlid(),
-				defaultSegmentsExperienceId,
+				TestPropsValues.getUserId(), _group1.getGroupId(),
+				layoutPageTemplateEntry.getPlid(), defaultSegmentsExperienceId,
 				StringUtil.replace(
 					_read("export_import_layout_data.json"), "${", "}",
 					HashMapBuilder.put(
@@ -1569,8 +1575,8 @@ public class LayoutsImporterTest {
 			LayoutPageTemplateEntry layoutPageTemplateEntry)
 		throws Exception {
 
-		JSONObject editablesValuesJSONObject = JSONFactoryUtil.createJSONObject(
-			fragmentEntryLink.getEditableValues());
+		JSONObject editablesValuesJSONObject =
+			fragmentEntryLink.getEditableValuesJSONObject();
 
 		JSONObject freeMarkerFragmentEntryProcessorJSONObject =
 			editablesValuesJSONObject.getJSONObject(
@@ -1656,8 +1662,11 @@ public class LayoutsImporterTest {
 		FragmentEntryLink curFragmentEntryLink = fragmentEntryLinks.get(0);
 
 		Assert.assertEquals(
-			fragmentEntry.getFragmentEntryId(),
-			curFragmentEntryLink.getFragmentEntryId());
+			fragmentEntry.getExternalReferenceCode(),
+			curFragmentEntryLink.getFragmentEntryERC());
+		Assert.assertEquals(
+			fragmentEntry.getGroupId(),
+			curFragmentEntryLink.getFragmentEntryGroupId());
 
 		Assert.assertTrue(
 			curFragmentEntryLink.getEditableValues(),
@@ -1689,14 +1698,16 @@ public class LayoutsImporterTest {
 		FragmentEntryLink fragmentEntryLink = fragmentEntryLinks.get(0);
 
 		Assert.assertEquals(
-			fragmentEntry.getFragmentEntryId(),
-			fragmentEntryLink.getFragmentEntryId());
+			fragmentEntry.getExternalReferenceCode(),
+			fragmentEntryLink.getFragmentEntryERC());
+		Assert.assertEquals(
+			fragmentEntry.getGroupId(),
+			fragmentEntryLink.getFragmentEntryGroupId());
 		Assert.assertTrue(
 			fragmentEntryLink.getConfiguration(),
 			JSONUtil.equals(
 				configurationJSONObject,
-				_jsonFactory.createJSONObject(
-					fragmentEntryLink.getConfiguration())));
+				fragmentEntryLink.getConfigurationJSONObject()));
 		Assert.assertTrue(
 			fragmentEntryLink.getEditableValues(),
 			JSONUtil.equals(
@@ -1741,8 +1752,8 @@ public class LayoutsImporterTest {
 		Assert.assertTrue(
 			Validator.isNotNull(fragmentEntryLink.getEditableValues()));
 
-		JSONObject editableValuesJSONObject = _jsonFactory.createJSONObject(
-			fragmentEntryLink.getEditableValues());
+		JSONObject editableValuesJSONObject =
+			fragmentEntryLink.getEditableValuesJSONObject();
 
 		JSONObject editableJSONObject = editableValuesJSONObject.getJSONObject(
 			FragmentEntryProcessorConstants.
@@ -1880,20 +1891,20 @@ public class LayoutsImporterTest {
 			curFragmentStyledLayoutStructureItem);
 	}
 
-	private void _assertStyleBookEntryId(
+	private void _assertStyleBookEntryERC(
 			LayoutPageTemplateEntry layoutPageTemplateEntry,
-			long styleBookEntryId)
+			String styleBookEntryERC)
 		throws Exception {
 
 		Layout layout = _layoutLocalService.getLayout(
 			layoutPageTemplateEntry.getPlid());
 
-		Assert.assertEquals(styleBookEntryId, layout.getStyleBookEntryId());
+		Assert.assertEquals(styleBookEntryERC, layout.getStyleBookEntryERC());
 
 		Layout draftLayout = layout.fetchDraftLayout();
 
 		Assert.assertEquals(
-			styleBookEntryId, draftLayout.getStyleBookEntryId());
+			styleBookEntryERC, draftLayout.getStyleBookEntryERC());
 	}
 
 	private ContainerStyledLayoutStructureItem _getContainerLayoutStructureItem(
@@ -2042,8 +2053,9 @@ public class LayoutsImporterTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), _group1.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), segmentsExperienceId,
+				null, TestPropsValues.getUserId(), _group1.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), segmentsExperienceId,
 				draftLayout.getPlid(), fragmentEntry.getCss(),
 				fragmentEntry.getHtml(), fragmentEntry.getConfiguration(),
 				fragmentEntry.getConfiguration(),
@@ -2089,9 +2101,9 @@ public class LayoutsImporterTest {
 			_getLayoutPageTemplateEntryKey(layoutsImporterResultEntries));
 	}
 
-	private void _updateLayoutStyleBookEntryId(
+	private void _updateLayoutStyleBookEntryERC(
 			LayoutPageTemplateEntry layoutPageTemplateEntry,
-			long styleBookEntryId)
+			String styleBookEntryERC)
 		throws Exception {
 
 		Layout layout = _layoutLocalService.getLayout(
@@ -2100,12 +2112,12 @@ public class LayoutsImporterTest {
 		Layout draftLayout = layout.fetchDraftLayout();
 
 		ContentLayoutTestUtil.publishLayout(
-			_layoutLocalService.updateStyleBookEntryId(
+			_layoutLocalService.updateStyleBookEntryERC(
 				draftLayout.getGroupId(), draftLayout.isPrivateLayout(),
-				draftLayout.getLayoutId(), styleBookEntryId),
+				draftLayout.getLayoutId(), styleBookEntryERC),
 			layout);
 
-		_assertStyleBookEntryId(layoutPageTemplateEntry, styleBookEntryId);
+		_assertStyleBookEntryERC(layoutPageTemplateEntry, styleBookEntryERC);
 	}
 
 	private void _validateColumnLayoutStructureItem(
@@ -2187,15 +2199,10 @@ public class LayoutsImporterTest {
 			_fragmentEntryLinkLocalService.getFragmentEntryLink(
 				actualFragmentEntryLinkId);
 
-		String expectedEditableValues =
-			expectedFragmentEntryLink.getEditableValues();
-		String actualEditableValues =
-			actualFragmentEntryLink.getEditableValues();
-
 		JSONObject expectedEditableValuesJSONObject =
-			JSONFactoryUtil.createJSONObject(expectedEditableValues);
+			expectedFragmentEntryLink.getEditableValuesJSONObject();
 		JSONObject actualEditableValuesJSONObject =
-			JSONFactoryUtil.createJSONObject(actualEditableValues);
+			actualFragmentEntryLink.getEditableValuesJSONObject();
 
 		JSONObject expectedBackgroundImageFragmentEntryProcessorJSONObject =
 			expectedEditableValuesJSONObject.getJSONObject(

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {cleanup, render} from '@testing-library/react';
 import React from 'react';
 
@@ -88,9 +88,10 @@ describe('The workload by assignee body should', () => {
 			const renderResult = render(
 				<WorkloadByAssigneeCard.Body
 					currentTab="total"
-					{...{items: [items[0]], totalCount: 1}}
+					items={[items[0]]}
 					processId={12345}
 					processStepKey="review"
+					totalCount={1}
 				/>,
 				{wrapper}
 			);
@@ -122,9 +123,10 @@ describe('The workload by assignee body should', () => {
 			const renderResult = render(
 				<WorkloadByAssigneeCard.Body
 					currentTab="onTime"
-					{...{items: [items[1]], totalCount: 1}}
+					items={[items[1]]}
 					processId={12345}
 					processStepKey="update"
+					totalCount={1}
 				/>,
 				{wrapper}
 			);

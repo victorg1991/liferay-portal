@@ -15,9 +15,13 @@ import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {objectPagesTest} from '../../../fixtures/objectPagesTest';
 import createTempFile from '../../../utils/createTempFile';
+import {readCSVFile} from '../../../utils/fileReader';
 import getRandomString from '../../../utils/getRandomString';
 import {dataMigrationCenterPagesTest} from './fixtures/dataMigrationCenterPagesTest';
-import {OBJECT_ENTRY_ENTITY_TYPE} from './utils/constants';
+import {
+	OBJECT_DEFINITION_TYPE,
+	OBJECT_ENTRY_ENTITY_TYPE,
+} from './utils/constants';
 
 export const test = mergeTests(
 	dataApiHelpersTest,
@@ -495,6 +499,56 @@ const siteObjectDefinition: ObjectDefinition = {
 	status: {code: 0},
 };
 
+test('can download custom object sample file', async ({
+	apiHelpers,
+	dataMigrationCenterPage,
+}) => {
+	const objectDefinitionAPIClient =
+		await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+	const {body: objectDefinition} =
+		await objectDefinitionAPIClient.postObjectDefinition(
+			companyObjectDefinition
+		);
+	apiHelpers.data.push({
+		id: objectDefinition.id,
+		type: 'objectDefinition',
+	});
+
+	await dataMigrationCenterPage.gotoPage();
+	await dataMigrationCenterPage.goToImportFile();
+
+	const file = await dataMigrationCenterPage.downloadSampleFile(
+		OBJECT_ENTRY_ENTITY_TYPE
+	);
+
+	expect(file).toEqual(
+		await readCSVFile(
+			path.join(__dirname, '/dependencies/object_entry_import_sample.csv')
+		)
+	);
+});
+
+test('can download object definition sample file', async ({
+	dataMigrationCenterPage,
+}) => {
+	await dataMigrationCenterPage.gotoPage();
+	await dataMigrationCenterPage.goToImportFile();
+
+	const file = await dataMigrationCenterPage.downloadSampleFile(
+		OBJECT_DEFINITION_TYPE
+	);
+
+	expect(file).toEqual(
+		await readCSVFile(
+			path.join(
+				__dirname,
+				'/dependencies/object_definition_import_sample.csv'
+			)
+		)
+	);
+});
+
 test('can handle OnlyAddNewRecords and UpdateChangedRecordFields import strategies with duplicate ERCs', async ({
 	apiHelpers,
 	dataMigrationCenterPage,
@@ -524,7 +578,10 @@ test('can handle OnlyAddNewRecords and UpdateChangedRecordFields import strategi
 		page.getByText('The import process completed successfully.')
 	).toBeVisible();
 
-	await page.getByRole('button', {exact: true, name: 'Close'}).click();
+	await page
+		.locator('.modal-header')
+		.getByRole('button', {exact: true, name: 'Close'})
+		.click();
 
 	await dataMigrationCenterPage.importFile(
 		OBJECT_ENTRY_ENTITY_TYPE,
@@ -649,7 +706,7 @@ test('can import CSV file with custom columns order', async ({
 			testLongTextField: 'This is a long text to test testLongTextField',
 			testPrecisionDecimalField: 321.123,
 			testRichTextField:
-				'<p>This is a long text <strong>with some fomatting</strong> to text\n  testRichTextField  </p>',
+				'<p>This is a long text <strong>with some fomatting</strong> to text testRichTextField\n </p>',
 			testRichTextFieldRawText:
 				'This is a long text with some fomatting to text testRichTextField',
 			testTextField: 'Test',
@@ -686,55 +743,58 @@ test('can import CSV file with multiple site scoped object entries', async ({
 		page.getByText('The import process completed successfully.')
 	).toBeVisible();
 
-	expect(
-		(
-			await apiHelpers.objectEntry.getObjectDefinitionObjectEntriesByScope(
-				'c/tests',
-				'Guest'
-			)
-		).items
-	).toMatchObject([
-		{
-			externalReferenceCode: '83b46736-f89b-9b90-188c-497d06c08271',
-			scopeKey: 'Guest',
-			testAutoIncrementField: 'prefix-1-suffix',
-			testBooleanField: true,
-			testDateField: '2024-01-05T00:00:00.000Z',
-			testDateTimeField: '2024-01-05T15:00:00.000Z',
-			testDecimalField: 10.2,
-			testFormulaField: 1,
-			testIntegerField: 100,
-			testLongInteger: 123456789,
-			testLongTextField:
-				'This is a long text to test testLongTextField. The first entry',
-			testPrecisionDecimalField: 321.123,
-			testRichTextField:
-				'<p>This is a long text <strong>with some fomatting</strong> to text\n  testRichTextField. The first entry.  </p>',
-			testRichTextFieldRawText:
-				'This is a long text with some fomatting to text testRichTextField. The first entry.',
-			testTextField: 'Test_FirstEntry',
-		},
-		{
-			externalReferenceCode: '83b46736-f89b-9b90-188c-497d06c08273',
-			scopeKey: 'Guest',
-			testAutoIncrementField: 'prefix-2-suffix',
-			testBooleanField: false,
-			testDateField: '2024-01-06T00:00:00.000Z',
-			testDateTimeField: '2024-01-06T15:00:00.000Z',
-			testDecimalField: 11.2,
-			testFormulaField: 1,
-			testIntegerField: 101,
-			testLongInteger: 123456790,
-			testLongTextField:
-				'This is a long text to test testLongTextField. The second entry',
-			testPrecisionDecimalField: 123.321,
-			testRichTextField:
-				'<p>This is a long text <strong>with some fomatting</strong> to text\n  testRichTextField. The second entry.  </p>',
-			testRichTextFieldRawText:
-				'This is a long text with some fomatting to text testRichTextField. The second entry.',
-			testTextField: 'Test_SecondEntry',
-		},
-	]);
+	const {items} =
+		await apiHelpers.objectEntry.getObjectDefinitionObjectEntriesByScope(
+			'c/tests',
+			'Guest'
+		);
+
+	expect(items).toHaveLength(2);
+
+	expect(items).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				externalReferenceCode: '83b46736-f89b-9b90-188c-497d06c08271',
+				scopeKey: 'Guest',
+				testAutoIncrementField: 'prefix-1-suffix',
+				testBooleanField: true,
+				testDateField: '2024-01-05T00:00:00.000Z',
+				testDateTimeField: '2024-01-05T15:00:00.000Z',
+				testDecimalField: 10.2,
+				testFormulaField: 1,
+				testIntegerField: 100,
+				testLongInteger: 123456789,
+				testLongTextField:
+					'This is a long text to test testLongTextField. The first entry',
+				testPrecisionDecimalField: 321.123,
+				testRichTextField:
+					'<p>This is a long text <strong>with some fomatting</strong> to text testRichTextField. The first entry.\n </p>',
+				testRichTextFieldRawText:
+					'This is a long text with some fomatting to text testRichTextField. The first entry.',
+				testTextField: 'Test_FirstEntry',
+			}),
+			expect.objectContaining({
+				externalReferenceCode: '83b46736-f89b-9b90-188c-497d06c08273',
+				scopeKey: 'Guest',
+				testAutoIncrementField: 'prefix-2-suffix',
+				testBooleanField: false,
+				testDateField: '2024-01-06T00:00:00.000Z',
+				testDateTimeField: '2024-01-06T15:00:00.000Z',
+				testDecimalField: 11.2,
+				testFormulaField: 1,
+				testIntegerField: 101,
+				testLongInteger: 123456790,
+				testLongTextField:
+					'This is a long text to test testLongTextField. The second entry',
+				testPrecisionDecimalField: 123.321,
+				testRichTextField:
+					'<p>This is a long text <strong>with some fomatting</strong> to text testRichTextField. The second entry.\n </p>',
+				testRichTextFieldRawText:
+					'This is a long text with some fomatting to text testRichTextField. The second entry.',
+				testTextField: 'Test_SecondEntry',
+			}),
+		])
+	);
 });
 
 test('can import CSV file with new and existing site scoped object entries', async ({
@@ -762,7 +822,7 @@ test('can import CSV file with new and existing site scoped object entries', asy
 		'UPDATE'
 	);
 
-	await page.getByRole('button', {exact: true, name: 'Close'}).click();
+	await page.getByText('Close', {exact: true}).click();
 
 	await dataMigrationCenterPage.importFile(
 		OBJECT_ENTRY_ENTITY_TYPE,
@@ -801,7 +861,7 @@ test('can import CSV file with new and existing site scoped object entries', asy
 				'This is a long text to test testLongTextField. The first entry',
 			testPrecisionDecimalField: 321.123,
 			testRichTextField:
-				'<p>This is a long text <strong>with some fomatting</strong> to text\n  testRichTextField.  </p>',
+				'<p>This is a long text <strong>with some fomatting</strong> to text testRichTextField.\n </p>',
 			testRichTextFieldRawText:
 				'This is a long text with some fomatting to text testRichTextField.',
 			testTextField: 'Test',
@@ -821,7 +881,7 @@ test('can import CSV file with new and existing site scoped object entries', asy
 				'This is a long text to test testLongTextField. The second entry',
 			testPrecisionDecimalField: 123.321,
 			testRichTextField:
-				'<p>This is a long text <strong>with some fomatting</strong> to text\n  testRichTextField. New entry.  </p>',
+				'<p>This is a long text <strong>with some fomatting</strong> to text testRichTextField. New entry.\n </p>',
 			testRichTextFieldRawText:
 				'This is a long text with some fomatting to text testRichTextField. New entry.',
 			testTextField: 'Test_SecondEntry',
@@ -891,7 +951,7 @@ test('can import CSV file with new and modified existing company scoped object e
 				'This is a long text to test testLongTextField. The first entry',
 			testPrecisionDecimalField: 321.123,
 			testRichTextField:
-				'<p>This is a long text <strong>with some fomatting</strong> to text\n  testRichTextField. The modified entry.  </p>',
+				'<p>This is a long text <strong>with some fomatting</strong> to text testRichTextField. The modified entry.\n </p>',
 			testRichTextFieldRawText:
 				'This is a long text with some fomatting to text testRichTextField. The modified entry.',
 			testTextField: 'Test_Modified',
@@ -910,7 +970,7 @@ test('can import CSV file with new and modified existing company scoped object e
 				'This is a long text to test testLongTextField. The second entry',
 			testPrecisionDecimalField: 123.321,
 			testRichTextField:
-				'<p>This is a long text <strong>with some fomatting</strong> to text\n  testRichTextField. The new entry.  </p>',
+				'<p>This is a long text <strong>with some fomatting</strong> to text testRichTextField. The new entry.\n </p>',
 			testRichTextFieldRawText:
 				'This is a long text with some fomatting to text testRichTextField. The new entry.',
 			testTextField: 'Test_NewEntry',
@@ -1306,7 +1366,7 @@ test('can show duplicate error message with CSV import existing entry and only a
 		'UPDATE'
 	);
 
-	await page.getByRole('button', {exact: true, name: 'Close'}).click();
+	await page.getByText('Close', {exact: true}).click();
 
 	await dataMigrationCenterPage.importFile(
 		OBJECT_ENTRY_ENTITY_TYPE,
@@ -1347,7 +1407,7 @@ test('can show unique contraint error message with CSV import existing entry and
 		'UPDATE'
 	);
 
-	await page.getByRole('button', {exact: true, name: 'Close'}).click();
+	await page.getByText('Close', {exact: true}).click();
 
 	await dataMigrationCenterPage.importFile(
 		OBJECT_ENTRY_ENTITY_TYPE,
@@ -1422,7 +1482,7 @@ test('cannot import CSV file with empty headers row', async ({
 	).toBeVisible();
 });
 
-test('cannot import CSV file with object entry with UPSERT strategy', async ({
+test('can import CSV file with object entry with UPSERT strategy', async ({
 	apiHelpers,
 	dataMigrationCenterPage,
 	page,
@@ -1448,9 +1508,7 @@ test('cannot import CSV file with object entry with UPSERT strategy', async ({
 	);
 
 	await expect(
-		page.getByText(
-			'jakarta.ws.rs.NotSupportedException: Create strategy "UPSERT" is not supported for'
-		)
+		page.getByText('The import process completed successfully')
 	).toBeVisible();
 });
 

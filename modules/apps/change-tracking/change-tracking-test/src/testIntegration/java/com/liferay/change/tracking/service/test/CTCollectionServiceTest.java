@@ -9,6 +9,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.change.tracking.configuration.CTSettingsConfiguration;
 import com.liferay.change.tracking.constants.CTActionKeys;
 import com.liferay.change.tracking.constants.CTConstants;
+import com.liferay.change.tracking.constants.CTDestinationNames;
 import com.liferay.change.tracking.exception.CTPublishConflictException;
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.model.CTEntry;
@@ -25,7 +26,6 @@ import com.liferay.journal.service.JournalFolderLocalService;
 import com.liferay.journal.test.util.JournalFolderFixture;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.petra.lang.SafeCloseable;
-import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.background.task.model.BackgroundTask;
 import com.liferay.portal.background.task.service.BackgroundTaskLocalService;
@@ -36,6 +36,9 @@ import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.messaging.Destination;
+import com.liferay.portal.kernel.messaging.DestinationStatistics;
+import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
@@ -213,15 +216,37 @@ public class CTCollectionServiceTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				StringBundler.concat(
-					"select count(*) from JournalArticle where id_ = ",
-					journalArticle.getPrimaryKey(), " and ctCollectionId = ",
-					_ctCollection.getCtCollectionId()));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select count(*) from JournalArticle where id_ = ? and " +
+					"ctCollectionId = ?")) {
 
-			Assert.assertTrue(resultSet.next());
+			preparedStatement.setLong(1, journalArticle.getPrimaryKey());
+			preparedStatement.setLong(2, _ctCollection.getCtCollectionId());
 
-			Assert.assertEquals(0, resultSet.getInt(1));
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				Assert.assertTrue(resultSet.next());
+
+				Assert.assertEquals(0, resultSet.getInt(1));
+			}
+		}
+
+		Destination destination = MessageBusUtil.getDestination(
+			CTDestinationNames.CT_ENTRY_REINDEX);
+
+		DestinationStatistics destinationStatistics =
+			destination.getDestinationStatistics();
+
+		int i = 0;
+
+		while ((destinationStatistics.getActiveThreadCount() > 0) ||
+			   (destinationStatistics.getPendingMessageCount() > 0)) {
+
+			if (i++ > 60) {
+				break;
+			}
+
+			Thread.sleep(500);
+
+			destinationStatistics = destination.getDestinationStatistics();
 		}
 
 		SearchRequestBuilder searchRequestBuilder =

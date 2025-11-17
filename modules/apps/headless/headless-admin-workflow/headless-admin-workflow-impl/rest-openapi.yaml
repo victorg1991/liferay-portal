@@ -293,6 +293,10 @@ components:
                         A flag that indicates whether the instance is complete.
                     readOnly: true
                     type: boolean
+                context:
+                    additionalProperties: true
+                    readOnly: true
+                    type: object
                 currentNodeNames:
                     # @review
                     description:
@@ -514,6 +518,10 @@ components:
                     format: int64
                     readOnly: true
                     type: integer
+                workflowLogs:
+                    items:
+                        $ref: "#/components/schemas/WorkflowLog"
+                    type: array
             type: object
         WorkflowTaskAssignToMe:
             description:
@@ -671,7 +679,7 @@ components:
 info:
     description:
         "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID
-        'com.liferay.headless.admin.workflow.client', and version '4.0.40'."
+        'com.liferay.headless.admin.workflow.client', and version '4.0.42'."
     license:
         name: Apache 2.0
         url: http://www.apache.org/licenses/LICENSE-2.0.html

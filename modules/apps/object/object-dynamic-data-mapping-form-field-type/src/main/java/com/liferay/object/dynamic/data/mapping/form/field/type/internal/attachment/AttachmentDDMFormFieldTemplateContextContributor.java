@@ -20,6 +20,13 @@ import com.liferay.object.configuration.ObjectConfiguration;
 import com.liferay.object.constants.ObjectFieldSettingConstants;
 import com.liferay.object.dynamic.data.mapping.form.field.type.constants.ObjectDDMFormFieldTypeConstants;
 import com.liferay.object.field.attachment.AttachmentManager;
+import com.liferay.object.field.util.ObjectFieldUtil;
+import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.model.ObjectEntry;
+import com.liferay.object.service.ObjectDefinitionLocalService;
+import com.liferay.object.service.ObjectEntryLocalService;
+import com.liferay.object.service.ObjectEntryService;
+import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -33,12 +40,13 @@ import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactory;
 import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.upload.configuration.UploadServletRequestConfigurationProvider;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -118,8 +126,7 @@ public class AttachmentDDMFormFieldTemplateContextContributor
 		).put(
 			"tip",
 			_language.format(
-				ddmFormFieldRenderingContext.getLocale(),
-				"upload-a-x-no-larger-than-x",
+				themeDisplay.getLocale(), "upload-a-x-no-larger-than-x",
 				new Object[] {
 					ddmFormField.getProperty("acceptedFileExtensions"),
 					_language.formatStorageSize(
@@ -215,22 +222,38 @@ public class AttachmentDDMFormFieldTemplateContextContributor
 						return url;
 					}
 
-					url = _dlURLHelper.getDownloadURL(
-						fileEntry, fileEntry.getFileVersion(), themeDisplay,
-						StringPool.BLANK);
+					long groupId = GetterUtil.getLong(
+						ddmFormField.getProperty("groupId"));
 
-					url = HttpComponentsUtil.addParameter(
-						url, "objectDefinitionExternalReferenceCode",
+					String objectDefinitionExternalReferenceCode =
 						GetterUtil.getString(
 							ddmFormField.getProperty(
-								"objectDefinitionExternalReferenceCode")));
-					url = HttpComponentsUtil.addParameter(
-						url, "objectEntryExternalReferenceCode",
-						GetterUtil.getString(
-							ddmFormField.getProperty(
-								"objectEntryExternalReferenceCode")));
+								"objectDefinitionExternalReferenceCode"));
 
-					return url;
+					ObjectDefinition objectDefinition =
+						_objectDefinitionLocalService.
+							fetchObjectDefinitionByExternalReferenceCode(
+								objectDefinitionExternalReferenceCode,
+								fileEntry.getCompanyId());
+
+					ObjectEntry objectEntry = null;
+
+					if (objectDefinition != null) {
+						objectEntry = _objectEntryLocalService.fetchObjectEntry(
+							GetterUtil.getString(
+								ddmFormField.getProperty(
+									"objectEntryExternalReferenceCode")),
+							groupId, objectDefinition.getObjectDefinitionId());
+					}
+
+					return ObjectFieldUtil.getAttachmentDownloadURL(
+						_dlURLHelper, fileEntry, groupId,
+						objectDefinitionExternalReferenceCode, objectEntry,
+						_objectEntryService,
+						_objectFieldLocalService.fetchObjectField(
+							GetterUtil.getLong(
+								ddmFormField.getProperty("objectFieldId"))),
+						_getPermissionChecker(themeDisplay), themeDisplay);
 				}
 			).put(
 				"title", fileEntry.getFileName()
@@ -282,6 +305,17 @@ public class AttachmentDDMFormFieldTemplateContextContributor
 				_groupLocalService.fetchGroup(groupId), groupId,
 				portletNamespace + "selectAttachmentEntry",
 				fileItemSelectorCriterion));
+	}
+
+	private PermissionChecker _getPermissionChecker(ThemeDisplay themeDisplay) {
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		if (permissionChecker == null) {
+			permissionChecker = themeDisplay.getPermissionChecker();
+		}
+
+		return permissionChecker;
 	}
 
 	private String _getURL(
@@ -361,6 +395,18 @@ public class AttachmentDDMFormFieldTemplateContextContributor
 	private Language _language;
 
 	private volatile ObjectConfiguration _objectConfiguration;
+
+	@Reference
+	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Reference
+	private ObjectEntryLocalService _objectEntryLocalService;
+
+	@Reference
+	private ObjectEntryService _objectEntryService;
+
+	@Reference
+	private ObjectFieldLocalService _objectFieldLocalService;
 
 	@Reference
 	private UploadServletRequestConfigurationProvider

@@ -5,6 +5,7 @@
 
 package com.liferay.commerce.shop.by.diagram.internal.upgrade.registry;
 
+import com.liferay.portal.kernel.upgrade.BaseExternalReferenceCodeUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.CTModelUpgradeProcess;
 import com.liferay.portal.kernel.upgrade.DummyUpgradeStep;
 import com.liferay.portal.kernel.upgrade.MVCCVersionUpgradeProcess;
@@ -62,6 +63,17 @@ public class CommerceShopByDiagramServiceUpgradeStepRegistrator
 			});
 
 		registry.register("1.2.0", "1.2.1", new DummyUpgradeStep());
+
+		registry.register(
+			"1.2.1", "1.3.0",
+			new BaseExternalReferenceCodeUpgradeProcess() {
+
+				@Override
+				protected String[] getTableNames() {
+					return new String[] {"CSDiagramEntry"};
+				}
+
+			});
 	}
 
 }

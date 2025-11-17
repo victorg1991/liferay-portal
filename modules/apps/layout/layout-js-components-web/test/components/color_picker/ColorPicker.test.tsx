@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {fireEvent, render} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
@@ -239,15 +239,37 @@ describe('ColorPicker', () => {
 			expect(input).toHaveValue('#444444');
 		});
 
-		it('takes a 6-digit hexcolor even if the input value has more digits', async () => {
+		it('takes a 6-digit hexcolor if the input value has 7 digits', async () => {
 			const {baseElement} = renderColorPicker({
 				value: '#444444',
 			});
 			const input = baseElement.querySelector('input')!;
 
+			await onTypeValue(input, '#123456A');
+
+			expect(input).toHaveValue('#123456');
+		});
+
+		it('takes an 8-digit hexcolor', async () => {
+			const {baseElement} = renderColorPicker({
+				value: '#44444444',
+			});
+			const input = baseElement.querySelector('input')!;
+
+			await onTypeValue(input, '#AABBCCDD');
+
+			expect(input).toHaveValue('#AABBCCDD');
+		});
+
+		it('takes an 8-digit hexcolor even if the input value has more digits', async () => {
+			const {baseElement} = renderColorPicker({
+				value: '#44444444',
+			});
+			const input = baseElement.querySelector('input')!;
+
 			await onTypeValue(input, '#55555555555');
 
-			expect(input).toHaveValue('#555555');
+			expect(input).toHaveValue('#55555555');
 		});
 
 		it('converts the 3-digit hexcolor to a 6-digit hexcolor', async () => {
@@ -259,6 +281,17 @@ describe('ColorPicker', () => {
 			await onTypeValue(input, '#abc');
 
 			expect(input).toHaveValue('#AABBCC');
+		});
+
+		it('converts the 4-digit hexcolor to an 8-digit hexcolor', async () => {
+			const {baseElement} = renderColorPicker({
+				value: '#444444',
+			});
+			const input = baseElement.querySelector('input')!;
+
+			await onTypeValue(input, '#abcd');
+
+			expect(input).toHaveValue('#AABBCCDD');
 		});
 
 		describe('Input errors', () => {

@@ -297,11 +297,32 @@ public class ObjectEntryVersionLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.object.model.ObjectEntryVersion
+		fetchLatestApprovedObjectEntryVersion(
+			long objectEntryId,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.object.model.ObjectEntryVersion>
+					orderByComparator) {
+
+		return _objectEntryVersionLocalService.
+			fetchLatestApprovedObjectEntryVersion(
+				objectEntryId, orderByComparator);
+	}
+
+	@Override
 	public com.liferay.object.model.ObjectEntryVersion fetchObjectEntryVersion(
 		long objectEntryVersionId) {
 
 		return _objectEntryVersionLocalService.fetchObjectEntryVersion(
 			objectEntryVersionId);
+	}
+
+	@Override
+	public com.liferay.object.model.ObjectEntryVersion fetchObjectEntryVersion(
+		long objectEntryId, int version) {
+
+		return _objectEntryVersionLocalService.fetchObjectEntryVersion(
+			objectEntryId, version);
 	}
 
 	/**
@@ -456,6 +477,14 @@ public class ObjectEntryVersionLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectEntryVersionLocalService.getPersistedModel(primaryKeyObj);
+	}
+
+	@Override
+	public boolean isLatestObjectEntryVersion(long objectEntryId, int version)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryVersionLocalService.isLatestObjectEntryVersion(
+			objectEntryId, version);
 	}
 
 	@Override

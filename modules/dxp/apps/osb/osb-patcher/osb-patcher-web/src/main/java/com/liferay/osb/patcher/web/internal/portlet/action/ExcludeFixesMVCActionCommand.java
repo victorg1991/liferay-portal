@@ -5,13 +5,21 @@
 
 package com.liferay.osb.patcher.web.internal.portlet.action;
 
+import com.liferay.osb.patcher.constants.PatcherActionKeys;
 import com.liferay.osb.patcher.constants.PatcherFixConstants;
 import com.liferay.osb.patcher.constants.PatcherPortletKeys;
+import com.liferay.osb.patcher.model.PatcherFix;
+import com.liferay.osb.patcher.permission.resource.PatcherPermission;
 import com.liferay.osb.patcher.service.PatcherFixLocalService;
 import com.liferay.osb.patcher.util.PatcherFixUtil;
+import com.liferay.osb.patcher.web.internal.validator.PatcherFixValidator;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import jakarta.portlet.ActionRequest;
 import jakarta.portlet.ActionResponse;
@@ -36,7 +44,26 @@ public class ExcludeFixesMVCActionCommand extends BaseMVCActionCommand {
 			ActionRequest actionRequest, ActionResponse actionResponse)
 		throws Exception {
 
+		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
 		long patcherFixId = ParamUtil.getLong(actionRequest, "patcherFixId");
+
+		PatcherFix patcherFix = _patcherFixLocalService.getPatcherFix(
+			patcherFixId);
+
+		if (!PatcherPermission.contains(
+				themeDisplay.getPermissionChecker(), patcherFix,
+				PatcherActionKeys.EXCLUDE, patcherFix.getUserId())) {
+
+			throw new PrincipalException.MustHavePermission(
+				themeDisplay.getUserId());
+		}
+
+		PatcherFixValidator patcherFixValidator = new PatcherFixValidator(
+			_portal.getHttpServletRequest(actionRequest));
+
+		patcherFixValidator.validateExclude(patcherFix);
 
 		PatcherFixUtil.updateObsolete(patcherFixId, true);
 
@@ -46,5 +73,8 @@ public class ExcludeFixesMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private PatcherFixLocalService _patcherFixLocalService;
+
+	@Reference
+	private Portal _portal;
 
 }

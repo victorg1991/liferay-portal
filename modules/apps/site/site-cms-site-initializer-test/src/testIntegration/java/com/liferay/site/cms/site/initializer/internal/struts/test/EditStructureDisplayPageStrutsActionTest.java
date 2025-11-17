@@ -6,6 +6,7 @@
 package com.liferay.site.cms.site.initializer.internal.struts.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
@@ -28,15 +29,18 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.struts.StrutsAction;
 import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -47,6 +51,7 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.FeatureFlag;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -70,7 +75,10 @@ import org.springframework.mock.web.MockHttpServletResponse;
 /**
  * @author Lourdes Fernández Besada
  */
-@FeatureFlag("LPD-17564")
+@DataGuard(scope = DataGuard.Scope.METHOD)
+@FeatureFlags(
+	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
+)
 @RunWith(Arquillian.class)
 public class EditStructureDisplayPageStrutsActionTest {
 
@@ -84,6 +92,8 @@ public class EditStructureDisplayPageStrutsActionTest {
 	@BeforeClass
 	public static void setUpClass() throws Exception {
 		_company = CompanyTestUtil.addCompany();
+
+		_user = UserTestUtil.addCompanyAdminUser(_company);
 
 		_groupLocalService.checkSystemGroups(_company.getCompanyId());
 	}
@@ -102,6 +112,7 @@ public class EditStructureDisplayPageStrutsActionTest {
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()
 			).build(),
+			DepotConstants.TYPE_ASSET_LIBRARY,
 			ServiceContextTestUtil.getServiceContext());
 
 		_group = _groupLocalService.getGroup(
@@ -110,12 +121,13 @@ public class EditStructureDisplayPageStrutsActionTest {
 		_layout = LayoutTestUtil.addTypeContentLayout(_group);
 
 		_objectDefinition = ObjectDefinitionTestUtil.publishObjectDefinition(
+			"A" + RandomTestUtil.randomString(),
 			ListUtil.fromArray(
 				ObjectFieldUtil.createObjectField(
 					ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 					ObjectFieldConstants.DB_TYPE_STRING,
 					RandomTestUtil.randomString(), "text")),
-			ObjectDefinitionConstants.SCOPE_DEPOT);
+			ObjectDefinitionConstants.SCOPE_DEPOT, _user.getUserId());
 
 		_objectDefinitionSettingLocalService.addObjectDefinitionSetting(
 			_objectDefinition.getUserId(),
@@ -143,8 +155,13 @@ public class EditStructureDisplayPageStrutsActionTest {
 	private HttpServletRequest _getMockHttpServletRequest() throws Exception {
 		MockHttpServletRequest mockHttpServletRequest =
 			ContentLayoutTestUtil.getMockHttpServletRequest(
-				_companyLocalService.getCompany(_company.getCompanyId()),
-				_group, _layout);
+				_company, _group, _layout);
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)mockHttpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		themeDisplay.setUser(_user);
 
 		mockHttpServletRequest.setParameter(
 			"objectDefinitionId",
@@ -227,6 +244,8 @@ public class EditStructureDisplayPageStrutsActionTest {
 
 	@Inject
 	private static GroupLocalService _groupLocalService;
+
+	private static User _user;
 
 	private DepotEntry _depotEntry;
 

@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.service.impl.PortletPreferencesLocalServiceImpl;
 import com.liferay.portal.spring.aop.AopInvocationHandler;
@@ -28,7 +29,6 @@ import com.liferay.portal.test.rule.ExpectedMultipleLogs;
 import com.liferay.portal.test.rule.ExpectedType;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.PropsValues;
 
 import jakarta.portlet.PortletPreferences;
 
@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
-import org.hibernate.engine.jdbc.batch.internal.BatchingBatch;
 import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 
 import org.junit.Assert;
@@ -160,16 +159,6 @@ public class PortletPreferencesLocalServiceConcurrentTest {
 					)
 				},
 				level = "ERROR", loggerClass = SqlExceptionHelper.class
-			),
-			@ExpectedLogs(
-				expectedLogs = {
-					@ExpectedLog(
-						expectedDBType = ExpectedDBType.NONE,
-						expectedLog = "HHH000315: Exception executing batch [java.sql.BatchUpdateException",
-						expectedType = ExpectedType.PREFIX
-					)
-				},
-				level = "ERROR", loggerClass = BatchingBatch.class
 			)
 		}
 	)

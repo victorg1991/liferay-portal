@@ -46,14 +46,15 @@ public class UserSystemObjectDefinitionManager
 	extends BaseSystemObjectDefinitionManager {
 
 	@Override
-	public long addBaseModel(User user, Map<String, Object> values)
+	public long addBaseModel(
+			boolean checkPermissions, User user, Map<String, Object> values)
 		throws Exception {
 
 		UserAccountResource userAccountResource = _buildUserAccountResource(
-			false, user);
+			checkPermissions, user);
 
 		UserAccount userAccount = userAccountResource.postUserAccount(
-			_toUserAccount(values));
+			null, null, _toUserAccount(values));
 
 		setExtendedProperties(
 			UserAccount.class.getName(), userAccount, user, values);

@@ -48,7 +48,8 @@ public class ViewVocabulariesDisplayContext {
 	}
 
 	public String getAPIURL() {
-		return "/o/headless-admin-taxonomy/v1.0/taxonomy-vocabularies";
+		return "/o/headless-admin-taxonomy/v1.0/sites/" +
+			_themeDisplay.getScopeGroupId() + "/taxonomy-vocabularies";
 	}
 
 	public List<AssetRendererFactory<?>> getAvailableAssetRendererFactories() {
@@ -131,10 +132,6 @@ public class ViewVocabulariesDisplayContext {
 				LanguageUtil.get(_httpServletRequest, "edit"), "get", "update",
 				null),
 			new FDSActionDropdownItem(
-				_getEditPermissionsURL(), "password-policies", "permissions",
-				LanguageUtil.get(_httpServletRequest, "permissions"), "get",
-				null, "modal-permissions"),
-			new FDSActionDropdownItem(
 				HttpComponentsUtil.addParameter(
 					PortalUtil.getLayoutFullURL(
 						LayoutLocalServiceUtil.getLayoutByFriendlyURL(
@@ -145,6 +142,10 @@ public class ViewVocabulariesDisplayContext {
 				null, "view-categories",
 				LanguageUtil.get(_httpServletRequest, "view-categories"), "get",
 				null, null),
+			new FDSActionDropdownItem(
+				_getEditPermissionsURL(), "password-policies", "permissions",
+				LanguageUtil.get(_httpServletRequest, "permissions"), "get",
+				null, "modal-permissions"),
 			new FDSActionDropdownItem(
 				null, "trash", "delete",
 				LanguageUtil.get(_httpServletRequest, "delete"), null, "delete",

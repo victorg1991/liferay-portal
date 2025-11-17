@@ -20,9 +20,7 @@ import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.model.LayoutStagingHandler;
 import com.liferay.portal.kernel.model.ModelWrapper;
 import com.liferay.portal.kernel.model.SystemEventConstants;
-import com.liferay.portal.kernel.module.framework.service.IdentifiableOSGiService;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
-import com.liferay.portal.kernel.service.BaseLocalService;
 import com.liferay.portal.kernel.service.LayoutFriendlyURLLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutRevisionLocalService;
@@ -34,7 +32,6 @@ import com.liferay.portal.kernel.service.persistence.LayoutPersistence;
 import com.liferay.portal.kernel.service.persistence.LayoutRevisionPersistence;
 import com.liferay.portal.kernel.systemevent.SystemEventHierarchyEntry;
 import com.liferay.portal.kernel.systemevent.SystemEventHierarchyEntryThreadLocal;
-import com.liferay.portal.kernel.util.AggregateClassLoader;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -43,12 +40,10 @@ import com.liferay.portal.kernel.util.Localization;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.service.impl.LayoutLocalServiceHelper;
-import com.liferay.portal.spring.aop.AopInvocationHandler;
 import com.liferay.portlet.exportimport.staging.ProxiedLayoutsThreadLocal;
 import com.liferay.portlet.exportimport.staging.StagingAdvicesThreadLocal;
 
@@ -68,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -126,7 +122,7 @@ public class LayoutLocalServiceStagingAdvice {
 			Map<Locale, String> descriptionMap, Map<Locale, String> keywordsMap,
 			Map<Locale, String> robotsMap, String type, boolean hidden,
 			Map<Locale, String> friendlyURLMap, boolean hasIconImage,
-			byte[] iconBytes, long styleBookEntryId, long faviconFileEntryId,
+			byte[] iconBytes, String styleBookEntryERC, long faviconFileEntryId,
 			long masterLayoutPlid, ServiceContext serviceContext)
 		throws PortalException {
 
@@ -184,7 +180,7 @@ public class LayoutLocalServiceStagingAdvice {
 			return layoutLocalService.updateLayout(
 				groupId, privateLayout, layoutId, parentLayoutId, nameMap,
 				titleMap, descriptionMap, keywordsMap, robotsMap, type, hidden,
-				friendlyURLMap, hasIconImage, iconBytes, styleBookEntryId,
+				friendlyURLMap, hasIconImage, iconBytes, styleBookEntryERC,
 				faviconFileEntryId, masterLayoutPlid, serviceContext);
 		}
 
@@ -195,8 +191,8 @@ public class LayoutLocalServiceStagingAdvice {
 
 		if (parentLayoutId != layout.getParentLayoutId()) {
 			int priority = _layoutLocalServiceHelper.getNextPriority(
-				groupId, privateLayout, parentLayoutId,
-				layout.getSourcePrototypeLayoutUuid(), -1);
+				groupId, layout.getLayoutSetPrototypeLayoutERC(), privateLayout,
+				parentLayoutId, -1);
 
 			layout.setPriority(priority);
 		}
@@ -257,59 +253,6 @@ public class LayoutLocalServiceStagingAdvice {
 		finally {
 			serviceContext.setWorkflowAction(workflowAction);
 		}
-
-		return layout;
-	}
-
-	public Layout updateLayout(
-			LayoutLocalService layoutLocalService, long groupId,
-			boolean privateLayout, long layoutId, String typeSettings)
-		throws PortalException {
-
-		ServiceContext serviceContext =
-			ServiceContextThreadLocal.getServiceContext();
-
-		if (serviceContext == null) {
-			return layoutLocalService.updateLayout(
-				groupId, privateLayout, layoutId, typeSettings);
-		}
-
-		Layout layout = _layoutPersistence.findByG_P_L(
-			groupId, privateLayout, layoutId);
-
-		if (LayoutStagingUtil.isBranchingLayout(layout)) {
-			layout = getProxiedLayout(layout);
-		}
-
-		LayoutRevision layoutRevision = LayoutStagingUtil.getLayoutRevision(
-			layout);
-
-		if (layoutRevision == null) {
-			return layoutLocalService.updateLayout(
-				groupId, privateLayout, layoutId, typeSettings);
-		}
-
-		layout.setTypeSettings(typeSettings);
-
-		boolean hasWorkflowTask = _staging.hasWorkflowTask(
-			serviceContext.getUserId(), layoutRevision);
-
-		serviceContext.setAttribute("revisionInProgress", hasWorkflowTask);
-
-		if (!MergeLayoutPrototypesThreadLocal.isInProgress()) {
-			serviceContext.setWorkflowAction(
-				WorkflowConstants.ACTION_SAVE_DRAFT);
-		}
-
-		_layoutRevisionLocalService.updateLayoutRevision(
-			serviceContext.getUserId(), layoutRevision.getLayoutRevisionId(),
-			layoutRevision.getLayoutBranchId(), layoutRevision.getName(),
-			layoutRevision.getTitle(), layoutRevision.getDescription(),
-			layoutRevision.getKeywords(), layoutRevision.getRobots(),
-			layoutRevision.getTypeSettings(), layoutRevision.getIconImage(),
-			layoutRevision.getIconImageId(), layoutRevision.getThemeId(),
-			layoutRevision.getColorSchemeId(), layoutRevision.getCss(),
-			serviceContext);
 
 		return layout;
 	}
@@ -415,26 +358,73 @@ public class LayoutLocalServiceStagingAdvice {
 		return layout;
 	}
 
+	public Layout updateTypeSettings(
+			LayoutLocalService layoutLocalService, Layout layout,
+			String typeSettings)
+		throws PortalException {
+
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		if (serviceContext == null) {
+			return layoutLocalService.updateTypeSettings(layout, typeSettings);
+		}
+
+		Layout originalLayout = layout;
+
+		if (LayoutStagingUtil.isBranchingLayout(layout)) {
+			layout = getProxiedLayout(layout);
+		}
+
+		LayoutRevision layoutRevision = LayoutStagingUtil.getLayoutRevision(
+			layout);
+
+		if (layoutRevision == null) {
+			return layoutLocalService.updateTypeSettings(
+				originalLayout, typeSettings);
+		}
+
+		layout.setTypeSettings(typeSettings);
+
+		boolean hasWorkflowTask = _staging.hasWorkflowTask(
+			serviceContext.getUserId(), layoutRevision);
+
+		serviceContext.setAttribute("revisionInProgress", hasWorkflowTask);
+
+		if (!MergeLayoutPrototypesThreadLocal.isInProgress()) {
+			serviceContext.setWorkflowAction(
+				WorkflowConstants.ACTION_SAVE_DRAFT);
+		}
+
+		_layoutRevisionLocalService.updateLayoutRevision(
+			serviceContext.getUserId(), layoutRevision.getLayoutRevisionId(),
+			layoutRevision.getLayoutBranchId(), layoutRevision.getName(),
+			layoutRevision.getTitle(), layoutRevision.getDescription(),
+			layoutRevision.getKeywords(), layoutRevision.getRobots(),
+			layoutRevision.getTypeSettings(), layoutRevision.getIconImage(),
+			layoutRevision.getIconImageId(), layoutRevision.getThemeId(),
+			layoutRevision.getColorSchemeId(), layoutRevision.getCss(),
+			serviceContext);
+
+		return layout;
+	}
+
+	public Layout updateTypeSettings(
+			LayoutLocalService layoutLocalService, long groupId,
+			boolean privateLayout, long layoutId, String typeSettings)
+		throws PortalException {
+
+		return updateTypeSettings(
+			layoutLocalService,
+			_layoutPersistence.findByG_P_L(groupId, privateLayout, layoutId),
+			typeSettings);
+	}
+
 	@Activate
-	protected void activate() {
-		AopInvocationHandler aopInvocationHandler =
-			ProxyUtil.fetchInvocationHandler(
-				_layoutLocalService, AopInvocationHandler.class);
-
-		Object target = aopInvocationHandler.getTarget();
-
-		aopInvocationHandler.setTarget(
-			ProxyUtil.newProxyInstance(
-				AggregateClassLoader.getAggregateClassLoader(
-					PortalClassLoaderUtil.getClassLoader(),
-					LayoutLocalServiceStagingAdvice.class.getClassLoader()),
-				new Class<?>[] {
-					IdentifiableOSGiService.class, LayoutLocalService.class,
-					BaseLocalService.class
-				},
-				new LayoutLocalServiceStagingInvocationHandler(this, target)));
-
-		_closeable = () -> aopInvocationHandler.setTarget(target);
+	protected void activate(BundleContext bundleContext) {
+		_closeable = StagingAdviceUtil.register(
+			bundleContext, LayoutLocalServiceStagingInvocationHandler::new,
+			_layoutLocalService, LayoutLocalService.class);
 	}
 
 	@Deactivate
@@ -686,7 +676,8 @@ public class LayoutLocalServiceStagingAdvice {
 		_layoutLocalServiceStagingAdviceMethodNames = new HashSet<>(
 			Arrays.asList(
 				"create", "createLayout", "deleteLayout", "getLayouts",
-				"updateLayout", "updateLookAndFeel", "updateName"));
+				"updateLayout", "updateLookAndFeel", "updateName",
+				"updateTypeSettings"));
 	private static final Function<InvocationHandler, Layout>
 		_proxyProviderFunction = ProxyUtil.getProxyProviderFunction(
 			Layout.class, ModelWrapper.class);
@@ -737,11 +728,21 @@ public class LayoutLocalServiceStagingAdvice {
 		public Object invoke(Object proxy, Method method, Object[] arguments)
 			throws Throwable {
 
+			String methodName = method.getName();
+
+			if (methodName.equals("getWrappedService")) {
+				return _targetObject;
+			}
+
+			if (methodName.equals("setWrappedService")) {
+				_targetObject = arguments[0];
+
+				return null;
+			}
+
 			if (!StagingAdvicesThreadLocal.isEnabled()) {
 				return _invoke(method, arguments);
 			}
-
-			String methodName = method.getName();
 
 			if (!_layoutLocalServiceStagingAdviceMethodNames.contains(
 					methodName)) {
@@ -818,7 +819,7 @@ public class LayoutLocalServiceStagingAdvice {
 					friendlyURLMap = (Map<Locale, String>)arguments[11];
 				}
 
-				long styleBookEntryId = 0;
+				String styleBookEntryERC = null;
 				long faviconFileEntryId = 0;
 				long masterLayoutPlid = 0;
 
@@ -833,7 +834,7 @@ public class LayoutLocalServiceStagingAdvice {
 					serviceContext = (ServiceContext)arguments[15];
 				}
 				else if (arguments.length == 18) {
-					styleBookEntryId = (Long)arguments[14];
+					styleBookEntryERC = (String)arguments[14];
 					faviconFileEntryId = (Long)arguments[15];
 					masterLayoutPlid = (Long)arguments[16];
 
@@ -850,7 +851,7 @@ public class LayoutLocalServiceStagingAdvice {
 					(Map<Locale, String>)arguments[8], (String)arguments[9],
 					(Boolean)arguments[10], friendlyURLMap,
 					(Boolean)arguments[12], (byte[])arguments[13],
-					styleBookEntryId, faviconFileEntryId, masterLayoutPlid,
+					styleBookEntryERC, faviconFileEntryId, masterLayoutPlid,
 					serviceContext);
 			}
 			else {
@@ -878,7 +879,7 @@ public class LayoutLocalServiceStagingAdvice {
 						new Object[] {_targetObject}, arguments);
 
 					returnValue = layoutLocalServiceStagingAdviceMethod.invoke(
-						_layoutLocalServiceStagingAdvice, arguments);
+						LayoutLocalServiceStagingAdvice.this, arguments);
 				}
 				catch (InvocationTargetException invocationTargetException) {
 					throw invocationTargetException.getTargetException();
@@ -896,10 +897,8 @@ public class LayoutLocalServiceStagingAdvice {
 		}
 
 		private LayoutLocalServiceStagingInvocationHandler(
-			LayoutLocalServiceStagingAdvice layoutLocalServiceStagingAdvice,
 			Object targetObject) {
 
-			_layoutLocalServiceStagingAdvice = layoutLocalServiceStagingAdvice;
 			_targetObject = targetObject;
 		}
 
@@ -914,9 +913,7 @@ public class LayoutLocalServiceStagingAdvice {
 			}
 		}
 
-		private final LayoutLocalServiceStagingAdvice
-			_layoutLocalServiceStagingAdvice;
-		private final Object _targetObject;
+		private volatile Object _targetObject;
 
 	}
 

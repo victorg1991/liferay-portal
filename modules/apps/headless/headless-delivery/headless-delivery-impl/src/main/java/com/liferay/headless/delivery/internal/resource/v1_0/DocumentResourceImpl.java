@@ -62,6 +62,7 @@ import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.search.filter.TermFilter;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -90,6 +91,7 @@ import com.liferay.portal.vulcan.multipart.BinaryFile;
 import com.liferay.portal.vulcan.multipart.MultipartBody;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
+import com.liferay.portal.vulcan.permission.ModelPermissionsUtil;
 import com.liferay.portal.vulcan.util.SearchUtil;
 import com.liferay.portlet.documentlibrary.constants.DLConstants;
 import com.liferay.ratings.kernel.service.RatingsEntryLocalService;
@@ -279,7 +281,7 @@ public class DocumentResourceImpl extends BaseDocumentResourceImpl {
 			FileEntry.class.getName(), _getDDMStructureId(fileEntry),
 			displayPageKey, fileEntry.getGroupId(), contextHttpServletRequest,
 			contextHttpServletResponse, fileEntry, _infoItemServiceRegistry,
-			_layoutDisplayPageProviderRegistry, _layoutLocalService,
+			_layoutDisplayPageProviderRegistry, _layoutService,
 			_layoutPageTemplateEntryService);
 	}
 
@@ -372,6 +374,7 @@ public class DocumentResourceImpl extends BaseDocumentResourceImpl {
 
 		String fileName = null;
 		String title = null;
+		String urlTitle = null;
 		String description = null;
 		Date displayDate = null;
 		Date expirationDate = null;
@@ -379,6 +382,7 @@ public class DocumentResourceImpl extends BaseDocumentResourceImpl {
 		if (document != null) {
 			fileName = document.getFileName();
 			title = document.getTitle();
+			urlTitle = document.getFriendlyUrlPath();
 			description = document.getDescription();
 			displayDate = document.getDatePublished();
 			expirationDate = document.getDateExpired();
@@ -393,21 +397,21 @@ public class DocumentResourceImpl extends BaseDocumentResourceImpl {
 		}
 
 		if (description == null) {
-			existingFileEntry.getDescription();
+			description = existingFileEntry.getDescription();
 		}
 
 		if (displayDate == null) {
-			existingFileEntry.getDisplayDate();
+			displayDate = existingFileEntry.getDisplayDate();
 		}
 
 		if (expirationDate == null) {
-			existingFileEntry.getExpirationDate();
+			expirationDate = existingFileEntry.getExpirationDate();
 		}
 
 		return _toDocument(
 			_dlAppService.updateFileEntry(
-				documentId, fileName, binaryFile.getContentType(), title, null,
-				description, null, DLVersionNumberIncrease.AUTOMATIC,
+				documentId, fileName, binaryFile.getContentType(), title,
+				urlTitle, description, null, DLVersionNumberIncrease.AUTOMATIC,
 				binaryFile.getInputStream(), binaryFile.getSize(), displayDate,
 				expirationDate, existingFileEntry.getReviewDate(),
 				_createServiceContext(
@@ -686,6 +690,13 @@ public class DocumentResourceImpl extends BaseDocumentResourceImpl {
 			CustomFieldsUtil.toMap(
 				DLFileEntry.class.getName(), contextCompany.getCompanyId(),
 				customFields, contextAcceptLanguage.getPreferredLocale())
+		).permissions(
+			ModelPermissionsUtil.toModelPermissions(
+				contextCompany.getCompanyId(), document.getPermissions(),
+				getPermissionCheckerResourceId(document.getId()),
+				getPermissionCheckerResourceName(document.getId()),
+				resourceActionLocalService, resourcePermissionLocalService,
+				roleLocalService)
 		).build();
 
 		serviceContext.setCommand(command);
@@ -940,7 +951,9 @@ public class DocumentResourceImpl extends BaseDocumentResourceImpl {
 			}
 		}
 
-		if (folderId != null) {
+		if ((folderId != null) &&
+			(folderId != existingFileEntry.getFolderId())) {
+
 			return _dlAppService.moveFileEntry(
 				documentId, folderId, new ServiceContext());
 		}
@@ -1128,6 +1141,9 @@ public class DocumentResourceImpl extends BaseDocumentResourceImpl {
 
 	@Reference
 	private LayoutPageTemplateEntryService _layoutPageTemplateEntryService;
+
+	@Reference
+	private LayoutService _layoutService;
 
 	@Reference
 	private Portal _portal;

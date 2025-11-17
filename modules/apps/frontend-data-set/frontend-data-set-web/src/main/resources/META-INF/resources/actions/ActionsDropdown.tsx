@@ -9,7 +9,8 @@ import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import {LinkOrButton} from '@clayui/shared';
 import {useIsMounted} from '@liferay/frontend-js-react-web';
-import React, {useContext} from 'react';
+import classNames from 'classnames';
+import React, {useContext, useMemo} from 'react';
 
 import FrontendDataSetContext, {
 	IFrontendDataSetContext,
@@ -20,17 +21,25 @@ import {IActionsDropdown, IItemsActions} from '../utils/types';
 
 interface IDropdownItem {
 	action: IItemsActions;
+	className?: string;
 	closeMenu: Function;
 	onClick: Function;
 	setLoading: Function;
 	url: string | undefined;
 }
 
-function DropdownItem({action, closeMenu, onClick, url}: IDropdownItem) {
+function DropdownItem({
+	action,
+	className,
+	closeMenu,
+	onClick,
+	url,
+}: IDropdownItem) {
 	const {icon, label, target} = action;
 
 	return (
 		<ClayDropDown.Item
+			className={className}
 			disabled={action.disabled}
 			href={isLink(target, null) ? url : undefined}
 			onClick={(event) =>
@@ -42,7 +51,7 @@ function DropdownItem({action, closeMenu, onClick, url}: IDropdownItem) {
 			}
 		>
 			{icon && (
-				<span className="pr-2">
+				<span className="dropdown-item-indicator-start">
 					<ClayIcon symbol={icon} />
 				</span>
 			)}
@@ -88,6 +97,26 @@ function ActionsDropdown({
 	}
 
 	const editModeActive = !!itemsChanges![parsedItemId];
+
+	const hasIcons = useMemo(() => {
+		const checkHasIcon = (currentActions: IItemsActions[]): boolean => {
+			for (const action of currentActions) {
+				if (action.icon) {
+					return true;
+				}
+
+				if (action.type === 'group' && action.items?.length) {
+					if (checkHasIcon(action.items)) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		};
+
+		return checkHasIcon(actions);
+	}, [actions]);
 
 	const itemChanges =
 		editModeActive && Object.keys(itemsChanges![parsedItemId]).length
@@ -151,7 +180,10 @@ function ActionsDropdown({
 		return (
 			<LinkOrButton
 				aria-label={action.label}
-				className="btn btn-secondary btn-sm"
+				className={classNames(
+					'btn btn-secondary btn-sm',
+					action.className
+				)}
 				disabled={action.disabled}
 				href={
 					isLink(
@@ -184,9 +216,13 @@ function ActionsDropdown({
 	const renderItems = (items: IItemsActions[]) =>
 		items.map(({items: nestedItems = [], separator, type, ...item}, i) => {
 			if (type === 'group') {
+				if (!nestedItems.length) {
+					return;
+				}
+
 				return (
 					<ClayDropDown.Group {...item} key={i}>
-						{separator && <ClayDropDown.Divider />}
+						{separator && i !== 0 && <ClayDropDown.Divider />}
 
 						{renderItems(nestedItems)}
 					</ClayDropDown.Group>
@@ -196,6 +232,7 @@ function ActionsDropdown({
 			return (
 				<DropdownItem
 					action={item}
+					className={item.className}
 					closeMenu={() =>
 						onMenuActiveChange && onMenuActiveChange(false)
 					}
@@ -216,6 +253,7 @@ function ActionsDropdown({
 
 			<ClayDropDown
 				active={menuActive}
+				hasLeftSymbols={hasIcons}
 				onActiveChange={() =>
 					onMenuActiveChange && onMenuActiveChange(!menuActive)
 				}

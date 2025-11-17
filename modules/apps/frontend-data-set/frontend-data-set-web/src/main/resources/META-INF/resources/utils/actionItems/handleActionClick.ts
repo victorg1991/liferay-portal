@@ -8,7 +8,7 @@ import {navigate} from 'frontend-js-web';
 
 import {openPermissionsModal} from '../modals/openPermissionsModal';
 import {resolveModalSize} from '../modals/resolveModalSize';
-import {ESelectionTrigger, IItemsActions} from '../types';
+import {IItemsActions} from '../types';
 import {ACTION_ITEM_TARGETS} from './constants';
 import formatActionURL from './formatActionURL';
 
@@ -23,6 +23,7 @@ const handleActionClick = ({
 	infoPanelOpen,
 	itemData,
 	itemId,
+	items,
 	loadData,
 	onActionDropdownItemClick,
 	onInfoPanelToggleButtonClick,
@@ -40,6 +41,7 @@ const handleActionClick = ({
 	infoPanelOpen?: boolean;
 	itemData: any;
 	itemId: string | number;
+	items: any[];
 	loadData: Function;
 	onActionDropdownItemClick: Function;
 	onInfoPanelToggleButtonClick?: Function;
@@ -66,10 +68,7 @@ const handleActionClick = ({
 
 	const doAction = ({defaultPrevented}: {defaultPrevented: boolean}) => {
 		if (target === INFO_PANEL && onInfoPanelToggleButtonClick) {
-			onItemSelectionChange?.({
-				item: itemData,
-				trigger: ESelectionTrigger.CONTAINER,
-			});
+			onItemSelectionChange?.(itemData);
 
 			!infoPanelOpen && onInfoPanelToggleButtonClick();
 		}
@@ -129,6 +128,7 @@ const handleActionClick = ({
 			action,
 			event,
 			itemData,
+			items,
 			loadData,
 			openSidePanel,
 		};

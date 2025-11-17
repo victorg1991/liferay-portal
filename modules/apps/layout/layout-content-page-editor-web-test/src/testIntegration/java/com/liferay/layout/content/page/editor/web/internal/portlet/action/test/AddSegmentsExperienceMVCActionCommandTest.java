@@ -30,6 +30,7 @@ import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.servlet.PortletServlet;
 import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.TestInfo;
@@ -46,6 +47,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -60,6 +62,8 @@ import com.liferay.segments.test.util.SegmentsTestUtil;
 import jakarta.portlet.ActionRequest;
 import jakarta.portlet.ActionResponse;
 import jakarta.portlet.PortletPreferences;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Iterator;
 import java.util.List;
@@ -265,12 +269,15 @@ public class AddSegmentsExperienceMVCActionCommandTest {
 			_fragmentEntryLinkLocalService.getFragmentEntryLink(
 				GetterUtil.getLong(iterator.next()));
 
+		Assert.assertTrue(
+			Validator.isNull(
+				targetFragmentEntryLink.getOriginalFragmentEntryLinkERC()));
 		Assert.assertEquals(
-			0, targetFragmentEntryLink.getOriginalFragmentEntryLinkId());
-
+			sourceFragmentEntryLink.getFragmentEntryERC(),
+			targetFragmentEntryLink.getFragmentEntryERC());
 		Assert.assertEquals(
-			sourceFragmentEntryLink.getFragmentEntryId(),
-			targetFragmentEntryLink.getFragmentEntryId());
+			sourceFragmentEntryLink.getFragmentEntryGroupId(),
+			targetFragmentEntryLink.getFragmentEntryGroupId());
 		Assert.assertEquals(
 			sourceFragmentEntryLink.getHtml(),
 			targetFragmentEntryLink.getHtml());
@@ -292,10 +299,23 @@ public class AddSegmentsExperienceMVCActionCommandTest {
 			"segmentsEntryId", String.valueOf(segmentsEntryId));
 		mockLiferayPortletActionRequest.setAttribute(
 			JavaConstants.JAKARTA_PORTLET_CONFIG, null);
+
+		HttpServletRequest httpServletRequest = new MockHttpServletRequest();
+
+		ThemeDisplay themeDisplay = _getThemeDisplay();
+
+		httpServletRequest.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
+
+		httpServletRequest.setAttribute(
+			WebKeys.USER_ID, TestPropsValues.getUserId());
+
+		mockLiferayPortletActionRequest.setAttribute(
+			PortletServlet.PORTLET_SERVLET_REQUEST, httpServletRequest);
+
 		mockLiferayPortletActionRequest.setAttribute(
 			WebKeys.LAYOUT, _draftLayout);
 		mockLiferayPortletActionRequest.setAttribute(
-			WebKeys.THEME_DISPLAY, _getThemeDisplay());
+			WebKeys.THEME_DISPLAY, themeDisplay);
 
 		return mockLiferayPortletActionRequest;
 	}
@@ -315,8 +335,8 @@ public class AddSegmentsExperienceMVCActionCommandTest {
 		Assert.assertEquals(
 			FragmentConstants.TYPE_PORTLET, fragmentEntryLink.getType());
 
-		JSONObject editableValuesJSONObject = _jsonFactory.createJSONObject(
-			fragmentEntryLink.getEditableValues());
+		JSONObject editableValuesJSONObject =
+			fragmentEntryLink.getEditableValuesJSONObject();
 
 		return PortletIdCodec.encode(
 			editableValuesJSONObject.getString("portletId"),

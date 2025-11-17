@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
@@ -24,12 +24,6 @@ const renderComponent = (state?: Partial<State>) => {
 };
 
 describe('PicklistFields', () => {
-	beforeEach(() => {
-		(global as any).Liferay.Language.direction = {
-			en_US: 'rtl',
-		};
-	});
-
 	it('updates the name when name input changes', async () => {
 		renderComponent();
 
@@ -65,7 +59,7 @@ describe('PicklistFields', () => {
 
 		expect(
 			screen.queryByText(
-				'picklists-are-shared-resources,-so-changes-to-a-picklist-affect-all-structures-that-use-it'
+				'picklists-are-shared-resources,-so-changes-to-a-picklist-affect-all-content-structures-that-use-it'
 			)
 		).not.toBeInTheDocument();
 	});
@@ -75,7 +69,7 @@ describe('PicklistFields', () => {
 
 		expect(
 			screen.queryByText(
-				'picklists-are-shared-resources,-so-changes-to-a-picklist-affect-all-structures-that-use-it'
+				'picklists-are-shared-resources,-so-changes-to-a-picklist-affect-all-content-structures-that-use-it'
 			)
 		).toBeInTheDocument();
 	});

@@ -91,8 +91,13 @@ public class GroupSelectorDisplayContext {
 	}
 
 	public Set<String> getGroupTypes() {
-		return GroupItemSelectorProviderRegistryUtil.
-			getGroupItemSelectorProviderTypes();
+		Set<String> groupItemSelectorProviderTypes =
+			GroupItemSelectorProviderRegistryUtil.
+				getGroupItemSelectorProviderTypes();
+
+		groupItemSelectorProviderTypes.remove("space-depot");
+
+		return groupItemSelectorProviderTypes;
 	}
 
 	public SearchContainer<Group> getSearchContainer() {

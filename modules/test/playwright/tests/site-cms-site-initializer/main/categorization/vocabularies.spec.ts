@@ -7,6 +7,7 @@ import {expect, mergeTests} from '@playwright/test';
 
 import {featureFlagsTest} from '../../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../../fixtures/loginTest';
+import {checkAccessibility} from '../../../../utils/checkAccessibility';
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
 import {getRandomInt} from '../../../../utils/getRandomInt';
 import getRandomString from '../../../../utils/getRandomString';
@@ -57,6 +58,17 @@ test(
 		});
 
 		await expect(vocabulariesPage.getItem(name)).toBeHidden();
+
+		await checkAccessibility({
+			page: vocabulariesPage.page,
+			selectors: ['.content'],
+			selectorsToExclude: [
+				'.control-menu-container',
+				'.fds',
+				'.sidebar-container',
+				'.top-bar',
+			],
+		});
 	}
 );
 
@@ -122,7 +134,7 @@ test(
 
 test(
 	'Can create and update vocabulary',
-	{tag: '@LPD-32750'},
+	{tag: ['@LPD-32750', '@LPD-66358']},
 	async ({editVocabularyPage, page, vocabulariesPage}) => {
 		editVocabularyPage.goto();
 
@@ -133,11 +145,32 @@ test(
 			name,
 		});
 
+		await checkAccessibility({
+			page: editVocabularyPage.page,
+			selectors: ['.cms-section'],
+			selectorsToExclude: ['.control-menu-container'],
+		});
+
 		await editVocabularyPage.multiSelectToggle.click();
 
 		await editVocabularyPage.changeVisibility('Private');
 
 		await editVocabularyPage.assetTypesButton.click();
+
+		// Verify that All Asset Types checkbox retains correct state when ticked repeatedly to test LPD-66358
+
+		await editVocabularyPage.assetTypeCheckbox.uncheck();
+
+		await expect(
+			page.getByText('The Asset Types field is required.')
+		).toBeVisible();
+
+		await editVocabularyPage.assetTypeCheckbox.check();
+
+		await expect(editVocabularyPage.assetTypeSelector).toHaveAttribute(
+			'placeholder',
+			'All Asset Types'
+		);
 
 		await editVocabularyPage.selectAssetTypes('Blog');
 
@@ -155,6 +188,12 @@ test(
 
 		await newVocabualry.click();
 
+		await checkAccessibility({
+			page: editVocabularyPage.page,
+			selectors: ['.categorization-section'],
+			selectorsToExclude: ['.control-menu-container'],
+		});
+
 		await expect(page.getByText(`Edit ${name}`)).toBeVisible();
 
 		await expect(editVocabularyPage.multiSelectToggle).not.toBeChecked();
@@ -165,11 +204,9 @@ test(
 			'Private'
 		);
 
-		const spacesInputLocator = page
-			.locator('.categorization-spaces .input-group-item span')
-			.nth(1);
+		const spacesInputLocator = page.locator('#multiSelect');
 
-		await expect(spacesInputLocator).toContainText('All Spaces');
+		await expect(spacesInputLocator).toHaveAttribute('value', 'All Spaces');
 
 		const newName = `Vocabulary${getRandomInt()}`;
 
@@ -180,11 +217,9 @@ test(
 
 		await editVocabularyPage.assetTypesButton.click();
 
-		const assetTypesInputLocator = page
-			.locator('.input-group-item span')
-			.nth(1);
+		const assetTypesInputLocator = page.locator('div[role="grid"] > span');
 
-		await expect(assetTypesInputLocator).toContainText('Blog');
+		await expect(assetTypesInputLocator).toContainText(['Blog']);
 
 		await clickAndExpectToBeVisible({
 			target: page.getByText(
@@ -227,6 +262,15 @@ test(
 		await expect(page.getByText(`Edit ${name}`)).toBeVisible();
 
 		await editVocabularyPage.assetTypesButton.click();
+
+		await checkAccessibility({
+			page: editVocabularyPage.page,
+			selectors: ['.cms-section'],
+			selectorsToExclude: [
+				'categorization-vertical-nav',
+				'.control-menu-container',
+			],
+		});
 
 		await editVocabularyPage.selectAssetTypes('Blog');
 
@@ -292,16 +336,20 @@ test(
 );
 
 test(
-	'Validate vocabulary inputs when saving',
-	{tag: '@LPD-32750'},
+	'Validate vocabulary inputs',
+	{tag: ['@LPD-32750', '@LPD-69687']},
 	async ({editVocabularyPage, page}) => {
 		editVocabularyPage.goto();
 
 		// Check we can't publish an empty name
 
+		await expect(editVocabularyPage.saveButton).toBeDisabled();
+
+		await editVocabularyPage.fillName('');
+
 		await clickAndExpectToBeVisible({
 			target: page.getByText('The Name field is required'),
-			trigger: editVocabularyPage.saveButton,
+			trigger: page.getByLabel('Description'),
 		});
 
 		const name = `Vocabulary${getRandomInt()}`;
@@ -311,14 +359,18 @@ test(
 			name,
 		});
 
+		await expect(editVocabularyPage.saveButton).not.toBeDisabled();
+
 		// Check we can't publish without selecting a space
 
-		await editVocabularyPage.spaceCheckbox.click();
+		// await editVocabularyPage.spaceCheckbox.click();
 
 		await clickAndExpectToBeVisible({
 			target: page.getByText('The Space field is required'),
-			trigger: editVocabularyPage.saveButton,
+			trigger: editVocabularyPage.spaceCheckbox,
 		});
+
+		await expect(editVocabularyPage.saveButton).toBeDisabled();
 
 		await editVocabularyPage.spaceCheckbox.click();
 
@@ -326,12 +378,14 @@ test(
 
 		await editVocabularyPage.assetTypesButton.click();
 
-		await editVocabularyPage.assetTypeCheckbox.click();
+		// await editVocabularyPage.assetTypeCheckbox.click();
 
 		await clickAndExpectToBeVisible({
 			target: page.getByText('The Asset Types field is required.'),
-			trigger: editVocabularyPage.saveButton,
+			trigger: editVocabularyPage.assetTypeCheckbox,
 		});
+
+		await expect(editVocabularyPage.saveButton).toBeDisabled();
 	}
 );
 

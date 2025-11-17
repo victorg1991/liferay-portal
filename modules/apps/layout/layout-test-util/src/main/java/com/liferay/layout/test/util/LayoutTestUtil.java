@@ -115,7 +115,7 @@ public class LayoutTestUtil {
 		String newPortletId = layoutTypePortlet.addPortletId(
 			userId, portletId, columnId, -1);
 
-		LayoutLocalServiceUtil.updateLayout(
+		LayoutLocalServiceUtil.updateTypeSettings(
 			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
 			layout.getTypeSettings());
 
@@ -276,6 +276,21 @@ public class LayoutTestUtil {
 		layout.setType(LayoutConstants.TYPE_EMBEDDED);
 
 		return LayoutLocalServiceUtil.updateLayout(layout);
+	}
+
+	public static Layout addTypeEmptyLayout(Group group) throws Exception {
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(
+				TestPropsValues.getGroupId(), TestPropsValues.getUserId());
+
+		serviceContext.setAttribute(
+			"layout.instanceable.allowed", Boolean.TRUE);
+
+		return LayoutLocalServiceUtil.addLayout(
+			null, TestPropsValues.getUserId(), group.getGroupId(), false,
+			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID,
+			RandomTestUtil.randomString(), StringPool.BLANK, StringPool.BLANK,
+			LayoutConstants.TYPE_EMPTY, true, StringPool.BLANK, serviceContext);
 	}
 
 	public static Layout addTypeFullPageApplicationLayout(long groupId)
@@ -562,7 +577,7 @@ public class LayoutTestUtil {
 			layout.getTitleMap(), layout.getDescriptionMap(),
 			layout.getKeywordsMap(), layout.getRobotsMap(), layout.getType(),
 			layout.isHidden(), friendlyURLMap, layout.getIconImage(), null,
-			layout.getStyleBookEntryId(), layout.getFaviconFileEntryId(),
+			layout.getStyleBookEntryERC(), layout.getFaviconFileEntryId(),
 			layout.getMasterLayoutPlid(),
 			ServiceContextTestUtil.getServiceContext(
 				layout.getGroupId(), TestPropsValues.getUserId()));
@@ -580,7 +595,7 @@ public class LayoutTestUtil {
 			String.valueOf(customizable));
 		layoutTypePortlet.setUpdatePermission(customizable);
 
-		return LayoutServiceUtil.updateLayout(
+		return LayoutServiceUtil.updateTypeSettings(
 			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
 			layout.getTypeSettings());
 	}
@@ -630,7 +645,7 @@ public class LayoutTestUtil {
 		layoutTypePortlet.setLayoutTemplateId(
 			user.getUserId(), layoutTemplateId);
 
-		return LayoutServiceUtil.updateLayout(
+		return LayoutServiceUtil.updateTypeSettings(
 			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
 			layout.getTypeSettings());
 	}

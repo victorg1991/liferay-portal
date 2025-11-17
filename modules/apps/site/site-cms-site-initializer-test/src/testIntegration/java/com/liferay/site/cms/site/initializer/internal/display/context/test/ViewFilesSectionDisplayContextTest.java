@@ -34,9 +34,11 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -57,11 +59,13 @@ import org.springframework.mock.web.MockHttpServletResponse;
 /**
  * @author Eudaldo Alonso
  */
-@FeatureFlag("LPD-17564")
+@FeatureFlags(
+	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
+)
 @RunWith(Arquillian.class)
 @Sync
 public class ViewFilesSectionDisplayContextTest
-	extends BaseSectionDisplayContextTestCase {
+	extends BaseFilesSectionDisplayContextTestCase {
 
 	@ClassRule
 	@Rule
@@ -96,7 +100,7 @@ public class ViewFilesSectionDisplayContextTest
 				(List<DropdownItem>)creationMenu.get("primaryItems");
 
 			Assert.assertEquals(
-				primaryItems.toString(), 1, primaryItems.size());
+				primaryItems.toString(), 0, primaryItems.size());
 
 			Role role = _roleLocalService.getRole(
 				TestPropsValues.getCompanyId(), RoleConstants.USER);
@@ -112,7 +116,8 @@ public class ViewFilesSectionDisplayContextTest
 
 			primaryItems = (List<DropdownItem>)creationMenu.get("primaryItems");
 
-			Assert.assertTrue(primaryItems.size() > 1);
+			Assert.assertEquals(
+				primaryItems.toString(), 4, primaryItems.size());
 		}
 		finally {
 			PermissionThreadLocal.setPermissionChecker(
@@ -124,14 +129,14 @@ public class ViewFilesSectionDisplayContextTest
 	protected Map<String, String> getExpectedCreationMenuItems()
 		throws PortalException {
 
-		return HashMapBuilder.put(
-			"Basic Document", getRedirect("L_BASIC_DOCUMENT")
+		return LinkedHashMapBuilder.put(
+			"single-file", getRedirect("L_CMS_BASIC_DOCUMENT")
 		).put(
-			"External Video", getRedirect("L_EXTERNAL_VIDEO")
+			"multiple-files", StringPool.BLANK
 		).put(
 			"folder", StringPool.BLANK
 		).put(
-			"multiple-files", StringPool.BLANK
+			"external-video-shortcut", getRedirect("L_CMS_EXTERNAL_VIDEO")
 		).build();
 	}
 

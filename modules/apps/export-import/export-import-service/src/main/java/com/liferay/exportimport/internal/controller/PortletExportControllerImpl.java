@@ -680,7 +680,7 @@ public class PortletExportControllerImpl implements PortletExportController {
 			PortletDataHandlerKeys.UPDATE_LAST_PUBLISH_DATE);
 
 		if (ExportImportThreadLocal.isStagingInProcess() &&
-			updateLastPublishDate) {
+			!portletDataHandler.isBatch() && updateLastPublishDate) {
 
 			DateRange adjustedDateRange = new DateRange(
 				portletLastPublishDate, portletDataContext.getEndDate());

@@ -32,6 +32,7 @@ const NAVIGATION_TABS = {
 export default function EditVocabulary({
 	availableAssetTypes,
 	backURL,
+	cmsGroupId,
 	defaultLanguageId,
 	locales,
 	spritemap,
@@ -40,6 +41,7 @@ export default function EditVocabulary({
 }: {
 	availableAssetTypes: AssetType[];
 	backURL: string;
+	cmsGroupId: number;
 	defaultLanguageId: string;
 	locales: any[];
 	spritemap: string;
@@ -116,7 +118,7 @@ export default function EditVocabulary({
 	}, [backURL, isNew, vocabularyId]);
 
 	const _handleValidateInputs = () => {
-		if (nameInputError || vocabulary.name === '') {
+		if (nameInputError || !vocabulary.name.trim().length) {
 			setNameInputError(
 				sub(
 					Liferay.Language.get('the-x-field-is-required'),
@@ -151,7 +153,10 @@ export default function EditVocabulary({
 
 		if (isNew) {
 			const {data, error, status} =
-				await VocabularyService.createVocabulary(vocabulary);
+				await VocabularyService.createVocabulary(
+					cmsGroupId,
+					vocabulary
+				);
 
 			if (error) {
 				if (status === 'CONFLICT') {
@@ -227,9 +232,14 @@ export default function EditVocabulary({
 		setActiveVerticalNavKey(verticalNav);
 	};
 
+	const shouldDisableSaveBtn =
+		!vocabulary.name.trim().length ||
+		!!spaceInputError ||
+		!!assetTypeInputError;
+
 	return (
 		<div className="categorization-section">
-			<div className="d-flex edit-vocabulary flex-column">
+			<div className="edit-page">
 				<Toolbar
 					backURL={backURL}
 					title={
@@ -252,6 +262,7 @@ export default function EditVocabulary({
 
 						<ClayButton
 							className="inline-item-after"
+							disabled={shouldDisableSaveBtn}
 							displayType="primary"
 							onClick={() => {
 								if (assetTypeChange || spaceChange) {
@@ -268,18 +279,14 @@ export default function EditVocabulary({
 					</Toolbar.Item>
 				</Toolbar>
 
-				<ClayLayout.ContainerFluid
-					className="cms-parent-container m-0"
-					formSize="xl"
-					size="xl"
-				>
-					<ClayLayout.Row className="cms-container-child">
+				<ClayLayout.ContainerFluid size={false}>
+					<ClayLayout.Row className="min-vh-100">
 						<ClayLayout.Col
-							className="categorization-vertical-nav p-0"
-							md={3}
+							className="cms-sidebar-nav sidebar-layout"
+							md="auto"
 							sm={12}
 						>
-							<div className="p-4">
+							<div className="px-md-2 py-3 py-md-4">
 								<ClayVerticalNav
 									items={[
 										{
@@ -311,7 +318,7 @@ export default function EditVocabulary({
 							</div>
 						</ClayLayout.Col>
 
-						<ClayLayout.Col md={9} sm={12}>
+						<ClayLayout.Col className="col-md" sm={12}>
 							{activeVerticalNavKey === 'general' && (
 								<EditGeneralInfo
 									assetLibraries={assetLibraries}

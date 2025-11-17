@@ -63,20 +63,6 @@ public class UtilityPageSerDes {
 			sb.append(utilityPage.getCreator());
 		}
 
-		if (utilityPage.getCreatorExternalReferenceCode() != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"creatorExternalReferenceCode\": ");
-
-			sb.append("\"");
-
-			sb.append(_escape(utilityPage.getCreatorExternalReferenceCode()));
-
-			sb.append("\"");
-		}
-
 		if (utilityPage.getDateCreated() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -203,6 +189,26 @@ public class UtilityPageSerDes {
 			sb.append("]");
 		}
 
+		if (utilityPage.getPermissions() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"permissions\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < utilityPage.getPermissions().length; i++) {
+				sb.append(utilityPage.getPermissions()[i]);
+
+				if ((i + 1) < utilityPage.getPermissions().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (utilityPage.getThumbnail() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -221,9 +227,7 @@ public class UtilityPageSerDes {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(utilityPage.getType());
-
 			sb.append("\"");
 		}
 
@@ -278,15 +282,6 @@ public class UtilityPageSerDes {
 		}
 		else {
 			map.put("creator", String.valueOf(utilityPage.getCreator()));
-		}
-
-		if (utilityPage.getCreatorExternalReferenceCode() == null) {
-			map.put("creatorExternalReferenceCode", null);
-		}
-		else {
-			map.put(
-				"creatorExternalReferenceCode",
-				String.valueOf(utilityPage.getCreatorExternalReferenceCode()));
 		}
 
 		if (utilityPage.getDateCreated() == null) {
@@ -368,6 +363,14 @@ public class UtilityPageSerDes {
 				String.valueOf(utilityPage.getPageSpecifications()));
 		}
 
+		if (utilityPage.getPermissions() == null) {
+			map.put("permissions", null);
+		}
+		else {
+			map.put(
+				"permissions", String.valueOf(utilityPage.getPermissions()));
+		}
+
 		if (utilityPage.getThumbnail() == null) {
 			map.put("thumbnail", null);
 		}
@@ -419,11 +422,6 @@ public class UtilityPageSerDes {
 			if (Objects.equals(jsonParserFieldName, "creator")) {
 				return false;
 			}
-			else if (Objects.equals(
-						jsonParserFieldName, "creatorExternalReferenceCode")) {
-
-				return false;
-			}
 			else if (Objects.equals(jsonParserFieldName, "dateCreated")) {
 				return false;
 			}
@@ -459,6 +457,9 @@ public class UtilityPageSerDes {
 
 				return false;
 			}
+			else if (Objects.equals(jsonParserFieldName, "permissions")) {
+				return false;
+			}
 			else if (Objects.equals(jsonParserFieldName, "thumbnail")) {
 				return false;
 			}
@@ -486,14 +487,6 @@ public class UtilityPageSerDes {
 				if (jsonParserFieldValue != null) {
 					utilityPage.setCreator(
 						CreatorSerDes.toDTO((String)jsonParserFieldValue));
-				}
-			}
-			else if (Objects.equals(
-						jsonParserFieldName, "creatorExternalReferenceCode")) {
-
-				if (jsonParserFieldValue != null) {
-					utilityPage.setCreatorExternalReferenceCode(
-						(String)jsonParserFieldValue);
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "dateCreated")) {
@@ -567,6 +560,26 @@ public class UtilityPageSerDes {
 					}
 
 					utilityPage.setPageSpecifications(pageSpecificationsArray);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "permissions")) {
+				if (jsonParserFieldValue != null) {
+					Object[] jsonParserFieldValues =
+						(Object[])jsonParserFieldValue;
+
+					com.liferay.headless.admin.site.client.permission.
+						Permission[] permissionsArray = new
+						com.liferay.headless.admin.site.client.permission.
+							Permission[jsonParserFieldValues.length];
+
+					for (int i = 0; i < permissionsArray.length; i++) {
+						permissionsArray[i] =
+							com.liferay.headless.admin.site.client.permission.
+								Permission.toDTO(
+									(String)jsonParserFieldValues[i]);
+					}
+
+					utilityPage.setPermissions(permissionsArray);
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "thumbnail")) {

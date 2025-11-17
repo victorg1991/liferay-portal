@@ -371,6 +371,13 @@ public interface LayoutService extends BaseService {
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Layout getLayout(long plid) throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Layout getLayout(long groupId, boolean privateLayout, long layoutId)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public Layout getLayoutByExternalReferenceCode(
 			String externalReferenceCode, long groupId)
 		throws PortalException;
@@ -515,6 +522,12 @@ public interface LayoutService extends BaseService {
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public int getLayoutsCount(long groupId, String type);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Layout getOrAddEmptyLayout(
+			String externalReferenceCode, long groupId,
+			ServiceContext serviceContext)
+		throws Exception;
 
 	/**
 	 * Returns the OSGi service identifier.
@@ -685,7 +698,7 @@ public interface LayoutService extends BaseService {
 	 String)}.
 	 * @param hasIconImage if the layout has a custom icon image
 	 * @param iconBytes the byte array of the layout's new icon image
-	 * @param styleBookEntryId the primary key of the style book entry
+	 * @param styleBookEntryERC the external reference code of the style book entry
 	 * @param faviconFileEntryId the file entry ID of the layout's new favicon
 	 * @param masterLayoutPlid the primary key of the master layout
 	 * @param serviceContext the service context to be applied. Can set the
@@ -700,25 +713,8 @@ public interface LayoutService extends BaseService {
 			Map<Locale, String> descriptionMap, Map<Locale, String> keywordsMap,
 			Map<Locale, String> robotsMap, String type, boolean hidden,
 			Map<Locale, String> friendlyURLMap, boolean hasIconImage,
-			byte[] iconBytes, long styleBookEntryId, long faviconFileEntryId,
+			byte[] iconBytes, String styleBookEntryERC, long faviconFileEntryId,
 			long masterLayoutPlid, ServiceContext serviceContext)
-		throws PortalException;
-
-	/**
-	 * Updates the layout replacing its type settings.
-	 *
-	 * @param groupId the primary key of the group
-	 * @param privateLayout whether the layout is private to the group
-	 * @param layoutId the layout ID of the layout
-	 * @param typeSettings the settings to load the unicode properties object.
-	 See {@link com.liferay.portal.kernel.util.UnicodeProperties
-	 #fastLoad(String)}.
-	 * @return the updated layout
-	 * @throws PortalException if a portal exception occurred
-	 */
-	public Layout updateLayout(
-			long groupId, boolean privateLayout, long layoutId,
-			String typeSettings)
 		throws PortalException;
 
 	/**
@@ -857,5 +853,22 @@ public interface LayoutService extends BaseService {
 		throws PortalException;
 
 	public Layout updateType(long plid, String type) throws PortalException;
+
+	/**
+	 * Updates the layout replacing its type settings.
+	 *
+	 * @param groupId the primary key of the group
+	 * @param privateLayout whether the layout is private to the group
+	 * @param layoutId the layout ID of the layout
+	 * @param typeSettings the settings to load the unicode properties object.
+	 See {@link com.liferay.portal.kernel.util.UnicodeProperties
+	 #fastLoad(String)}.
+	 * @return the updated layout
+	 * @throws PortalException if a portal exception occurred
+	 */
+	public Layout updateTypeSettings(
+			long groupId, boolean privateLayout, long layoutId,
+			String typeSettings)
+		throws PortalException;
 
 }

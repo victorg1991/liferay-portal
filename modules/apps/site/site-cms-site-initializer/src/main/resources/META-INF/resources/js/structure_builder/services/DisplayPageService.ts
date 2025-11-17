@@ -20,6 +20,18 @@ async function resetDisplayPage({id}: {id: Structure['id']}) {
 	return await ApiHelper.post(resetStructureDisplayPageURL);
 }
 
+async function resetTranslationDisplayPage({id}: {id: Structure['id']}) {
+	const resetStructureDisplayPageURL = addParams(
+		{
+			objectDefinitionId: id,
+		},
+		config.resetTranslationDisplayPageURL
+	);
+
+	return await ApiHelper.post(resetStructureDisplayPageURL);
+}
+
 export default {
 	resetDisplayPage,
+	resetTranslationDisplayPage,
 };

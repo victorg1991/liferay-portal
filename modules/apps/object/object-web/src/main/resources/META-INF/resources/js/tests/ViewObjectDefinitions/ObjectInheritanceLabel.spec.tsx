@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {render} from '@testing-library/react';
 
 import ObjectDefinitionInheritanceDataRenderer from '../../components/ViewObjectDefinitions/FDSDataRenderers/ObjectDefinitionInheritanceDataRenderer';
@@ -23,14 +23,22 @@ const standardObjectDefinitionMock = {
 
 const rootObjectDefinitionMock = {
 	...standardObjectDefinitionMock,
-	rootObjectDefinitionExternalReferenceCode:
-		'e11aa801-238b-f2d2-195c-e96b6b03dbd5',
+	objectDefinitionSettings: [
+		{
+			name: 'rootObjectDefinitionExternalReferenceCodes',
+			value: 'e11aa801-238b-f2d2-195c-e96b6b03dbd5',
+		},
+	],
 };
 
 const inheritedObjectDefinitionMock = {
 	...standardObjectDefinitionMock,
-	rootObjectDefinitionExternalReferenceCode:
-		'660defb8-7549-8191-3174-fca8bad17656',
+	objectDefinitionSettings: [
+		{
+			name: 'rootObjectDefinitionExternalReferenceCodes',
+			value: '660defb8-7549-8191-3174-fca8bad17656',
+		},
+	],
 };
 
 describe('The ObjectDefinitionInheritanceDataRenderer component should', () => {

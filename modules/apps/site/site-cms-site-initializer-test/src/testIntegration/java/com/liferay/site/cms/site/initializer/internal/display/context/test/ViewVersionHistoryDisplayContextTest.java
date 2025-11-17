@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.FeatureFlag;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -46,7 +47,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 /**
  * @author Mikel Lorza
  */
-@FeatureFlag("LPD-17564")
+@FeatureFlags(
+	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
+)
 @RunWith(Arquillian.class)
 @Sync
 public class ViewVersionHistoryDisplayContextTest
@@ -88,36 +91,14 @@ public class ViewVersionHistoryDisplayContextTest
 	@Test
 	public void testGetAPIURL() throws Exception {
 		Assert.assertEquals(
-			_getAPIURL(_objectEntry, _objectDefinition),
+			StringBundler.concat(
+				"/o", _objectDefinition.getRESTContextPath(), StringPool.SLASH,
+				_objectEntry.getObjectEntryId(),
+				"/versions?nestedFields=file.thumbnailURL"),
 			ReflectionTestUtil.invoke(
 				_getViewVersionHistoryDisplayContext(
 					_getMockHttpServletRequest(_objectEntry)),
 				"getAPIURL", new Class<?>[0]));
-	}
-
-	@Test
-	public void testGetBackButtonReactData() throws Exception {
-		String backURL = "http://localhost:8080/";
-
-		Assert.assertEquals(
-			HashMapBuilder.<String, Object>put(
-				"backURL", backURL
-			).put(
-				"headerTitle",
-				_objectEntry.getTitleValue(group.getDefaultLanguageId())
-			).build(),
-			ReflectionTestUtil.invoke(
-				_getViewVersionHistoryDisplayContext(
-					_getMockHttpServletRequest(backURL, _objectEntry)),
-				"getBackButtonReactData", new Class<?>[0]));
-	}
-
-	private String _getAPIURL(
-		ObjectEntry objectEntry, ObjectDefinition objectDefinition) {
-
-		return StringBundler.concat(
-			"/o", objectDefinition.getRESTContextPath(), StringPool.SLASH,
-			objectEntry.getObjectEntryId(), "/versions");
 	}
 
 	private MockHttpServletRequest _getMockHttpServletRequest(
@@ -129,18 +110,6 @@ public class ViewVersionHistoryDisplayContextTest
 
 		mockHttpServletRequest.setParameter(
 			"objectEntryId", String.valueOf(objectEntry.getObjectEntryId()));
-
-		return mockHttpServletRequest;
-	}
-
-	private MockHttpServletRequest _getMockHttpServletRequest(
-			String backURL, ObjectEntry objectEntry)
-		throws Exception {
-
-		MockHttpServletRequest mockHttpServletRequest =
-			_getMockHttpServletRequest(objectEntry);
-
-		mockHttpServletRequest.setParameter("backURL", backURL);
 
 		return mockHttpServletRequest;
 	}

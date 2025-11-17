@@ -41,6 +41,8 @@ import com.liferay.commerce.product.internal.upgrade.v5_25_0.util.CPConfiguratio
 import com.liferay.commerce.product.internal.upgrade.v5_26_0.util.CPConfigurationEntrySettingTable;
 import com.liferay.commerce.product.internal.upgrade.v5_4_0.CommercePermissionUpgradeProcess;
 import com.liferay.commerce.product.internal.upgrade.v5_5_0.util.CPInstanceUnitOfMeasureTable;
+import com.liferay.commerce.product.internal.upgrade.v6_1_0.CPConfigurationEntryUpgradeProcess;
+import com.liferay.commerce.product.internal.upgrade.v6_2_0.CPDefinitionLocalizationUpgradeProcess;
 import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -310,11 +312,9 @@ public class CommerceProductServiceUpgradeStepRegistrator
 			new BaseUuidUpgradeProcess() {
 
 				@Override
-				protected String[][] getTableAndPrimaryKeyColumnNames() {
-					return new String[][] {
-						{"CommerceCatalog", "commerceCatalogId"},
-						{"CommerceChannel", "commerceChannelId"},
-						{"CPTaxCategory", "CPTaxCategoryId"}
+				protected String[] getTableNames() {
+					return new String[] {
+						"CommerceCatalog", "CommerceChannel", "CPTaxCategory"
 					};
 				}
 
@@ -325,16 +325,11 @@ public class CommerceProductServiceUpgradeStepRegistrator
 			new BaseExternalReferenceCodeUpgradeProcess() {
 
 				@Override
-				protected String[][] getTableAndPrimaryKeyColumnNames() {
-					return new String[][] {
-						{"CommerceCatalog", "commerceCatalogId"},
-						{"CommerceChannel", "commerceChannelId"},
-						{"CPAttachmentFileEntry", "CPAttachmentFileEntryId"},
-						{"CPInstance", "CPInstanceId"},
-						{"CPOption", "CPOptionId"},
-						{"CPOptionValue", "CPOptionValueId"},
-						{"CProduct", "CProductId"},
-						{"CPTaxCategory", "CPTaxCategoryId"}
+				protected String[] getTableNames() {
+					return new String[] {
+						"CommerceCatalog", "CommerceChannel",
+						"CPAttachmentFileEntry", "CPInstance", "CPOption",
+						"CPOptionValue", "CProduct", "CPTaxCategory"
 					};
 				}
 
@@ -457,10 +452,8 @@ public class CommerceProductServiceUpgradeStepRegistrator
 			new BaseExternalReferenceCodeUpgradeProcess() {
 
 				@Override
-				protected String[][] getTableAndPrimaryKeyColumnNames() {
-					return new String[][] {
-						{"CPMeasurementUnit", "CPMeasurementUnitId"}
-					};
+				protected String[] getTableNames() {
+					return new String[] {"CPMeasurementUnit"};
 				}
 
 			});
@@ -484,10 +477,8 @@ public class CommerceProductServiceUpgradeStepRegistrator
 			new BaseExternalReferenceCodeUpgradeProcess() {
 
 				@Override
-				protected String[][] getTableAndPrimaryKeyColumnNames() {
-					return new String[][] {
-						{"CPOptionCategory", "CPOptionCategoryId"}
-					};
+				protected String[] getTableNames() {
+					return new String[] {"CPOptionCategory"};
 				}
 
 			});
@@ -497,10 +488,8 @@ public class CommerceProductServiceUpgradeStepRegistrator
 			new BaseExternalReferenceCodeUpgradeProcess() {
 
 				@Override
-				protected String[][] getTableAndPrimaryKeyColumnNames() {
-					return new String[][] {
-						{"CPSpecificationOption", "CPSpecificationOptionId"}
-					};
+				protected String[] getTableNames() {
+					return new String[] {"CPSpecificationOption"};
 				}
 
 			});
@@ -515,13 +504,8 @@ public class CommerceProductServiceUpgradeStepRegistrator
 			new BaseExternalReferenceCodeUpgradeProcess() {
 
 				@Override
-				protected String[][] getTableAndPrimaryKeyColumnNames() {
-					return new String[][] {
-						{
-							"CPDSpecificationOptionValue",
-							"CPDSpecificationOptionValueId"
-						}
-					};
+				protected String[] getTableNames() {
+					return new String[] {"CPDSpecificationOptionValue"};
 				}
 
 			});
@@ -667,6 +651,17 @@ public class CommerceProductServiceUpgradeStepRegistrator
 				CPDefinitionSpecificationOptionValueUpgradeProcess(),
 			new com.liferay.commerce.product.internal.upgrade.v5_28_0.
 				CPSpecificationOptionUpgradeProcess());
+
+		registry.register(
+			"5.28.0", "6.0.0",
+			UpgradeProcessFactory.dropColumns(
+				"CPConfigurationEntry", "visible"));
+
+		registry.register(
+			"6.0.0", "6.1.0", new CPConfigurationEntryUpgradeProcess());
+
+		registry.register(
+			"6.1.0", "6.2.0", new CPDefinitionLocalizationUpgradeProcess());
 
 		if (_log.isInfoEnabled()) {
 			_log.info("Commerce product upgrade step registrator finished");

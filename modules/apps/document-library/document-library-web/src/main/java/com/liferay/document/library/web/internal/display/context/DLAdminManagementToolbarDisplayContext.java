@@ -550,7 +550,7 @@ public class DLAdminManagementToolbarDisplayContext
 							"extension",
 							() -> ArrayUtil.remove(extensions, extension)));
 					labelItem.setCloseable(true);
-					labelItem.setLabel(_getLabel("extension", extension));
+					labelItem.setLabel(_getLabel("extension[file]", extension));
 				});
 		}
 	}
@@ -885,7 +885,7 @@ public class DLAdminManagementToolbarDisplayContext
 					"extensionsFilterURL", _getExtensionsItemSelectorURL());
 				dropdownItem.setActive(!extensionsIsEmpty);
 				dropdownItem.setLabel(
-					LanguageUtil.get(_httpServletRequest, "extension"));
+					LanguageUtil.get(_httpServletRequest, "extension[file]"));
 			}
 		).add(
 			dropdownItem -> {

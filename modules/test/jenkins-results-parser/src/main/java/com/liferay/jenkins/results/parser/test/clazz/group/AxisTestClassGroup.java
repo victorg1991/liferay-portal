@@ -6,6 +6,7 @@
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
 import com.liferay.jenkins.results.parser.BatchHistory;
+import com.liferay.jenkins.results.parser.DownstreamBuildReport;
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 import com.liferay.jenkins.results.parser.Job;
 import com.liferay.jenkins.results.parser.test.clazz.TestClass;
@@ -14,6 +15,7 @@ import com.liferay.jenkins.results.parser.test.clazz.TestClassFactory;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -120,6 +122,35 @@ public class AxisTestClassGroup extends BaseTestClassGroup {
 		return _batchTestClassGroup;
 	}
 
+	public List<DownstreamBuildReport> getCachedDownstreamBuildReports() {
+		if (!isBuildCachingEnabled() || !isResultsCached()) {
+			return null;
+		}
+
+		BatchTestClassGroup batchTestClassGroup = getBatchTestClassGroup();
+
+		List<DownstreamBuildReport> cachedDownstreamBuildReports =
+			batchTestClassGroup.getCachedDownstreamBuildReports(getAxisName());
+
+		if ((cachedDownstreamBuildReports == null) ||
+			cachedDownstreamBuildReports.isEmpty()) {
+
+			return null;
+		}
+
+		for (DownstreamBuildReport cachedDownstreamBuildReport :
+				cachedDownstreamBuildReports) {
+
+			if ((cachedDownstreamBuildReport != null) &&
+				!cachedDownstreamBuildReport.isFailing()) {
+
+				return Collections.singletonList(cachedDownstreamBuildReport);
+			}
+		}
+
+		return null;
+	}
+
 	public String getDownstreamJobName() {
 		return _batchTestClassGroup.getDownstreamJobName();
 	}
@@ -201,7 +232,26 @@ public class AxisTestClassGroup extends BaseTestClassGroup {
 		return null;
 	}
 
+	public boolean isBuildCachingEnabled() {
+		return _batchTestClassGroup.isBuildCachingEnabled();
+	}
+
 	public boolean isResultsCached() {
+		if (!isBuildCachingEnabled()) {
+			return false;
+		}
+
+		BatchTestClassGroup batchTestClassGroup = getBatchTestClassGroup();
+
+		List<DownstreamBuildReport> cachedDownstreamBuildReports =
+			batchTestClassGroup.getCachedDownstreamBuildReports(getAxisName());
+
+		if ((cachedDownstreamBuildReports != null) &&
+			!cachedDownstreamBuildReports.isEmpty()) {
+
+			return true;
+		}
+
 		return false;
 	}
 

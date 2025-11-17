@@ -46,9 +46,7 @@ import java.util.function.Supplier;
  * @generated
  */
 @Generated("")
-@GraphQLName(
-	description = "https://www.schema.org/Document", value = "TestEntity"
-)
+@GraphQLName("TestEntity")
 @JsonFilter("Liferay.Vulcan")
 @JsonSubTypes(
 	{
@@ -842,9 +840,7 @@ public abstract class TestEntity implements Serializable {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(type);
-
 			sb.append("\"");
 		}
 

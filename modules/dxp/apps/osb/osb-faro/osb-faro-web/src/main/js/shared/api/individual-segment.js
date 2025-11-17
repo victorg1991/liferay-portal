@@ -21,10 +21,13 @@ export function addIndividuals({groupId, individualIds, selectedSegmentId}) {
 	});
 }
 
-function delete$({groupId, id}) {
+function delete$({groupId, ids}) {
 	return sendRequest({
+		data: {
+			ids
+		},
 		method: 'DELETE',
-		path: `contacts/${groupId}/individual_segment/${id}`
+		path: `contacts/${groupId}/individual_segment`
 	});
 }
 
@@ -51,7 +54,7 @@ export function create({
 	segmentType
 }) {
 	const data =
-		segmentType === SegmentTypes.Dynamic
+		segmentType === SegmentTypes.Batch
 			? {
 					channelId,
 					filter: criteriaString,
@@ -83,7 +86,7 @@ export function update({
 	segmentType
 }) {
 	const data =
-		segmentType === SegmentTypes.Dynamic
+		segmentType === SegmentTypes.Batch
 			? {
 					channelId,
 					filter: criteriaString,

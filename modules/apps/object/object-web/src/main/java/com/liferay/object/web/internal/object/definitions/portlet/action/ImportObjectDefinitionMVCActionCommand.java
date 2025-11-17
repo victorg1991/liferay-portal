@@ -9,6 +9,7 @@ import com.liferay.object.admin.rest.dto.v1_0.ObjectDefinition;
 import com.liferay.object.admin.rest.resource.v1_0.ObjectDefinitionResource;
 import com.liferay.object.constants.ObjectPortletKeys;
 import com.liferay.object.exception.ObjectDefinitionNameException;
+import com.liferay.object.exception.ObjectDefinitionScopeException;
 import com.liferay.object.exception.ObjectDefinitionStatusException;
 import com.liferay.object.exception.ObjectViewColumnFieldNameException;
 import com.liferay.petra.string.StringPool;
@@ -69,6 +70,10 @@ public class ImportObjectDefinitionMVCActionCommand
 			JSONPortletResponseUtil.writeJSON(
 				actionRequest, actionResponse, errorsJSONObject);
 		}
+		else {
+			JSONPortletResponseUtil.writeJSON(
+				actionRequest, actionResponse, _jsonFactory.createJSONObject());
+		}
 
 		hideDefaultSuccessMessage(actionRequest);
 	}
@@ -86,6 +91,9 @@ public class ImportObjectDefinitionMVCActionCommand
 			return JSONUtil.put(
 				"type",
 				"ObjectDefinitionNameException." + clazz.getSimpleName());
+		}
+		else if (exception instanceof ObjectDefinitionScopeException) {
+			return JSONUtil.put("title", exception.getMessage());
 		}
 		else if (exception instanceof ObjectDefinitionStatusException) {
 			return JSONUtil.put("title", exception.getMessage());

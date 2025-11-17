@@ -46,6 +46,7 @@ import com.liferay.osb.faro.engine.client.model.IndividualTransformation;
 import com.liferay.osb.faro.engine.client.model.Interest;
 import com.liferay.osb.faro.engine.client.model.PageVisited;
 import com.liferay.osb.faro.engine.client.model.PagedModel;
+import com.liferay.osb.faro.engine.client.model.ProjectUsageMetric;
 import com.liferay.osb.faro.engine.client.model.Provider;
 import com.liferay.osb.faro.engine.client.model.Rels;
 import com.liferay.osb.faro.engine.client.model.Results;
@@ -390,7 +391,9 @@ public class ContactsEngineClientImpl
 
 		post(
 			faroProject, Collections.emptyMap(), "/projects",
-			Collections.emptyMap(), new AsahProject(projectId), Void.class);
+			Collections.emptyMap(),
+			new AsahProject(projectId, faroProject.getLastAnniversaryDate()),
+			Void.class);
 
 		return projectId;
 	}
@@ -484,8 +487,10 @@ public class ContactsEngineClientImpl
 	}
 
 	@Override
-	public void deleteIndividualSegment(FaroProject faroProject, String id) {
-		delete(faroProject, Rels.INDIVIDUAL_SEGMENT, id);
+	public void deleteIndividualSegments(
+		FaroProject faroProject, List<String> ids) {
+
+		delete(faroProject, Rels.INDIVIDUAL_SEGMENTS, ids);
 	}
 
 	@Override
@@ -2117,9 +2122,9 @@ public class ContactsEngineClientImpl
 	@Override
 	public Results<IndividualSegment> getIndividualSegments(
 		FaroProject faroProject, String channelId, String dataSourceId,
-		String query, List<String> fields, String name, String segmentType,
-		String state, String status, int cur, int delta,
-		List<OrderByField> orderByFields) {
+		String query, List<String> fields, String name,
+		List<String> segmentTypes, String state, String status, int cur,
+		int delta, List<OrderByField> orderByFields) {
 
 		PagedModel<?, IndividualSegment> pagedModel = null;
 
@@ -2143,12 +2148,23 @@ public class ContactsEngineClientImpl
 		}
 
 		filterBuilder.addFilter(
-			"type", FilterConstants.COMPARISON_OPERATOR_EQUALS, segmentType);
-		filterBuilder.addFilter(
 			"state", FilterConstants.COMPARISON_OPERATOR_EQUALS, state);
 		filterBuilder.addFilter(
 			"status", FilterConstants.COMPARISON_OPERATOR_EQUALS, status);
-		filterBuilder.addSearchFilter(query, fields, null);
+
+		if (segmentTypes != null) {
+			FilterBuilder segmentTypeFilterBuilder = new FilterBuilder();
+
+			for (String segmentType : segmentTypes) {
+				segmentTypeFilterBuilder.addFilter(
+					"type", FilterConstants.COMPARISON_OPERATOR_EQUALS,
+					segmentType, false);
+			}
+
+			filterBuilder.addFilter(segmentTypeFilterBuilder.build());
+		}
+
+		filterBuilder.addSearchFilter(query, fields, null, true);
 
 		uriVariables.put("filter", filterBuilder.build());
 
@@ -2311,6 +2327,22 @@ public class ContactsEngineClientImpl
 	}
 
 	@Override
+	public Results<ProjectUsageMetric> getProjectUsageMetrics(
+		FaroProject faroProject, Date sinceDate) {
+
+		PagedModel<?, ProjectUsageMetric> pagedModel = get(
+			faroProject, Rels.PROJECT_USAGE_METRICS,
+			new ParameterizedTypeReference
+				<EntityModelPagedModel<ProjectUsageMetric>>() {
+			},
+			HashMapBuilder.<String, Object>put(
+				"createDate", sinceDate
+			).build());
+
+		return pagedModel.getResults();
+	}
+
+	@Override
 	public long getReportsExportCSVCount(
 			FaroProject faroProject, String path,
 			Map<String, List<String>> queryParameters)
@@ -2434,6 +2466,24 @@ public class ContactsEngineClientImpl
 			uriVariables);
 
 		return pagedModel.getResults();
+	}
+
+	@Override
+	public void insertBQProjects(List<FaroProject> faroProjects)
+		throws Exception {
+
+		List<AsahProject> asahProjects = new ArrayList<>();
+
+		for (FaroProject faroProject : faroProjects) {
+			asahProjects.add(
+				new AsahProject(
+					faroProject.getProjectId(), faroProject.getStartDate()));
+		}
+
+		post(
+			faroProjects.get(0), Collections.emptyMap(), "/bq-projects",
+			Collections.emptyMap(), new AsahProject(asahProjects), Void.class,
+			Collections.emptyMap());
 	}
 
 	@Override
@@ -2604,6 +2654,17 @@ public class ContactsEngineClientImpl
 
 		return post(
 			faroProject, Rels.DATA_SOURCE_REFRESH_LIFERAY, null, List.class);
+	}
+
+	@Override
+	public void updateBQProject(FaroProject faroProject, Date startDate)
+		throws Exception {
+
+		patch(
+			faroProject, Collections.emptyMap(), "/bq-projects",
+			Collections.emptyMap(),
+			new AsahProject(faroProject.getProjectId(), startDate), Void.class,
+			Collections.emptyMap());
 	}
 
 	@Override

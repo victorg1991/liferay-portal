@@ -408,8 +408,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 			groupId, name, start, end, false, orderByComparator);
 	}
 
-	@Override
-	public AssetVocabulary getOrAddIncompleteVocabulary(
+	public AssetVocabulary getOrAddEmptyVocabulary(
 			String externalReferenceCode, long groupId)
 		throws PortalException {
 
@@ -424,7 +423,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 		AssetCategoriesPermission.check(
 			getPermissionChecker(), groupId, ActionKeys.ADD_VOCABULARY);
 
-		return assetVocabularyLocalService.getOrAddIncompleteVocabulary(
+		return assetVocabularyLocalService.getOrAddEmptyVocabulary(
 			externalReferenceCode, getUserId(), groupId);
 	}
 
@@ -514,7 +513,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 	public AssetVocabulary updateVocabulary(
 			long vocabularyId, String title, Map<Locale, String> titleMap,
 			Map<Locale, String> descriptionMap, String settings,
-			ServiceContext serviceContext)
+			int visibilityType, ServiceContext serviceContext)
 		throws PortalException {
 
 		AssetVocabularyPermission.check(
@@ -522,7 +521,7 @@ public class AssetVocabularyServiceImpl extends AssetVocabularyServiceBaseImpl {
 
 		return assetVocabularyLocalService.updateVocabulary(
 			vocabularyId, title, titleMap, descriptionMap, settings,
-			serviceContext);
+			visibilityType, serviceContext);
 	}
 
 	@BeanReference(type = ClassNameLocalService.class)

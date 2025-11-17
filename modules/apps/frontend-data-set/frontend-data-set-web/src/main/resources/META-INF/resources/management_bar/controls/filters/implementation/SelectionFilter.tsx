@@ -105,6 +105,7 @@ function getSelectedItemsLabel({
 function getOdataString({
 	entityFieldType,
 	id,
+	multiple,
 	selectedData,
 }: SelectionFilterImplementationArgs): string {
 	const {exclude, selectedItems} = selectedData;
@@ -114,8 +115,9 @@ function getOdataString({
 	}
 
 	const quotedSelectedItems = selectedItems.map((item) =>
-		typeof item.value === 'string' ||
-		entityFieldType === EEntityFieldType.STRING
+		entityFieldType === EEntityFieldType.STRING ||
+		(typeof item.value === 'string' &&
+			entityFieldType !== EEntityFieldType.INTEGER)
 			? `'${item.value}'`
 			: item.value
 	);
@@ -125,7 +127,7 @@ function getOdataString({
 			.map((value) => `(x ${exclude ? 'ne' : 'eq'} ${value})`)
 			.join(exclude ? ' and ' : ' or ')})`;
 	}
-	else if (selectedItems.length === 1) {
+	else if (selectedItems.length === 1 && !multiple) {
 		return `${id} ${exclude ? 'ne' : 'eq'} ${quotedSelectedItems[0]}`;
 	}
 	else {
@@ -479,7 +481,13 @@ function SelectionFilter({
 					disabled={submitDisabled}
 					onClick={() => {
 						if (actionType === 'delete') {
-							setFilter({active: false});
+							setFilter({
+								active: false,
+								selectedData: {
+									exclude: false,
+									selectedItems: [],
+								},
+							});
 						}
 						else {
 							const newSelectedData = {
@@ -502,7 +510,7 @@ function SelectionFilter({
 					{actionType === 'add' && Liferay.Language.get('add-filter')}
 
 					{actionType === 'edit' &&
-						Liferay.Language.get('edit-filter')}
+						Liferay.Language.get('show-results')}
 
 					{actionType === 'delete' &&
 						Liferay.Language.get('delete-filter')}

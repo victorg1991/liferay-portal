@@ -52,7 +52,13 @@
 			height: 16px;
 			line-height: var(--text-paragraph-xs-line-height, 16px);
 			margin-top: 0.125rem;
-			width: 5rem;
+			width: 12rem;
+		}
+
+		.ticket-status-text {
+			max-width: 100%;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 	
 		.ticket-text-container {

@@ -15,6 +15,7 @@ export class CommerceAdminChannelDetailsPage {
 	readonly addTaxRateFrame: FrameLocator;
 	readonly allowMultishippingToggle: Locator;
 	readonly applicationsMenuPage: ApplicationsMenuPage;
+	readonly categoryDisplayPageTab: Locator;
 	readonly channelCurrencySelect: Locator;
 	readonly channelId: Locator;
 	readonly channelNameLink: (channelName: string) => Locator;
@@ -124,6 +125,9 @@ export class CommerceAdminChannelDetailsPage {
 			.frameLocator('iframe');
 		this.allowMultishippingToggle = page.getByLabel('Allow Multishipping');
 		this.applicationsMenuPage = new ApplicationsMenuPage(page);
+		this.categoryDisplayPageTab = page.getByRole('link', {
+			name: 'Category Display Pages',
+		});
 		this.channelCurrencySelect = page.locator("select[title='Currency']");
 		this.channelId = page.locator('span:has-text("ID")+strong');
 		this.channelNameLink = (channelName: string) =>
@@ -416,7 +420,7 @@ export class CommerceAdminChannelDetailsPage {
 		await (await this.closeSidePanelFrame(false, tableName)).click();
 	}
 
-	async addFlatRateShippingOption(name: string) {
+	async addFlatRateShippingOption(name: string, amount?: string) {
 		const tableName = 'Shipping Methods';
 		await (
 			await this.generalCommerceAdminChannelTableLink('Flat Rate')
@@ -429,6 +433,11 @@ export class CommerceAdminChannelDetailsPage {
 		await (await this.sidePanelNestedFrame(tableName))
 			.getByLabel('Name')
 			.fill(name);
+		if (amount) {
+			await (await this.sidePanelNestedFrame(tableName))
+				.getByLabel('Amount')
+				.fill(amount);
+		}
 		await (await this.sidePanelNestedFrame(tableName))
 			.getByLabel('Key')
 			.fill(name);
@@ -640,6 +649,10 @@ export class CommerceAdminChannelDetailsPage {
 		await this.applicationsMenuPage.goToCommerceChannels(
 			checkTabVisibility
 		);
+	}
+
+	async goToCategoryDisplayPages() {
+		await this.categoryDisplayPageTab.click();
 	}
 
 	async goToTab(tabName: string) {

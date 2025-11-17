@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
+import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
@@ -100,18 +101,19 @@ public class DBUpgraderTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select schemaVersion from Release_ where releaseId = " +
-					ReleaseConstants.DEFAULT_ID);
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select schemaVersion from Release_ where releaseId = ?")) {
 
-			resultSet.next();
+			preparedStatement.setLong(1, ReleaseConstants.DEFAULT_ID);
 
-			currentSchemaVersion = resultSet.getString(1);
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				resultSet.next();
+
+				currentSchemaVersion = resultSet.getString(1);
+			}
 		}
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				DataCleanupPreupgradeProcessSuite.class.getName(),
-				LoggerTestUtil.INFO);
+				LoggingTimer.class.getName(), LoggerTestUtil.INFO);
 			SafeCloseable safeCloseable =
 				PropsValuesTestUtil.swapWithSafeCloseable(
 					"UPGRADE_DATABASE_PREUPGRADE_VERIFY_ENABLED", false)) {
@@ -124,17 +126,19 @@ public class DBUpgraderTest {
 
 			LogEntry logEntry = logEntries.get(0);
 
-			Assert.assertEquals(
-				"Starting " + DataCleanupPreupgradeProcessSuite.class.getName(),
-				logEntry.getMessage());
+			String logMessage = logEntry.getMessage();
+
+			Assert.assertTrue(
+				logMessage.contains(
+					"Starting " +
+						DataCleanupPreupgradeProcessSuite.class.getName()));
 		}
 		finally {
 			_updatePortalSchemaVersion(currentSchemaVersion);
 		}
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				DataCleanupPreupgradeProcessSuite.class.getName(),
-				LoggerTestUtil.INFO);
+				LoggingTimer.class.getName(), LoggerTestUtil.INFO);
 			SafeCloseable safeCloseable1 =
 				PropsValuesTestUtil.swapWithSafeCloseable(
 					"UPGRADE_DATABASE_PREUPGRADE_DATA_CLEANUP_ENABLED", false);
@@ -146,9 +150,14 @@ public class DBUpgraderTest {
 
 			DBUpgrader.upgradePortal();
 
-			List<LogEntry> logEntries = logCapture.getLogEntries();
+			List<String> messages = logCapture.getMessages();
 
-			Assert.assertEquals(logEntries.toString(), 0, logEntries.size());
+			for (String message : messages) {
+				Assert.assertFalse(
+					message.contains(
+						"Starting " +
+							DataCleanupPreupgradeProcessSuite.class.getName()));
+			}
 		}
 		finally {
 			_updatePortalSchemaVersion(currentSchemaVersion);

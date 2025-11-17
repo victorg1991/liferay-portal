@@ -223,8 +223,17 @@ public interface ObjectEntryVersionLocalService
 		throws Exception;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectEntryVersion fetchLatestApprovedObjectEntryVersion(
+		long objectEntryId,
+		OrderByComparator<ObjectEntryVersion> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ObjectEntryVersion fetchObjectEntryVersion(
 		long objectEntryVersionId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectEntryVersion fetchObjectEntryVersion(
+		long objectEntryId, int version);
 
 	/**
 	 * Returns the object entry version with the matching UUID and company.
@@ -321,6 +330,10 @@ public interface ObjectEntryVersionLocalService
 	@Override
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public boolean isLatestObjectEntryVersion(long objectEntryId, int version)
 		throws PortalException;
 
 	public ObjectEntryVersion updateLatestObjectEntryVersion(

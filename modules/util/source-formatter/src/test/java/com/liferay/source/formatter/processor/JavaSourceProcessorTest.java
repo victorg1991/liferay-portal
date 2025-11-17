@@ -20,6 +20,11 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testAnonymousInnerClass() throws Exception {
+		test("AnonymousInnerClass.testjava");
+	}
+
+	@Test
 	public void testAssertUsage() throws Exception {
 		test(
 			"AssertUsage.testjava",
@@ -362,6 +367,24 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testIncorrectMethodCallsInUpgradeSteps() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"IncorrectMethodCallsInUpgradeSteps.testjava"
+			).addExpectedMessage(
+				"Only \"Table.create*\" and \"UpgradeProcessFactory.*\" " +
+					"calls are allowed in \"getPostUpgradeSteps\" and \"" +
+						"getPreUpgradeSteps\", see LPD-44331",
+				35
+			).addExpectedMessage(
+				"Only \"Table.create*\" and \"UpgradeProcessFactory.*\" " +
+					"calls are allowed in \"getPostUpgradeSteps\" and \"" +
+						"getPreUpgradeSteps\", see LPD-44331",
+				38
+			));
+	}
+
+	@Test
 	public void testIncorrectOperatorOrder() throws Exception {
 		test(
 			SourceProcessorTestParameters.create(
@@ -664,11 +687,33 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testMissingEmptyLinesAfterReferencingVariable()
+		throws Exception {
+
+		test(
+			"MissingEmptyLinesAfterReferencingVariable.testjava",
+			"There should be an empty line before line \"47\", as we " +
+				"finished referencing variable \"group\"",
+			47);
+	}
+
+	@Test
 	public void testMissingEmptyLinesBeforeMethodCalls() throws Exception {
 		test(
 			"MissingEmptyLinesBeforeMethodCalls.testjava",
 			"There should be an empty line before \"portletPreferences.store\"",
 			17);
+	}
+
+	@Test
+	public void testMissingEmptyLinesBetweenAssigningAndUsingVariable()
+		throws Exception {
+
+		test(
+			"MissingEmptyLinesBetweenAssigningAndUsingVariable.testjava",
+			"There should be an empty line between assigning and using " +
+				"variable \"jsonBeginPos\"",
+			16);
 	}
 
 	@Test
@@ -787,6 +832,16 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	public void testResultCountSet() throws Exception {
 		test(
 			"ResultSetCount.testjava", "Use resultSet.getInt(1) for count", 26);
+	}
+
+	@Test
+	public void testResultSetGetCall() throws Exception {
+		test(
+			"ResultSetGetCall.testjava",
+			"Do not use \"TableName.ColumnName\" as the parameter when " +
+				"calling method \"resultSet.get*\", use column index or " +
+					"column name instead",
+			43);
 	}
 
 	@Test

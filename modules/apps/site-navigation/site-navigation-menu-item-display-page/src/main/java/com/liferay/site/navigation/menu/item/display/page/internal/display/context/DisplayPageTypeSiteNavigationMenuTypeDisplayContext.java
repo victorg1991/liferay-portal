@@ -114,6 +114,21 @@ public class DisplayPageTypeSiteNavigationMenuTypeDisplayContext {
 		).build();
 	}
 
+	public String getClassName() {
+		if (_className != null) {
+			return _className;
+		}
+
+		UnicodeProperties typeSettingsUnicodeProperties =
+			UnicodePropertiesBuilder.fastLoad(
+				_siteNavigationMenuItem.getTypeSettings()
+			).build();
+
+		_className = typeSettingsUnicodeProperties.get("className");
+
+		return _className;
+	}
+
 	public long getClassNameId() {
 		if (_classNameId != null) {
 			return _classNameId;
@@ -186,6 +201,8 @@ public class DisplayPageTypeSiteNavigationMenuTypeDisplayContext {
 		).put(
 			"item",
 			HashMapBuilder.<String, Object>put(
+				"className", getClassName()
+			).put(
 				"classNameId", getClassNameId()
 			).put(
 				"classPK", getClassPK()
@@ -193,6 +210,8 @@ public class DisplayPageTypeSiteNavigationMenuTypeDisplayContext {
 				"classTypeId", getClassTypeId()
 			).put(
 				"data", _getDataJSONArray()
+			).put(
+				"externalReferenceCode", getExternalReferenceCode()
 			).put(
 				"title", getTitle()
 			).put(
@@ -244,6 +263,22 @@ public class DisplayPageTypeSiteNavigationMenuTypeDisplayContext {
 					typeSettingsUnicodeProperties.get("useCustomName"));
 			}
 		).build();
+	}
+
+	public String getExternalReferenceCode() {
+		if (_externalReferenceCode != null) {
+			return _externalReferenceCode;
+		}
+
+		UnicodeProperties typeSettingsUnicodeProperties =
+			UnicodePropertiesBuilder.fastLoad(
+				_siteNavigationMenuItem.getTypeSettings()
+			).build();
+
+		_externalReferenceCode = typeSettingsUnicodeProperties.get(
+			"externalReferenceCode");
+
+		return _externalReferenceCode;
 	}
 
 	public String getItemDetailsURL() {
@@ -386,10 +421,12 @@ public class DisplayPageTypeSiteNavigationMenuTypeDisplayContext {
 		return _layoutDisplayPageObjectProvider;
 	}
 
+	private String _className;
 	private Long _classNameId;
 	private Long _classPK;
 	private Long _classTypeId;
 	private final DisplayPageTypeContext _displayPageTypeContext;
+	private String _externalReferenceCode;
 	private final HttpServletRequest _httpServletRequest;
 	private final ItemSelector _itemSelector;
 	private LayoutDisplayPageObjectProvider<?> _layoutDisplayPageObjectProvider;

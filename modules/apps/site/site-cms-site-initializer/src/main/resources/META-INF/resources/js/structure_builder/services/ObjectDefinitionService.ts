@@ -8,30 +8,24 @@ import {ObjectDefinition, ObjectDefinitions} from '../types/ObjectDefinition';
 
 async function getObjectDefinitions(): Promise<ObjectDefinitions> {
 	const filter =
-		"(objectFolderExternalReferenceCode eq 'L_CMS_CONTENT_STRUCTURES') or (objectFolderExternalReferenceCode eq 'L_CMS_FILE_TYPES')";
+		'(status/any(x:(x eq 0))) and (' +
+		"(objectFolderExternalReferenceCode eq 'L_CMS_CONTENT_STRUCTURES') or " +
+		"(objectFolderExternalReferenceCode eq 'L_CMS_FILE_TYPES') or " +
+		"(objectFolderExternalReferenceCode eq 'L_CMS_STRUCTURE_REPEATABLE_GROUPS'))";
 
-	const {data, error} = await ApiHelper.get<{items: ObjectDefinition[]}>(
-		`/o/object-admin/v1.0/object-definitions?filter=${filter}`
-	);
+	const items = await ApiHelper.getAll<ObjectDefinition>({
+		filter,
+		url: '/o/object-admin/v1.0/object-definitions',
+	});
 
-	if (data) {
-		const objectDefinitions = new Map();
+	const objectDefinitions: ObjectDefinitions = {};
 
-		for (const objectDefinition of data.items) {
-			if (objectDefinition.status?.code !== 0) {
-				continue;
-			}
-
-			objectDefinitions.set(
-				objectDefinition.externalReferenceCode,
-				objectDefinition
-			);
-		}
-
-		return objectDefinitions;
+	for (const objectDefinition of items) {
+		objectDefinitions[objectDefinition.externalReferenceCode] =
+			objectDefinition;
 	}
 
-	throw new Error(error);
+	return objectDefinitions;
 }
 
 export default {

@@ -6,15 +6,14 @@
 package com.liferay.site.cms.site.initializer.internal.display.context;
 
 import com.liferay.depot.service.DepotEntryLocalService;
+import com.liferay.document.library.configuration.DLConfiguration;
 import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
 import com.liferay.object.model.ObjectEntryFolder;
 import com.liferay.object.service.ObjectDefinitionService;
 import com.liferay.object.service.ObjectDefinitionSettingLocalService;
-import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
-import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -34,7 +33,7 @@ public class ViewFilesSectionDisplayContext
 
 	public ViewFilesSectionDisplayContext(
 		DepotEntryLocalService depotEntryLocalService,
-		GroupLocalService groupLocalService,
+		DLConfiguration dlConfiguration, GroupLocalService groupLocalService,
 		HttpServletRequest httpServletRequest, Language language,
 		ObjectDefinitionService objectDefinitionService,
 		ObjectDefinitionSettingLocalService objectDefinitionSettingLocalService,
@@ -43,8 +42,8 @@ public class ViewFilesSectionDisplayContext
 		Portal portal) {
 
 		super(
-			depotEntryLocalService, groupLocalService, httpServletRequest,
-			language, objectDefinitionService,
+			depotEntryLocalService, dlConfiguration, groupLocalService,
+			httpServletRequest, language, objectDefinitionService,
 			objectDefinitionSettingLocalService,
 			objectEntryFolderModelResourcePermission, portal);
 	}
@@ -54,7 +53,8 @@ public class ViewFilesSectionDisplayContext
 		return HashMapBuilder.<String, Object>put(
 			"description",
 			LanguageUtil.get(
-				httpServletRequest, "click-new-to-create-your-first-file")
+				httpServletRequest,
+				"click-new-or-drag-and-drop-your-files-here")
 		).put(
 			"image", "/states/cms_empty_state_files.svg"
 		).put(
@@ -68,26 +68,7 @@ public class ViewFilesSectionDisplayContext
 			super.getFDSActionDropdownItems();
 
 		fdsActionDropdownItems.add(
-			1,
-			new FDSActionDropdownItem(
-				"{embedded.file.link.href}", "download", "download",
-				LanguageUtil.get(httpServletRequest, "download"), "get", null,
-				"link"));
-		fdsActionDropdownItems.add(
-			2,
-			new FDSActionDropdownItem(
-				StringBundler.concat(
-					"/o", GroupConstants.CMS_FRIENDLY_URL, "/download-folder/",
-					portal.getClassNameId(ObjectEntryFolder.class),
-					"/{embedded.id}"),
-				"download", "download-folder",
-				LanguageUtil.get(httpServletRequest, "download"), "get", null,
-				"link",
-				HashMapBuilder.<String, Object>put(
-					"entryClassName", ObjectEntryFolder.class.getName()
-				).build()));
-		fdsActionDropdownItems.add(
-			3,
+			5,
 			new FDSActionDropdownItem(
 				StringPool.BLANK, "info-circle-open", "show-details",
 				LanguageUtil.get(httpServletRequest, "show-details"), null,
@@ -98,12 +79,12 @@ public class ViewFilesSectionDisplayContext
 
 	@Override
 	protected String getCMSSectionFilterString() {
-		return "cmsRoot eq true and cmsSection eq 'files'";
+		return appendStatus("cmsRoot eq true and cmsSection eq 'files'");
 	}
 
 	@Override
 	protected String getEmptyStateDescriptionKey() {
-		return "click-new-to-create-your-first-file";
+		return "click-new-or-drag-and-drop-your-files-here";
 	}
 
 }

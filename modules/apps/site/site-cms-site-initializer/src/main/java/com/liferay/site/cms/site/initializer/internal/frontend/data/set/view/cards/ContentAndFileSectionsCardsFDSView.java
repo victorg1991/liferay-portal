@@ -30,8 +30,9 @@ import org.osgi.service.component.annotations.Component;
 		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.ALL_SECTION,
 		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.CONTENTS_SECTION,
 		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.FILES_SECTION,
-		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.SPACE_FILES_ABSTRACT_SECTION,
-		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.VIEW_FOLDER
+		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.SPACE_FILES_SUMMARY_SECTION,
+		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.VIEW_CONTENTS_FOLDER,
+		"frontend.data.set.name=" + CMSSiteInitializerFDSNames.VIEW_FILES_FOLDER
 	},
 	service = FDSView.class
 )

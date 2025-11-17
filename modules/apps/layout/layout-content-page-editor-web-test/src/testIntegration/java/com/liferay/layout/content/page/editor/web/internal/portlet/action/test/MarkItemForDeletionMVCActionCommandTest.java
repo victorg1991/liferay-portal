@@ -123,7 +123,8 @@ public class MarkItemForDeletionMVCActionCommandTest {
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
-				_group.getGroupId(), _layout.getPlid(),
+				TestPropsValues.getUserId(), _group.getGroupId(),
+				_layout.getPlid(),
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
 				layoutStructure.toString());
@@ -184,8 +185,9 @@ public class MarkItemForDeletionMVCActionCommandTest {
 				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		return _fragmentEntryLinkLocalService.addFragmentEntryLink(
-			null, TestPropsValues.getUserId(), _group.getGroupId(), 0,
-			fragmentEntry.getFragmentEntryId(),
+			null, TestPropsValues.getUserId(), _group.getGroupId(), null,
+			fragmentEntry.getExternalReferenceCode(),
+			fragmentEntry.getScopeERC(),
 			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
 				_layout.getPlid()),
 			_layout.getPlid(), fragmentEntry.getCss(), fragmentEntry.getHtml(),

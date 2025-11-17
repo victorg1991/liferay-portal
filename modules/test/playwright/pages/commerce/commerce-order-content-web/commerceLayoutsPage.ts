@@ -118,7 +118,7 @@ export class CommerceLayoutsPage {
 		this.availableThemesFrame = page.frameLocator(
 			'iframe[title="Available Themes"]'
 		);
-		this.backLink = page.getByRole('link', {exact: true, name: 'Back'});
+		this.backLink = page.locator('span[title="Back"]');
 		this.cancelButton = page.getByRole('button', {
 			exact: true,
 			name: 'Cancel',
@@ -127,7 +127,7 @@ export class CommerceLayoutsPage {
 			exact: true,
 			name: 'Change Current Theme',
 		});
-		this.closeFrameButton = page.getByLabel('close', {exact: true});
+		this.closeFrameButton = page.getByLabel('Close', {exact: true});
 		this.closeProductMenuButton = page.getByRole('tab', {
 			exact: true,
 			name: 'Close Product Menu',

@@ -15,6 +15,7 @@ export class ApplicationsMenuPage {
 	private readonly announcementsItem: Locator;
 	private readonly apiBuilderMenuItem: Locator;
 	readonly applicationsMenuTabButton: Locator;
+	private readonly appManagerMenuItem: Locator;
 	private readonly auditItem: Locator;
 	private readonly blueprintsItem: Locator;
 	private readonly clientExtensionsLink: Locator;
@@ -23,6 +24,7 @@ export class ApplicationsMenuPage {
 	private readonly commerceCurrenciesMenuItem: Locator;
 	private readonly commerceDiscountsMenuItem: Locator;
 	private readonly commerceHealthCheckMenuItem: Locator;
+	private readonly commerceInventoryMenuItem: Locator;
 	private readonly commerceOrdersMenuItem: Locator;
 	private readonly commerceOrderTypesMenuItem: Locator;
 	private readonly commercePanelButton: Locator;
@@ -45,9 +47,11 @@ export class ApplicationsMenuPage {
 	readonly importMenuItem: Locator;
 	private readonly instanceSettingsMenuItem: Locator;
 	private readonly jobSchedulerMenuItem: Locator;
+	private readonly licenseManagerMenuItem: Locator;
 	private readonly metricsItem: Locator;
 	private readonly oAuth2Administration: Locator;
 	private readonly objectsMenuItem: Locator;
+	private readonly onDemandAdminItem: Locator;
 	private readonly page: Page;
 	private readonly passwordPoliciesAdminItem: Locator;
 	private readonly paymentsMenuItem: Locator;
@@ -96,6 +100,10 @@ export class ApplicationsMenuPage {
 		this.applicationsMenuTabButton = page.getByRole('tab', {
 			name: 'Applications',
 		});
+		this.appManagerMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'App Manager',
+		});
 		this.auditItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Audit',
@@ -126,6 +134,10 @@ export class ApplicationsMenuPage {
 		this.commerceHealthCheckMenuItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Health Check',
+		});
+		this.commerceInventoryMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'Inventory',
 		});
 		this.commerceOrdersMenuItem = page.getByRole('menuitem', {
 			exact: true,
@@ -213,6 +225,10 @@ export class ApplicationsMenuPage {
 			exact: true,
 			name: 'Job Scheduler',
 		});
+		this.licenseManagerMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'License Manager',
+		});
 		this.metricsItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Metrics',
@@ -224,6 +240,10 @@ export class ApplicationsMenuPage {
 		this.objectsMenuItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Objects',
+		});
+		this.onDemandAdminItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'On-Demand Admin',
 		});
 		this.page = page;
 		this.passwordPoliciesAdminItem = page.getByRole('menuitem', {
@@ -365,6 +385,11 @@ export class ApplicationsMenuPage {
 		await this.applicationsMenuTabButton.click();
 	}
 
+	async goToAppManager() {
+		await this.goToControlPanel();
+		await this.appManagerMenuItem.click();
+	}
+
 	async goToAudit() {
 		await this.goto();
 		await this.controlPanelButton.click();
@@ -404,6 +429,11 @@ export class ApplicationsMenuPage {
 	async goToCommerceHealthCheck() {
 		await this.goToCommercePanel();
 		await this.commerceHealthCheckMenuItem.click();
+	}
+
+	async goToCommerceInventory(checkTabVisibility = true) {
+		await this.goToCommercePanel(checkTabVisibility);
+		await this.commerceInventoryMenuItem.click();
 	}
 
 	async goToCommerceOrders(checkTabVisibility = true) {
@@ -534,6 +564,11 @@ export class ApplicationsMenuPage {
 		await this.jobSchedulerMenuItem.click();
 	}
 
+	async goToLicenseManager() {
+		await this.goToControlPanel();
+		await this.licenseManagerMenuItem.click();
+	}
+
 	async goToMetrics() {
 		await this.goToApplicationsMenu();
 		await this.metricsItem.click();
@@ -554,6 +589,11 @@ export class ApplicationsMenuPage {
 	async goToObjects() {
 		await this.goToControlPanel();
 		await this.objectsMenuItem.click();
+	}
+
+	async goToOnDemandAdmin() {
+		await this.goToControlPanel();
+		await this.onDemandAdminItem.click();
 	}
 
 	async goToPasswordPolicies() {

@@ -5,6 +5,7 @@
 
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
+import com.liferay.jenkins.results.parser.DownstreamBuildReport;
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 import com.liferay.jenkins.results.parser.TestReport;
 import com.liferay.jenkins.results.parser.test.clazz.FunctionalTestClass;
@@ -13,8 +14,10 @@ import com.liferay.jenkins.results.parser.test.clazz.TestClass;
 import java.io.File;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.json.JSONObject;
 
@@ -22,6 +25,27 @@ import org.json.JSONObject;
  * @author Michael Hashimoto
  */
 public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
+
+	@Override
+	public List<DownstreamBuildReport> getCachedDownstreamBuildReports() {
+		if (!isBuildCachingEnabled() || !isResultsCached()) {
+			return null;
+		}
+
+		Set<DownstreamBuildReport> cachedDownstreamBuildReports =
+			new HashSet<>();
+
+		for (FunctionalTestClass functionalTestClass :
+				getFunctionalTestClasses()) {
+
+			DownstreamBuildReport downstreamBuildReport =
+				functionalTestClass.getCachedDownstreamBuildReport();
+
+			cachedDownstreamBuildReports.add(downstreamBuildReport);
+		}
+
+		return new ArrayList<>(cachedDownstreamBuildReports);
+	}
 
 	public List<FunctionalTestClass> getFunctionalTestClasses() {
 		List<FunctionalTestClass> functionalTestClasses = new ArrayList<>();
@@ -103,7 +127,7 @@ public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
 
 	@Override
 	public boolean isResultsCached() {
-		if (!JenkinsResultsParserUtil.isBuildCachingEnabled()) {
+		if (!isBuildCachingEnabled()) {
 			return false;
 		}
 

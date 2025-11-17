@@ -202,9 +202,7 @@ public class WidgetPageSettingsSerDes {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(widgetPageSettings.getType());
-
 			sb.append("\"");
 		}
 
@@ -470,7 +468,7 @@ public class WidgetPageSettingsSerDes {
 
 				if (jsonParserFieldValue != null) {
 					widgetPageSettings.setNavigationSettings(
-						NavigationSettingsSerDes.toDTO(
+						SitePageNavigationSettingsSerDes.toDTO(
 							(String)jsonParserFieldValue));
 				}
 			}

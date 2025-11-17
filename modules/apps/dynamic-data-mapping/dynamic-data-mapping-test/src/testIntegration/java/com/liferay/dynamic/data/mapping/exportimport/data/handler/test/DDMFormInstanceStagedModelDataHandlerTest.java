@@ -287,8 +287,8 @@ public class DDMFormInstanceStagedModelDataHandlerTest
 
 		ObjectDefinition objectDefinition =
 			ObjectDefinitionLocalServiceUtil.addCustomObjectDefinition(
-				userId, 0, null, false, false, true, false, false, false, false,
-				null,
+				null, userId, 0, null, false, true, false, true, false, false,
+				false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
@@ -299,7 +299,8 @@ public class DDMFormInstanceStagedModelDataHandlerTest
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						ObjectFieldConstants.DB_TYPE_STRING,
-						RandomTestUtil.randomString(), "text")));
+						RandomTestUtil.randomString(), "text")),
+				Collections.emptyList());
 
 		objectDefinition.setExternalReferenceCode(externalReferenceCode);
 

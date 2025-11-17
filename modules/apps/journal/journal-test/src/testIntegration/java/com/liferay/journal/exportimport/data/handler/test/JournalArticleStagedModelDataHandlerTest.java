@@ -271,6 +271,83 @@ public class JournalArticleStagedModelDataHandlerTest
 	}
 
 	@Test
+	public void testArticleRecoversExternalReferenceCode() throws Exception {
+		initExport();
+
+		JournalArticle journalArticle = JournalTestUtil.addArticle(
+			stagingGroup.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+
+		User user = UserTestUtil.addUser(
+			RandomTestUtil.randomString(4), liveGroup.getGroupId());
+
+		journalArticle.setStatusByUserId(user.getUserId());
+		journalArticle.setStatusByUserName(user.getFullName());
+
+		StagedModelDataHandlerUtil.exportStagedModel(
+			portletDataContext, journalArticle);
+
+		initImport();
+
+		StagedModel exportedStagedModel = readExportedStagedModel(
+			journalArticle);
+
+		Assert.assertNotNull(exportedStagedModel);
+
+		try {
+			ExportImportThreadLocal.setPortletImportInProcess(true);
+
+			StagedModelDataHandlerUtil.importStagedModel(
+				portletDataContext, exportedStagedModel);
+		}
+		finally {
+			ExportImportThreadLocal.setPortletImportInProcess(false);
+		}
+
+		JournalArticle importJournalArticle =
+			JournalArticleLocalServiceUtil.fetchJournalArticleByUuidAndGroupId(
+				journalArticle.getUuid(), liveGroup.getGroupId());
+
+		importJournalArticle.setExternalReferenceCode(
+			RandomTestUtil.randomString());
+
+		importJournalArticle = _journalArticleLocalService.updateJournalArticle(
+			importJournalArticle);
+
+		Assert.assertNotEquals(
+			journalArticle, importJournalArticle.getExternalReferenceCode());
+
+		initExport();
+
+		StagedModelDataHandlerUtil.exportStagedModel(
+			portletDataContext, journalArticle);
+
+		initImport();
+
+		exportedStagedModel = readExportedStagedModel(journalArticle);
+
+		Assert.assertNotNull(exportedStagedModel);
+
+		try {
+			ExportImportThreadLocal.setPortletImportInProcess(true);
+
+			StagedModelDataHandlerUtil.importStagedModel(
+				portletDataContext, exportedStagedModel);
+		}
+		finally {
+			ExportImportThreadLocal.setPortletImportInProcess(false);
+		}
+
+		importJournalArticle =
+			JournalArticleLocalServiceUtil.fetchJournalArticleByUuidAndGroupId(
+				journalArticle.getUuid(), liveGroup.getGroupId());
+
+		Assert.assertEquals(
+			journalArticle.getExternalReferenceCode(),
+			importJournalArticle.getExternalReferenceCode());
+	}
+
+	@Test
 	public void testArticlesWithSameResourceUUID() throws Exception {
 		initExport();
 
@@ -368,7 +445,8 @@ public class JournalArticleStagedModelDataHandlerTest
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
 				null, layoutPageTemplateStructure.getUserId(),
-				stagingGroup.getGroupId(), 0, 0, defaultSegmentsExperienceId,
+				stagingGroup.getGroupId(), null, null, null,
+				defaultSegmentsExperienceId,
 				layoutPageTemplateStructure.getPlid(), StringPool.BLANK,
 				StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
 				JSONUtil.put(
@@ -385,6 +463,7 @@ public class JournalArticleStagedModelDataHandlerTest
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
+				TestPropsValues.getUserId(),
 				layoutPageTemplateStructure.getGroupId(),
 				layoutPageTemplateStructure.getPlid(),
 				defaultSegmentsExperienceId, layoutStructure.toString());
@@ -506,7 +585,8 @@ public class JournalArticleStagedModelDataHandlerTest
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
 				null, layoutPageTemplateStructure.getUserId(),
-				stagingGroup.getGroupId(), 0, 0, defaultSegmentsExperienceId,
+				stagingGroup.getGroupId(), null, null, null,
+				defaultSegmentsExperienceId,
 				layoutPageTemplateStructure.getPlid(), StringPool.BLANK,
 				StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
 				JSONUtil.put(
@@ -523,6 +603,7 @@ public class JournalArticleStagedModelDataHandlerTest
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
+				TestPropsValues.getUserId(),
 				layoutPageTemplateStructure.getGroupId(),
 				layoutPageTemplateStructure.getPlid(),
 				defaultSegmentsExperienceId, layoutStructure.toString());

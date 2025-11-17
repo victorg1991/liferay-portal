@@ -3,8 +3,15 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {getObjectValueFromPath} from 'frontend-js-web';
+
 import {getLocalizedValue} from '../getLocalizedValue';
-import {IItemActionsDataFilter, IItemsActions} from '../types';
+import {
+	EItemActionsType,
+	IItemActionsDataFilter,
+	IItemsActions,
+} from '../types';
+import {ACTION_ITEM_TARGETS} from './constants';
 
 const hasPermission = (action: IItemsActions, itemData: any): boolean => {
 	if (!action?.data?.permissionKey) {
@@ -49,17 +56,26 @@ const isDisabled = (
 		return action.isDisabled(itemData);
 	}
 
-	if (infoPanelOpen && action.target === 'infoPanel' && selectedItem) {
+	if (
+		infoPanelOpen &&
+		action.target === ACTION_ITEM_TARGETS.INFO_PANEL &&
+		selectedItem
+	) {
 		return true;
 	}
 
 	return false;
 };
 
-const isVisible = (action: IItemsActions, itemData: any): boolean => {
+const isVisible = (
+	action: IItemsActions,
+	itemData: any,
+	selectable: boolean = false
+): boolean => {
 	if (
 		!hasPermission(action, itemData) ||
-		!matchesVisibilityFilters(action, itemData)
+		!matchesVisibilityFilters(action, itemData) ||
+		(action.target === ACTION_ITEM_TARGETS.INFO_PANEL && !selectable)
 	) {
 		return false;
 	}
@@ -108,30 +124,55 @@ const filterItemActions = ({
 	actions,
 	infoPanelOpen = false,
 	itemData,
+	selectable,
 	selectedItemsKey,
 	selectedItemsValue,
 }: {
 	actions: Array<IItemsActions>;
 	infoPanelOpen?: boolean;
 	itemData: any;
+	selectable?: boolean;
 	selectedItemsKey: string;
 	selectedItemsValue?: Array<any>;
 }): Array<IItemsActions> => {
 	const selectedItem =
 		selectedItemsValue?.length === 1 &&
-		!!selectedItemsValue?.includes(itemData[selectedItemsKey]);
+		!!selectedItemsValue?.includes(
+			getObjectValueFromPath({object: itemData, path: selectedItemsKey})
+		);
 
 	return actions
 		? actions
-				.filter((action: IItemsActions) => isVisible(action, itemData))
-				.map((action: IItemsActions) =>
-					transformAction({
+				.filter((action: IItemsActions) =>
+					isVisible(action, itemData, selectable)
+				)
+				.map((action: IItemsActions) => {
+					const transformedAction = transformAction({
 						action,
 						infoPanelOpen,
 						itemData,
 						selectedItem,
-					})
-				)
+					});
+
+					if (
+						action.type === EItemActionsType.GROUP &&
+						action.items
+					) {
+						return {
+							...transformedAction,
+							items: filterItemActions({
+								actions: action.items,
+								infoPanelOpen,
+								itemData,
+								selectable,
+								selectedItemsKey,
+								selectedItemsValue,
+							}),
+						};
+					}
+
+					return transformedAction;
+				})
 		: [];
 };
 

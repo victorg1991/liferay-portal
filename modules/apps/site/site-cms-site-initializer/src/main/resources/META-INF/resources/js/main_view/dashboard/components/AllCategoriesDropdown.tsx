@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {buildQueryString} from '@liferay/analytics-reports-js-components-web';
 import React, {useContext, useState} from 'react';
 
 import ApiHelper from '../../../common/services/ApiHelper';
 import {ViewDashboardContext} from '../ViewDashboardContext';
-import {buildQueryString} from '../utils/buildQueryString';
 import {FilterDropdown} from './FilterDropdown';
 import {
 	IAllFiltersDropdown,
@@ -46,6 +46,7 @@ const AllCategoriesDropdown: React.FC<IAllFiltersDropdown> = ({
 	onSelectItem,
 }) => {
 	const {
+		constants: {cmsGroupId},
 		filters: {space},
 	} = useContext(ViewDashboardContext);
 
@@ -78,7 +79,7 @@ const AllCategoriesDropdown: React.FC<IAllFiltersDropdown> = ({
 		});
 
 		const data = await fetchData(
-			`/o/headless-admin-taxonomy/v1.0/taxonomy-vocabularies${queryParams}`
+			`/o/headless-admin-taxonomy/v1.0/sites/${cmsGroupId}/taxonomy-vocabularies${queryParams}`
 		);
 
 		const filteredData = data?.items

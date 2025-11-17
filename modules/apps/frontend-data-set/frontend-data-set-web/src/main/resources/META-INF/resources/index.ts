@@ -22,10 +22,15 @@ export {
 	FDS_NESTED_FIELD_NAME_PARENT_SUFFIX,
 } from './constants';
 
+export {ACTION_ITEM_TARGETS} from './utils/actionItems/constants';
+
+export {replaceTokens} from './utils/actionItems/formatActionURL';
+
 export {default as FDS_EVENT} from './utils/eventsDefinitions';
 
 export {
 	DisplayType,
+	EConfigInURLBehavior,
 	ICardSchema,
 	IClientExtensionRenderer,
 	ICreationActionItem,
@@ -35,6 +40,8 @@ export {
 	IInternalRenderer,
 	IItemsActions,
 	IItemActionsData,
+	IView,
+	TOnFileDrop,
 } from './utils/types';
 
 export {Card} from './views/cards/Cards';

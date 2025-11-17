@@ -38,9 +38,11 @@ const renderTitle = ({
 	) {
 		return (
 			<>
-				{!title_i18n
-					? title
-					: title_i18n[Liferay.ThemeDisplay.getLanguageId()] || title}
+				{title_i18n
+					? title_i18n[
+							Liferay.ThemeDisplay.getLanguageId() as keyof typeof title_i18n
+						] || title
+					: title || Liferay.Language.get('untitled-asset')}
 			</>
 		);
 	}
@@ -54,23 +56,23 @@ const AssetTypeInfoPanelHeader = () => {
 	return (
 		<SidePanel.Header>
 			<SidePanel.Title>
-				<span className="text-truncate-inline">
+				<span className="text-nowrap">
 					{context.objectEntries?.length === 1 && (
 						<ClayIcon
-							className={classnames(
-								'asset-icon inline-item inline-item-before',
-								{
-									'asset-icon-files':
-										context.type === ASSET_TYPE.FILES,
-								}
-							)}
+							className={classnames({
+								'asset-icon-files':
+									context.type === ASSET_TYPE.FILES,
+							})}
+							fontSize={20}
 							symbol={context.icon || ''}
 						></ClayIcon>
 					)}
 
-					<h3 className="asset-title inline-item inline-item-after">
-						{renderTitle(context)}
-					</h3>
+					<span className="text-truncate-inline">
+						<h3 className="inline-item-after mb-0 text-truncate">
+							{renderTitle(context)}
+						</h3>
+					</span>
 				</span>
 			</SidePanel.Title>
 		</SidePanel.Header>

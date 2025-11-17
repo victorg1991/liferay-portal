@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 // eslint-disable-next-line
 import {checkAccessibility} from '@liferay/layout-js-components-web/test/__lib__/index';
@@ -15,11 +15,6 @@ import React from 'react';
 import SpaceService from '../../../../src/main/resources/META-INF/resources/js/common/services/SpaceService';
 import {Space} from '../../../../src/main/resources/META-INF/resources/js/common/types/Space';
 import SpaceGeneralSettings from '../../../../src/main/resources/META-INF/resources/js/main_view/spaces/SpaceGeneralSettings';
-
-jest.mock('frontend-js-web', () => ({
-	...(jest.requireActual('frontend-js-web') as object),
-	navigate: jest.fn(),
-}));
 
 jest.mock(
 	'../../../../src/main/resources/META-INF/resources/js/common/services/SpaceService',
@@ -38,24 +33,31 @@ const SPACE: Partial<Space> = {
 	name: 'Cool Space',
 	settings: {
 		logoColor: 'outline-2',
-		mimeTypeLimits: [{maximumSize: 1024, mimeType: 'application/json'}],
 		sharingEnabled: true,
+		trashEnabled: true,
+		trashEntriesMaxAge: 0,
 	},
 };
 
 const closeToast = async () => {
-	await userEvent.click(screen.getByRole('button', {name: 'Close'}));
+	await userEvent.click(screen.getByRole('button', {name: 'close'}));
 };
 
 const renderComponent = ({
+	backURL = '/all-spaces',
 	groupId = '1234',
 	space = SPACE,
 }: {
+	backURL?: string;
 	groupId?: string;
 	space?: Partial<Space>;
 } = {}) => {
 	return render(
-		<SpaceGeneralSettings groupId={groupId} space={space as Space} />
+		<SpaceGeneralSettings
+			backURL={backURL}
+			groupId={groupId}
+			space={space as Space}
+		/>
 	);
 };
 
@@ -96,17 +98,9 @@ describe('SpaceGeneralSettings', () => {
 
 		expect(
 			screen.getByRole('checkbox', {
-				name: /enable-this-option-to-allow-users/,
+				name: /enable-sharing/,
 			})
 		).toBeChecked();
-
-		expect(screen.getByRole('textbox', {name: /mime-type/})).toHaveValue(
-			'application/json'
-		);
-
-		expect(
-			screen.getByRole('spinbutton', {name: /maximum-file-size/})
-		).toHaveValue(1024);
 	});
 
 	it('checks the accessibility of the general settings', async () => {
@@ -132,6 +126,11 @@ describe('SpaceGeneralSettings', () => {
 		await userEvent.clear(descriptionField);
 		await userEvent.type(descriptionField, 'My space description');
 
+		const ercField = screen.getByRole('textbox', {name: /erc/});
+
+		await userEvent.clear(ercField);
+		await userEvent.type(ercField, 'My New ERC');
+
 		await userEvent.click(
 			screen.getByRole('button', {
 				name: 'save',
@@ -141,12 +140,15 @@ describe('SpaceGeneralSettings', () => {
 		await waitFor(() => {
 			const {externalReferenceCode, ...space} = SPACE;
 
-			expect(SpaceService.updateSpace).toBeCalledWith({
-				...space,
-				description: 'My space description',
-				erc: externalReferenceCode,
-				name: 'My Space',
-			});
+			expect(SpaceService.updateSpace).toBeCalledWith(
+				externalReferenceCode,
+				{
+					...space,
+					description: 'My space description',
+					externalReferenceCode: 'My New ERC',
+					name: 'My Space',
+				}
+			);
 
 			expect(
 				screen.getByText('My Space-was-saved-successfully')
@@ -157,12 +159,6 @@ describe('SpaceGeneralSettings', () => {
 	});
 
 	it('redirects to the previous url when the cancel button is pressed', async () => {
-		delete (window as any).location;
-
-		(window as any).location = {
-			href: 'http://url?redirect=/all-spaces',
-		} as unknown as Location;
-
 		renderComponent();
 
 		await userEvent.click(
@@ -202,20 +198,6 @@ describe('SpaceGeneralSettings', () => {
 		await closeToast();
 	});
 
-	it('adds and remove fields for the mime type limit', async () => {
-		renderComponent();
-
-		expect(screen.getAllByLabelText('maximum-file-size').length).toBe(1);
-
-		await userEvent.click(screen.getByLabelText('add-x'));
-
-		expect(screen.getAllByLabelText('maximum-file-size').length).toBe(2);
-
-		await userEvent.click(screen.getAllByLabelText('remove-x')[1]);
-
-		expect(screen.getAllByLabelText('maximum-file-size').length).toBe(1);
-	});
-
 	describe('Errors', () => {
 		it('does not save the name field when there is an error and the field is focused', async () => {
 			renderComponent();
@@ -248,72 +230,6 @@ describe('SpaceGeneralSettings', () => {
 			).toBeInTheDocument();
 
 			expect(nameInput).toHaveFocus();
-		});
-
-		it('does not save the form when the Maximum File Size field has an error and the field is focused', async () => {
-			renderComponent();
-
-			const maximumSizeInput = screen.getByLabelText('maximum-file-size');
-
-			await userEvent.type(maximumSizeInput, '123.123');
-
-			await userEvent.click(screen.getByRole('button', {name: 'save'}));
-
-			expect(
-				screen.getByText('please-enter-a-valid-number')
-			).toBeInTheDocument();
-
-			expect(maximumSizeInput).toHaveFocus();
-		});
-
-		it('saves the form when a maximum file size field has an error and this field is removed', async () => {
-			renderComponent();
-
-			await userEvent.click(screen.getByLabelText('add-x'));
-
-			const inputs = screen.getAllByLabelText('maximum-file-size');
-
-			const [firstInput, secondInput] = inputs;
-
-			await userEvent.type(firstInput, '123.123');
-
-			firstInput.blur();
-
-			await userEvent.type(secondInput, '123');
-
-			secondInput.blur();
-
-			await waitFor(() => {
-				expect(
-					screen.getByText('please-enter-a-valid-number')
-				).toBeInTheDocument();
-			});
-
-			await userEvent.click(screen.getAllByLabelText('remove-x')[0]);
-
-			await waitFor(() => {
-				expect(
-					screen.queryByText('please-enter-a-valid-number')
-				).not.toBeInTheDocument();
-			});
-
-			await userEvent.click(screen.getByRole('button', {name: 'save'}));
-
-			await waitFor(() => {
-				expect(SpaceService.updateSpace).toBeCalledWith(
-					expect.objectContaining({
-						settings: expect.objectContaining({
-							mimeTypeLimits: [
-								{maximumSize: '123', mimeType: ''},
-							],
-						}),
-					})
-				);
-
-				expect(
-					screen.getByText(/was-saved-successfully/)
-				).toBeInTheDocument();
-			});
 		});
 	});
 });

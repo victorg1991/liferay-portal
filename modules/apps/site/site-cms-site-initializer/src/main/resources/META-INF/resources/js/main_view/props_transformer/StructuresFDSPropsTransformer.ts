@@ -5,10 +5,11 @@
 
 import {IInternalRenderer} from '@liferay/frontend-data-set-web';
 
+import getLocalizedValue from '../../common/utils/getLocalizedValue';
 import deleteStructureAction from './actions/deleteStructureAction';
 import importStructureAction from './actions/importStructureAction';
 import AuthorRenderer from './cell_renderers/AuthorRenderer';
-import NameRenderer from './cell_renderers/NameRenderer';
+import SimpleActionLinkRenderer from './cell_renderers/SimpleActionLinkRenderer';
 import StructureScopeRenderer from './cell_renderers/StructureScopeRenderer';
 import TypeRenderer from './cell_renderers/TypeRenderer';
 
@@ -27,8 +28,8 @@ export default function StructuresFDSPropsTransformer({
 					type: 'internal',
 				} as IInternalRenderer,
 				{
-					component: NameRenderer,
-					name: 'nameTableCellRenderer',
+					component: SimpleActionLinkRenderer,
+					name: 'simpleActionLinkTableCellRenderer',
 					type: 'internal',
 				} as IInternalRenderer,
 				{
@@ -80,11 +81,10 @@ export default function StructuresFDSPropsTransformer({
 					getObjectDefinitionDeleteInfoURL: target.href,
 					loadData,
 					name:
-						itemData.label[Liferay.ThemeDisplay.getLanguageId()] ||
-						itemData.label[
-							Liferay.ThemeDisplay.getDefaultLanguageId()
-						] ||
-						'',
+						getLocalizedValue(
+							itemData.label,
+							Liferay.ThemeDisplay.getLanguageId()
+						) || getLocalizedValue(itemData.label),
 					status: itemData.status.code,
 				});
 			}

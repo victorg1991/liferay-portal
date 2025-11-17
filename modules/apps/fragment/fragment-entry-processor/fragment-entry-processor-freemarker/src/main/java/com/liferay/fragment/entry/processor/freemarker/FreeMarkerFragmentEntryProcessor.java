@@ -56,10 +56,10 @@ public class FreeMarkerFragmentEntryProcessor
 
 	@Override
 	public JSONObject getDefaultEditableValuesJSONObject(
-		String html, String configuration) {
+		String html, JSONObject configurationJSONObject) {
 
 		return _fragmentEntryConfigurationParser.
-			getConfigurationDefaultValuesJSONObject(configuration);
+			getConfigurationDefaultValuesJSONObject(configurationJSONObject);
 	}
 
 	@Override
@@ -115,8 +115,8 @@ public class FreeMarkerFragmentEntryProcessor
 
 		JSONObject configurationValuesJSONObject =
 			_fragmentEntryConfigurationParser.getConfigurationJSONObject(
-				fragmentEntryLink.getConfiguration(),
-				fragmentEntryLink.getEditableValues(),
+				fragmentEntryLink.getConfigurationJSONObject(),
+				fragmentEntryLink.getEditableValuesJSONObject(),
 				fragmentEntryProcessorContext.getLocale());
 
 		template.putAll(
@@ -140,7 +140,7 @@ public class FreeMarkerFragmentEntryProcessor
 			).putAll(
 				_fragmentEntryConfigurationParser.getContextObjects(
 					configurationValuesJSONObject,
-					fragmentEntryLink.getConfiguration(),
+					fragmentEntryLink.getConfigurationJSONObject(),
 					_getInfoItem(
 						fragmentEntryProcessorContext.
 							getContextInfoItemReference()),

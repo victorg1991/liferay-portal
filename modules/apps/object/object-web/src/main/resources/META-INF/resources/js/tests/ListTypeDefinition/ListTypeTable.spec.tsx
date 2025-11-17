@@ -3,21 +3,11 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import {getDataSetProps} from '../../components/ListTypeDefinition/ListTypeTable';
 
 describe('getDataSetProps', () => {
-	beforeAll(() => {
-		global.Liferay = {
-			...global.Liferay,
-			FeatureFlags: {
-				...global.Liferay?.FeatureFlags,
-				'LPD-24055': true,
-			},
-		};
-	});
-
 	it('displays the add entry button when a system picklist is selected', async () => {
 		const fireModal = () => {};
 		const pickListId = -1;

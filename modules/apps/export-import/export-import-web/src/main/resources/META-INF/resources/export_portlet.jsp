@@ -10,10 +10,19 @@
 <%
 String tabs3 = ParamUtil.getString(request, "tabs3", "new-export-process");
 
+String redirect = ParamUtil.getString(request, "redirect");
+
+if (Validator.isNotNull(redirect)) {
+	portletDisplay.setShowBackIcon(true);
+	portletDisplay.setURLBack(redirect);
+}
+
 PortletURL portletURL = PortletURLBuilder.createRenderURL(
 	renderResponse
 ).setMVCRenderCommandName(
 	"/export_import/export_import"
+).setRedirect(
+	redirect
 ).setPortletResource(
 	portletResource
 ).buildPortletURL();
@@ -430,7 +439,19 @@ PortletURL portletURL = PortletURLBuilder.createRenderURL(
 													</ul>
 
 													<ul>
-														<aui:fieldset cssClass="content-options" label="for-each-of-the-selected-content-types,-export-their">
+														<liferay-util:buffer
+															var="selectedContentOptionsLabel"
+														>
+															<liferay-ui:message key="for-each-of-the-selected-content-types,-export-their" />
+
+															<span aria-label="<%= LanguageUtil.get(request, "comments-associated-to-object-entries-are-currently-excluded-from-the-export") %>" class="lfr-portal-tooltip ml-1" title="<%= LanguageUtil.get(request, "comments-associated-to-object-entries-are-currently-excluded-from-the-export") %>">
+																<clay:icon
+																	symbol="question-circle-full"
+																/>
+															</span>
+														</liferay-util:buffer>
+
+														<aui:fieldset cssClass="content-options" label="<%= selectedContentOptionsLabel %>">
 															<span class="selected-labels" id="<portlet:namespace />selectedContentOptions"></span>
 
 															<clay:button
@@ -491,7 +512,19 @@ PortletURL portletURL = PortletURLBuilder.createRenderURL(
 			<aui:button-row>
 				<aui:button type="submit" value="export" />
 
-				<aui:button type="cancel" />
+				<c:choose>
+					<c:when test='<%= FeatureFlagManagerUtil.isEnabled(company.getCompanyId(), "LPD-57655") %>'>
+						<clay:link
+							cssClass="btn btn-secondary"
+							href="<%= redirect %>"
+							label='<%= LanguageUtil.get(request, "cancel") %>'
+							role="button"
+						/>
+					</c:when>
+					<c:otherwise>
+						<aui:button type="cancel" />
+					</c:otherwise>
+				</c:choose>
 			</aui:button-row>
 		</aui:form>
 

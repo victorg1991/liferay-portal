@@ -8,6 +8,7 @@ package com.liferay.portal.security.sso.openid.connect.internal.servlet.filter.a
 import com.liferay.portal.kernel.exception.UserEmailAddressException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -49,8 +50,7 @@ public class OpenIdConnectAutoLoginFilter extends AutoLoginFilter {
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse) {
 
-		return _openIdConnect.isEnabled(
-			_portal.getCompanyId(httpServletRequest));
+		return _openIdConnect.isEnabled(CompanyThreadLocal.getCompanyId());
 	}
 
 	@Override
@@ -89,8 +89,10 @@ public class OpenIdConnectAutoLoginFilter extends AutoLoginFilter {
 				userId -> _autoLoginUser(
 					httpServletRequest, httpServletResponse, userId));
 		}
-		catch (StrangersNotAllowedException |
+		catch (IllegalArgumentException | StrangersNotAllowedException |
 			   UserEmailAddressException.MustNotUseCompanyMx exception) {
+
+			_log.error(exception);
 
 			Class<?> clazz = exception.getClass();
 

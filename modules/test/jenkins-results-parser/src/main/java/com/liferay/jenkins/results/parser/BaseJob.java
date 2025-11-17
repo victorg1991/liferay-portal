@@ -56,7 +56,7 @@ public abstract class BaseJob implements Job {
 		for (BatchTestClassGroup batchTestClassGroup :
 				getBatchTestClassGroups()) {
 
-			if (batchTestClassGroup.testAnalyticsCloud()) {
+			if (batchTestClassGroup.isTestAnalyticsCloud()) {
 				batchNames.add(batchTestClassGroup.getBatchName());
 			}
 		}
@@ -70,7 +70,7 @@ public abstract class BaseJob implements Job {
 		for (SegmentTestClassGroup segmentTestClassGroup :
 				getSegmentTestClassGroups()) {
 
-			if (segmentTestClassGroup.testAnalyticsCloud()) {
+			if (segmentTestClassGroup.isTestAnalyticsCloud()) {
 				segmentNames.add(segmentTestClassGroup.getSegmentName());
 			}
 		}
@@ -427,7 +427,7 @@ public abstract class BaseJob implements Job {
 
 			if (standaloneTestBatchNames.contains(
 					segmentTestClassGroup.getBatchName()) ||
-				(segmentTestClassGroup.testAnalyticsCloud() &&
+				(segmentTestClassGroup.isTestAnalyticsCloud() &&
 				 JenkinsResultsParserUtil.isCloudCINode())) {
 
 				continue;
@@ -819,6 +819,29 @@ public abstract class BaseJob implements Job {
 	}
 
 	@Override
+	public boolean isBuildCachingEnabled() {
+		String buildCachingEnabled = System.getenv("BUILD_CACHING_ENABLED");
+
+		if (Objects.equals(buildCachingEnabled, "true")) {
+			return true;
+		}
+
+		try {
+			buildCachingEnabled = JenkinsResultsParserUtil.getBuildProperty(
+				"build.caching.enabled", getJobName(), getTestSuiteName());
+
+			if (Objects.equals(buildCachingEnabled, "true")) {
+				return true;
+			}
+		}
+		catch (IOException ioException) {
+			return false;
+		}
+
+		return false;
+	}
+
+	@Override
 	public boolean isDownstreamEnabled() {
 		JobProperty jobProperty = getJobProperty(
 			"test.batch.downstream.enabled");
@@ -901,16 +924,11 @@ public abstract class BaseJob implements Job {
 	}
 
 	@Override
-	public boolean isValidationRequired() {
-		return false;
-	}
-
-	@Override
-	public boolean testAnalyticsCloud() {
+	public boolean isTestAnalyticsCloud() {
 		for (BatchTestClassGroup batchTestClassGroup :
 				getBatchTestClassGroups()) {
 
-			if (batchTestClassGroup.testAnalyticsCloud()) {
+			if (batchTestClassGroup.isTestAnalyticsCloud()) {
 				_testAnalyticsCloud = true;
 
 				return _testAnalyticsCloud;
@@ -923,7 +941,7 @@ public abstract class BaseJob implements Job {
 	}
 
 	@Override
-	public boolean testHotfixChanges() {
+	public boolean isTestHotfixChanges() {
 		JobProperty jobProperty = getJobProperty("test.hotfix.changes");
 
 		if (jobProperty != null) {
@@ -936,7 +954,7 @@ public abstract class BaseJob implements Job {
 	}
 
 	@Override
-	public boolean testJaCoCoCodeCoverage() {
+	public boolean isTestJaCoCoCodeCoverage() {
 		JobProperty jobProperty = getJobProperty("test.jacoco.code.coverage");
 
 		if (jobProperty != null) {
@@ -949,7 +967,7 @@ public abstract class BaseJob implements Job {
 	}
 
 	@Override
-	public boolean testReleaseBundle() {
+	public boolean isTestReleaseBundle() {
 		JobProperty jobProperty = getJobProperty("test.release.bundle");
 
 		if (jobProperty != null) {
@@ -962,7 +980,7 @@ public abstract class BaseJob implements Job {
 	}
 
 	@Override
-	public boolean testRelevantChanges() {
+	public boolean isTestRelevantChanges() {
 		JobProperty jobProperty = getJobProperty("test.relevant.changes");
 
 		if (jobProperty != null) {
@@ -975,7 +993,7 @@ public abstract class BaseJob implements Job {
 	}
 
 	@Override
-	public boolean testRelevantChangesInStable() {
+	public boolean isTestRelevantChangesInStable() {
 		JobProperty jobProperty = getJobProperty(
 			"test.relevant.changes.in.stable");
 
@@ -985,6 +1003,11 @@ public abstract class BaseJob implements Job {
 			return Boolean.parseBoolean(jobProperty.getValue());
 		}
 
+		return false;
+	}
+
+	@Override
+	public boolean isValidationRequired() {
 		return false;
 	}
 

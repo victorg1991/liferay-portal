@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.liferay.headless.object.dto.v1_0.Scope;
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -47,6 +48,91 @@ public class SystemProperties implements Serializable {
 	public static SystemProperties unsafeToDTO(String json) {
 		return ObjectMapperUtil.unsafeReadValue(SystemProperties.class, json);
 	}
+
+	@io.swagger.v3.oas.annotations.media.Schema
+	@Valid
+	public ObjectDefinitionBrief getObjectDefinitionBrief() {
+		if (_objectDefinitionBriefSupplier != null) {
+			objectDefinitionBrief = _objectDefinitionBriefSupplier.get();
+
+			_objectDefinitionBriefSupplier = null;
+		}
+
+		return objectDefinitionBrief;
+	}
+
+	public void setObjectDefinitionBrief(
+		ObjectDefinitionBrief objectDefinitionBrief) {
+
+		this.objectDefinitionBrief = objectDefinitionBrief;
+
+		_objectDefinitionBriefSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setObjectDefinitionBrief(
+		UnsafeSupplier<ObjectDefinitionBrief, Exception>
+			objectDefinitionBriefUnsafeSupplier) {
+
+		_objectDefinitionBriefSupplier = () -> {
+			try {
+				return objectDefinitionBriefUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected ObjectDefinitionBrief objectDefinitionBrief;
+
+	@JsonIgnore
+	private Supplier<ObjectDefinitionBrief> _objectDefinitionBriefSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema
+	@Valid
+	public Scope getScope() {
+		if (_scopeSupplier != null) {
+			scope = _scopeSupplier.get();
+
+			_scopeSupplier = null;
+		}
+
+		return scope;
+	}
+
+	public void setScope(Scope scope) {
+		this.scope = scope;
+
+		_scopeSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setScope(UnsafeSupplier<Scope, Exception> scopeUnsafeSupplier) {
+		_scopeSupplier = () -> {
+			try {
+				return scopeUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Scope scope;
+
+	@JsonIgnore
+	private Supplier<Scope> _scopeSupplier;
 
 	@io.swagger.v3.oas.annotations.media.Schema
 	@Valid
@@ -116,6 +202,31 @@ public class SystemProperties implements Serializable {
 		StringBundler sb = new StringBundler();
 
 		sb.append("{");
+
+		ObjectDefinitionBrief objectDefinitionBrief =
+			getObjectDefinitionBrief();
+
+		if (objectDefinitionBrief != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"objectDefinitionBrief\": ");
+
+			sb.append(String.valueOf(objectDefinitionBrief));
+		}
+
+		Scope scope = getScope();
+
+		if (scope != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"scope\": ");
+
+			sb.append(scope);
+		}
 
 		Version version = getVersion();
 

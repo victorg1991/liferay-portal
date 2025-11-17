@@ -8,6 +8,7 @@ package com.liferay.site.cms.site.initializer.internal.display.context.test;
 import com.liferay.batch.engine.unit.BatchEngineUnitProcessor;
 import com.liferay.batch.engine.unit.BatchEngineUnitReader;
 import com.liferay.info.constants.InfoDisplayWebKeys;
+import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectFolderConstants;
 import com.liferay.object.field.util.ObjectFieldUtil;
@@ -29,6 +30,7 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
@@ -61,6 +63,10 @@ public abstract class BaseDisplayContextTestCase {
 	public void setUp() throws Exception {
 		group = GroupTestUtil.addGroup();
 
+		mockHttpServletRequest = getMockHttpServletRequest();
+
+		themeDisplay = getThemeDisplay(mockHttpServletRequest);
+
 		if (_isCMSSiteInitialized()) {
 			return;
 		}
@@ -92,8 +98,9 @@ public abstract class BaseDisplayContextTestCase {
 						bundle.getSymbolicName(),
 						"com.liferay.site.initializer.cms")) {
 
-					_setUpProcessedFile(bundle, "01.object.folder");
-					_setUpProcessedFile(bundle, "02.object.definition");
+					_deleteFile(bundle, "00.list.type.definition");
+					_deleteFile(bundle, "01.object.folder");
+					_deleteFile(bundle, "02.object.definition");
 
 					CompletableFuture<Void> completableFuture =
 						_batchEngineUnitProcessor.processBatchEngineUnits(
@@ -116,8 +123,9 @@ public abstract class BaseDisplayContextTestCase {
 
 		ObjectDefinition objectDefinition =
 			objectDefinitionLocalService.addCustomObjectDefinition(
-				TestPropsValues.getUserId(), objectFolderId, null, false, false,
-				true, true, enableObjectEntryDraft, false, false, null,
+				null, TestPropsValues.getUserId(), objectFolderId, null, false,
+				true, false, true, true, enableObjectEntryDraft, false, false,
+				false, null,
 				Collections.singletonMap(
 					LocaleUtil.getDefault(), RandomTestUtil.randomString()),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
@@ -128,7 +136,8 @@ public abstract class BaseDisplayContextTestCase {
 				Collections.singletonList(
 					ObjectFieldUtil.createObjectField(
 						"Text", "String", true, true, null,
-						RandomTestUtil.randomString(), "text", false)));
+						RandomTestUtil.randomString(), "text", false)),
+				Collections.emptyList());
 
 		if (status == WorkflowConstants.STATUS_DRAFT) {
 			return objectDefinition;
@@ -150,12 +159,14 @@ public abstract class BaseDisplayContextTestCase {
 			objectDefinition.getClassName(),
 			objectDefinition.isEnableCategorization(),
 			objectDefinition.isEnableComments(),
+			objectDefinition.isEnableFormContainer(),
 			objectDefinition.isEnableFriendlyURLCustomization(),
 			objectDefinition.isEnableIndexSearch(),
 			objectDefinition.isEnableLocalization(),
 			objectDefinition.isEnableObjectEntryDraft(),
 			objectDefinition.isEnableObjectEntryHistory(),
 			objectDefinition.isEnableObjectEntrySchedule(),
+			objectDefinition.isEnableObjectEntrySubscription(),
 			objectDefinition.isEnableObjectEntryVersioning(),
 			objectDefinition.getFriendlyURLSeparator(),
 			objectDefinition.getLabelMap(), objectDefinition.getName(),
@@ -163,7 +174,8 @@ public abstract class BaseDisplayContextTestCase {
 			objectDefinition.getPanelCategoryKey(),
 			objectDefinition.isPortlet(), objectDefinition.getPluralLabelMap(),
 			objectDefinition.getScope(), objectDefinition.getStatus(),
-			objectDefinition.getObjectDefinitionSettings());
+			objectDefinition.getObjectDefinitionSettings(),
+			Collections.emptyList(), Collections.emptyList());
 	}
 
 	protected ObjectDefinition addCustomObjectDefinition(
@@ -209,8 +221,12 @@ public abstract class BaseDisplayContextTestCase {
 		themeDisplay.setCompany(
 			companyLocalService.getCompany(TestPropsValues.getCompanyId()));
 		themeDisplay.setLanguageId(group.getDefaultLanguageId());
+		themeDisplay.setLayout(
+			LayoutTestUtil.addTypeContentLayout(group, "test"));
+		themeDisplay.setPathMain(portal.getPathMain());
 		themeDisplay.setPermissionChecker(
 			PermissionThreadLocal.getPermissionChecker());
+		themeDisplay.setPortalURL("http://localhost:8080");
 		themeDisplay.setRealUser(TestPropsValues.getUser());
 		themeDisplay.setRequest(httpServletRequest);
 		themeDisplay.setScopeGroupId(group.getGroupId());
@@ -227,11 +243,28 @@ public abstract class BaseDisplayContextTestCase {
 	@DeleteAfterTestRun
 	protected Group group;
 
+	protected MockHttpServletRequest mockHttpServletRequest;
+
 	@Inject
 	protected ObjectDefinitionLocalService objectDefinitionLocalService;
 
 	@Inject
 	protected ObjectFolderLocalService objectFolderLocalService;
+
+	@Inject
+	protected Portal portal;
+
+	protected ThemeDisplay themeDisplay;
+
+	private void _deleteFile(Bundle bundle, String fileName) {
+		File file = bundle.getDataFile(
+			".com.liferay.site.initializer.cms.internal.batch." + fileName +
+				".batch.engine.data.json.0.processed");
+
+		if ((file != null) && file.exists()) {
+			file.delete();
+		}
+	}
 
 	private boolean _isCMSSiteInitialized() {
 		ObjectFolder objectFolder =
@@ -244,16 +277,6 @@ public abstract class BaseDisplayContextTestCase {
 		}
 
 		return false;
-	}
-
-	private void _setUpProcessedFile(Bundle bundle, String fileName) {
-		File file = bundle.getDataFile(
-			".com.liferay.site.initializer.cms.internal.batch." + fileName +
-				".batch.engine.data.json.0.processed");
-
-		if ((file != null) && file.exists()) {
-			file.delete();
-		}
 	}
 
 	@Inject

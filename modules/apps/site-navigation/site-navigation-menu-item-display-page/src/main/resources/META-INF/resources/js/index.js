@@ -289,6 +289,7 @@ DisplayPageItemContextualSidebar.propTypes = {
 	defaultLanguageId: PropTypes.string.isRequired,
 	hasDisplayPage: PropTypes.bool.isRequired,
 	item: PropTypes.shape({
+		className: PropTypes.string,
 		classNameId: PropTypes.string,
 		classPK: PropTypes.string,
 		classTypeId: PropTypes.string,
@@ -308,6 +309,12 @@ function FormValues({localizedNames, namespace, selectedItem, useCustomName}) {
 	return (
 		<>
 			<input
+				name={getFieldName(namespace, 'className')}
+				readOnly
+				type="hidden"
+				value={selectedItem.className || ''}
+			/>
+			<input
 				name={getFieldName(namespace, 'classNameId')}
 				readOnly
 				type="hidden"
@@ -324,6 +331,12 @@ function FormValues({localizedNames, namespace, selectedItem, useCustomName}) {
 				readOnly
 				type="hidden"
 				value={selectedItem.classTypeId || ''}
+			/>
+			<input
+				name={getFieldName(namespace, 'externalReferenceCode')}
+				readOnly
+				type="hidden"
+				value={selectedItem.externalReferenceCode || ''}
 			/>
 			<input
 				name={getFieldName(namespace, 'title')}
@@ -357,6 +370,7 @@ FormValues.propTypes = {
 	localizedNames: PropTypes.object.isRequired,
 	namespace: PropTypes.string.isRequired,
 	selectedItem: PropTypes.shape({
+		className: PropTypes.string,
 		classNameId: PropTypes.string,
 		classPK: PropTypes.string,
 		classTypeId: PropTypes.string,

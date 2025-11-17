@@ -146,8 +146,23 @@ public abstract class BaseTestClass implements TestClass {
 	}
 
 	@Override
+	public long getOverheadWeight() {
+		return getAverageOverheadDuration();
+	}
+
+	@Override
 	public SegmentTestClassGroup getSegmentTestClassGroup() {
 		return _segmentTestClassGroup;
+	}
+
+	@Override
+	public long getSharedWeight() {
+		return 0L;
+	}
+
+	@Override
+	public String getSharedWeightName() {
+		return null;
 	}
 
 	@Override
@@ -158,6 +173,11 @@ public abstract class BaseTestClass implements TestClass {
 	@Override
 	public List<TestClassMethod> getTestClassMethods() {
 		return _testClassMethods;
+	}
+
+	@Override
+	public String getTestClassName() {
+		return getName();
 	}
 
 	@Override
@@ -187,6 +207,11 @@ public abstract class BaseTestClass implements TestClass {
 	}
 
 	@Override
+	public long getWeight() {
+		return getAverageDuration();
+	}
+
+	@Override
 	public int hashCode() {
 		JSONObject jsonObject = getJSONObject();
 
@@ -202,6 +227,13 @@ public abstract class BaseTestClass implements TestClass {
 		}
 
 		return true;
+	}
+
+	@Override
+	public boolean isBuildCachingEnabled() {
+		BatchTestClassGroup batchTestClassGroup = getBatchTestClassGroup();
+
+		return batchTestClassGroup.isBuildCachingEnabled();
 	}
 
 	@Override
@@ -265,6 +297,14 @@ public abstract class BaseTestClass implements TestClass {
 		addTestClassMethod(
 			TestClassFactory.newTestClassMethod(
 				methodIgnored, methodName, this));
+	}
+
+	protected void addTestClassMethod(
+		boolean methodIgnored, String methodName, String issues) {
+
+		addTestClassMethod(
+			TestClassFactory.newTestClassMethod(
+				methodIgnored, methodName, issues, this));
 	}
 
 	protected void addTestClassMethod(String methodName) {

@@ -23,7 +23,7 @@ import com.liferay.exportimport.kernel.lar.PortletDataHandlerChoice;
 import com.liferay.exportimport.kernel.lar.PortletDataHandlerControl;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.portal.kernel.model.Repository;
-import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.kernel.util.PropsValues;
 
 import jakarta.portlet.PortletPreferences;
 
@@ -110,10 +110,6 @@ public class DLPortletDataHandler extends BasePortletDataHandler {
 	protected void activate() {
 		setDataLevel(DataLevel.PORTLET_INSTANCE);
 		setDataLocalized(true);
-		setDataPortletPreferences(
-			"rootFolderExternalReferenceCode",
-			"selectedGroupExternalReferenceCode",
-			"selectedRepositoryExternalReferenceCode");
 		setDeletionSystemEventStagedModelTypes(
 			new StagedModelType(DLFileEntryType.class),
 			new StagedModelType(DLFileShortcut.class),

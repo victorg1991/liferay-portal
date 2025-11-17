@@ -6,7 +6,7 @@
 import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 // eslint-disable-next-line
 import {checkAccessibility} from '@liferay/layout-js-components-web/test/__lib__/index';
@@ -17,18 +17,14 @@ jest.mock('frontend-js-web', () => ({
 	sub: (str: string, arg: string) => str.replace('x', arg),
 }));
 
-global.Liferay.Util.formatStorage = jest.fn((size: number) => {
-	return `${size / 1024} KB`;
-});
-
 const mockCloseModal = jest.fn();
 const mockUploadComplete = jest.fn();
 const mockUploadRequest = jest.fn().mockResolvedValue({error: false});
 
 const DEFAULT_PROPS = {
 	assetLibraries: [
-		{groupId: 123, name: 'Library A'},
-		{groupId: 456, name: 'Library B'},
+		{externalReferenceCode: 'erc-1', groupId: 123, name: 'Library A'},
+		{externalReferenceCode: 'erc-2', groupId: 456, name: 'Library B'},
 	],
 	onModalClose: mockCloseModal,
 	onUploadComplete: mockUploadComplete,
@@ -214,7 +210,13 @@ describe('MultipleFileUploader', () => {
 		const {container} = render(
 			<MultipleFileUploader
 				{...DEFAULT_PROPS}
-				assetLibraries={[{groupId: 2, name: 'Library A'}]}
+				assetLibraries={[
+					{
+						externalReferenceCode: 'erc-1',
+						groupId: 2,
+						name: 'Library A',
+					},
+				]}
 			/>
 		);
 
@@ -234,7 +236,11 @@ describe('MultipleFileUploader', () => {
 			expect(mockUploadRequest).toHaveBeenCalledTimes(2);
 
 			expect(mockUploadComplete).toHaveBeenCalledWith({
-				assetLibrary: {groupId: 2, name: 'Library A'},
+				assetLibrary: expect.objectContaining({
+					externalReferenceCode: 'erc-1',
+					groupId: 2,
+					name: 'Library A',
+				}),
 				failedFiles: [],
 				successFiles: ['upload1.png', 'upload2.png'],
 			});
@@ -249,7 +255,13 @@ describe('MultipleFileUploader', () => {
 		const {container, getByText} = render(
 			<MultipleFileUploader
 				{...DEFAULT_PROPS}
-				assetLibraries={[{groupId: 2, name: 'Library A'}]}
+				assetLibraries={[
+					{
+						externalReferenceCode: 'erc-2',
+						groupId: 2,
+						name: 'Library A',
+					},
+				]}
 				uploadRequest={mockUploadRequestFail}
 			/>
 		);

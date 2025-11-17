@@ -666,8 +666,7 @@ public class FormItemManager {
 
 		JSONObject editableValuesJSONObject =
 			_fragmentEntryLinkManager.mergeEditableValuesJSONObject(
-				_jsonFactory.createJSONObject(
-					stepperFragmentEntryLink.getEditableValues()),
+				stepperFragmentEntryLink.getEditableValuesJSONObject(),
 				JSONUtil.put(
 					FragmentEntryProcessorConstants.
 						KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR,
@@ -693,7 +692,7 @@ public class FormItemManager {
 				_fragmentEntryProcessorRegistry.
 					getDefaultEditableValuesJSONObject(
 						processedHTML,
-						stepperFragmentEntryLink.getConfiguration()),
+						stepperFragmentEntryLink.getConfigurationJSONObject()),
 				editableValuesJSONObject);
 
 		stepperFragmentEntryLink =
@@ -821,8 +820,9 @@ public class FormItemManager {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkService.addFragmentEntryLink(
-				null, layout.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), segmentsExperienceId,
+				null, layout.getGroupId(), null,
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), segmentsExperienceId,
 				layout.getPlid(), fragmentEntry.getCss(),
 				fragmentEntry.getHtml(), fragmentEntry.getJs(),
 				fragmentEntry.getConfiguration(), null, StringPool.BLANK, 0,
@@ -831,8 +831,7 @@ public class FormItemManager {
 
 		JSONObject editableValuesJSONObject =
 			_fragmentEntryLinkManager.mergeEditableValuesJSONObject(
-				_jsonFactory.createJSONObject(
-					fragmentEntryLink.getEditableValues()),
+				fragmentEntryLink.getEditableValuesJSONObject(),
 				JSONUtil.put(
 					FragmentEntryProcessorConstants.
 						KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR,
@@ -856,7 +855,8 @@ public class FormItemManager {
 			_fragmentEntryLinkManager.mergeEditableValuesJSONObject(
 				_fragmentEntryProcessorRegistry.
 					getDefaultEditableValuesJSONObject(
-						processedHTML, fragmentEntryLink.getConfiguration()),
+						processedHTML,
+						fragmentEntryLink.getConfigurationJSONObject()),
 				editableValuesJSONObject);
 
 		fragmentEntryLink = _fragmentEntryLinkService.updateFragmentEntryLink(
@@ -969,8 +969,8 @@ public class FormItemManager {
 
 		return GetterUtil.getString(
 			_fragmentEntryConfigurationParser.getFieldValue(
-				fragmentEntryLink.getConfiguration(),
-				fragmentEntryLink.getEditableValues(),
+				fragmentEntryLink.getConfigurationJSONObject(),
+				fragmentEntryLink.getEditableValuesJSONObject(),
 				LocaleUtil.getMostRelevantLocale(), "type"),
 			null);
 	}

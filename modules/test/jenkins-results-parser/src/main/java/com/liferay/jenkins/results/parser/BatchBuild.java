@@ -131,26 +131,21 @@ public class BatchBuild extends BaseParentBuild {
 			Element gitHubMessageElement =
 				failedDownstreamBuild.getGitHubMessageElement();
 
-			if (gitHubMessageElement != null) {
-				failureElements.add(gitHubMessageElement);
+			if (gitHubMessageElement == null) {
+				continue;
 			}
 
-			Element gitHubMessageUpstreamJobFailureElement =
-				failedDownstreamBuild.
-					getGitHubMessageUpstreamJobFailureElement();
-
-			if (gitHubMessageUpstreamJobFailureElement != null) {
-				upstreamJobFailureElements.add(
-					gitHubMessageUpstreamJobFailureElement);
+			if (failedDownstreamBuild.isUniqueFailure()) {
+				failureElements.add(gitHubMessageElement);
+			}
+			else {
+				upstreamJobFailureElements.add(gitHubMessageElement);
 			}
 		}
 
 		if (!upstreamJobFailureElements.isEmpty()) {
-			upstreamJobFailureMessageElement = getGitHubMessageElement(true);
-
 			Dom4JUtil.getOrderedListElement(
-				upstreamJobFailureElements, upstreamJobFailureMessageElement,
-				4);
+				upstreamJobFailureElements, getGitHubMessageElement(true), 4);
 		}
 
 		Dom4JUtil.getOrderedListElement(failureElements, messageElement, 4);
@@ -296,12 +291,12 @@ public class BatchBuild extends BaseParentBuild {
 			BUILD_URLS_PROPERTIES_KEY, getBatchName(), getBuildURL(), false);
 	}
 
-	protected BatchBuild(String url) {
-		this(url, null);
+	protected BatchBuild(String buildURL) {
+		this(buildURL, null);
 	}
 
-	protected BatchBuild(String url, TopLevelBuild topLevelBuild) {
-		super(url, topLevelBuild);
+	protected BatchBuild(String buildURL, TopLevelBuild topLevelBuild) {
+		super(buildURL, topLevelBuild);
 
 		String jobVariant = getJobVariant();
 

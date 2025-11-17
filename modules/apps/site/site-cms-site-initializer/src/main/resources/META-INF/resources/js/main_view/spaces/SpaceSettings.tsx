@@ -9,27 +9,30 @@ import React, {useEffect, useState} from 'react';
 import Toolbar from '../../common/components/Toolbar';
 import VerticalNavLayout from '../../common/components/VerticalNavLayout';
 import SpaceService from '../../common/services/SpaceService';
-import {Space} from '../../common/types/Space';
+import {LabelValueObject, Space} from '../../common/types/Space';
 import SpaceGeneralSettings from './SpaceGeneralSettings';
+import SpaceLanguageSettings from './SpaceLanguageSettings';
 
 interface SpaceSettingsProps {
 	backURL: string;
-	depotEntryId: string;
+	companyAvailableLanguages: LabelValueObject[];
+	externalReferenceCode: string;
 	groupId: string;
 }
 
 export default function SpaceSettings({
 	backURL,
-	depotEntryId,
+	companyAvailableLanguages,
+	externalReferenceCode,
 	groupId,
 }: SpaceSettingsProps) {
 	const [space, setSpace] = useState<Space | null>(null);
 
 	useEffect(() => {
-		SpaceService.getSpace({spaceId: depotEntryId}).then((space) => {
+		SpaceService.getSpace(externalReferenceCode).then((space) => {
 			setSpace(space);
 		});
-	}, [depotEntryId]);
+	}, [externalReferenceCode]);
 
 	if (!space) {
 		return null;
@@ -37,12 +40,26 @@ export default function SpaceSettings({
 
 	const verticalNavItems = [
 		{
-			component: <SpaceGeneralSettings groupId={groupId} space={space} />,
+			component: (
+				<SpaceGeneralSettings
+					backURL={backURL}
+					groupId={groupId}
+					setSpace={setSpace}
+					space={space}
+				/>
+			),
 			id: 'general',
 			label: Liferay.Language.get('general'),
 		},
 		{
-			component: <Languages />,
+			component: (
+				<SpaceLanguageSettings
+					backURL={backURL}
+					companyAvailableLanguages={companyAvailableLanguages}
+					setSpace={setSpace}
+					space={space}
+				/>
+			),
 			id: 'languages',
 			label: Liferay.Language.get('languages'),
 		},
@@ -58,8 +75,4 @@ export default function SpaceSettings({
 			<VerticalNavLayout items={verticalNavItems} />
 		</>
 	);
-}
-
-function Languages() {
-	return null;
 }
