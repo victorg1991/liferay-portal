@@ -19,11 +19,13 @@ import com.liferay.object.constants.ObjectActionTriggerConstants;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.exception.NoSuchObjectDefinitionException;
+import com.liferay.object.field.builder.ObjectFieldBuilder;
 import com.liferay.object.info.field.converter.ObjectFieldInfoFieldConverter;
 import com.liferay.object.info.item.ObjectEntryInfoItemFields;
 import com.liferay.object.info.item.util.ObjectEntryInfoItemUtil;
 import com.liferay.object.model.ObjectAction;
 import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.model.ObjectEntryTable;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.service.ObjectActionLocalService;
@@ -37,6 +39,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 import com.liferay.template.info.item.provider.TemplateInfoItemFieldSetProvider;
 
 import java.util.HashMap;
@@ -358,6 +361,35 @@ public class ObjectEntryInfoItemFormProviderUtil {
 						ObjectEntryInfoItemFields.getFriendlyURLInfoField(
 							objectDefinition.isEnableFriendlyURLCustomization(),
 							name, namespace));
+				}
+
+				for (ObjectRelationship objectRelationship :
+					objectRelationshipLocalService.getObjectRelationships(
+						objectDefinition.getObjectDefinitionId(),
+						ObjectRelationshipConstants.TYPE_MANY_TO_MANY)) {
+
+					if (objectRelationship.isReverse()) {
+						continue;
+					}
+
+					unsafeConsumer.accept(
+						objectFieldInfoFieldConverter.getInfoField(
+							editable, namespace, new ObjectFieldBuilder(
+							).businessType(
+								ObjectFieldConstants.BUSINESS_TYPE_RELATIONSHIP
+							).labelMap(
+								objectRelationship.getLabelMap()
+							).name(
+								ObjectRelationshipConstants.OBJECT_RELATIONSHIP_FIELD_NAME_PREFIX +
+								objectRelationship.getName()
+							).objectFieldId(
+								objectRelationship.getObjectFieldId2()
+							).objectDefinitionId(
+								objectDefinition.getObjectDefinitionId()
+							).relationshipType(
+								objectRelationship.getType()
+							).build()));
+
 				}
 			}
 		).infoFieldSetEntry(

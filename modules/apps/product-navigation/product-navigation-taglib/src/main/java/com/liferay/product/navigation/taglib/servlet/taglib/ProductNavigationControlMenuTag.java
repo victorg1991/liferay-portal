@@ -141,7 +141,7 @@ public class ProductNavigationControlMenuTag extends IncludeTag {
 		return false;
 	}
 
-	private static final String _PAGE = "/control_menu/page.jsp";
+		private static final String _PAGE = "/control_menu/page.jsp";
 
 	private static final String[] _ROLE_NAMES = PropsUtil.getArray(
 		"control.menu.required.authenticated.user.role.names");

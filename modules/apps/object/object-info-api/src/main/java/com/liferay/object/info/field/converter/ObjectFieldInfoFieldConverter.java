@@ -24,6 +24,7 @@ import com.liferay.list.type.service.ListTypeEntryLocalService;
 import com.liferay.object.configuration.ObjectConfiguration;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectFieldValidationConstants;
+import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.field.setting.util.ObjectFieldSettingUtil;
 import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.info.field.type.util.ObjectFieldInfoFieldTypeUtil;
@@ -47,6 +48,7 @@ import com.liferay.object.service.ObjectStateFlowLocalService;
 import com.liferay.object.service.ObjectStateLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -493,14 +495,42 @@ public class ObjectFieldInfoFieldConverter {
 			return StringPool.BLANK;
 		}
 
-		ObjectRelationship objectRelationship =
-			_objectRelationshipLocalService.
-				fetchObjectRelationshipByObjectFieldId2(
-					objectField.getObjectFieldId());
+		ObjectDefinition relatedObjectDefinition = null;
 
-		ObjectDefinition relatedObjectDefinition =
-			_objectDefinitionLocalService.fetchObjectDefinition(
-				objectRelationship.getObjectDefinitionId1());
+		if (Objects.equals(
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY,
+			objectField.getRelationshipType())) {
+
+			try {
+				ObjectRelationship objectRelationship =
+					_objectRelationshipLocalService.
+						fetchObjectRelationship(
+							objectField.getObjectDefinitionId(),
+							StringUtil.replace(
+								objectField.getName(),
+								ObjectRelationshipConstants.OBJECT_RELATIONSHIP_FIELD_NAME_PREFIX,
+								StringPool.BLANK));
+
+				relatedObjectDefinition =
+					_objectDefinitionLocalService.fetchObjectDefinition(
+						objectRelationship.getObjectDefinitionId2());
+			}
+			catch (PortalException e) {
+				throw new RuntimeException(e);
+			}
+
+		}
+		else {
+			ObjectRelationship objectRelationship =
+				_objectRelationshipLocalService.
+					fetchObjectRelationshipByObjectFieldId2(
+						objectField.getObjectFieldId());
+
+			relatedObjectDefinition =
+				_objectDefinitionLocalService.fetchObjectDefinition(
+					objectRelationship.getObjectDefinitionId1());
+		}
+
 
 		if (relatedObjectDefinition == null) {
 			return StringPool.BLANK;
