@@ -6,6 +6,7 @@
 package com.liferay.object.field.business.type;
 
 import com.liferay.object.constants.ObjectFieldSettingConstants;
+import com.liferay.object.exception.ObjectEntryValuesException;
 import com.liferay.object.exception.ObjectFieldSettingNameException;
 import com.liferay.object.exception.ObjectFieldSettingValueException;
 import com.liferay.object.field.render.ObjectFieldRenderingContext;
@@ -63,6 +64,24 @@ public interface ObjectFieldBusinessType {
 	}
 
 	public String getLabel(Locale locale);
+
+	public default Map<String, Object> getLocalizedValues(
+			ObjectField objectField, Long userId, Map<String, Object> values)
+		throws PortalException {
+
+		Object value = values.get(objectField.getI18nObjectFieldName());
+
+		if (value == null) {
+			return null;
+		}
+
+		if (!(value instanceof Map<?, ?>)) {
+			throw new ObjectEntryValuesException.InvalidValue(
+				objectField.getI18nObjectFieldName());
+		}
+
+		return (Map<String, Object>)value;
+	}
 
 	public String getName();
 

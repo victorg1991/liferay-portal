@@ -16,6 +16,7 @@ import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.entry.util.ObjectEntryDTOConverterUtil;
 import com.liferay.object.exception.NoSuchObjectEntryException;
 import com.liferay.object.field.attachment.AttachmentManager;
+import com.liferay.object.field.business.type.ObjectFieldBusinessType;
 import com.liferay.object.field.business.type.ObjectFieldBusinessTypeRegistry;
 import com.liferay.object.field.setting.util.ObjectFieldSettingUtil;
 import com.liferay.object.model.ObjectAction;
@@ -1679,13 +1680,19 @@ public class DefaultObjectEntryManagerImpl
 			}
 
 			if (objectField.isLocalized()) {
-				Object localizedValue = objectEntry.getPropertyValue(
-					objectField.getI18nObjectFieldName());
+				ObjectFieldBusinessType objectFieldBusinessType =
+					_objectFieldBusinessTypeRegistry.getObjectFieldBusinessType(
+						objectField.getBusinessType());
 
-				if (localizedValue != null) {
+				Map<String, Object> localizedValues =
+					objectFieldBusinessType.getLocalizedValues(
+						objectField, serviceContext.getUserId(),
+						objectEntry.getProperties());
+
+				if (localizedValues != null) {
 					values.put(
 						objectField.getI18nObjectFieldName(),
-						(Serializable)localizedValue);
+						(Serializable)localizedValues);
 				}
 				else if (value != null) {
 					values.put(

@@ -56,6 +56,27 @@ public class RichTextObjectFieldBusinessType
 	}
 
 	@Override
+	public Map<String, Object> getLocalizedValues(
+			ObjectField objectField, Long userId, Map<String, Object> values)
+		throws PortalException {
+
+		Map<String, Object> localizedValues =
+			ObjectFieldBusinessType.super.getLocalizedValues(
+				objectField, userId, values);
+
+		if (localizedValues == null) {
+			return null;
+		}
+
+		for (Map.Entry<String, Object> entry : localizedValues.entrySet()) {
+			localizedValues.put(
+				entry.getKey(), _getValue(objectField, entry.getValue()));
+		}
+
+		return localizedValues;
+	}
+
+	@Override
 	public String getName() {
 		return ObjectFieldConstants.BUSINESS_TYPE_RICH_TEXT;
 	}
@@ -80,16 +101,21 @@ public class RichTextObjectFieldBusinessType
 			ObjectField objectField, long userId, Map<String, Object> values)
 		throws PortalException {
 
+		Object value = ObjectFieldBusinessType.super.getValue(
+			objectField, userId, values);
+
+		return _getValue(objectField, value);
+	}
+
+	private Object _getValue(ObjectField objectField, Object value)
+		throws PortalException {
+
 		ObjectDefinition objectDefinition = objectField.getObjectDefinition();
 
 		return SanitizerUtil.sanitize(
 			objectField.getCompanyId(), 0, objectField.getUserId(),
 			objectDefinition.getClassName(), 0, ContentTypes.TEXT_HTML,
-			Sanitizer.MODE_ALL,
-			String.valueOf(
-				ObjectFieldBusinessType.super.getValue(
-					objectField, userId, values)),
-			null);
+			Sanitizer.MODE_ALL, String.valueOf(value), null);
 	}
 
 	@Reference
