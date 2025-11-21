@@ -1299,6 +1299,38 @@ public class DefaultObjectEntryManagerImplTest
 	}
 
 	@Test
+	public void testAddObjectEntryWithLocalizedRichTextObjectField()
+		throws Exception {
+
+		ObjectEntry objectEntry = _defaultObjectEntryManager.addObjectEntry(
+			_simpleDTOConverterContext, _objectDefinition2,
+			new ObjectEntry() {
+				{
+					properties = HashMapBuilder.<String, Object>put(
+						"localizedRichTextObjectFieldName_i18n",
+						HashMapBuilder.<String, Object>put(
+							"en_US",
+							"en_US <script>console.log('XSS');</script>"
+						).put(
+							"pt_BR",
+							"pt_BR <script>console.log('XSS');</script>"
+						).build()
+					).build();
+				}
+			},
+			null);
+
+		Assert.assertEquals(
+			"en_US",
+			_getLocalizedPropertyValue(
+				"en_US", objectEntry, "localizedRichTextObjectFieldName"));
+		Assert.assertEquals(
+			"pt_BR",
+			_getLocalizedPropertyValue(
+				"pt_BR", objectEntry, "localizedRichTextObjectFieldName"));
+	}
+
+	@Test
 	public void testDeleteObjectEntry() throws Exception {
 		ObjectDefinition objectDefinition1 = _createObjectDefinition(
 			Collections.singletonList(
@@ -4001,6 +4033,16 @@ public class DefaultObjectEntryManagerImplTest
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		return dlFileEntry.getFileEntryId();
+	}
+
+	private Object _getLocalizedPropertyValue(
+		String languageId, ObjectEntry objectEntry, String objectFieldName) {
+
+		Map<String, Serializable> localizedValues =
+			(Map<String, Serializable>)objectEntry.getPropertyValue(
+				objectFieldName + "_i18n");
+
+		return localizedValues.get(languageId);
 	}
 
 	private void _removeResourcePermission(
