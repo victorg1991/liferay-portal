@@ -8716,11 +8716,11 @@ ${output.content}</echo>
 		</run-batch-test>
 	</target>
 
-	<target name="patching-tool-mysql57">
+	<target name="patching-tool-mysql57-jdk8">
 		<run-patching-tool-test database.type="mysql" database.version="5.7" />
 	</target>
 
-	<target name="patching-tool-postgresql153">
+	<target name="patching-tool-postgresql153-jdk8">
 		<run-patching-tool-test database.type="postgresql" database.version="15.3" />
 	</target>
 
