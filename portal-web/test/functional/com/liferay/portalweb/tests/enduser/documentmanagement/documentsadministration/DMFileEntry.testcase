@@ -4353,7 +4353,7 @@ definition {
 		AssertConsoleTextPresent(value1 = "com.liferay.document.library.kernel.exception.NoSuchFileException");
 
 		DMDocument.assertNoZipFileFromTempFolder(
-			appServer = "tomcat-9.0.107",
+			appServer = "tomcat-9.0.112",
 			fileNamePattern = "*.zip");
 	}
 
