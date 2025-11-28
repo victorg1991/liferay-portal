@@ -278,7 +278,7 @@ public class PermissionCacheUtil {
 
 	private static void _clearCache(long companyId, long... userIds) {
 		try (SafeCloseable safeCloseable =
-				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
+				CompanyThreadLocal.setWithSafeCloseable(companyId)) {
 
 			_clearCache(userIds);
 		}
@@ -327,7 +327,7 @@ public class PermissionCacheUtil {
 		long companyId, int scope, String name, String primKey) {
 
 		try (SafeCloseable safeCloseable =
-				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
+				CompanyThreadLocal.setWithSafeCloseable(companyId)) {
 
 			_clearResourcePermissionCache(scope, name, primKey);
 		}
