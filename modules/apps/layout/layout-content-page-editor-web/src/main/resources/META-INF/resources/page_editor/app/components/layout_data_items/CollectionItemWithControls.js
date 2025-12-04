@@ -9,7 +9,7 @@ import React, {useContext} from 'react';
 import useSetRef from '../../../common/hooks/useSetRef';
 import {config} from '../../config';
 import {CollectionItemContext} from '../../contexts/CollectionItemContext';
-import getLayoutDataItemTopperUniqueClassName from '../../utils/getLayoutDataItemTopperUniqueClassName';
+import getLayoutDataItemTopperUniqueClassName from '../../utils/getLasyoutDataItemTopperUniqueClassName';
 import TopperEmpty from '../topper/TopperEmpty';
 
 const CollectionItemWithControls = React.forwardRef(({children, item}, ref) => {
