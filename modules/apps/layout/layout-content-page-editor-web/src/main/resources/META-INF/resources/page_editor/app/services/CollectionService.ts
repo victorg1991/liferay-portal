@@ -125,7 +125,7 @@ export default {
 	getCollectionSupportedFilters(
 		collections: Array<{
 			collectionId: string;
-			layoutObjectReference: CollectionLayoutDataItem['config']['collection'];
+			layoutObjectReference: CollectionLayoutDataItem['config']['colslection'];
 		}>
 	) {
 		return serviceFetch<Record<string, string[]>>(
