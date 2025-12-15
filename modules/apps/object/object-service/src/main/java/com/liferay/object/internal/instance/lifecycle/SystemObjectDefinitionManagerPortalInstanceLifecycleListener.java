@@ -44,6 +44,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Release;
+import com.liferay.portal.kernel.security.permission.InlineSQLHelper;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.ListTypeLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
@@ -223,16 +224,17 @@ public class SystemObjectDefinitionManagerPortalInstanceLifecycleListener
 			_objectRelatedModelsProviderRegistrarHelper.register(
 				_bundleContext, objectDefinition,
 				new SystemObjectMtoMObjectRelatedModelsProviderImpl(
-					objectDefinition, _objectDefinitionLocalService,
-					_objectFieldLocalService, _objectRelationshipLocalService,
+					_inlineSQLHelper, objectDefinition,
+					_objectDefinitionLocalService, _objectFieldLocalService,
+					_objectRelationshipLocalService,
 					systemObjectDefinitionManager,
 					_systemObjectDefinitionManagerRegistry));
 			_objectRelatedModelsProviderRegistrarHelper.register(
 				_bundleContext, objectDefinition,
 				new SystemObject1toMObjectRelatedModelsProviderImpl(
-					objectDefinition, _objectDefinitionLocalService,
-					_objectEntryLocalService, _objectFieldLocalService,
-					_objectRelationshipLocalService,
+					_inlineSQLHelper, objectDefinition,
+					_objectDefinitionLocalService, _objectEntryLocalService,
+					_objectFieldLocalService, _objectRelationshipLocalService,
 					systemObjectDefinitionManager,
 					_systemObjectDefinitionManagerRegistry));
 		}
@@ -257,6 +259,9 @@ public class SystemObjectDefinitionManagerPortalInstanceLifecycleListener
 
 	@Reference
 	private DTOConverterRegistry _dtoConverterRegistry;
+
+	@Reference
+	private InlineSQLHelper _inlineSQLHelper;
 
 	@Reference
 	private ItemSelector _itemSelector;
