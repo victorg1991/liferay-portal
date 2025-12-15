@@ -42,6 +42,7 @@ import com.liferay.layout.content.page.editor.web.internal.configuration.PageEdi
 import com.liferay.layout.content.page.editor.web.internal.constants.ContentPageEditorActionKeys;
 import com.liferay.layout.content.page.editor.web.internal.manager.FragmentCollectionManager;
 import com.liferay.layout.content.page.editor.web.internal.manager.FragmentEntryLinkManager;
+import com.liferay.layout.content.page.editor.web.internal.util.CodeEditorUtil;
 import com.liferay.layout.content.page.editor.web.internal.util.MappingContentUtil;
 import com.liferay.layout.content.page.editor.web.internal.util.MappingTypesUtil;
 import com.liferay.layout.content.page.editor.web.internal.util.StyleBookEntryUtil;
@@ -71,6 +72,7 @@ import com.liferay.portal.kernel.editor.configuration.EditorConfiguration;
 import com.liferay.portal.kernel.editor.configuration.EditorConfigurationFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -290,6 +292,9 @@ public class ContentPageEditorDisplayContext {
 				"changeStyleBookEntryURL",
 				getFragmentEntryActionURL(
 					"/layout_content_page_editor/change_style_book_entry")
+			).put(
+				"codeEditorSidebarElements",
+				_getCodeEditorSidebarElementsJSONArray()
 			).put(
 				"collectionSelectorURL", _getCollectionSelectorURL()
 			).put(
@@ -1306,6 +1311,13 @@ public class ContentPageEditorDisplayContext {
 		}
 
 		return availableViewportSizesMap;
+	}
+
+	private JSONArray _getCodeEditorSidebarElementsJSONArray()
+		throws Exception {
+
+		return CodeEditorUtil.buildSidebarSections(
+			language, httpServletRequest);
 	}
 
 	private String _getCollectionSelectorURL() {
