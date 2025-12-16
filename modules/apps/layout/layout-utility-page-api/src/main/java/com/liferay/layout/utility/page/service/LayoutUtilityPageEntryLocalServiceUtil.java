@@ -503,7 +503,8 @@ public class LayoutUtilityPageEntryLocalServiceUtil {
 	}
 
 	public static LayoutUtilityPageEntry updateLayoutUtilityPageEntry(
-		long layoutUtilityPageEntryId, long previewFileEntryId) {
+			long layoutUtilityPageEntryId, long previewFileEntryId)
+		throws PortalException {
 
 		return getService().updateLayoutUtilityPageEntry(
 			layoutUtilityPageEntryId, previewFileEntryId);
