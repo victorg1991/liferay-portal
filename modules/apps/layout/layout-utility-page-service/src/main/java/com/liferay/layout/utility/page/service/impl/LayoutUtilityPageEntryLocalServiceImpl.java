@@ -353,7 +353,7 @@ public class LayoutUtilityPageEntryLocalServiceImpl
 		throws PortalException {
 
 		LayoutUtilityPageEntry layoutUtilityPageEntry =
-			layoutUtilityPageEntryPersistence.fetchByPrimaryKey(
+			layoutUtilityPageEntryPersistence.findByPrimaryKey(
 				layoutUtilityPageEntryId);
 
 		long previousPreviewFileEntryId =
