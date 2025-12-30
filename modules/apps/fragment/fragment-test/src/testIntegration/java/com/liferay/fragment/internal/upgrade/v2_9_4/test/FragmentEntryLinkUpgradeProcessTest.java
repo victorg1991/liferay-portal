@@ -154,7 +154,6 @@ public class FragmentEntryLinkUpgradeProcessTest
 		FragmentEntryLink fragmentEntryLink = (FragmentEntryLink)ctModel;
 
 		return _fragmentEntryLinkLocalService.updateFragmentEntryLink(
-			TestPropsValues.getUserId(),
 			fragmentEntryLink.getFragmentEntryLinkId(),
 			JSONUtil.put(
 				FragmentEntryProcessorConstants.

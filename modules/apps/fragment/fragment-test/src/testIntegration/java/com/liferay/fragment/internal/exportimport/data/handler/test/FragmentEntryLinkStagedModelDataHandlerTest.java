@@ -128,8 +128,6 @@ public class FragmentEntryLinkStagedModelDataHandlerTest
 	public void testStageFragmentEntryLinkWithCollectionEditableValues()
 		throws Exception {
 
-		String externalReferenceCode = RandomTestUtil.randomString();
-
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext(
 				stagingGroup.getGroupId(), TestPropsValues.getUserId());
@@ -145,9 +143,9 @@ public class FragmentEntryLinkStagedModelDataHandlerTest
 
 		TemplateEntry templateEntry =
 			_templateEntryLocalService.addTemplateEntry(
-				externalReferenceCode, TestPropsValues.getUserId(),
-				stagingGroup.getGroupId(), ddmTemplate.getTemplateId(),
-				StringPool.BLANK, StringPool.BLANK, serviceContext);
+				TestPropsValues.getUserId(), stagingGroup.getGroupId(),
+				ddmTemplate.getTemplateId(), StringPool.BLANK,
+				StringPool.BLANK, serviceContext);
 
 		String configuration = _read("configuration-valid-all-types.json");
 
@@ -182,8 +180,8 @@ public class FragmentEntryLinkStagedModelDataHandlerTest
 
 		TemplateEntry importedTemplateEntry =
 			_templateEntryLocalService.
-				fetchTemplateEntryByExternalReferenceCode(
-					externalReferenceCode, liveGroup.getGroupId());
+				fetchTemplateEntryByUuidAndGroupId(
+					templateEntry.getUuid(), liveGroup.getGroupId());
 
 		Assert.assertNotNull(importedTemplateEntry);
 
@@ -213,16 +211,14 @@ public class FragmentEntryLinkStagedModelDataHandlerTest
 	public void testStageFragmentEntryLinkWithCollectionSelector()
 		throws Exception {
 
-		String externalReferenceCode = RandomTestUtil.randomString();
-
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext(
 				stagingGroup.getGroupId(), TestPropsValues.getUserId());
 
 		AssetListEntry assetListEntry =
 			_assetListEntryLocalService.addAssetListEntry(
-				externalReferenceCode, TestPropsValues.getUserId(),
-				stagingGroup.getGroupId(), RandomTestUtil.randomString(),
+				TestPropsValues.getUserId(), stagingGroup.getGroupId(),
+				RandomTestUtil.randomString(),
 				AssetListEntryTypeConstants.TYPE_DYNAMIC, serviceContext);
 
 		String configuration = _read("configuration-collection-selector.json");
@@ -263,8 +259,8 @@ public class FragmentEntryLinkStagedModelDataHandlerTest
 
 		AssetListEntry importedAssetListEntry =
 			_assetListEntryLocalService.
-				fetchAssetListEntryByExternalReferenceCode(
-					externalReferenceCode, liveGroup.getGroupId());
+				fetchAssetListEntryByUuidAndGroupId(
+					assetListEntry.getUuid(), liveGroup.getGroupId());
 
 		Assert.assertNotNull(importedAssetListEntry);
 
