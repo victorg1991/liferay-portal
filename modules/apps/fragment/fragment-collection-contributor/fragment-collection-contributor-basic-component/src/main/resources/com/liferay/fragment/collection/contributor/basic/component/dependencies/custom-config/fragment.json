@@ -1,0 +1,7 @@
+{
+	"fragmentEntryKey": "customConfig",
+	"icon": "cog",
+	"name": "customConfig",
+	"thumbnail": "heading.png",
+	"type": "component"
+}

@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-export {LocalizationSelect} from './LocalizationSelect';
+export {ConfigurationComponent} from './ConfigurationComponent';
 
+export {LocalizationSelect} from './LocalizationSelect';
 export {focusInput} from './focusInput';
 export {getTranslationInput} from './getTranslationInput';
 export {
@@ -13,6 +14,6 @@ export {
 } from './handleInputLengthError';
 export {registerLocalizedInput} from './registerLocalizedInput';
 export {registerUnlocalizedInput} from './registerUnlocalizedInput';
-export {updateDLVideo} from './updateDLVideo';
 
+export {updateDLVideo} from './updateDLVideo';
 export {localStorage} from 'frontend-js-web';

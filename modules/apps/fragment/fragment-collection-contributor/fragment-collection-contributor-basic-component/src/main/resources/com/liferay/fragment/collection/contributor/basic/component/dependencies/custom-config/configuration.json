@@ -1,0 +1,18 @@
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"defaultValue": "",
+					"label": "custom-config",
+					"name": "customConfig",
+					"type": "jsModule",
+					"typeOptions": {
+						"module": "@liferay/fragment-impl/api"
+					}
+				}
+			],
+			"label": "configs"
+		}
+	]
+}

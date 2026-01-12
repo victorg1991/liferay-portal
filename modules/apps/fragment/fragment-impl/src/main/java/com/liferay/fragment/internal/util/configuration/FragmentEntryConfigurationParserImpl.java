@@ -51,12 +51,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -135,6 +137,8 @@ public class FragmentEntryConfigurationParserImpl
 			return configurationDefaultValuesJSONObject;
 		}
 
+		Set<String> keys = new HashSet<>();
+
 		List<FragmentConfigurationField> fragmentConfigurationFields =
 			getFragmentConfigurationFields(configurationJSONObject);
 
@@ -149,11 +153,23 @@ public class FragmentEntryConfigurationParserImpl
 				continue;
 			}
 
+			keys.add(name);
+
 			configurationDefaultValuesJSONObject.put(
 				name,
 				_getFieldValue(
 					fragmentConfigurationField, locale,
 					configurationValuesJSONObject.getString(name)));
+		}
+
+		for (String configurationValue : configurationValuesJSONObject.keySet()) {
+			if (configurationDefaultValuesJSONObject.has(configurationValue)) {
+				continue;
+			}
+
+			configurationDefaultValuesJSONObject.put(
+				configurationValue,
+				configurationValuesJSONObject.get(configurationValue));
 		}
 
 		return configurationDefaultValuesJSONObject;
