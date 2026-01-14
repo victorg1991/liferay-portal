@@ -91,6 +91,7 @@ import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.ModelPermissionsFactory;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -3651,6 +3652,61 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	public void testGetNestedFieldDetailsInRelationshipsWithoutPermission()
+		throws Exception {
+
+		// Many to many relationship, custom and system object definitions
+
+		_objectEntry1 = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition1, _OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1);
+		_userAccountJSONObject = UserAccountTestUtil.addUserAccountJSONObject(
+			_systemObjectDefinitionManagerRegistry.
+				getSystemObjectDefinitionManager("User"),
+			Collections.emptyMap());
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_userSystemObjectDefinition, _objectDefinition1,
+			_userAccountJSONObject.getLong("id"), _objectEntry1.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// Many to many relationship, custom object definitions
+
+		_objectEntry2 = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition2, _OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2);
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_objectDefinition1, _objectDefinition2,
+			_objectEntry1.getPrimaryKey(), _objectEntry2.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// One to many relationship, custom and system object definitions
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_objectDefinition1, _userSystemObjectDefinition,
+			_objectEntry1.getPrimaryKey(), _userAccountJSONObject.getLong("id"),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// One to many relationship, custom object definitions
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_objectDefinition1, _objectDefinition2,
+			_objectEntry1.getPrimaryKey(), _objectEntry2.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+	}
+
+	@Test
 	public void testGetNestedFieldDetailsInRelationshipsWithSystemObjectDefinition()
 		throws Exception {
 
@@ -6805,16 +6861,10 @@ public class ObjectEntryResourceTest {
 			long primaryKey2, String type)
 		throws Exception {
 
-		ObjectRelationship objectRelationship =
-			ObjectRelationshipTestUtil.addObjectRelationship(
-				objectDefinition1, objectDefinition2,
-				TestPropsValues.getUserId(), type);
-
-		ObjectRelationshipTestUtil.relateObjectEntries(
-			primaryKey1, primaryKey2, objectRelationship,
-			TestPropsValues.getUserId());
-
-		return objectRelationship;
+		return _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_PREVENT,
+			objectDefinition1, objectDefinition2, primaryKey1, primaryKey2,
+			type);
 	}
 
 	private ObjectRelationship _addObjectRelationshipAndRelateObjectEntries(
@@ -6824,6 +6874,24 @@ public class ObjectEntryResourceTest {
 		return _addObjectRelationshipAndRelateObjectEntries(
 			_objectDefinition1, _objectDefinition2,
 			_objectEntry1.getPrimaryKey(), _objectEntry2.getPrimaryKey(), type);
+	}
+
+	private ObjectRelationship _addObjectRelationshipAndRelateObjectEntries(
+			String deletionType, ObjectDefinition objectDefinition1,
+			ObjectDefinition objectDefinition2, long primaryKey1,
+			long primaryKey2, String type)
+		throws Exception {
+
+		ObjectRelationship objectRelationship =
+			ObjectRelationshipTestUtil.addObjectRelationship(
+				deletionType, objectDefinition1, objectDefinition2,
+				TestPropsValues.getUserId(), type);
+
+		ObjectRelationshipTestUtil.relateObjectEntries(
+			primaryKey1, primaryKey2, objectRelationship,
+			TestPropsValues.getUserId());
+
+		return objectRelationship;
 	}
 
 	private void _addResourcePermission(
@@ -7141,6 +7209,15 @@ public class ObjectEntryResourceTest {
 		return objectDefinition.getRESTContextPath();
 	}
 
+	private String _getEndpoint(
+		long objectEntryId, ObjectRelationship objectRelationship,
+		ObjectDefinition objectDefinition) {
+
+		return StringBundler.concat(
+			objectDefinition.getRESTContextPath(), StringPool.SLASH,
+			objectEntryId, "?nestedFields=", objectRelationship.getName());
+	}
+
 	private JSONObject _getLinkJSONObject(
 			DLFolder dlFolder, long fileEntryId, String fileName, Folder folder,
 			ObjectDefinition objectDefinition)
@@ -7361,6 +7438,44 @@ public class ObjectEntryResourceTest {
 		_assertNestedFieldsInRelationships(
 			0, GetterUtil.getInteger(nestedFieldDepth, 1), itemJSONObject,
 			expectedFieldName, objectFieldNamesAndObjectFieldValues, type);
+	}
+
+	private void _testGetNestedFieldDetailsInRelationshipsWithoutPermission()
+		throws Exception {
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		_resourcePermissionLocalService.setResourcePermissions(
+			TestPropsValues.getCompanyId(), _objectDefinition1.getClassName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(_objectEntry1.getPrimaryKey()), role.getRoleId(),
+			new String[] {ActionKeys.VIEW});
+
+		String password = RandomTestUtil.randomString();
+
+		User user = _addUser(RandomTestUtil.randomString(), password);
+
+		_userLocalService.addRoleUser(role.getRoleId(), user.getUserId());
+
+		HTTPTestUtil.customize(
+		).withCredentials(
+			user.getEmailAddress(), password
+		).apply(
+			() -> {
+				JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+					null,
+					_getEndpoint(
+						_objectEntry1.getObjectEntryId(), _objectRelationship1,
+						_objectDefinition1),
+					Http.Method.GET);
+
+				Assert.assertEquals(
+					"[]",
+					String.valueOf(
+						jsonObject.getJSONArray(
+							_objectRelationship1.getName())));
+			}
+		);
 	}
 
 	private void _testPatchPutCustomObjectEntryExternalReferenceCode(
@@ -9184,6 +9299,10 @@ public class ObjectEntryResourceTest {
 		_systemObjectDefinitionManagerRegistry;
 
 	private JSONObject _userAccountJSONObject;
+
+	@Inject
+	private UserLocalService _userLocalService;
+
 	private ObjectDefinition _userSystemObjectDefinition;
 
 	@DeleteAfterTestRun
