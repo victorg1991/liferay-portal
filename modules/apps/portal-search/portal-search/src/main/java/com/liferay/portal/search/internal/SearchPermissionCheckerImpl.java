@@ -246,7 +246,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 	}
 
 	private SearchPermissionContext _createSearchPermissionContext(
-			long companyId, long[] groupIds, long userId,
+			long companyId, boolean filterSearch, long[] groupIds, long userId,
 			PermissionChecker permissionChecker)
 		throws Exception {
 
@@ -283,7 +283,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 		int permissionTermsLimit =
 			_searchPermissionCheckerConfiguration.permissionTermsLimit();
 
-		if (termsCount > permissionTermsLimit) {
+		if (filterSearch && (termsCount > permissionTermsLimit)) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					StringBundler.concat(
@@ -302,7 +302,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 
 		termsCount += groups.size();
 
-		if (termsCount > permissionTermsLimit) {
+		if (filterSearch && (termsCount > permissionTermsLimit)) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(
 					StringBundler.concat(
@@ -353,7 +353,7 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 
 			termsCount += groupRoles.size();
 
-			if (termsCount > permissionTermsLimit) {
+			if (filterSearch && (termsCount > permissionTermsLimit)) {
 				if (_log.isDebugEnabled()) {
 					_log.debug(
 						StringBundler.concat(
@@ -430,7 +430,8 @@ public class SearchPermissionCheckerImpl implements SearchPermissionChecker {
 		}
 		else if (!permissionChecker.isCompanyAdmin(companyId)) {
 			searchPermissionContext = _createSearchPermissionContext(
-				companyId, groupIds, userId, permissionChecker);
+				companyId, indexer.isFilterSearch(), groupIds, userId,
+				permissionChecker);
 		}
 
 		if (searchPermissionContext == null) {
