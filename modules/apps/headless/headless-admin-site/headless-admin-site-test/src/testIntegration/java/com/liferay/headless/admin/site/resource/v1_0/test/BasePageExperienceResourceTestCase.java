@@ -18,6 +18,9 @@ import com.liferay.headless.admin.site.client.http.HttpInvoker;
 import com.liferay.headless.admin.site.client.pagination.Page;
 import com.liferay.headless.admin.site.client.resource.v1_0.PageExperienceResource;
 import com.liferay.headless.admin.site.client.serdes.v1_0.PageExperienceSerDes;
+import com.liferay.headless.batch.engine.client.dto.v1_0.ImportTask;
+import com.liferay.headless.batch.engine.client.http.HttpInvoker.HttpResponse;
+import com.liferay.headless.batch.engine.client.resource.v1_0.ImportTaskResource;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
@@ -32,12 +35,12 @@ import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
 import jakarta.annotation.Generated;
@@ -107,6 +110,16 @@ public abstract class BasePageExperienceResourceTestCase {
 		).locale(
 			LocaleUtil.getDefault()
 		).build();
+
+		importTaskResource = ImportTaskResource.builder(
+		).authentication(
+			_testCompanyAdminUser.getEmailAddress(),
+			PropsValues.DEFAULT_ADMIN_PASSWORD
+		).endpoint(
+			testCompany.getVirtualHostname(), 8080, "http"
+		).locale(
+			LocaleUtil.getDefault()
+		).build();
 	}
 
 	@After
@@ -168,7 +181,7 @@ public abstract class BasePageExperienceResourceTestCase {
 		pageExperience.setExternalReferenceCode(regex);
 		pageExperience.setKey(regex);
 		pageExperience.setPageSpecificationExternalReferenceCode(regex);
-		pageExperience.setSegmentExternalReferenceCode(regex);
+		pageExperience.setUuid(regex);
 
 		String json = PageExperienceSerDes.toJSON(pageExperience);
 
@@ -180,248 +193,90 @@ public abstract class BasePageExperienceResourceTestCase {
 		Assert.assertEquals(regex, pageExperience.getKey());
 		Assert.assertEquals(
 			regex, pageExperience.getPageSpecificationExternalReferenceCode());
-		Assert.assertEquals(
-			regex, pageExperience.getSegmentExternalReferenceCode());
+		Assert.assertEquals(regex, pageExperience.getUuid());
 	}
 
 	@Test
-	public void testDeleteSiteSiteByExternalReferenceCodePageExperience()
-		throws Exception {
-
+	public void testDeleteSitePageExperience() throws Exception {
 		@SuppressWarnings("PMD.UnusedLocalVariable")
 		PageExperience pageExperience =
-			testDeleteSiteSiteByExternalReferenceCodePageExperience_addPageExperience();
+			testDeleteSitePageExperience_addPageExperience();
 
 		assertHttpResponseStatusCode(
 			204,
-			pageExperienceResource.
-				deleteSiteSiteByExternalReferenceCodePageExperienceHttpResponse(
-					testDeleteSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode(),
-					pageExperience.getExternalReferenceCode()));
+			pageExperienceResource.deleteSitePageExperienceHttpResponse(
+				testDeleteSitePageExperience_getSiteExternalReferenceCode(),
+				pageExperience.getExternalReferenceCode()));
 
 		assertHttpResponseStatusCode(
 			404,
-			pageExperienceResource.
-				getSiteSiteByExternalReferenceCodePageExperienceHttpResponse(
-					testDeleteSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode(),
-					pageExperience.getExternalReferenceCode()));
+			pageExperienceResource.getSitePageExperienceHttpResponse(
+				testDeleteSitePageExperience_getSiteExternalReferenceCode(),
+				pageExperience.getExternalReferenceCode()));
 		assertHttpResponseStatusCode(
 			404,
-			pageExperienceResource.
-				getSiteSiteByExternalReferenceCodePageExperienceHttpResponse(
-					testDeleteSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode(),
-					"-"));
+			pageExperienceResource.getSitePageExperienceHttpResponse(
+				testDeleteSitePageExperience_getSiteExternalReferenceCode(),
+				"-"));
 	}
 
-	protected PageExperience
-			testDeleteSiteSiteByExternalReferenceCodePageExperience_addPageExperience()
+	protected PageExperience testDeleteSitePageExperience_addPageExperience()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
 	}
 
-	protected String
-			testDeleteSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode()
+	protected String testDeleteSitePageExperience_getSiteExternalReferenceCode()
 		throws Exception {
 
-		throw new UnsupportedOperationException(
-			"This method needs to be implemented");
+		return testGroup.getExternalReferenceCode();
 	}
 
 	@Test
-	public void testGetSiteSiteByExternalReferenceCodePageExperience()
-		throws Exception {
-
+	public void testGetSitePageExperience() throws Exception {
 		PageExperience postPageExperience =
-			testGetSiteSiteByExternalReferenceCodePageExperience_addPageExperience();
+			testGetSitePageExperience_addPageExperience();
 
 		PageExperience getPageExperience =
-			pageExperienceResource.
-				getSiteSiteByExternalReferenceCodePageExperience(
-					testGetSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode(),
-					postPageExperience.getExternalReferenceCode());
+			pageExperienceResource.getSitePageExperience(
+				testGetSitePageExperience_getSiteExternalReferenceCode(),
+				postPageExperience.getExternalReferenceCode());
 
 		assertEquals(postPageExperience, getPageExperience);
 		assertValid(getPageExperience);
 	}
 
-	protected PageExperience
-			testGetSiteSiteByExternalReferenceCodePageExperience_addPageExperience()
+	protected PageExperience testGetSitePageExperience_addPageExperience()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
 	}
 
-	protected String
-			testGetSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode()
+	protected String testGetSitePageExperience_getSiteExternalReferenceCode()
 		throws Exception {
 
-		throw new UnsupportedOperationException(
-			"This method needs to be implemented");
+		return testGroup.getExternalReferenceCode();
 	}
 
 	@Test
-	public void testGraphQLGetSiteSiteByExternalReferenceCodePageExperience()
-		throws Exception {
-
-		PageExperience pageExperience =
-			testGraphQLGetSiteSiteByExternalReferenceCodePageExperience_addPageExperience();
-
-		// No namespace
-
-		Assert.assertTrue(
-			equals(
-				pageExperience,
-				PageExperienceSerDes.toDTO(
-					JSONUtil.getValueAsString(
-						invokeGraphQLQuery(
-							new GraphQLField(
-								"siteByExternalReferenceCodePageExperience",
-								new HashMap<String, Object>() {
-									{
-										put(
-											"siteExternalReferenceCode",
-											"\"" +
-												testGraphQLGetSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode() +
-													"\"");
-										put(
-											"pageExperienceExternalReferenceCode",
-											"\"" +
-												pageExperience.
-													getExternalReferenceCode() +
-														"\"");
-									}
-								},
-								getGraphQLFields())),
-						"JSONObject/data",
-						"Object/siteByExternalReferenceCodePageExperience"))));
-
-		// Using the namespace headlessAdminSite_v1_0
-
-		Assert.assertTrue(
-			equals(
-				pageExperience,
-				PageExperienceSerDes.toDTO(
-					JSONUtil.getValueAsString(
-						invokeGraphQLQuery(
-							new GraphQLField(
-								"headlessAdminSite_v1_0",
-								new GraphQLField(
-									"siteByExternalReferenceCodePageExperience",
-									new HashMap<String, Object>() {
-										{
-											put(
-												"siteExternalReferenceCode",
-												"\"" +
-													testGraphQLGetSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode() +
-														"\"");
-											put(
-												"pageExperienceExternalReferenceCode",
-												"\"" +
-													pageExperience.
-														getExternalReferenceCode() +
-															"\"");
-										}
-									},
-									getGraphQLFields()))),
-						"JSONObject/data", "JSONObject/headlessAdminSite_v1_0",
-						"Object/siteByExternalReferenceCodePageExperience"))));
-	}
-
-	protected String
-			testGraphQLGetSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode()
-		throws Exception {
-
-		throw new UnsupportedOperationException(
-			"This method needs to be implemented");
-	}
-
-	@Test
-	public void testGraphQLGetSiteSiteByExternalReferenceCodePageExperienceNotFound()
-		throws Exception {
-
-		String irrelevantPageExperienceExternalReferenceCode =
-			"\"" + RandomTestUtil.randomString() + "\"";
-
-		// No namespace
-
-		Assert.assertEquals(
-			"Not Found",
-			JSONUtil.getValueAsString(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"siteByExternalReferenceCodePageExperience",
-						new HashMap<String, Object>() {
-							{
-								put(
-									"siteExternalReferenceCode",
-									"\"" +
-										irrelevantGroup.
-											getExternalReferenceCode() + "\"");
-								put(
-									"pageExperienceExternalReferenceCode",
-									irrelevantPageExperienceExternalReferenceCode);
-							}
-						},
-						getGraphQLFields())),
-				"JSONArray/errors", "Object/0", "JSONObject/extensions",
-				"Object/code"));
-
-		// Using the namespace headlessAdminSite_v1_0
-
-		Assert.assertEquals(
-			"Not Found",
-			JSONUtil.getValueAsString(
-				invokeGraphQLQuery(
-					new GraphQLField(
-						"headlessAdminSite_v1_0",
-						new GraphQLField(
-							"siteByExternalReferenceCodePageExperience",
-							new HashMap<String, Object>() {
-								{
-									put(
-										"siteExternalReferenceCode",
-										"\"" +
-											irrelevantGroup.
-												getExternalReferenceCode() +
-													"\"");
-									put(
-										"pageExperienceExternalReferenceCode",
-										irrelevantPageExperienceExternalReferenceCode);
-								}
-							},
-							getGraphQLFields()))),
-				"JSONArray/errors", "Object/0", "JSONObject/extensions",
-				"Object/code"));
-	}
-
-	protected PageExperience
-			testGraphQLGetSiteSiteByExternalReferenceCodePageExperience_addPageExperience()
-		throws Exception {
-
-		return testGraphQLPageExperience_addPageExperience();
-	}
-
-	@Test
-	public void testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage()
+	public void testGetSitePageSpecificationPageExperiencesPage()
 		throws Exception {
 
 		String siteExternalReferenceCode =
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getSiteExternalReferenceCode();
+			testGetSitePageSpecificationPageExperiencesPage_getSiteExternalReferenceCode();
 		String irrelevantSiteExternalReferenceCode =
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getIrrelevantSiteExternalReferenceCode();
+			testGetSitePageSpecificationPageExperiencesPage_getIrrelevantSiteExternalReferenceCode();
 		String pageSpecificationExternalReferenceCode =
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getPageSpecificationExternalReferenceCode();
+			testGetSitePageSpecificationPageExperiencesPage_getPageSpecificationExternalReferenceCode();
 		String irrelevantPageSpecificationExternalReferenceCode =
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getIrrelevantPageSpecificationExternalReferenceCode();
+			testGetSitePageSpecificationPageExperiencesPage_getIrrelevantPageSpecificationExternalReferenceCode();
 
 		Page<PageExperience> page =
-			pageExperienceResource.
-				getSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage(
-					siteExternalReferenceCode,
-					pageSpecificationExternalReferenceCode);
+			pageExperienceResource.getSitePageSpecificationPageExperiencesPage(
+				siteExternalReferenceCode,
+				pageSpecificationExternalReferenceCode);
 
 		long totalCount = page.getTotalCount();
 
@@ -429,14 +284,14 @@ public abstract class BasePageExperienceResourceTestCase {
 			(irrelevantPageSpecificationExternalReferenceCode != null)) {
 
 			PageExperience irrelevantPageExperience =
-				testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_addPageExperience(
+				testGetSitePageSpecificationPageExperiencesPage_addPageExperience(
 					irrelevantSiteExternalReferenceCode,
 					irrelevantPageSpecificationExternalReferenceCode,
 					randomIrrelevantPageExperience());
 
 			page =
 				pageExperienceResource.
-					getSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage(
+					getSitePageSpecificationPageExperiencesPage(
 						irrelevantSiteExternalReferenceCode,
 						irrelevantPageSpecificationExternalReferenceCode);
 
@@ -447,26 +302,25 @@ public abstract class BasePageExperienceResourceTestCase {
 				(List<PageExperience>)page.getItems());
 			assertValid(
 				page,
-				testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getExpectedActions(
+				testGetSitePageSpecificationPageExperiencesPage_getExpectedActions(
 					irrelevantSiteExternalReferenceCode,
 					irrelevantPageSpecificationExternalReferenceCode));
 		}
 
 		PageExperience pageExperience1 =
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_addPageExperience(
+			testGetSitePageSpecificationPageExperiencesPage_addPageExperience(
 				siteExternalReferenceCode,
 				pageSpecificationExternalReferenceCode, randomPageExperience());
 
 		PageExperience pageExperience2 =
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_addPageExperience(
+			testGetSitePageSpecificationPageExperiencesPage_addPageExperience(
 				siteExternalReferenceCode,
 				pageSpecificationExternalReferenceCode, randomPageExperience());
 
 		page =
-			pageExperienceResource.
-				getSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage(
-					siteExternalReferenceCode,
-					pageSpecificationExternalReferenceCode);
+			pageExperienceResource.getSitePageSpecificationPageExperiencesPage(
+				siteExternalReferenceCode,
+				pageSpecificationExternalReferenceCode);
 
 		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
@@ -474,13 +328,13 @@ public abstract class BasePageExperienceResourceTestCase {
 		assertContains(pageExperience2, (List<PageExperience>)page.getItems());
 		assertValid(
 			page,
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getExpectedActions(
+			testGetSitePageSpecificationPageExperiencesPage_getExpectedActions(
 				siteExternalReferenceCode,
 				pageSpecificationExternalReferenceCode));
 	}
 
 	protected Map<String, Map<String, String>>
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getExpectedActions(
+			testGetSitePageSpecificationPageExperiencesPage_getExpectedActions(
 				String siteExternalReferenceCode,
 				String pageSpecificationExternalReferenceCode)
 		throws Exception {
@@ -491,7 +345,7 @@ public abstract class BasePageExperienceResourceTestCase {
 	}
 
 	protected PageExperience
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_addPageExperience(
+			testGetSitePageSpecificationPageExperiencesPage_addPageExperience(
 				String siteExternalReferenceCode,
 				String pageSpecificationExternalReferenceCode,
 				PageExperience pageExperience)
@@ -502,21 +356,21 @@ public abstract class BasePageExperienceResourceTestCase {
 	}
 
 	protected String
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getSiteExternalReferenceCode()
+			testGetSitePageSpecificationPageExperiencesPage_getSiteExternalReferenceCode()
 		throws Exception {
 
 		return testGroup.getExternalReferenceCode();
 	}
 
 	protected String
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getIrrelevantSiteExternalReferenceCode()
+			testGetSitePageSpecificationPageExperiencesPage_getIrrelevantSiteExternalReferenceCode()
 		throws Exception {
 
 		return irrelevantGroup.getExternalReferenceCode();
 	}
 
 	protected String
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getPageSpecificationExternalReferenceCode()
+			testGetSitePageSpecificationPageExperiencesPage_getPageSpecificationExternalReferenceCode()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
@@ -524,27 +378,24 @@ public abstract class BasePageExperienceResourceTestCase {
 	}
 
 	protected String
-			testGetSiteSiteByExternalReferenceCodePageSpecificationPageExperiencesPage_getIrrelevantPageSpecificationExternalReferenceCode()
+			testGetSitePageSpecificationPageExperiencesPage_getIrrelevantPageSpecificationExternalReferenceCode()
 		throws Exception {
 
 		return null;
 	}
 
 	@Test
-	public void testPatchSiteSiteByExternalReferenceCodePageExperience()
-		throws Exception {
-
+	public void testPatchSitePageExperience() throws Exception {
 		PageExperience postPageExperience =
-			testPatchSiteSiteByExternalReferenceCodePageExperience_addPageExperience();
+			testPatchSitePageExperience_addPageExperience();
 
 		PageExperience randomPatchPageExperience = randomPatchPageExperience();
 
 		@SuppressWarnings("PMD.UnusedLocalVariable")
 		PageExperience patchPageExperience =
-			pageExperienceResource.
-				patchSiteSiteByExternalReferenceCodePageExperience(
-					null, postPageExperience.getExternalReferenceCode(),
-					randomPatchPageExperience);
+			pageExperienceResource.patchSitePageExperience(
+				null, postPageExperience.getExternalReferenceCode(),
+				randomPatchPageExperience);
 
 		PageExperience expectedPatchPageExperience = postPageExperience.clone();
 
@@ -552,16 +403,14 @@ public abstract class BasePageExperienceResourceTestCase {
 			randomPatchPageExperience, expectedPatchPageExperience);
 
 		PageExperience getPageExperience =
-			pageExperienceResource.
-				getSiteSiteByExternalReferenceCodePageExperience(
-					null, patchPageExperience.getExternalReferenceCode());
+			pageExperienceResource.getSitePageExperience(
+				null, patchPageExperience.getExternalReferenceCode());
 
 		assertEquals(expectedPatchPageExperience, getPageExperience);
 		assertValid(getPageExperience);
 	}
 
-	protected PageExperience
-			testPatchSiteSiteByExternalReferenceCodePageExperience_addPageExperience()
+	protected PageExperience testPatchSitePageExperience_addPageExperience()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
@@ -569,13 +418,11 @@ public abstract class BasePageExperienceResourceTestCase {
 	}
 
 	@Test
-	public void testPostSiteSiteByExternalReferenceCodePageSpecificationPageExperience()
-		throws Exception {
-
+	public void testPostSitePageSpecificationPageExperience() throws Exception {
 		PageExperience randomPageExperience = randomPageExperience();
 
 		PageExperience postPageExperience =
-			testPostSiteSiteByExternalReferenceCodePageSpecificationPageExperience_addPageExperience(
+			testPostSitePageSpecificationPageExperience_addPageExperience(
 				randomPageExperience);
 
 		assertEquals(randomPageExperience, postPageExperience);
@@ -583,7 +430,7 @@ public abstract class BasePageExperienceResourceTestCase {
 	}
 
 	protected PageExperience
-			testPostSiteSiteByExternalReferenceCodePageSpecificationPageExperience_addPageExperience(
+			testPostSitePageSpecificationPageExperience_addPageExperience(
 				PageExperience pageExperience)
 		throws Exception {
 
@@ -592,60 +439,103 @@ public abstract class BasePageExperienceResourceTestCase {
 	}
 
 	@Test
-	public void testPutSiteSiteByExternalReferenceCodePageExperience()
-		throws Exception {
-
+	public void testPutSitePageExperience() throws Exception {
 		PageExperience postPageExperience =
-			testPutSiteSiteByExternalReferenceCodePageExperience_addPageExperience();
+			testPutSitePageExperience_addPageExperience();
 
 		PageExperience randomPageExperience = randomPageExperience();
 
 		PageExperience putPageExperience =
-			pageExperienceResource.
-				putSiteSiteByExternalReferenceCodePageExperience(
-					testPutSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode(),
-					postPageExperience.getExternalReferenceCode(),
-					randomPageExperience);
+			pageExperienceResource.putSitePageExperience(
+				testPutSitePageExperience_getSiteExternalReferenceCode(),
+				postPageExperience.getExternalReferenceCode(),
+				randomPageExperience);
 
 		assertEquals(randomPageExperience, putPageExperience);
 		assertValid(putPageExperience);
 
 		PageExperience getPageExperience =
-			pageExperienceResource.
-				getSiteSiteByExternalReferenceCodePageExperience(
-					testPutSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode(),
-					putPageExperience.getExternalReferenceCode());
+			pageExperienceResource.getSitePageExperience(
+				testPutSitePageExperience_getSiteExternalReferenceCode(),
+				putPageExperience.getExternalReferenceCode());
 
 		assertEquals(randomPageExperience, getPageExperience);
 		assertValid(getPageExperience);
 	}
 
-	protected PageExperience
-			testPutSiteSiteByExternalReferenceCodePageExperience_addPageExperience()
+	protected PageExperience testPutSitePageExperience_addPageExperience()
 		throws Exception {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
 	}
 
-	protected String
-			testPutSiteSiteByExternalReferenceCodePageExperience_getSiteExternalReferenceCode()
+	protected String testPutSitePageExperience_getSiteExternalReferenceCode()
 		throws Exception {
 
-		throw new UnsupportedOperationException(
-			"This method needs to be implemented");
+		return testGroup.getExternalReferenceCode();
 	}
 
 	@Test
 	public void testBatchEngineDeleteImportTask() throws Exception {
-		Assert.assertTrue(true);
+		PageExperience pageExperience1 =
+			testBatchEngineDeleteImportTask_addSitePageExperience();
+
+		testBatchEngineDeleteImportTask_deletePageExperience(
+			200, pageExperience1.getExternalReferenceCode(),
+			"siteExternalReferenceCode", testGroup.getExternalReferenceCode());
+
+		assertHttpResponseStatusCode(
+			404,
+			pageExperienceResource.getSitePageExperienceHttpResponse(
+				testBatchEngineDeleteImportTask_getSiteExternalReferenceCode(),
+				pageExperience1.getExternalReferenceCode()));
 	}
 
-	protected PageExperience testGraphQLPageExperience_addPageExperience()
+	protected PageExperience
+			testBatchEngineDeleteImportTask_addSitePageExperience()
 		throws Exception {
 
-		throw new UnsupportedOperationException(
-			"This method needs to be implemented");
+		return testDeleteSitePageExperience_addPageExperience();
+	}
+
+	protected void testBatchEngineDeleteImportTask_deletePageExperience(
+			int expectedStatusCode, String externalReferenceCode,
+			String... parameters)
+		throws Exception {
+
+		ImportTaskResource importTaskResource = ImportTaskResource.builder(
+		).authentication(
+			_testCompanyAdminUser.getEmailAddress(),
+			PropsValues.DEFAULT_ADMIN_PASSWORD
+		).endpoint(
+			testCompany.getVirtualHostname(), 8080, "http"
+		).parameters(
+			parameters
+		).build();
+
+		HttpResponse httpResponse =
+			importTaskResource.deleteImportTaskHttpResponse(
+				"com.liferay.headless.admin.site.dto.v1_0.PageExperience", null,
+				null, null, null,
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"externalReferenceCode", () -> externalReferenceCode)));
+
+		Assert.assertEquals(expectedStatusCode, httpResponse.getStatusCode());
+
+		if (expectedStatusCode == 200) {
+			waitForFinish(
+				"COMPLETED",
+				JSONFactoryUtil.createJSONObject(httpResponse.getContent()));
+		}
+	}
+
+	protected String
+			testBatchEngineDeleteImportTask_getSiteExternalReferenceCode()
+		throws Exception {
+
+		return testGroup.getExternalReferenceCode();
 	}
 
 	protected void assertContains(
@@ -788,10 +678,18 @@ public abstract class BasePageExperienceResourceTestCase {
 			}
 
 			if (Objects.equals(
-					"segmentExternalReferenceCode",
+					"segmentItemExternalReference",
 					additionalAssertFieldName)) {
 
-				if (pageExperience.getSegmentExternalReferenceCode() == null) {
+				if (pageExperience.getSegmentItemExternalReference() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("uuid", additionalAssertFieldName)) {
+				if (pageExperience.getUuid() == null) {
 					valid = false;
 				}
 
@@ -855,6 +753,8 @@ public abstract class BasePageExperienceResourceTestCase {
 
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
+
+		graphQLFields.add(new GraphQLField("externalReferenceCode"));
 
 		for (java.lang.reflect.Field field :
 				getDeclaredFields(
@@ -1001,12 +901,22 @@ public abstract class BasePageExperienceResourceTestCase {
 			}
 
 			if (Objects.equals(
-					"segmentExternalReferenceCode",
+					"segmentItemExternalReference",
 					additionalAssertFieldName)) {
 
 				if (!Objects.deepEquals(
-						pageExperience1.getSegmentExternalReferenceCode(),
-						pageExperience2.getSegmentExternalReferenceCode())) {
+						pageExperience1.getSegmentItemExternalReference(),
+						pageExperience2.getSegmentItemExternalReference())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("uuid", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						pageExperience1.getUuid(), pageExperience2.getUuid())) {
 
 					return false;
 				}
@@ -1282,8 +1192,13 @@ public abstract class BasePageExperienceResourceTestCase {
 			return sb.toString();
 		}
 
-		if (entityFieldName.equals("segmentExternalReferenceCode")) {
-			Object object = pageExperience.getSegmentExternalReferenceCode();
+		if (entityFieldName.equals("segmentItemExternalReference")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("uuid")) {
+			Object object = pageExperience.getUuid();
 
 			String value = String.valueOf(object);
 
@@ -1379,8 +1294,7 @@ public abstract class BasePageExperienceResourceTestCase {
 				pageSpecificationExternalReferenceCode = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				priority = RandomTestUtil.randomInt();
-				segmentExternalReferenceCode = StringUtil.toLowerCase(
-					RandomTestUtil.randomString());
+				uuid = StringUtil.toLowerCase(RandomTestUtil.randomString());
 			}
 		};
 	}
@@ -1395,7 +1309,30 @@ public abstract class BasePageExperienceResourceTestCase {
 		return randomPageExperience();
 	}
 
+	protected final JSONObject waitForFinish(
+			String expectedExecuteStatus, JSONObject jsonObject)
+		throws Exception {
+
+		while (true) {
+			ImportTask importTask = importTaskResource.getImportTask(
+				jsonObject.getLong("id"));
+
+			ImportTask.ExecuteStatus executeStatus =
+				importTask.getExecuteStatus();
+
+			if (StringUtil.equals(executeStatus.getValue(), "COMPLETED") ||
+				StringUtil.equals(executeStatus.getValue(), "FAILED")) {
+
+				Assert.assertEquals(
+					expectedExecuteStatus, executeStatus.getValue());
+
+				return jsonObject;
+			}
+		}
+	}
+
 	protected PageExperienceResource pageExperienceResource;
+	protected ImportTaskResource importTaskResource;
 	protected com.liferay.portal.kernel.model.Group irrelevantGroup;
 	protected com.liferay.portal.kernel.model.Company testCompany;
 	protected com.liferay.portal.kernel.model.Group testGroup;

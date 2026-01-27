@@ -15,6 +15,7 @@ import {
 } from '../../js/CookiesUtil';
 
 export default function ({
+	consentRenewalPeriod,
 	namespace,
 	optionalConsentCookieTypeNames,
 	requiredConsentCookieTypeNames,
@@ -53,27 +54,29 @@ export default function ({
 		const acceptAllButton = document.getElementById(
 			`${namespace}acceptAllButton`
 		);
-		const confirmButton = document.getElementById(
-			`${namespace}confirmButton`
+		const acceptSelectedButton = document.getElementById(
+			`${namespace}acceptSelectedButton`
 		);
-		const declineAllButton = document.getElementById(
-			`${namespace}declineAllButton`
+		const useNecessaryCookiesOnlyButton = document.getElementById(
+			`${namespace}useNecessaryCookiesOnlyButton`
 		);
 
 		acceptAllButton.addEventListener('click', () => {
 			acceptAllCookies(
+				consentRenewalPeriod,
 				optionalConsentCookieTypeNames,
 				requiredConsentCookieTypeNames
 			);
 
-			setUserConfigCookie();
+			setUserConfigCookie(consentRenewalPeriod);
 
 			window.location.reload();
 		});
 
-		confirmButton.addEventListener('click', () => {
+		acceptSelectedButton.addEventListener('click', () => {
 			toggleSwitches.forEach((toggleSwitch) => {
 				setCookie(
+					consentRenewalPeriod,
 					toggleSwitch.dataset.cookieKey,
 					toggleSwitch.checked ? 'true' : 'false'
 				);
@@ -81,22 +84,27 @@ export default function ({
 
 			requiredConsentCookieTypeNames.forEach(
 				(requiredConsentCookieTypeName) => {
-					setCookie(requiredConsentCookieTypeName, 'true');
+					setCookie(
+						consentRenewalPeriod,
+						requiredConsentCookieTypeName,
+						'true'
+					);
 				}
 			);
 
-			setUserConfigCookie();
+			setUserConfigCookie(consentRenewalPeriod);
 
 			window.location.reload();
 		});
 
-		declineAllButton.addEventListener('click', () => {
+		useNecessaryCookiesOnlyButton.addEventListener('click', () => {
 			declineAllCookies(
+				consentRenewalPeriod,
 				optionalConsentCookieTypeNames,
 				requiredConsentCookieTypeNames
 			);
 
-			setUserConfigCookie();
+			setUserConfigCookie(consentRenewalPeriod);
 
 			window.location.reload();
 		});

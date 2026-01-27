@@ -221,6 +221,10 @@ public class ObjectEntryEntityModel implements EntityModel {
 					"externalReferenceCode",
 					_getExternalReferenceCodeFunction())
 			).put(
+				"folderId",
+				new IntegerEntityField(
+					"folderId", locale -> "objectEntryFolderId")
+			).put(
 				"id", new IdEntityField("id", locale -> "id", String::valueOf)
 			).put(
 				"keywords",
@@ -246,8 +250,13 @@ public class ObjectEntryEntityModel implements EntityModel {
 					new IntegerEntityField(
 						"taxonomyCategoryIds", locale -> "assetCategoryIds"))
 			).put(
+				"title", new StringEntityField("title", locale -> Field.TITLE)
+			).put(
 				"userId",
 				new IntegerEntityField("userId", locale -> Field.USER_ID)
+			).put(
+				"version",
+				new IntegerEntityField("version", locale -> "version")
 			).build();
 
 		for (ObjectField objectField : objectFields) {
@@ -285,13 +294,32 @@ public class ObjectEntryEntityModel implements EntityModel {
 						NAME_OBJECT_RELATIONSHIP_ERC_OBJECT_FIELD_NAME,
 					objectField);
 
-			entityFieldsMap.put(
-				objectRelationshipERCObjectFieldName,
-				new ReferenceStringEntityField(
+			// TODO: Temporary workaround for LPD-59378. Remove when filtering
+			// is supported for system objects.
+
+			ObjectDefinition relatedObjectDefinition =
+				ObjectRelationshipUtil.getRelatedObjectDefinition(
+					objectDefinition,
+					ObjectRelationshipLocalServiceUtil.
+						fetchObjectRelationshipByObjectFieldId2(
+							objectField.getObjectFieldId()));
+
+			if (relatedObjectDefinition.isUnmodifiableSystemObject()) {
+				entityFieldsMap.put(
 					objectRelationshipERCObjectFieldName,
-					_getExternalReferenceCodeFunction(),
-					objectFieldName.split(StringPool.UNDERLINE)[1] +
-						"/externalReferenceCode"));
+					new StringEntityField(
+						objectRelationshipERCObjectFieldName,
+						locale -> objectFieldName));
+			}
+			else {
+				entityFieldsMap.put(
+					objectRelationshipERCObjectFieldName,
+					new ReferenceStringEntityField(
+						objectRelationshipERCObjectFieldName,
+						_getExternalReferenceCodeFunction(),
+						objectFieldName.split(StringPool.UNDERLINE)[1] +
+							"/externalReferenceCode"));
+			}
 
 			String relationshipIdName = objectFieldName.substring(
 				objectFieldName.lastIndexOf(StringPool.UNDERLINE) + 1);

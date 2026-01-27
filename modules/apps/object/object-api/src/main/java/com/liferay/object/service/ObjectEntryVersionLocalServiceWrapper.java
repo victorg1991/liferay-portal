@@ -297,11 +297,32 @@ public class ObjectEntryVersionLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.object.model.ObjectEntryVersion
+		fetchLatestApprovedObjectEntryVersion(
+			long objectEntryId,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.object.model.ObjectEntryVersion>
+					orderByComparator) {
+
+		return _objectEntryVersionLocalService.
+			fetchLatestApprovedObjectEntryVersion(
+				objectEntryId, orderByComparator);
+	}
+
+	@Override
 	public com.liferay.object.model.ObjectEntryVersion fetchObjectEntryVersion(
 		long objectEntryVersionId) {
 
 		return _objectEntryVersionLocalService.fetchObjectEntryVersion(
 			objectEntryVersionId);
+	}
+
+	@Override
+	public com.liferay.object.model.ObjectEntryVersion fetchObjectEntryVersion(
+		long objectEntryId, int version) {
+
+		return _objectEntryVersionLocalService.fetchObjectEntryVersion(
+			objectEntryId, version);
 	}
 
 	/**
@@ -421,6 +442,18 @@ public class ObjectEntryVersionLocalServiceWrapper
 			objectEntryId, start, end);
 	}
 
+	@Override
+	public java.util.List<com.liferay.object.model.ObjectEntryVersion>
+		getObjectEntryVersions(
+			long objectEntryId, int start, int end,
+			com.liferay.portal.kernel.util.OrderByComparator
+				<com.liferay.object.model.ObjectEntryVersion>
+					orderByComparator) {
+
+		return _objectEntryVersionLocalService.getObjectEntryVersions(
+			objectEntryId, start, end, orderByComparator);
+	}
+
 	/**
 	 * Returns the number of object entry versions.
 	 *
@@ -459,6 +492,14 @@ public class ObjectEntryVersionLocalServiceWrapper
 	}
 
 	@Override
+	public boolean isLatestObjectEntryVersion(long objectEntryId, int version)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryVersionLocalService.isLatestObjectEntryVersion(
+			objectEntryId, version);
+	}
+
+	@Override
 	public com.liferay.object.model.ObjectEntryVersion
 			updateLatestObjectEntryVersion(
 				com.liferay.object.model.ObjectEntry objectEntry)
@@ -466,6 +507,17 @@ public class ObjectEntryVersionLocalServiceWrapper
 
 		return _objectEntryVersionLocalService.updateLatestObjectEntryVersion(
 			objectEntry);
+	}
+
+	@Override
+	public com.liferay.object.model.ObjectEntryVersion
+			updateLatestObjectEntryVersionModifiedDate(
+				java.util.Date modifiedDate, long objectEntryId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryVersionLocalService.
+			updateLatestObjectEntryVersionModifiedDate(
+				modifiedDate, objectEntryId);
 	}
 
 	/**

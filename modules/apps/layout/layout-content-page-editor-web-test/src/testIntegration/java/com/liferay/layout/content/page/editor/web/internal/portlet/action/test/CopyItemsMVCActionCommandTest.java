@@ -64,6 +64,7 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
@@ -265,7 +266,8 @@ public class CopyItemsMVCActionCommandTest {
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						ObjectFieldConstants.DB_TYPE_STRING, "First Name",
-						"firstName")));
+						"firstName")),
+				false);
 
 		InfoItemFormProvider<?> infoItemFormProvider =
 			_infoItemServiceRegistry.getFirstInfoItemService(
@@ -275,7 +277,11 @@ public class CopyItemsMVCActionCommandTest {
 			StringPool.BLANK, _group.getGroupId());
 
 		List<InfoField<?>> allInfoFields = ListUtil.filter(
-			infoForm.getAllInfoFields(), InfoField::isEditable);
+			infoForm.getAllInfoFields(),
+			infoField ->
+				infoField.isEditable() &&
+				!StringUtil.equals(
+					infoField.getName(), "externalReferenceCode"));
 
 		String classNameId = String.valueOf(
 			_portal.getClassNameId(objectDefinition.getClassName()));
@@ -362,7 +368,8 @@ public class CopyItemsMVCActionCommandTest {
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						ObjectFieldConstants.DB_TYPE_STRING, "First Name",
-						"firstName")));
+						"firstName")),
+				false);
 
 		InfoItemFormProvider<?> infoItemFormProvider =
 			_infoItemServiceRegistry.getFirstInfoItemService(
@@ -448,8 +455,8 @@ public class CopyItemsMVCActionCommandTest {
 
 		_layoutPageTemplateStructureLocalService.
 			updateLayoutPageTemplateStructureData(
-				_layout.getGroupId(), _layout.getPlid(),
-				layoutStructure.toString());
+				TestPropsValues.getUserId(), _layout.getGroupId(),
+				_layout.getPlid(), layoutStructure.toString());
 
 		JSONObject jsonObject = ReflectionTestUtil.invoke(
 			_mvcActionCommand, "doTransactionalCommand",
@@ -537,7 +544,8 @@ public class CopyItemsMVCActionCommandTest {
 			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 				editableValues, fragmentEntry.getCss(),
 				fragmentEntry.getConfiguration(),
-				fragmentEntry.getFragmentEntryId(), fragmentEntry.getHtml(),
+				fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), fragmentEntry.getHtml(),
 				fragmentEntry.getJs(), _layout,
 				fragmentEntry.getFragmentEntryKey(), fragmentEntry.getType(),
 				parentItemId, 0, _segmentsExperienceId);
@@ -608,10 +616,9 @@ public class CopyItemsMVCActionCommandTest {
 			FragmentEntryLink fragmentEntryLink)
 		throws Exception {
 
-		JSONObject jsonObject = _jsonFactory.createJSONObject(
-			fragmentEntryLink.getEditableValues());
-		JSONObject copiedJSONObject = _jsonFactory.createJSONObject(
-			copiedFragmentEntryLink.getEditableValues());
+		JSONObject jsonObject = fragmentEntryLink.getEditableValuesJSONObject();
+		JSONObject copiedJSONObject =
+			copiedFragmentEntryLink.getEditableValuesJSONObject();
 
 		Assert.assertEquals(jsonObject.length(), copiedJSONObject.length());
 
@@ -644,8 +651,11 @@ public class CopyItemsMVCActionCommandTest {
 		throws Exception {
 
 		Assert.assertEquals(
-			fragmentEntryLink.getFragmentEntryId(),
-			copiedFragmentEntryLink.getFragmentEntryId());
+			fragmentEntryLink.getFragmentEntryERC(),
+			copiedFragmentEntryLink.getFragmentEntryERC());
+		Assert.assertEquals(
+			fragmentEntryLink.getGroupId(),
+			copiedFragmentEntryLink.getFragmentEntryGroupId());
 		Assert.assertNotEquals(
 			copiedFragmentEntryLink.getFragmentEntryLinkId(),
 			fragmentEntryLink.getFragmentEntryLinkId());
@@ -654,8 +664,9 @@ public class CopyItemsMVCActionCommandTest {
 		Assert.assertNotEquals(
 			fragmentEntryLink.getNamespace(),
 			copiedFragmentEntryLink.getNamespace());
-		Assert.assertEquals(
-			0, copiedFragmentEntryLink.getOriginalFragmentEntryLinkId());
+		Assert.assertTrue(
+			Validator.isNull(
+				copiedFragmentEntryLink.getOriginalFragmentEntryLinkERC()));
 		Assert.assertEquals(
 			copiedFragmentEntryLink.getType(),
 			copiedFragmentEntryLink.getType());

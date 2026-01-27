@@ -51,6 +51,7 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropertiesUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -61,7 +62,6 @@ import com.liferay.portal.kernel.xml.SAXReaderUtil;
 import com.liferay.portal.kernel.xml.UnsecureSAXReaderUtil;
 import com.liferay.portal.kernel.xml.XPath;
 import com.liferay.portal.plugin.PluginPackageUtil;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.util.JS;
 import com.liferay.whip.util.ReflectionUtil;
 
@@ -302,10 +302,10 @@ public class WabProcessor {
 
 			Path metatInfBatchPath = _createPath(
 				clientExtensionBundlePath, "META-INF/batch");
+			Path metaInfClientExtensionConfigBundlePath = _createPath(
+				clientExtensionBundlePath, "META-INF/client-extension-config");
 			Path metatInfResourcesPath = _createPath(
 				clientExtensionBundlePath, "META-INF/resources");
-			Path osgiInfConfiguratorPath = _createPath(
-				clientExtensionBundlePath, "OSGI-INF/configurator");
 			Path siteInitializerResourcesPath = _createPath(
 				clientExtensionBundlePath, "site-initializer");
 
@@ -349,7 +349,7 @@ public class WabProcessor {
 
 					Files.copy(
 						zipFile.getInputStream(zipEntry),
-						osgiInfConfiguratorPath.resolve(name));
+						metaInfClientExtensionConfigBundlePath.resolve(name));
 				}
 				else if (name.startsWith(batchPathString)) {
 					Files.copy(
@@ -375,6 +375,13 @@ public class WabProcessor {
 								"^" + siteInitializerPathString, "")));
 
 					siteInitializerDetected = true;
+				}
+				else if (Objects.equals(
+							name, "META-INF/marketplace.properties")) {
+
+					Files.copy(
+						zipFile.getInputStream(zipEntry),
+						clientExtensionBundlePath.resolve(name));
 				}
 			}
 
@@ -533,24 +540,28 @@ public class WabProcessor {
 		}
 
 		try (ZipFile zipFile = new ZipFile(_file)) {
+			_pluginPackageProperties = new Properties();
+
 			ZipEntry zipEntry = zipFile.getEntry(
 				"WEB-INF/liferay-plugin-package.properties");
 
 			if (zipEntry == null) {
-				return _pluginPackageProperties = new Properties();
+				return _pluginPackageProperties;
 			}
 
 			try {
-				return _pluginPackageProperties = PropertiesUtil.load(
+				_pluginPackageProperties = PropertiesUtil.load(
 					zipFile.getInputStream(zipEntry),
 					StandardCharsets.UTF_8.name());
+
+				return _pluginPackageProperties;
 			}
 			catch (IOException ioException) {
 				if (_log.isDebugEnabled()) {
 					_log.debug(ioException);
 				}
 
-				return _pluginPackageProperties = new Properties();
+				return _pluginPackageProperties;
 			}
 		}
 	}
@@ -572,7 +583,10 @@ public class WabProcessor {
 		return webContextpath;
 	}
 
-	private void _processBeans(Builder analyzer) throws IOException {
+	private void _processBeans(
+			Builder analyzer, Properties pluginPackageProperties)
+		throws IOException {
+
 		String beansXMLFile = "WEB-INF/beans.xml";
 
 		File file = new File(_pluginDir, beansXMLFile);
@@ -633,9 +647,10 @@ public class WabProcessor {
 
 			});
 
-		String cdiInstruction = analyzer.getProperty(Constants.CDIANNOTATIONS);
+		String cdiInstruction = pluginPackageProperties.getProperty(
+			Constants.CDIANNOTATIONS);
 
-		if (cdiInstruction != null) {
+		if ((cdiInstruction != null) && cdiInstruction.isBlank()) {
 			return;
 		}
 
@@ -1002,20 +1017,6 @@ public class WabProcessor {
 		}
 
 		_formatDocument(file, document);
-	}
-
-	private void _processOSGiConfigurator(Jar jar, Builder analyzer) {
-		Map<String, Resource> resources = jar.getResources();
-
-		for (String resourceName : resources.keySet()) {
-			if (resourceName.startsWith("OSGI-INF/configurator/")) {
-				_appendProperty(
-					analyzer, Constants.REQUIRE_CAPABILITY,
-					_REQUIRE_CAPABILITY_OSGI_CONFIGURATOR);
-
-				break;
-			}
-		}
 	}
 
 	private void _processPackageNames(Analyzer analyzer) {
@@ -1563,9 +1564,7 @@ public class WabProcessor {
 
 			_processExcludedJSPs(analyzer);
 
-			_processBeans(analyzer);
-
-			_processOSGiConfigurator(jar, analyzer);
+			_processBeans(analyzer, pluginPackageProperties);
 
 			for (String stringPropertyName :
 					pluginPackageProperties.stringPropertyNames()) {
@@ -1678,10 +1677,6 @@ public class WabProcessor {
 		"osgi.cdi.extension;filter:='(osgi.cdi.extension=aries.cdi.el.jsp)',",
 		"osgi.cdi.extension;filter:='(osgi.cdi.extension=",
 		"com.liferay.bean.portlet.cdi.extension)'");
-
-	private static final String _REQUIRE_CAPABILITY_OSGI_CONFIGURATOR =
-		"osgi.extender;filter:=\"(&(osgi.extender=osgi.configurator)" +
-			"(version>=1.0)(!(version>=2.0)))\"";
 
 	private static final String _XPATHS_HOOK = StringUtil.merge(
 		new String[] {

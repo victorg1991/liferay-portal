@@ -12,6 +12,7 @@ import {useEventListener} from '@liferay/frontend-js-react-web';
 import classNames from 'classnames';
 import React, {Key, useEffect, useMemo, useState} from 'react';
 
+import getLocalizedValue from '../../common/utils/getLocalizedValue';
 import {useCache} from '../contexts/CacheContext';
 import {
 	Action,
@@ -20,10 +21,10 @@ import {
 	useStateDispatch,
 } from '../contexts/StateContext';
 import selectInvalids from '../selectors/selectInvalids';
+import selectPublishedChildren from '../selectors/selectPublishedChildren';
 import selectSelection from '../selectors/selectSelection';
+import selectStructure from '../selectors/selectStructure';
 import selectStructureChildren from '../selectors/selectStructureChildren';
-import selectStructureERC from '../selectors/selectStructureERC';
-import selectStructureError from '../selectors/selectStructureError';
 import selectStructureLocalizedLabel from '../selectors/selectStructureLocalizedLabel';
 import selectStructureUuid from '../selectors/selectStructureUuid';
 import {
@@ -33,15 +34,29 @@ import {
 	StructureChild,
 } from '../types/Structure';
 import {Uuid} from '../types/Uuid';
+import confirmChildrenDeletion from '../utils/confirmChildrenDeletion';
 import {FIELD_TYPE_ICON, FieldType} from '../utils/field';
+import isLocked from '../utils/isLocked';
+import isReferenced from '../utils/isReferenced';
+import AddChildDropdown from './AddChildDropdown';
 
 type TreeItem = {
+	actions?: Array<{
+		href?: string;
+		label: string;
+		onClick?: () => void;
+		symbolLeft?: string;
+		symbolRight?: string;
+		target?: string;
+	}>;
 	children?: TreeItem[];
 	editURL?: string;
 	erc?: string;
 	icon: string;
 	id: Uuid;
+	invalid?: boolean;
 	label: string;
+	locked?: boolean;
 	name?: string;
 	type?: FieldType | ReferencedStructure['type'] | RepeatableGroup['type'];
 };
@@ -51,11 +66,11 @@ export default function StructureTree({search}: {search: string}) {
 
 	const children = useSelector(selectStructureChildren);
 	const invalids = useSelector(selectInvalids);
+	const publishedChildren = useSelector(selectPublishedChildren);
 	const selection = useSelector(selectSelection);
 	const structureLabel = useSelector(selectStructureLocalizedLabel);
 	const structureUuid = useSelector(selectStructureUuid);
-	const structureError = useSelector(selectStructureError);
-	const structureERC = useSelector(selectStructureERC);
+	const structure = useSelector(selectStructure);
 
 	const {load: loadObjectDefinitions, status: objectDefinitionsStatus} =
 		useCache('object-definitions');
@@ -67,8 +82,9 @@ export default function StructureTree({search}: {search: string}) {
 	);
 	const [selectedKeys, setSelectedKeys] = useState<Set<Key>>(new Set());
 
-	const hasReferencedStructure = Array.from(children.values()).some(
-		({type}) => type === 'referenced-structure'
+	const hasReferencedStructure = useMemo(
+		() => hasReferencedStructureChild(children),
+		[children]
 	);
 
 	const items: TreeItem[] = useMemo(() => {
@@ -80,21 +96,28 @@ export default function StructureTree({search}: {search: string}) {
 			{
 				children: buildItems({
 					children,
+					dispatch,
+					invalids,
+					publishedChildren,
 					search,
-					structureERC,
+					structure,
 				}),
 				icon: 'edit-layout',
 				id: structureUuid,
+				invalid: invalids.has(structureUuid),
 				label: structureLabel,
 				uuid: structureUuid,
 			},
 		];
 	}, [
 		children,
+		dispatch,
 		hasReferencedStructure,
+		invalids,
 		objectDefinitionsStatus,
+		publishedChildren,
 		search,
-		structureERC,
+		structure,
 		structureLabel,
 		structureUuid,
 	]);
@@ -205,12 +228,29 @@ export default function StructureTree({search}: {search: string}) {
 							symbol={item.icon}
 						/>
 
-						<span className="ml-1">{item.label}</span>
+						<span className="ml-1">
+							{item.label}
 
-						{invalids.has(item.id) ||
-						(item.id === structureUuid && structureError) ? (
+							<ItemStatus item={item} />
+						</span>
+
+						{item.type === 'referenced-structure' ||
+						item.type === 'repeatable-group' ? (
+							<ClayIcon
+								className="ml-2"
+								data-title={Liferay.Language.get('repeatable')}
+								symbol="repeat"
+							/>
+						) : (
+							<></>
+						)}
+
+						{item.invalid ? (
 							<ClayIcon
 								className="ml-2 text-danger"
+								data-title={Liferay.Language.get(
+									'invalid-element'
+								)}
 								symbol="exclamation-full"
 							/>
 						) : (
@@ -219,19 +259,22 @@ export default function StructureTree({search}: {search: string}) {
 					</ClayTreeView.ItemStack>
 
 					<ClayTreeView.Group items={item.children}>
-						{(childItem, selectedKeys) => {
-							const actions = getItemActions({
-								dispatch,
-								item: childItem,
-								parent: item,
-							});
+						{(childItem, selectedKeys) => (
+							<ClayTreeView.Item
+								actions={
+									<>
+										{childItem.type ===
+										'repeatable-group' ? (
+											<AddChildDropdown
+												className="component-action quick-action-item"
+												displayType="unstyled"
+												parentUuid={childItem.id}
+											/>
+										) : null}
 
-							return (
-								<ClayTreeView.Item
-									actions={
-										actions.length ? (
+										{childItem.actions?.length ? (
 											<ClayDropDownWithItems
-												items={actions}
+												items={childItem.actions}
 												trigger={
 													<ClayButtonWithIcon
 														aria-label={Liferay.Language.get(
@@ -247,32 +290,49 @@ export default function StructureTree({search}: {search: string}) {
 													/>
 												}
 											/>
-										) : undefined
-									}
-									className={classNames({
-										active: selectedKeys.has(childItem.id),
-									})}
-								>
+										) : undefined}
+									</>
+								}
+								className={classNames({
+									active: selectedKeys.has(childItem.id),
+								})}
+							>
+								<ClayIcon
+									className="structure-builder__tree-node--field-icon"
+									symbol={childItem.icon}
+								/>
+
+								<span className="ml-1">
+									{childItem.label}
+
+									<ItemStatus item={childItem} />
+								</span>
+
+								{childItem.locked ? (
 									<ClayIcon
-										className="structure-builder__tree-node--field-icon"
-										symbol={childItem.icon}
+										className="ml-2"
+										data-title={Liferay.Language.get(
+											'locked-field'
+										)}
+										symbol="lock"
 									/>
+								) : (
+									<></>
+								)}
 
-									<span className="ml-1">
-										{childItem.label}
-									</span>
-
-									{invalids.has(childItem.id) ? (
-										<ClayIcon
-											className="ml-2 text-danger"
-											symbol="exclamation-full"
-										/>
-									) : (
-										<></>
-									)}
-								</ClayTreeView.Item>
-							);
-						}}
+								{childItem.invalid ? (
+									<ClayIcon
+										className="ml-2 text-danger"
+										data-title={Liferay.Language.get(
+											'invalid-element'
+										)}
+										symbol="exclamation-full"
+									/>
+								) : (
+									<></>
+								)}
+							</ClayTreeView.Item>
+						)}
 					</ClayTreeView.Group>
 				</ClayTreeView.Item>
 			)}
@@ -280,15 +340,41 @@ export default function StructureTree({search}: {search: string}) {
 	);
 }
 
+function ItemStatus({item: {invalid, locked}}: {item: TreeItem}) {
+	const messages = [];
+
+	if (locked) {
+		messages.push(Liferay.Language.get('locked-field'));
+	}
+
+	if (invalid) {
+		messages.push(Liferay.Language.get('invalid-element'));
+	}
+
+	if (!messages.length) {
+		return null;
+	}
+
+	return <span className="sr-only">{messages.join(' ')}</span>;
+}
+
 function useSelectionMode() {
 	const [multiple, setMultiple] = useState(false);
+
+	const isMultiSelectKey = (key: string) => {
+		if (Liferay.Browser.isMac()) {
+			return key === 'Meta';
+		}
+
+		return key === 'Control';
+	};
 
 	useEventListener(
 		'keydown',
 		(event) => {
 			const {key} = event as KeyboardEvent;
 
-			if (key === 'Control' || key === 'Meta') {
+			if (isMultiSelectKey(key) && !multiple) {
 				setMultiple(true);
 			}
 		},
@@ -304,10 +390,20 @@ function useSelectionMode() {
 		(event) => {
 			const {key} = event as KeyboardEvent;
 
-			if (key === 'Control' || key === 'Meta') {
+			if (isMultiSelectKey(key) && multiple) {
 				setMultiple(false);
 			}
 		},
+		false,
+
+		// @ts-ignore
+
+		window
+	);
+
+	useEventListener(
+		'blur',
+		() => setMultiple(false),
 		false,
 
 		// @ts-ignore
@@ -320,14 +416,18 @@ function useSelectionMode() {
 
 function buildItems({
 	children,
-	path = [],
+	dispatch,
+	invalids,
+	publishedChildren,
 	search,
-	structureERC,
+	structure,
 }: {
-	children: (Structure | RepeatableGroup)['children'];
-	path?: string[];
+	children: (ReferencedStructure | RepeatableGroup | Structure)['children'];
+	dispatch: React.Dispatch<Action>;
+	invalids: State['invalids'];
+	publishedChildren: State['publishedChildren'];
 	search: string;
-	structureERC: Structure['erc'];
+	structure: Structure;
 }): TreeItem[] {
 	return Array.from(children.values()).reduce(
 		(items: TreeItem[], child: StructureChild) => {
@@ -335,19 +435,27 @@ function buildItems({
 				child.type === 'referenced-structure' ||
 				child.type === 'repeatable-group'
 			) {
-				const label =
-					child.label[Liferay.ThemeDisplay.getDefaultLanguageId()]!;
+				const label = getLocalizedValue(child.label);
 
 				const item: TreeItem = {
+					actions: getItemActions({
+						dispatch,
+						item: child,
+						publishedChildren,
+						structure,
+					}),
 					children: buildItems({
 						children: child.children,
-						path: [...path, child.name],
+						dispatch,
+						invalids,
+						publishedChildren,
 						search,
-						structureERC,
+						structure,
 					}),
 					erc: child.erc,
 					icon: 'fieldset',
 					id: child.uuid,
+					invalid: invalids.has(child.uuid),
 					label,
 					type: child.type,
 				};
@@ -362,16 +470,21 @@ function buildItems({
 				}
 			}
 			else {
-				const label =
-					child.label[Liferay.ThemeDisplay.getDefaultLanguageId()]!;
+				const label = getLocalizedValue(child.label);
 
 				if (match(label, search)) {
 					items.push({
+						actions: getItemActions({
+							dispatch,
+							item: child,
+							publishedChildren,
+							structure,
+						}),
 						icon: FIELD_TYPE_ICON[child.type],
 						id: child.uuid,
-						label: child.label[
-							Liferay.ThemeDisplay.getDefaultLanguageId()
-						]!,
+						invalid: invalids.has(child.uuid),
+						label: getLocalizedValue(child.label),
+						locked: child.locked,
 						type: child.type,
 					});
 				}
@@ -394,12 +507,18 @@ function match(value: string, keyword: string) {
 function getItemActions({
 	dispatch,
 	item,
-	parent,
+	publishedChildren,
+	structure,
 }: {
 	dispatch: React.Dispatch<Action>;
-	item: TreeItem;
-	parent: TreeItem;
+	item: StructureChild;
+	publishedChildren: State['publishedChildren'];
+	structure: Structure;
 }) {
+	if (isLocked(item)) {
+		return [];
+	}
+
 	const actions = [];
 
 	if (item.type === 'referenced-structure' && item.erc) {
@@ -412,7 +531,7 @@ function getItemActions({
 		});
 	}
 
-	if (parent.type !== 'referenced-structure') {
+	if (!isReferenced({item, root: structure})) {
 		if (
 			item.type !== 'referenced-structure' &&
 			item.type !== 'repeatable-group'
@@ -422,21 +541,58 @@ function getItemActions({
 				onClick: () =>
 					dispatch({
 						type: 'add-repeatable-group',
+						uuid: item.uuid,
 					}),
 				symbolLeft: 'repeat',
 			});
 		}
 
+		if (item.type === 'repeatable-group') {
+			actions.push({
+				label: Liferay.Language.get('ungroup'),
+				onClick: () =>
+					dispatch({
+						type: 'ungroup',
+						uuid: item.uuid,
+					}),
+			});
+		}
+
 		actions.push({
 			label: Liferay.Language.get('delete-field'),
-			onClick: () =>
+			onClick: async () => {
+				if (publishedChildren.has(item.uuid)) {
+					const confirm = await confirmChildrenDeletion();
+
+					if (!confirm) {
+						return;
+					}
+				}
+
 				dispatch({
 					type: 'delete-child',
-					uuid: item.id,
-				}),
+					uuid: item.uuid,
+				});
+			},
 			symbolLeft: 'trash',
 		});
 	}
 
 	return actions;
+}
+
+function hasReferencedStructureChild(
+	children: (RepeatableGroup | Structure)['children']
+): boolean {
+	for (const child of children.values()) {
+		if (child.type === 'referenced-structure') {
+			return true;
+		}
+
+		if (child.type === 'repeatable-group') {
+			return hasReferencedStructureChild(child.children);
+		}
+	}
+
+	return false;
 }

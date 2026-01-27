@@ -3,11 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {ObjectDefinitionAPI} from '@liferay/object-admin-rest-client-js';
-import {Page, expect, mergeTests} from '@playwright/test';
-import fs from 'fs/promises';
+import {expect, mergeTests} from '@playwright/test';
 import * as path from 'path';
-import {getComparator} from 'playwright-core/lib/utils';
 
 import {accountSettingsPagesTest} from '../../../fixtures/accountSettingsPagesTest';
 import {accountsPagesTest} from '../../../fixtures/accountsPagesTest';
@@ -22,18 +19,18 @@ import {objectPagesTest} from '../../../fixtures/objectPagesTest';
 import {pageTemplatesPagesTest} from '../../../fixtures/pageTemplatesPagesTest';
 import {pageViewModePagesTest} from '../../../fixtures/pageViewModePagesTest';
 import {productMenuPageTest} from '../../../fixtures/productMenuPageTest';
+import {styleBookPageTest} from '../../../fixtures/styleBookPageTest';
 import {uiElementsPageTest} from '../../../fixtures/uiElementsTest';
 import {usersAndOrganizationsPagesTest} from '../../../fixtures/usersAndOrganizationsPagesTest';
 import {wikiPagesTest} from '../../../fixtures/wikiPagesTest';
 import {HomePage} from '../../../pages/portal-web/HomePage';
 import getRandomString from '../../../utils/getRandomString';
+import {normalizeRestPath} from '../../../utils/normalizeRestPath';
 import {openFieldset} from '../../../utils/openFieldset';
-import {getTempDir} from '../../../utils/temp';
 import {readFileFromZip} from '../../../utils/zip';
 import {companyExportImportPageTest} from './fixtures/companyExportImportPagesTest';
 import {exportImportPagesTest} from './fixtures/exportImportPagesTest';
 import {stagingPageTest} from './fixtures/stagingPageTest';
-import {objectDefitionRequestData} from './utils/objectDefitionRequestData';
 import {openImportFieldset} from './utils/openImportFieldset';
 
 export const test = mergeTests(
@@ -47,7 +44,8 @@ export const test = mergeTests(
 	exportImportPagesTest,
 	featureFlagsTest({
 		'LPD-35013': {enabled: true},
-		'LPD-35914': {enabled: false, system: true},
+		'LPD-35443': {enabled: false},
+		'LPD-35914': {enabled: false},
 		'LPD-44307': {enabled: true},
 		'LPD-44771': {enabled: true},
 	}),
@@ -68,11 +66,15 @@ export const testWithExportImportAtInstanceLevelFF = mergeTests(
 	exportImportPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-35914': {enabled: true, system: true},
+		'LPD-17564': {enabled: true},
+		'LPD-35443': {enabled: true},
+		'LPD-35914': {enabled: true},
 		'LPD-44307': {enabled: true},
 		'LPD-44771': {enabled: true},
+		'LPD-45276': {enabled: true},
 	}),
 	loginTest(),
+	styleBookPageTest,
 	uiElementsPageTest
 );
 
@@ -80,7 +82,8 @@ const testWithDeprecationFFDisabled = mergeTests(
 	exportImportPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-35914': {enabled: true, system: true},
+		'LPD-35443': {enabled: true},
+		'LPD-35914': {enabled: true},
 		'LPD-44307': {enabled: false},
 		'LPD-44771': {enabled: false},
 	}),
@@ -92,7 +95,8 @@ const testWithDeprecationFF = mergeTests(
 	exportImportPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-35914': {enabled: true, system: true},
+		'LPD-35443': {enabled: true},
+		'LPD-35914': {enabled: true},
 		'LPD-44307': {enabled: true},
 		'LPD-44771': {enabled: true},
 	}),
@@ -100,68 +104,13 @@ const testWithDeprecationFF = mergeTests(
 	uiElementsPageTest
 );
 
-async function getSiteHomePageScreenshot(
-	page: Page,
-	siteKey: string,
-	{staging}: {staging: boolean}
-) {
-	await page.goto(`/web/${siteKey}${staging ? '-staging' : ''}`);
-
-	const url = page.url();
-
-	await page.goto(`${url}?p_l_mode=preview`, {waitUntil: 'load'});
-
-	await page.waitForFunction(() => document.fonts.ready);
-
-	const screenshot = await page.screenshot({
-		fullPage: true,
-		mask: [page.getByTestId('notificationsCount')],
-		path: path.join(
-			getTempDir(),
-			`${siteKey}-${staging ? 'staging' : 'live'}.png`
-		),
-	});
-
-	await page.goto(url);
-
-	return screenshot;
-}
-
 testWithExportImportAtInstanceLevelFF(
-	'can export and import custom object entries at site level',
+	'Can export and import custom object entries at site level',
 	async ({apiHelpers, exportImportPage}) => {
-		const objectActionAPIClient =
-			await apiHelpers.buildRestClient(ObjectDefinitionAPI);
-
-		const {body: objectDefinition} =
-			await objectActionAPIClient.postObjectDefinition({
-				active: true,
-				externalReferenceCode: 'test',
-				label: {
-					en_US: 'Test',
-				},
-				name: 'Test',
-				objectFields: [
-					{
-						DBType: 'String',
-						businessType: 'Text',
-						indexed: true,
-						indexedAsKeyword: true,
-						label: {
-							en_US: 'Name',
-						},
-						name: 'name',
-						required: true,
-					},
-				],
-				pluralLabel: {
-					en_US: 'Tests',
-				},
-				portlet: true,
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
 				scope: 'site',
-				status: {
-					code: 0,
-				},
+				status: {code: 0},
 			});
 
 		apiHelpers.data.push({
@@ -170,91 +119,82 @@ testWithExportImportAtInstanceLevelFF(
 		});
 
 		const objectEntry = await apiHelpers.objectEntry.postObjectEntry(
-			{externalReferenceCode: '', name: 'test'},
-			'c/tests/scopes/Guest'
+			{externalReferenceCode: '', textField: objectDefinition.name},
+			`${normalizeRestPath(objectDefinition.restContextPath)}/scopes/Guest`
 		);
 
 		await exportImportPage.goToExport();
 
-		const exportName = 'MyExport-' + getRandomString();
+		const exportFilePath = await exportImportPage.export({
+			portletLabels: [`${objectDefinition.name} 1 Items`],
+		});
 
-		await exportImportPage.export(exportName, 'Tests');
-
-		await expect(
-			exportImportPage.page
-				.locator('//h2[span[normalize-space()="' + exportName + '"]]')
-				.first()
-				.locator('../..')
-				.getByText('Successful')
-		).toBeVisible();
-
-		const exportFilePath =
-			await exportImportPage.downloadExportProcess(exportName);
-
-		const content = await readFileFromZip('C_Test.json', exportFilePath);
+		const content = await readFileFromZip(
+			`C_${objectDefinition.name}.json`,
+			exportFilePath
+		);
 
 		const json = JSON.parse(content);
 
 		expect(json.length).toBe(1);
-
 		expect(
 			await apiHelpers.delete(
-				`${apiHelpers.baseUrl}c/tests/${objectEntry.id}`
+				`${apiHelpers.baseUrl}${normalizeRestPath(objectDefinition.restContextPath)}/${objectEntry.id}`
 			)
 		).toBeOK();
 
 		await exportImportPage.goToImport();
 
-		await exportImportPage.import(exportFilePath);
-
-		await expect(
-			exportImportPage.page
-				.getByText(exportName)
-				.locator('../../..')
-				.getByText('Successful')
-		).toBeVisible();
+		await exportImportPage.import({filePath: exportFilePath});
 
 		expect(
 			await apiHelpers.get(
-				`${apiHelpers.baseUrl}c/tests/scopes/Guest/by-external-reference-code/${objectEntry.externalReferenceCode}`
+				`${apiHelpers.baseUrl}${normalizeRestPath(objectDefinition.restContextPath)}/scopes/Guest/by-external-reference-code/${objectEntry.externalReferenceCode}`
 			)
 		).toEqual(
 			expect.objectContaining({
 				externalReferenceCode: objectEntry.externalReferenceCode,
-				name: objectEntry.name,
+				textField: objectEntry.textField,
 			})
 		);
 	}
 );
 
 testWithExportImportAtInstanceLevelFF(
-	'cannot import an instance scoped lar file',
-	async ({apiHelpers, companyExportImportPage, exportImportPage, page}) => {
-		const objectActionAPIClient =
-			await apiHelpers.buildRestClient(ObjectDefinitionAPI);
-
-		const {body: objectDefinition} =
-			await objectActionAPIClient.postObjectDefinition(
-				objectDefitionRequestData()
-			);
+	'Cannot import an instance scoped lar file',
+	async ({apiHelpers, applicationsMenuPage, exportImportPage, page}) => {
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
 
 		apiHelpers.data.push({
 			id: objectDefinition.id,
 			type: 'objectDefinition',
 		});
 
+		await apiHelpers.objectEntry.postObjectEntry(
+			{externalReferenceCode: '', textField: objectDefinition.name},
+			`${normalizeRestPath(objectDefinition.restContextPath)}`
+		);
+
 		const homePage = new HomePage(page);
 
-		const exportFilePath = await companyExportImportPage.export('Tests');
+		await applicationsMenuPage.goToExport();
+
+		const exportFilePath = await exportImportPage.export({
+			portletLabels: [`${objectDefinition.name} 1 Items`],
+		});
 
 		await homePage.goto();
 
 		await exportImportPage.goToImport();
 
-		await exportImportPage.import(
-			exportFilePath,
-			'The LAR file contains one or more entities with a different scope.'
-		);
+		await exportImportPage.import({
+			expectedUploadErrorMessage:
+				'The LAR file contains one or more entities with a different scope.',
+			filePath: exportFilePath,
+		});
 	}
 );
 
@@ -307,20 +247,7 @@ test(
 
 		await exportImportPage.goToExport();
 
-		const exportName = 'MyExport-' + getRandomString();
-
-		await exportImportPage.export(exportName);
-
-		await expect(
-			exportImportPage.page
-				.locator('//h2[span[normalize-space()="' + exportName + '"]]')
-				.first()
-				.locator('../..')
-				.getByText('Successful')
-		).toBeVisible();
-
-		const exportFilePath =
-			await exportImportPage.downloadExportProcess(exportName);
+		const exportFilePath = await exportImportPage.export();
 
 		await exportImportPage.goToImport();
 
@@ -332,7 +259,7 @@ test(
 );
 
 test(
-	'can XSS with `searchContainerId` in Asset Libraries import',
+	'Can XSS with `searchContainerId` in Asset Libraries import',
 	{tag: '@LPS-195766'},
 	async ({apiHelpers, depotAdminPage, page}) => {
 		const depotName = getRandomString();
@@ -374,7 +301,7 @@ test(
 	}
 );
 
-test('can import a folder with document type restrictions and workflow', async ({
+test('Can import a folder with document type restrictions and workflow', async ({
 	apiHelpers,
 	documentLibraryEditFolderPage,
 	documentLibraryPage,
@@ -398,109 +325,35 @@ test('can import a folder with document type restrictions and workflow', async (
 	);
 });
 
-test('can import a lar file selecting some items to import', async ({
+test('Can import a lar file selecting some items to import', async ({
 	exportImportPage,
 }) => {
 	await exportImportPage.goToExport();
 
-	const exportName = 'MyExport-' + getRandomString();
-
-	await exportImportPage.export(exportName);
-
-	await expect(
-		exportImportPage.page
-			.locator('//h2[span[normalize-space()="' + exportName + '"]]')
-			.first()
-			.locator('../..')
-			.getByText('Successful')
-	).toBeVisible();
-
-	const exportFilePath =
-		await exportImportPage.downloadExportProcess(exportName);
+	const exportFilePath = await exportImportPage.export();
 
 	await exportImportPage.goToImport();
 
-	await exportImportPage.import(exportFilePath);
-
-	await expect(
-		exportImportPage.page
-			.getByText(exportName)
-			.locator('../../..')
-			.getByText('Successful')
-	).toBeVisible();
+	await exportImportPage.import({filePath: exportFilePath});
 });
 
-[
-	{name: 'com.liferay.site.initializer.masterclass', shouldFail: true},
-	{name: 'com.liferay.site.initializer.welcome'},
-].forEach(({name, shouldFail}) => {
-	test(`site initializer ${name} can be exported and imported`, async ({
-		apiHelpers,
-		page,
-		stagingPage,
-	}, testInfo) => {
-		testInfo.fail(shouldFail);
-
-		const site = await apiHelpers.headlessSite.createSite({
-			name,
-			templateKey: name,
-			templateType: 'site-initializer',
-		});
-
-		expect(site.name).toBeDefined();
-
-		apiHelpers.data.push({id: site.id, type: 'site'});
-
-		await stagingPage.goto(site.name);
-
-		await stagingPage.enableLocalStaging();
-
-		const comparator = getComparator('image/png');
-
-		const buffer = comparator(
-			await getSiteHomePageScreenshot(page, site.name, {staging: false}),
-			await getSiteHomePageScreenshot(page, site.name, {staging: true})
-		);
-
-		if (buffer !== null && buffer.diff !== undefined) {
-			const diffPath = path.join(getTempDir(), `${site.name}-diff.png`);
-			await fs.writeFile(diffPath, buffer.diff);
-			throw new Error(
-				`The live and staging pages differ. Check the screenshot diff at "${diffPath}".`
-			);
-		}
-	});
-});
-
-test('can see corresponding elements at site level', async ({
+test('Can see corresponding elements at site level', async ({
 	apiHelpers,
 	exportImportPage,
 }) => {
-	const objectActionAPIClient =
-		await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+	const objectDefinition =
+		await apiHelpers.objectAdmin.postRandomObjectDefinition({
+			status: {code: 0},
+		});
 
-	const {body: objectDefinition} =
-		await objectActionAPIClient.postObjectDefinition(
-			objectDefitionRequestData()
-		);
-
-	apiHelpers.data.push({id: objectDefinition.id, type: 'objectDefinition'});
+	apiHelpers.data.push({
+		id: objectDefinition.id,
+		type: 'objectDefinition',
+	});
 
 	await exportImportPage.goToExport();
 
-	const exportName = 'MyExport-' + getRandomString();
-
-	await exportImportPage.export(exportName);
-
-	await expect(
-		exportImportPage.page
-			.getByText(exportName)
-			.locator('../..')
-			.getByText('Successful')
-	).toBeVisible();
-
-	const exportFilePath =
-		await exportImportPage.downloadExportProcess(exportName);
+	const exportFilePath = await exportImportPage.export();
 
 	await exportImportPage.goToImport();
 
@@ -535,16 +388,13 @@ test('can see corresponding elements at site level', async ({
 });
 
 testWithDeprecationFFDisabled(
-	"hide 'Delete Application Data' checkbox and 'Copy as New' radio button when deprecation FF is false",
+	"Hide 'Delete Application Data' checkbox and 'Copy as New' radio button when deprecation FF is false",
 	{tag: ['@LPD-44771', '@LPD-44307']},
 	async ({apiHelpers, exportImportPage}) => {
-		const objectActionAPIClient =
-			await apiHelpers.buildRestClient(ObjectDefinitionAPI);
-
-		const {body: objectDefinition} =
-			await objectActionAPIClient.postObjectDefinition(
-				objectDefitionRequestData()
-			);
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
 
 		apiHelpers.data.push({
 			id: objectDefinition.id,
@@ -553,19 +403,7 @@ testWithDeprecationFFDisabled(
 
 		await exportImportPage.goToExport();
 
-		const exportName = 'MyExport-' + getRandomString();
-
-		await exportImportPage.export(exportName);
-
-		await expect(
-			exportImportPage.page
-				.getByText(exportName)
-				.locator('../..')
-				.getByText('Successful')
-		).toBeVisible();
-
-		const exportFilePath =
-			await exportImportPage.downloadExportProcess(exportName);
+		const exportFilePath = await exportImportPage.export();
 
 		await exportImportPage.goToImportOptions(exportFilePath);
 
@@ -580,16 +418,14 @@ testWithDeprecationFFDisabled(
 );
 
 testWithDeprecationFF(
-	'show modal warning at site level',
+	'Show modal warning at site level',
 	{tag: ['@LPD-54835', '@LPD-54836']},
 	async ({apiHelpers, exportImportPage, page, uiElementsPage}) => {
-		const objectActionAPIClient =
-			await apiHelpers.buildRestClient(ObjectDefinitionAPI);
-
-		const {body: objectDefinition} =
-			await objectActionAPIClient.postObjectDefinition(
-				objectDefitionRequestData({scope: 'site'})
-			);
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				scope: 'site',
+				status: {code: 0},
+			});
 
 		apiHelpers.data.push({
 			id: objectDefinition.id,
@@ -600,14 +436,15 @@ testWithDeprecationFF(
 
 		const exportName = 'MyExport-' + getRandomString();
 
-		await exportImportPage.export(exportName, 'Tests');
+		await apiHelpers.objectEntry.postObjectEntry(
+			{externalReferenceCode: '', textField: objectDefinition.name},
+			`${normalizeRestPath(objectDefinition.restContextPath)}/scopes/Guest`
+		);
 
-		await expect(
-			page.getByText(exportName).locator('../..').getByText('Successful')
-		).toBeVisible();
-
-		const exportFilePath =
-			await exportImportPage.downloadExportProcess(exportName);
+		const exportFilePath = await exportImportPage.export({
+			portletLabels: [`${objectDefinition.name} 1 Items`],
+			taskName: exportName,
+		});
 
 		await exportImportPage.goToImport();
 
@@ -747,27 +584,22 @@ testWithDeprecationFF(
 			await exportImportPage.deleteApplicationDataCheckbox.check();
 			await exportImportPage.importButton.click();
 			await exportImportPage.importModalButton.click();
-			await expect(
-				page
-					.getByText(exportName)
-					.locator('../../..')
-					.getByText('Successful')
-			).toBeVisible();
+			await exportImportPage
+				.taskStatusLabel(exportName, 'success')
+				.waitFor();
 		});
 	}
 );
 
 testWithDeprecationFFDisabled(
-	'show modal warning at site level - FF disabled',
+	'Show modal warning at site level - FF disabled',
 	{tag: ['@LPD-54835', '@LPD-54836']},
 	async ({apiHelpers, exportImportPage, page, uiElementsPage}) => {
-		const objectActionAPIClient =
-			await apiHelpers.buildRestClient(ObjectDefinitionAPI);
-
-		const {body: objectDefinition} =
-			await objectActionAPIClient.postObjectDefinition(
-				objectDefitionRequestData({scope: 'site'})
-			);
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				scope: 'site',
+				status: {code: 0},
+			});
 
 		apiHelpers.data.push({
 			id: objectDefinition.id,
@@ -776,16 +608,14 @@ testWithDeprecationFFDisabled(
 
 		await exportImportPage.goToExport();
 
-		const exportName = 'MyExport-' + getRandomString();
+		await apiHelpers.objectEntry.postObjectEntry(
+			{externalReferenceCode: '', textField: objectDefinition.name},
+			`${normalizeRestPath(objectDefinition.restContextPath)}/scopes/Guest`
+		);
 
-		await exportImportPage.export(exportName, 'Tests');
-
-		await expect(
-			page.getByText(exportName).locator('../..').getByText('Successful')
-		).toBeVisible();
-
-		const exportFilePath =
-			await exportImportPage.downloadExportProcess(exportName);
+		const exportFilePath = await exportImportPage.export({
+			portletLabels: [`${objectDefinition.name} 1 Items`],
+		});
 
 		await exportImportPage.goToImport();
 

@@ -5,12 +5,11 @@
 
 package com.liferay.jenkins.results.parser;
 
-import com.liferay.jenkins.results.parser.testray.TestrayS3Object;
+import com.liferay.jenkins.results.parser.testray.TestrayCloudObject;
 
 import java.net.URL;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Michael Hashimoto
@@ -20,9 +19,10 @@ public interface TopLevelBuildReport extends BuildReport {
 	public void addDownstreamBuildReport(
 		DownstreamBuildReport downstreamBuildReport);
 
-	public void addTestrayAttachmentURL(URL testrayAttachmentURL);
+	public void addDownstreamBuildReports(
+		List<DownstreamBuildReport> downstreamBuildReports);
 
-	public Map<String, String> getBuildParameters();
+	public void addTestrayAttachmentURL(URL testrayAttachmentURL);
 
 	public Job.BuildProfile getBuildProfile();
 
@@ -30,7 +30,7 @@ public interface TopLevelBuildReport extends BuildReport {
 
 	public URL getBuildReportJSONUserContentURL();
 
-	public TestrayS3Object getBuildReportTestrayS3Object();
+	public TestrayCloudObject getBuildReportTestrayCloudObject();
 
 	public ControllerBuildReport getControllerBuildReport();
 
@@ -51,6 +51,10 @@ public interface TopLevelBuildReport extends BuildReport {
 	public long getTopLevelActiveDuration();
 
 	public long getTopLevelPassiveDuration();
+
+	public long getTotalActualDuration();
+
+	public long getTotalCachedDuration();
 
 	public long getTotalDuration();
 

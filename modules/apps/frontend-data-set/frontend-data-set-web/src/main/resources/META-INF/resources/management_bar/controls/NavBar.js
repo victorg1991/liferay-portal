@@ -13,42 +13,26 @@ import FrontendDataSetContext from '../../FrontendDataSetContext';
 import ViewsContext from '../../views/ViewsContext';
 import ActiveViewSelector from './ActiveViewSelector';
 import CreationMenu from './CreationMenu';
-import CustomViewsControls from './CustomViewsControls';
 import InfoPanelToggleButton from './InfoPanelToggleButton';
 import MainSearch from './MainSearch';
-import SelectionCheckbox from './SelectionCheckbox';
+import SnapshotsControls from './SnapshotsControls';
 import SortDropdown from './SortDropdown';
 import FiltersDropdown from './filters/FiltersDropdown';
 
-function NavBar({creationMenu, handleCheckboxClick, items, showSearch}) {
-	const {selectable, selectionType, showInfoPanel} = useContext(
-		FrontendDataSetContext
-	);
+function NavBar({creationMenu, showSearch}) {
+	const {globalFDSState, showInfoPanel} = useContext(FrontendDataSetContext);
 
-	const [{customViewsEnabled, filters, sorts, views}] =
-		useContext(ViewsContext);
+	const [{snapshotsEnabled, sorts, views}] = useContext(ViewsContext);
 
 	const [showMobile, setShowMobile] = useState(false);
 
 	return (
-		<ManagementToolbar.Container
-			className="justify-content-space-between"
+		<div
+			className="container-fluid ml-2 navbar navbar-expand-md"
 			data-qa-id="managementToolbar"
 		>
 			<ManagementToolbar.ItemList>
-				{!!items.length &&
-					selectable &&
-					selectionType === 'multiple' && (
-						<ManagementToolbar.Item>
-							<SelectionCheckbox
-								handleCheckboxClick={handleCheckboxClick}
-								items={items}
-								selectedItemsValue={[]}
-							/>
-						</ManagementToolbar.Item>
-					)}
-
-				{!!filters.length && (
+				{!!globalFDSState.filters.length && (
 					<ManagementToolbar.Item>
 						<FiltersDropdown />
 					</ManagementToolbar.Item>
@@ -92,7 +76,7 @@ function NavBar({creationMenu, handleCheckboxClick, items, showSearch}) {
 					</ManagementToolbar.Item>
 				)}
 
-				{customViewsEnabled && <CustomViewsControls />}
+				{snapshotsEnabled && <SnapshotsControls />}
 
 				{views?.length > 1 && (
 					<ManagementToolbar.Item>
@@ -108,11 +92,11 @@ function NavBar({creationMenu, handleCheckboxClick, items, showSearch}) {
 
 				{showInfoPanel && (
 					<ManagementToolbar.Item>
-						<InfoPanelToggleButton symbol="info-panel-closed" />
+						<InfoPanelToggleButton symbol="info-circle-open" />
 					</ManagementToolbar.Item>
 				)}
 			</ManagementToolbar.ItemList>
-		</ManagementToolbar.Container>
+		</div>
 	);
 }
 
@@ -121,8 +105,6 @@ NavBar.propTypes = {
 		primaryItems: PropTypes.array,
 		secondaryItems: PropTypes.array,
 	}),
-	handleCheckboxClick: PropTypes.func.isRequired,
-	items: PropTypes.array.isRequired,
 	showSearch: PropTypes.bool,
 };
 

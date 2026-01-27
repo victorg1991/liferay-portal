@@ -1,18 +1,18 @@
 {
 	"dependencies": {
-		"@clayui/alert": "3.129.1",
-		"@clayui/button": "3.136.0",
-		"@clayui/drop-down": "3.140.0",
-		"@clayui/form": "3.140.0",
-		"@clayui/icon": "3.128.0",
-		"@clayui/label": "3.128.0",
-		"@clayui/link": "3.128.0",
-		"@clayui/list": "3.140.0",
-		"@clayui/loading-indicator": "3.128.0",
-		"@clayui/modal": "3.140.0",
-		"@clayui/slider": "3.140.0",
-		"@clayui/table": "3.111.0",
-		"@clayui/tabs": "3.140.0",
+		"@clayui/alert": "*",
+		"@clayui/button": "*",
+		"@clayui/drop-down": "*",
+		"@clayui/form": "*",
+		"@clayui/icon": "*",
+		"@clayui/label": "*",
+		"@clayui/link": "*",
+		"@clayui/list": "*",
+		"@clayui/loading-indicator": "*",
+		"@clayui/modal": "*",
+		"@clayui/slider": "*",
+		"@clayui/table": "*",
+		"@clayui/tabs": "*",
 		"@liferay/frontend-js-react-web": "*",
 		"classnames": "2.3.1",
 		"frontend-js-components-web": "*",
@@ -37,5 +37,5 @@
 		"format": "node-scripts format",
 		"test": "USE_REACT_16=true node-scripts test"
 	},
-	"version": "3.0.108"
+	"version": "3.0.117"
 }

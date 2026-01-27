@@ -5,13 +5,17 @@
 
 import {isNullOrUndefined} from '@liferay/layout-js-components-web';
 
-import {config} from '../config';
 import {
 	ObjectDefinition,
 	ObjectField,
 	ObjectRelationship,
-} from '../types/ObjectDefinition';
-import {ReferencedStructure, Structure} from '../types/Structure';
+} from '../../common/types/ObjectDefinition';
+import {config} from '../config';
+import {
+	ReferencedStructure,
+	RepeatableGroup,
+	Structure,
+} from '../types/Structure';
 import {
 	FIELD_TYPE_TO_BUSINESS_TYPE,
 	FIELD_TYPE_TO_DB_TYPE,
@@ -27,6 +31,7 @@ export default function buildObjectDefinition({
 	name,
 	spaces,
 	status = 'draft',
+	workflows,
 }: {
 	children?: Structure['children'];
 	erc: Structure['erc'];
@@ -35,25 +40,31 @@ export default function buildObjectDefinition({
 	name: Structure['name'];
 	spaces: Structure['spaces'];
 	status?: Structure['status'];
+	workflows?: Structure['workflows'];
 }): ObjectDefinition {
 	const objectDefinition: ObjectDefinition = {
+		enableComments: true,
 		enableFriendlyURLCustomization: true,
 		enableIndexSearch: true,
 		enableLocalization: true,
 		enableObjectEntryDraft: true,
+		enableObjectEntryHistory: true,
+		enableObjectEntrySchedule: true,
 		enableObjectEntryVersioning: true,
 		externalReferenceCode: erc,
 		label,
 		objectFields: buildFields(getFields(children)),
-		objectRelationships: buildRelationships(
-			erc,
-			getReferencedStructures(children)
-		),
+		objectRelationships: buildRelationships({
+			referencedStructures: getReferencedStructures(children),
+			repeatableGroups: getRepeatableGroups(children),
+			structureERC: erc,
+		}),
 		pluralLabel: label,
 		scope: 'depot',
 		status: {
 			code: status === 'published' ? 0 : 2,
 		},
+		titleObjectFieldName: 'title',
 	};
 
 	if (id) {
@@ -83,13 +94,20 @@ export default function buildObjectDefinition({
 		];
 	}
 
+	if (workflows && Object.keys(workflows).length) {
+		objectDefinition.workflowDefinitionLinks = buildWorkflowDefinitionLinks(
+			{spaces, workflows}
+		);
+	}
+
 	return objectDefinition;
 }
 
 function getFields(children: Structure['children']): Field[] {
 	return Array.from(children.values()).filter(
 		(child) =>
-			!['referenced-structure', 'repeatable-group'].includes(child.type)
+			child.type !== 'referenced-structure' &&
+			child.type !== 'repeatable-group'
 	) as Field[];
 }
 
@@ -99,6 +117,14 @@ function getReferencedStructures(
 	return Array.from(children.values()).filter(
 		(child) => child.type === 'referenced-structure'
 	) as ReferencedStructure[];
+}
+
+function getRepeatableGroups(
+	children: Structure['children']
+): RepeatableGroup[] {
+	return Array.from(children.values()).filter(
+		(child) => child.type === 'repeatable-group'
+	) as RepeatableGroup[];
 }
 
 function buildFields(fields: Field[]) {
@@ -112,6 +138,7 @@ function buildFields(fields: Field[]) {
 			localized: field.localized,
 			name: field.name,
 			required: field.required,
+			system: field.locked,
 		};
 
 		if (field.indexableConfig.indexed) {
@@ -138,22 +165,81 @@ function buildFields(fields: Field[]) {
 	});
 }
 
-function buildRelationships(
-	erc: Structure['erc'],
-	referencedStructures: ReferencedStructure[]
-) {
-	return referencedStructures.map((referencedStructure) => {
-		const relationship: ObjectRelationship = {
+function buildRelationships({
+	referencedStructures,
+	repeatableGroups,
+	structureERC,
+}: {
+	referencedStructures: ReferencedStructure[];
+	repeatableGroups: RepeatableGroup[];
+	structureERC: Structure['erc'];
+}) {
+	const relationships: ObjectRelationship[] = [];
+
+	for (const referencedStructure of referencedStructures) {
+		relationships.push({
 			deletionType: 'cascade',
 			label: {
 				en_US: referencedStructure.name,
 			},
 			name: referencedStructure.relationshipName,
-			objectDefinitionExternalReferenceCode1: erc,
+			objectDefinitionExternalReferenceCode1: structureERC,
 			objectDefinitionExternalReferenceCode2: referencedStructure.erc,
 			type: 'oneToMany',
-		};
+		});
+	}
 
-		return relationship;
-	});
+	for (const repeatableGroup of repeatableGroups) {
+		relationships.push({
+			deletionType: 'cascade',
+			label: repeatableGroup.label,
+			name: repeatableGroup.relationshipName,
+			objectDefinitionExternalReferenceCode1: structureERC,
+			objectDefinitionExternalReferenceCode2: repeatableGroup.erc,
+			type: 'oneToMany',
+		});
+	}
+
+	return relationships;
+}
+
+function buildWorkflowDefinitionLinks({
+	spaces,
+	workflows,
+}: {
+	spaces: Structure['spaces'];
+	workflows: Structure['workflows'];
+}) {
+	const definitionLinks: ObjectDefinition['workflowDefinitionLinks'] = [];
+
+	for (const [
+		groupExternalReferenceCode,
+		workflowDefinitionName,
+	] of Object.entries(workflows)) {
+
+		// Don't insert workflow if structure does not include the space
+
+		if (
+			spaces !== 'all' &&
+			groupExternalReferenceCode &&
+			!spaces.includes(groupExternalReferenceCode)
+		) {
+			continue;
+		}
+
+		// Don't insert if there's no workflow name, what means the Default one was selected
+
+		if (!workflowDefinitionName) {
+			continue;
+		}
+
+		// Insert the workflow link
+
+		definitionLinks.push({
+			groupExternalReferenceCode,
+			workflowDefinitionName,
+		});
+	}
+
+	return definitionLinks;
 }

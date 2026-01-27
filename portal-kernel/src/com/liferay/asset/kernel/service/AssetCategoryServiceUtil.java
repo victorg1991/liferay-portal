@@ -191,11 +191,11 @@ public class AssetCategoryServiceUtil {
 		return getService().getChildCategoriesCount(parentCategoryId);
 	}
 
-	public static AssetCategory getOrAddIncompleteCategory(
+	public static AssetCategory getOrAddEmptyCategory(
 			String externalReferenceCode, long groupId)
 		throws PortalException {
 
-		return getService().getOrAddIncompleteCategory(
+		return getService().getOrAddEmptyCategory(
 			externalReferenceCode, groupId);
 	}
 
@@ -396,16 +396,16 @@ public class AssetCategoryServiceUtil {
 	}
 
 	public static AssetCategory updateCategory(
-			long categoryId, long parentCategoryId,
-			Map<java.util.Locale, String> titleMap,
+			String externalReferenceCode, long categoryId,
+			long parentCategoryId, Map<java.util.Locale, String> titleMap,
 			Map<java.util.Locale, String> descriptionMap, long vocabularyId,
 			String[] categoryProperties,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
 		return getService().updateCategory(
-			categoryId, parentCategoryId, titleMap, descriptionMap,
-			vocabularyId, categoryProperties, serviceContext);
+			externalReferenceCode, categoryId, parentCategoryId, titleMap,
+			descriptionMap, vocabularyId, categoryProperties, serviceContext);
 	}
 
 	public static AssetCategoryService getService() {

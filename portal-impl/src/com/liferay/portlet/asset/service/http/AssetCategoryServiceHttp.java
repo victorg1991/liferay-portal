@@ -734,15 +734,15 @@ public class AssetCategoryServiceHttp {
 	}
 
 	public static com.liferay.asset.kernel.model.AssetCategory
-			getOrAddIncompleteCategory(
+			getOrAddEmptyCategory(
 				HttpPrincipal httpPrincipal, String externalReferenceCode,
 				long groupId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		try {
 			MethodKey methodKey = new MethodKey(
-				AssetCategoryServiceUtil.class, "getOrAddIncompleteCategory",
-				_getOrAddIncompleteCategoryParameterTypes17);
+				AssetCategoryServiceUtil.class, "getOrAddEmptyCategory",
+				_getOrAddEmptyCategoryParameterTypes17);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, externalReferenceCode, groupId);
@@ -1641,7 +1641,8 @@ public class AssetCategoryServiceHttp {
 	}
 
 	public static com.liferay.asset.kernel.model.AssetCategory updateCategory(
-			HttpPrincipal httpPrincipal, long categoryId, long parentCategoryId,
+			HttpPrincipal httpPrincipal, String externalReferenceCode,
+			long categoryId, long parentCategoryId,
 			java.util.Map<java.util.Locale, String> titleMap,
 			java.util.Map<java.util.Locale, String> descriptionMap,
 			long vocabularyId, String[] categoryProperties,
@@ -1654,8 +1655,8 @@ public class AssetCategoryServiceHttp {
 				_updateCategoryParameterTypes39);
 
 			MethodHandler methodHandler = new MethodHandler(
-				methodKey, categoryId, parentCategoryId, titleMap,
-				descriptionMap, vocabularyId, categoryProperties,
+				methodKey, externalReferenceCode, categoryId, parentCategoryId,
+				titleMap, descriptionMap, vocabularyId, categoryProperties,
 				serviceContext);
 
 			Object returnObj = null;
@@ -1741,10 +1742,8 @@ public class AssetCategoryServiceHttp {
 		};
 	private static final Class<?>[] _getChildCategoriesCountParameterTypes16 =
 		new Class[] {long.class};
-	private static final Class<?>[]
-		_getOrAddIncompleteCategoryParameterTypes17 = new Class[] {
-			String.class, long.class
-		};
+	private static final Class<?>[] _getOrAddEmptyCategoryParameterTypes17 =
+		new Class[] {String.class, long.class};
 	private static final Class<?>[] _getVocabularyCategoriesParameterTypes18 =
 		new Class[] {
 			long.class, int.class, int.class,
@@ -1841,8 +1840,8 @@ public class AssetCategoryServiceHttp {
 		};
 	private static final Class<?>[] _updateCategoryParameterTypes39 =
 		new Class[] {
-			long.class, long.class, java.util.Map.class, java.util.Map.class,
-			long.class, String[].class,
+			String.class, long.class, long.class, java.util.Map.class,
+			java.util.Map.class, long.class, String[].class,
 			com.liferay.portal.kernel.service.ServiceContext.class
 		};
 

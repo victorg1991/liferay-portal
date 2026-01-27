@@ -8,21 +8,36 @@ package com.liferay.account.internal.exportimport.data.handler.test;
 import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.constants.AccountPortletKeys;
 import com.liferay.account.model.AccountEntry;
+import com.liferay.account.model.AccountGroup;
 import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.account.service.AccountEntryOrganizationRelLocalService;
+import com.liferay.account.service.AccountGroupLocalService;
+import com.liferay.account.service.AccountGroupRelLocalService;
+import com.liferay.account.service.test.util.AccountGroupTestUtil;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationSettingsMapFactoryUtil;
 import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
 import com.liferay.exportimport.kernel.lar.PortletDataHandler;
 import com.liferay.exportimport.kernel.lar.PortletDataHandlerKeys;
+import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalService;
 import com.liferay.exportimport.kernel.service.ExportImportLocalService;
 import com.liferay.exportimport.portlet.data.handler.provider.PortletDataHandlerProvider;
-import com.liferay.portal.kernel.model.CompanyConstants;
+import com.liferay.exportimport.report.constants.ExportImportReportEntryConstants;
+import com.liferay.exportimport.report.model.ExportImportReportEntry;
+import com.liferay.exportimport.report.service.ExportImportReportEntryLocalService;
+import com.liferay.object.field.builder.TextObjectFieldBuilder;
+import com.liferay.object.field.util.ObjectFieldUtil;
+import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.service.ObjectDefinitionLocalService;
+import com.liferay.object.system.SystemObjectDefinitionManager;
+import com.liferay.object.system.SystemObjectDefinitionManagerRegistry;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.FeatureFlagTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -30,15 +45,22 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 import com.liferay.staging.StagingGroupHelper;
 
 import java.io.File;
+
+import java.util.List;
+import java.util.Objects;
 
 import org.hamcrest.CoreMatchers;
 
@@ -54,9 +76,7 @@ import org.junit.runner.RunWith;
  * @author Stefano Motta
  */
 @FeatureFlags(
-	featureFlags = {
-		@FeatureFlag(value = "LPD-35914"), @FeatureFlag(value = "LPD-47858")
-	}
+	featureFlags = {@FeatureFlag("LPD-35443"), @FeatureFlag("LPD-35914")}
 )
 @RunWith(Arquillian.class)
 public class AccountEntriesAdminPortletDataHandlerTest {
@@ -69,19 +89,23 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@BeforeClass
-	public static void setUpClass() {
+	public static void setUpClass() throws PortalException {
 		FeatureFlagTestUtil.invokeFeatureFlagListeners(
-			CompanyConstants.SYSTEM, true, "LPD-35914");
+			TestPropsValues.getCompanyId(), true, "LPD-35914");
 	}
 
 	@AfterClass
-	public static void tearDownClass() {
+	public static void tearDownClass() throws PortalException {
 		FeatureFlagTestUtil.invokeFeatureFlagListeners(
-			CompanyConstants.SYSTEM, false, "LPD-35914");
+			TestPropsValues.getCompanyId(), false, "LPD-35914");
 	}
 
 	@Test
 	public void testExportImportAccountEntries() throws Exception {
+		AccountGroup accountGroup = AccountGroupTestUtil.addAccountGroup(
+			_accountGroupLocalService, RandomTestUtil.randomString(),
+			RandomTestUtil.randomString());
+
 		Group group = _stagingGroupHelper.fetchCompanyGroup(
 			TestPropsValues.getCompanyId());
 
@@ -96,6 +120,10 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 			ServiceContextTestUtil.getServiceContext(
 				TestPropsValues.getCompanyId(), group.getGroupId(),
 				TestPropsValues.getUserId()));
+
+		_accountGroupRelLocalService.addAccountGroupRel(
+			accountGroup.getAccountGroupId(), AccountEntry.class.getName(),
+			accountEntry.getAccountEntryId());
 
 		Organization organization = _organizationLocalService.addOrganization(
 			TestPropsValues.getUserId(), 0, RandomTestUtil.randomString(),
@@ -124,10 +152,12 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 
 		_accountEntryLocalService.deleteAccountEntry(
 			accountEntry.getAccountEntryId());
+		_accountGroupLocalService.deleteAccountGroup(
+			accountGroup.getAccountGroupId());
 		_organizationLocalService.deleteOrganization(
 			organization.getOrganizationId());
 
-		_exportImportLocalService.importLayouts(
+		ExportImportConfiguration exportImportConfiguration =
 			_exportImportConfigurationLocalService.
 				addDraftExportImportConfiguration(
 					TestPropsValues.getUserId(),
@@ -139,13 +169,52 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 							HashMapBuilder.put(
 								PortletDataHandlerKeys.PORTLET_DATA,
 								new String[] {Boolean.TRUE.toString()}
-							).build())),
-			larFile);
+							).put(
+								PortletDataHandlerKeys.PORTLET_DATA + "_" +
+									AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
+								new String[] {Boolean.TRUE.toString()}
+							).build()));
 
-		Assert.assertNotNull(
+		_exportImportLocalService.importLayouts(
+			exportImportConfiguration, larFile);
+
+		accountEntry =
 			_accountEntryLocalService.fetchAccountEntryByExternalReferenceCode(
 				accountEntry.getExternalReferenceCode(),
-				TestPropsValues.getCompanyId()));
+				TestPropsValues.getCompanyId());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_APPROVED, accountEntry.getStatus());
+
+		List<ExportImportReportEntry> exportImportReportEntries =
+			_exportImportReportEntryLocalService.getExportImportReportEntries(
+				TestPropsValues.getCompanyId(),
+				exportImportConfiguration.getExportImportConfigurationId());
+
+		Assert.assertEquals(
+			exportImportReportEntries.toString(), 2,
+			exportImportReportEntries.size());
+
+		accountGroup =
+			_accountGroupLocalService.fetchAccountGroupByExternalReferenceCode(
+				accountGroup.getExternalReferenceCode(),
+				TestPropsValues.getCompanyId());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_EMPTY, accountGroup.getStatus());
+
+		String accountGroupExternalReferenceCode =
+			accountGroup.getExternalReferenceCode();
+
+		Assert.assertTrue(
+			ListUtil.exists(
+				exportImportReportEntries,
+				exportImportReportEntry ->
+					Objects.equals(
+						exportImportReportEntry.getClassExternalReferenceCode(),
+						accountGroupExternalReferenceCode) &&
+					(exportImportReportEntry.getType() ==
+						ExportImportReportEntryConstants.TYPE_EMPTY)));
 
 		organization =
 			_organizationLocalService.fetchOrganizationByExternalReferenceCode(
@@ -153,7 +222,148 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 				TestPropsValues.getCompanyId());
 
 		Assert.assertEquals(
-			WorkflowConstants.STATUS_INCOMPLETE, organization.getStatus());
+			WorkflowConstants.STATUS_EMPTY, organization.getStatus());
+
+		String organizationExternalReferenceCode =
+			organization.getExternalReferenceCode();
+
+		Assert.assertTrue(
+			ListUtil.exists(
+				exportImportReportEntries,
+				exportImportReportEntry ->
+					Objects.equals(
+						exportImportReportEntry.getClassExternalReferenceCode(),
+						organizationExternalReferenceCode) &&
+					(exportImportReportEntry.getType() ==
+						ExportImportReportEntryConstants.TYPE_EMPTY)));
+	}
+
+	@Test
+	@TestInfo("LPD-64512")
+	public void testExportImportAccountEntriesWithError() throws Exception {
+		AccountGroup accountGroup = AccountGroupTestUtil.addAccountGroup(
+			_accountGroupLocalService, RandomTestUtil.randomString(),
+			RandomTestUtil.randomString());
+
+		Group group = _stagingGroupHelper.fetchCompanyGroup(
+			TestPropsValues.getCompanyId());
+
+		AccountEntry accountEntry = _accountEntryLocalService.addAccountEntry(
+			RandomTestUtil.randomString(), TestPropsValues.getUserId(),
+			AccountConstants.PARENT_ACCOUNT_ENTRY_ID_DEFAULT,
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(), null,
+			RandomTestUtil.randomString() + "@liferay.com", null,
+			RandomTestUtil.randomString(),
+			AccountConstants.ACCOUNT_ENTRY_TYPE_BUSINESS,
+			WorkflowConstants.STATUS_APPROVED,
+			ServiceContextTestUtil.getServiceContext(
+				TestPropsValues.getCompanyId(), group.getGroupId(),
+				TestPropsValues.getUserId()));
+
+		_accountGroupRelLocalService.addAccountGroupRel(
+			accountGroup.getAccountGroupId(), AccountEntry.class.getName(),
+			accountEntry.getAccountEntryId());
+
+		Organization organization = _organizationLocalService.addOrganization(
+			TestPropsValues.getUserId(), 0, RandomTestUtil.randomString(),
+			false);
+
+		_accountEntryOrganizationRelLocalService.addAccountEntryOrganizationRel(
+			accountEntry.getAccountEntryId(), organization.getOrganizationId());
+
+		File larFile = _exportImportLocalService.exportLayoutsAsFile(
+			_exportImportConfigurationLocalService.
+				addDraftExportImportConfiguration(
+					TestPropsValues.getUserId(),
+					ExportImportConfigurationConstants.TYPE_EXPORT_LAYOUT,
+					ExportImportConfigurationSettingsMapFactoryUtil.
+						buildExportLayoutSettingsMap(
+							TestPropsValues.getUser(), group.getGroupId(),
+							false, new long[0],
+							HashMapBuilder.put(
+								PortletDataHandlerKeys.PORTLET_DATA,
+								new String[] {Boolean.TRUE.toString()}
+							).put(
+								PortletDataHandlerKeys.PORTLET_DATA + "_" +
+									AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
+								new String[] {Boolean.TRUE.toString()}
+							).build())));
+
+		SystemObjectDefinitionManager systemObjectDefinitionManager =
+			_systemObjectDefinitionManagerRegistry.
+				getSystemObjectDefinitionManager(
+					AccountEntry.class.getSimpleName());
+
+		ObjectDefinition objectDefinition =
+			_objectDefinitionLocalService.fetchSystemObjectDefinition(
+				TestPropsValues.getCompanyId(),
+				systemObjectDefinitionManager.getName());
+
+		String fieldName = "x" + RandomTestUtil.randomString();
+
+		ObjectFieldUtil.addCustomObjectField(
+			new TextObjectFieldBuilder(
+			).userId(
+				TestPropsValues.getUserId()
+			).labelMap(
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString())
+			).name(
+				fieldName
+			).objectDefinitionId(
+				objectDefinition.getObjectDefinitionId()
+			).required(
+				true
+			).build());
+
+		ExportImportConfiguration exportImportConfiguration =
+			_exportImportConfigurationLocalService.
+				addDraftExportImportConfiguration(
+					TestPropsValues.getUserId(),
+					ExportImportConfigurationConstants.TYPE_IMPORT_LAYOUT,
+					ExportImportConfigurationSettingsMapFactoryUtil.
+						buildImportLayoutSettingsMap(
+							TestPropsValues.getUser(), group.getGroupId(),
+							false, new long[0],
+							HashMapBuilder.put(
+								PortletDataHandlerKeys.PORTLET_DATA,
+								new String[] {Boolean.TRUE.toString()}
+							).put(
+								PortletDataHandlerKeys.PORTLET_DATA + "_" +
+									AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
+								new String[] {Boolean.TRUE.toString()}
+							).build()));
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.batch.engine.internal." +
+					"BatchEngineImportTaskExecutorImpl",
+				LoggerTestUtil.OFF)) {
+
+			_exportImportLocalService.importLayouts(
+				exportImportConfiguration, larFile);
+		}
+
+		int accountEntriesCount =
+			_accountEntryLocalService.getAccountEntriesCount(
+				TestPropsValues.getCompanyId(),
+				WorkflowConstants.STATUS_APPROVED);
+
+		List<ExportImportReportEntry> exportImportReportEntries =
+			_exportImportReportEntryLocalService.getExportImportReportEntries(
+				TestPropsValues.getCompanyId(),
+				exportImportConfiguration.getExportImportConfigurationId());
+
+		Assert.assertEquals(
+			exportImportReportEntries.toString(), accountEntriesCount,
+			exportImportReportEntries.size());
+		Assert.assertTrue(
+			ListUtil.exists(
+				exportImportReportEntries,
+				exportImportReportEntry ->
+					Objects.equals(
+						exportImportReportEntry.getErrorMessage(),
+						"The properties [" + fieldName + "] are required") &&
+					(exportImportReportEntry.getType() ==
+						ExportImportReportEntryConstants.TYPE_ERROR)));
 	}
 
 	@Test
@@ -163,13 +373,15 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 				TestPropsValues.getCompanyId(),
 				AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN);
 
+		Assert.assertEquals(
+			AccountEntry.class.getName(),
+			portletDataHandler.getClassNames()[0]);
+		Assert.assertEquals(
+			AccountPortletKeys.ACCOUNT_ENTRIES_ADMIN,
+			portletDataHandler.getName());
 		Assert.assertThat(
 			ClassUtil.getClassName(portletDataHandler),
 			CoreMatchers.containsString("BatchEnginePortletDataHandler"));
-		Assert.assertThat(
-			portletDataHandler.getName(),
-			CoreMatchers.containsString(
-				"com.liferay.headless.admin.user.dto.v1_0.Account"));
 	}
 
 	@Inject
@@ -178,6 +390,12 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 	@Inject
 	private AccountEntryOrganizationRelLocalService
 		_accountEntryOrganizationRelLocalService;
+
+	@Inject
+	private AccountGroupLocalService _accountGroupLocalService;
+
+	@Inject
+	private AccountGroupRelLocalService _accountGroupRelLocalService;
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
@@ -190,6 +408,13 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 	private ExportImportLocalService _exportImportLocalService;
 
 	@Inject
+	private ExportImportReportEntryLocalService
+		_exportImportReportEntryLocalService;
+
+	@Inject
+	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Inject
 	private OrganizationLocalService _organizationLocalService;
 
 	@Inject
@@ -197,5 +422,9 @@ public class AccountEntriesAdminPortletDataHandlerTest {
 
 	@Inject
 	private StagingGroupHelper _stagingGroupHelper;
+
+	@Inject
+	private SystemObjectDefinitionManagerRegistry
+		_systemObjectDefinitionManagerRegistry;
 
 }

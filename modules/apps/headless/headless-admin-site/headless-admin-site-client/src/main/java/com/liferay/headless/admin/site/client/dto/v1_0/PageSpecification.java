@@ -25,6 +25,35 @@ public abstract class PageSpecification implements Cloneable, Serializable {
 		return PageSpecificationSerDes.toDTO(json);
 	}
 
+	public com.liferay.headless.admin.site.client.custom.field.CustomField[]
+		getCustomFields() {
+
+		return customFields;
+	}
+
+	public void setCustomFields(
+		com.liferay.headless.admin.site.client.custom.field.CustomField[]
+			customFields) {
+
+		this.customFields = customFields;
+	}
+
+	public void setCustomFields(
+		UnsafeSupplier
+			<com.liferay.headless.admin.site.client.custom.field.CustomField[],
+			 Exception> customFieldsUnsafeSupplier) {
+
+		try {
+			customFields = customFieldsUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected com.liferay.headless.admin.site.client.custom.field.CustomField[]
+		customFields;
+
 	public String getExternalReferenceCode() {
 		return externalReferenceCode;
 	}
@@ -45,54 +74,6 @@ public abstract class PageSpecification implements Cloneable, Serializable {
 	}
 
 	protected String externalReferenceCode;
-
-	public Settings getSettings() {
-		return settings;
-	}
-
-	public void setSettings(Settings settings) {
-		this.settings = settings;
-	}
-
-	public void setSettings(
-		UnsafeSupplier<Settings, Exception> settingsUnsafeSupplier) {
-
-		try {
-			settings = settingsUnsafeSupplier.get();
-		}
-		catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	protected Settings settings;
-
-	public String getSiteTemplatePageSpecificationExternalReferenceCode() {
-		return siteTemplatePageSpecificationExternalReferenceCode;
-	}
-
-	public void setSiteTemplatePageSpecificationExternalReferenceCode(
-		String siteTemplatePageSpecificationExternalReferenceCode) {
-
-		this.siteTemplatePageSpecificationExternalReferenceCode =
-			siteTemplatePageSpecificationExternalReferenceCode;
-	}
-
-	public void setSiteTemplatePageSpecificationExternalReferenceCode(
-		UnsafeSupplier<String, Exception>
-			siteTemplatePageSpecificationExternalReferenceCodeUnsafeSupplier) {
-
-		try {
-			siteTemplatePageSpecificationExternalReferenceCode =
-				siteTemplatePageSpecificationExternalReferenceCodeUnsafeSupplier.
-					get();
-		}
-		catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	protected String siteTemplatePageSpecificationExternalReferenceCode;
 
 	public Status getStatus() {
 		return status;
@@ -217,6 +198,8 @@ public abstract class PageSpecification implements Cloneable, Serializable {
 	public static enum Type {
 
 		CONTENT_PAGE_SPECIFICATION("ContentPageSpecification"),
+		LINK_TO_URL_PAGE_SPECIFICATION("LinkToURLPageSpecification"),
+		PAGE_SET_PAGE_SPECIFICATION("PageSetPageSpecification"),
 		WIDGET_PAGE_SPECIFICATION("WidgetPageSpecification");
 
 		public static Type create(String value) {

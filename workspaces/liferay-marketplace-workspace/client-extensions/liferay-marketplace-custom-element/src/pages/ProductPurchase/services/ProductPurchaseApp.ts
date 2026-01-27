@@ -4,14 +4,14 @@
  */
 
 import {Analytics} from '../../../core/Analytics';
-import {OrderTypes} from '../../../enums/Order';
-import {ProductType, SkuOptions} from '../../../enums/Product';
+import {ProductSpecificationKey, SkuOptions} from '../../../enums/Product';
 import HeadlessCommerceDeliveryCart from '../../../services/rest/HeadlessCommerceDeliveryCart';
 import {postEmailAppInformation} from '../../../utils/api';
+import {getProductOrderTypes} from '../../../utils/getProductOrderTypes';
+import {getProductSpecificationValues} from '../../../utils/getProductSpecificationValues';
 import {
 	getProductPriceModel,
 	getSkuByOptionValueKey,
-	isCloudProduct,
 } from '../../../utils/productUtils';
 import {getSiteURL} from '../../../utils/site';
 import ProductPurchase from './ProductPurchase';
@@ -43,9 +43,10 @@ export default class ProductPurchaseApp extends ProductPurchase {
 			orderID: order.id,
 			priceModel: 'paid',
 			productName: this.product?.name as string,
-			productType: isCloudProduct(this.product)
-				? ProductType.CLOUD
-				: ProductType.DXP,
+			productType: this.product?.productSpecifications.find(
+				(spec) =>
+					spec.specificationKey === ProductSpecificationKey.APP_TYPE
+			)?.value,
 		});
 
 		return order;
@@ -67,7 +68,7 @@ export default class ProductPurchaseApp extends ProductPurchase {
 
 			// Only requests with cart are processed with payment
 
-			return {...baseCart, paymentMethod: 'paypal-integration'};
+			return baseCart;
 		}
 
 		const skuOptionValue = cartOptions?.isTrialSKU
@@ -94,10 +95,8 @@ export default class ProductPurchaseApp extends ProductPurchase {
 	}
 
 	static getOrderTypeExternalReferenceCode(product: DeliveryProduct) {
-		if (isCloudProduct(product)) {
-			return OrderTypes.CLOUDAPP;
-		}
-
-		return OrderTypes.DXPAPP;
+		return getProductOrderTypes(
+			getProductSpecificationValues(product?.productSpecifications || [])
+		).externalReferenceCode;
 	}
 }

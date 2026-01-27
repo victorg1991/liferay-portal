@@ -29,7 +29,6 @@ import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
-import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.encryptor.EncryptorException;
 import com.liferay.portal.kernel.encryptor.EncryptorUtil;
 import com.liferay.portal.kernel.exception.CompanyMxException;
@@ -121,6 +120,7 @@ import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TimeZoneUtil;
@@ -132,7 +132,6 @@ import com.liferay.portal.liveusers.LiveUsers;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.service.base.CompanyLocalServiceBaseImpl;
 import com.liferay.portal.util.PortalInstances;
-import com.liferay.portal.util.PropsValues;
 
 import jakarta.portlet.PortletException;
 import jakarta.portlet.PortletPreferences;
@@ -366,7 +365,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		FeatureFlagManagerUtil.checkEnabled("LPD-11342");
 
-		if (!DBPartition.isPartitionEnabled()) {
+		if (!PropsValues.DATABASE_PARTITION_ENABLED) {
 			throw new UnsupportedOperationException(
 				"Database partitioning must be enabled");
 		}
@@ -501,7 +500,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 			// Resource actions
 
-			if (DBPartition.isPartitionEnabled()) {
+			if (PropsValues.DATABASE_PARTITION_ENABLED) {
 				_resourceActionLocalService.checkResourceActions();
 			}
 
@@ -600,7 +599,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		FeatureFlagManagerUtil.checkEnabled("LPD-11342");
 
-		if (!DBPartition.isPartitionEnabled()) {
+		if (!PropsValues.DATABASE_PARTITION_ENABLED) {
 			throw new UnsupportedOperationException(
 				"Database partitioning must be enabled");
 		}
@@ -783,7 +782,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		Company company = companyPersistence.findByPrimaryKey(companyId);
 
 		try {
-			if (!DBPartition.isPartitionEnabled()) {
+			if (!PropsValues.DATABASE_PARTITION_ENABLED) {
 				DBPartitionUtil.exportCompany(companyId);
 
 				return company;
@@ -859,11 +858,26 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		throws E {
 
 		if (CompanyThreadLocal.isLocked()) {
-			unsafeConsumer.accept(
-				companyLocalService.fetchCompanyById(
-					CompanyThreadLocal.getCompanyId()));
+			long[] companyIds = ListUtil.toLongArray(
+				companies, Company::getCompanyId);
 
-			return;
+			if (ListUtil.isEmpty(companies) ||
+				Arrays.equals(
+					new long[] {CompanyThreadLocal.getCompanyId()},
+					companyIds)) {
+
+				unsafeConsumer.accept(
+					companyLocalService.fetchCompanyById(
+						CompanyThreadLocal.getCompanyId()));
+
+				return;
+			}
+
+			throw new UnsupportedOperationException(
+				StringBundler.concat(
+					"Unable to iterate over the following company IDs ",
+					Arrays.toString(companyIds), " because company ID ",
+					CompanyThreadLocal.getCompanyId(), " is locked"));
 		}
 
 		for (Company company : companies) {
@@ -885,8 +899,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		long[] companyIds = null;
 
 		if (!CompanyThreadLocal.isLocked()) {
-			companyIds = ListUtil.toLongArray(
-				companyLocalService.getCompanies(), Company::getCompanyId);
+			companyIds = PortalInstancePool.getCompanyIds();
 		}
 
 		forEachCompanyId(unsafeConsumer, companyIds);
@@ -899,9 +912,21 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		throws E {
 
 		if (CompanyThreadLocal.isLocked()) {
-			unsafeConsumer.accept(CompanyThreadLocal.getCompanyId());
+			if (ArrayUtil.isEmpty(companyIds) ||
+				Arrays.equals(
+					new long[] {CompanyThreadLocal.getCompanyId()},
+					companyIds)) {
 
-			return;
+				unsafeConsumer.accept(CompanyThreadLocal.getCompanyId());
+
+				return;
+			}
+
+			throw new UnsupportedOperationException(
+				StringBundler.concat(
+					"Unable to iterate over the following company IDs ",
+					Arrays.toString(companyIds), " because company ID ",
+					CompanyThreadLocal.getCompanyId(), " is locked"));
 		}
 
 		for (long companyId : companyIds) {
@@ -1147,7 +1172,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		validateVirtualHost(company.getWebId(), virtualHostname);
 
-		if (PropsValues.MAIL_MX_UPDATE) {
+		if (PropsValues.COMPANY_MX_UPDATE) {
 			validateMx(companyId, mx);
 
 			company.setMx(mx);
@@ -1206,13 +1231,13 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		validateVirtualHost(company.getWebId(), virtualHostname);
 
-		if (PropsValues.MAIL_MX_UPDATE) {
+		if (PropsValues.COMPANY_MX_UPDATE) {
 			validateMx(companyId, mx);
 		}
 
 		validateName(companyId, name);
 
-		if (PropsValues.MAIL_MX_UPDATE) {
+		if (PropsValues.COMPANY_MX_UPDATE) {
 			company.setMx(mx);
 		}
 
@@ -1357,7 +1382,8 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		Company company = checkLogo(companyId);
 
-		_imageLocalService.updateImage(company.getLogoId(), bytes);
+		_imageLocalService.updateImage(
+			company.getCompanyId(), company.getLogoId(), bytes);
 
 		return company;
 	}
@@ -1606,7 +1632,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 
 		preunregisterCompany(company);
 
-		if (DBPartition.isPartitionEnabled()) {
+		if (PropsValues.DATABASE_PARTITION_ENABLED) {
 			TransactionCommitCallbackUtil.registerCallback(
 				() -> {
 					_clearCache(companyId);
@@ -2499,7 +2525,7 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		throws PortalException {
 
 		try {
-			if (DBPartition.isPartitionEnabled()) {
+			if (PropsValues.DATABASE_PARTITION_ENABLED) {
 				return TransactionInvokerUtil.invoke(
 					_transactionConfig, callable);
 			}

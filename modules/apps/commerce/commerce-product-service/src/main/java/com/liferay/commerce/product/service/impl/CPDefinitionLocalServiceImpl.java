@@ -36,6 +36,7 @@ import com.liferay.commerce.product.model.CPDefinitionLocalization;
 import com.liferay.commerce.product.model.CPDefinitionOptionRel;
 import com.liferay.commerce.product.model.CPDefinitionOptionValueRel;
 import com.liferay.commerce.product.model.CPDefinitionSpecificationOptionValue;
+import com.liferay.commerce.product.model.CPDefinitionTable;
 import com.liferay.commerce.product.model.CPDisplayLayout;
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.model.CPInstanceOptionValueRel;
@@ -80,6 +81,7 @@ import com.liferay.friendly.url.model.FriendlyURLEntryLocalization;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
 import com.liferay.object.action.util.ObjectActionThreadLocal;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
@@ -307,8 +309,9 @@ public class CPDefinitionLocalServiceImpl
 		// Commerce product definition localization
 
 		_addCPDefinitionLocalizedFields(
-			user.getCompanyId(), cpDefinitionId, nameMap, shortDescriptionMap,
-			descriptionMap, metaTitleMap, metaDescriptionMap, metaKeywordsMap);
+			user.getCompanyId(), cpDefinitionId, cProduct.getCProductId(),
+			nameMap, shortDescriptionMap, descriptionMap, metaTitleMap,
+			metaDescriptionMap, metaKeywordsMap);
 
 		// Commerce product instance
 
@@ -418,8 +421,8 @@ public class CPDefinitionLocalServiceImpl
 
 	@Override
 	public CPDefinition addOrUpdateCPDefinition(
-			String externalReferenceCode, long userId, long groupId,
-			Map<Locale, String> nameMap,
+			String externalReferenceCode, long userId, long cpDefinitionId,
+			long groupId, Map<Locale, String> nameMap,
 			Map<Locale, String> shortDescriptionMap,
 			Map<Locale, String> descriptionMap, Map<Locale, String> urlTitleMap,
 			Map<Locale, String> metaTitleMap,
@@ -451,11 +454,15 @@ public class CPDefinitionLocalServiceImpl
 					externalReferenceCode, serviceContext.getCompanyId());
 
 			if (cProduct != null) {
+				if (cpDefinitionId == 0) {
+					cpDefinitionId = cProduct.getPublishedCPDefinitionId();
+				}
+
 				CPDefinition cpDefinition =
 					cpDefinitionLocalService.updateCPDefinition(
-						cProduct.getPublishedCPDefinitionId(), nameMap,
-						shortDescriptionMap, descriptionMap, urlTitleMap,
-						metaTitleMap, metaDescriptionMap, metaKeywordsMap,
+						cpDefinitionId, nameMap, shortDescriptionMap,
+						descriptionMap, urlTitleMap, metaTitleMap,
+						metaDescriptionMap, metaKeywordsMap,
 						ignoreSKUCombinations, shippable, freeShipping,
 						shipSeparately, shippingExtraPrice, width, height,
 						depth, weight, cpTaxCategoryId, taxExempt,
@@ -475,6 +482,9 @@ public class CPDefinitionLocalServiceImpl
 					deliverySubscriptionTypeSettingsUnicodeProperties,
 					deliveryMaxSubscriptionCycles);
 			}
+		}
+		else {
+			externalReferenceCode = null;
 		}
 
 		return cpDefinitionLocalService.addCPDefinition(
@@ -522,7 +532,7 @@ public class CPDefinitionLocalServiceImpl
 		throws PortalException {
 
 		return cpDefinitionLocalService.addOrUpdateCPDefinition(
-			externalReferenceCode, userId, groupId, nameMap,
+			externalReferenceCode, userId, 0, groupId, nameMap,
 			shortDescriptionMap, descriptionMap, urlTitleMap, metaTitleMap,
 			metaDescriptionMap, metaKeywordsMap, productTypeName,
 			ignoreSKUCombinations, shippable, freeShipping, shipSeparately,
@@ -1473,8 +1483,8 @@ public class CPDefinitionLocalServiceImpl
 			return cpDefinition;
 		}
 
-		return cpDefinitionPersistence.fetchByC_V(
-			cProduct.getCProductId(), cProduct.getLatestVersion());
+		return cpDefinitionPersistence.fetchByC_V_First(
+			cProduct.getCProductId(), cProduct.getLatestVersion(), null);
 	}
 
 	@Override
@@ -1492,8 +1502,8 @@ public class CPDefinitionLocalServiceImpl
 			return cpDefinition;
 		}
 
-		return cpDefinitionPersistence.fetchByC_V(
-			cProduct.getCProductId(), cProduct.getLatestVersion());
+		return cpDefinitionPersistence.fetchByC_V_First(
+			cProduct.getCProductId(), cProduct.getLatestVersion(), null);
 	}
 
 	@Override
@@ -1511,6 +1521,53 @@ public class CPDefinitionLocalServiceImpl
 
 		return cpDefinitionLocalService.fetchCPDefinitionByCProductId(
 			friendlyURLEntry.getClassPK());
+	}
+
+	@Override
+	public List<CPDefinition> findByExpirationDate(
+		Date expirationDate, QueryDefinition<CPDefinition> queryDefinition) {
+
+		return dslQuery(
+			DSLQueryFactoryUtil.select(
+				CPDefinitionTable.INSTANCE
+			).from(
+				CPDefinitionTable.INSTANCE
+			).where(
+				CPDefinitionTable.INSTANCE.expirationDate.isNotNull(
+				).and(
+					CPDefinitionTable.INSTANCE.expirationDate.lt(expirationDate)
+				).and(
+					() -> {
+						int status = queryDefinition.getStatus();
+
+						if (status == WorkflowConstants.STATUS_ANY) {
+							return CPDefinitionTable.INSTANCE.status.neq(
+								WorkflowConstants.STATUS_IN_TRASH);
+						}
+
+						return CPDefinitionTable.INSTANCE.status.eq(status);
+					}
+				)
+			).limit(
+				queryDefinition.getStart(), queryDefinition.getEnd()
+			));
+	}
+
+	@Override
+	public CPDefinition getCPDefinitionByCProductId(long cProductId)
+		throws PortalException {
+
+		CProduct cProduct = _cProductLocalService.getCProduct(cProductId);
+
+		CPDefinition cpDefinition = cpDefinitionPersistence.fetchByPrimaryKey(
+			cProduct.getPublishedCPDefinitionId());
+
+		if (cpDefinition != null) {
+			return cpDefinition;
+		}
+
+		return cpDefinitionPersistence.findByC_V_First(
+			cProduct.getCProductId(), cProduct.getLatestVersion(), null);
 	}
 
 	@Override
@@ -1669,18 +1726,6 @@ public class CPDefinitionLocalServiceImpl
 	}
 
 	@Override
-	public List<CPDefinition> getCPDefinitions(
-		long groupId, String productTypeName, String languageId, int status,
-		int start, int end, OrderByComparator<CPDefinition> orderByComparator) {
-
-		QueryDefinition<CPDefinition> queryDefinition = new QueryDefinition<>(
-			status, start, end, orderByComparator);
-
-		return cpDefinitionFinder.findByG_P_S(
-			groupId, productTypeName, languageId, queryDefinition);
-	}
-
-	@Override
 	public int getCPDefinitionsCount(
 		long groupId, boolean subscriptionEnabled) {
 
@@ -1695,17 +1740,6 @@ public class CPDefinitionLocalServiceImpl
 		}
 
 		return cpDefinitionPersistence.countByG_S(groupId, status);
-	}
-
-	@Override
-	public int getCPDefinitionsCount(
-		long groupId, String productTypeName, String languageId, int status) {
-
-		QueryDefinition<CPDefinition> queryDefinition = new QueryDefinition<>(
-			status);
-
-		return cpDefinitionFinder.countByG_P_S(
-			groupId, productTypeName, languageId, queryDefinition);
 	}
 
 	@Override
@@ -1735,7 +1769,8 @@ public class CPDefinitionLocalServiceImpl
 	public CPDefinition getCProductCPDefinition(long cProductId, int version)
 		throws PortalException {
 
-		return cpDefinitionPersistence.findByC_V(cProductId, version);
+		return cpDefinitionPersistence.findByC_V_First(
+			cProductId, version, null);
 	}
 
 	@Override
@@ -2232,8 +2267,8 @@ public class CPDefinitionLocalServiceImpl
 
 		_updateCPDefinitionLocalizedFields(
 			cpDefinition.getCompanyId(), cpDefinition.getCPDefinitionId(),
-			nameMap, shortDescriptionMap, descriptionMap, metaTitleMap,
-			metaDescriptionMap, metaKeywordsMap);
+			cProduct.getCProductId(), nameMap, shortDescriptionMap,
+			descriptionMap, metaTitleMap, metaDescriptionMap, metaKeywordsMap);
 
 		// Commerce product friendly URL entries
 
@@ -2659,7 +2694,8 @@ public class CPDefinitionLocalServiceImpl
 	}
 
 	private List<CPDefinitionLocalization> _addCPDefinitionLocalizedFields(
-			long companyId, long cpDefinitionId, Map<Locale, String> nameMap,
+			long companyId, long cpDefinitionId, long cProductId,
+			Map<Locale, String> nameMap,
 			Map<Locale, String> shortDescriptionMap,
 			Map<Locale, String> descriptionMap,
 			Map<Locale, String> metaTitleMap,
@@ -2732,16 +2768,17 @@ public class CPDefinitionLocalServiceImpl
 				}
 
 				return _addCPDefinitionLocalizedFields(
-					companyId, cpDefinitionId, name, shortDescription,
-					description, metaTitle, metaDescription, metaKeywords,
-					LocaleUtil.toLanguageId(locale));
+					companyId, cpDefinitionId, LocaleUtil.toLanguageId(locale),
+					cProductId, name, shortDescription, description, metaTitle,
+					metaDescription, metaKeywords);
 			});
 	}
 
 	private CPDefinitionLocalization _addCPDefinitionLocalizedFields(
-			long companyId, long cpDefinitionId, String name,
-			String shortDescription, String description, String metaTitle,
-			String metaDescription, String metaKeywords, String languageId)
+			long companyId, long cpDefinitionId, String languageId,
+			long cProductId, String name, String shortDescription,
+			String description, String metaTitle, String metaDescription,
+			String metaKeywords)
 		throws PortalException {
 
 		CPDefinitionLocalization cpDefinitionLocalization =
@@ -2758,6 +2795,7 @@ public class CPDefinitionLocalServiceImpl
 			cpDefinitionLocalization.setCompanyId(companyId);
 			cpDefinitionLocalization.setCPDefinitionId(cpDefinitionId);
 			cpDefinitionLocalization.setLanguageId(languageId);
+			cpDefinitionLocalization.setCProductId(cProductId);
 			cpDefinitionLocalization.setName(name);
 			cpDefinitionLocalization.setShortDescription(shortDescription);
 			cpDefinitionLocalization.setDescription(description);
@@ -2889,7 +2927,7 @@ public class CPDefinitionLocalServiceImpl
 
 	private void _checkCPDefinitionsByExpirationDate() throws PortalException {
 		List<CPDefinition> cpDefinitions =
-			cpDefinitionFinder.findByExpirationDate(
+			cpDefinitionLocalService.findByExpirationDate(
 				new Date(),
 				new QueryDefinition<>(WorkflowConstants.STATUS_APPROVED));
 
@@ -3129,7 +3167,8 @@ public class CPDefinitionLocalServiceImpl
 	}
 
 	private List<CPDefinitionLocalization> _updateCPDefinitionLocalizedFields(
-			long companyId, long cpDefinitionId, Map<Locale, String> nameMap,
+			long companyId, long cpDefinitionId, long cProductId,
+			Map<Locale, String> nameMap,
 			Map<Locale, String> shortDescriptionMap,
 			Map<Locale, String> descriptionMap,
 			Map<Locale, String> metaTitleMap,
@@ -3144,9 +3183,9 @@ public class CPDefinitionLocalServiceImpl
 
 		List<CPDefinitionLocalization> newCPDefinitionLocalizations =
 			_addCPDefinitionLocalizedFields(
-				companyId, cpDefinitionId, nameMap, shortDescriptionMap,
-				descriptionMap, metaTitleMap, metaDescriptionMap,
-				metaKeywordsMap);
+				companyId, cpDefinitionId, cProductId, nameMap,
+				shortDescriptionMap, descriptionMap, metaTitleMap,
+				metaDescriptionMap, metaKeywordsMap);
 
 		oldCPDefinitionLocalizations.removeAll(newCPDefinitionLocalizations);
 

@@ -1,0 +1,2055 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2025 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {
+	ObjectDefinitionAPI,
+	ObjectRelationshipAPI,
+	ObjectValidationRuleAPI,
+} from '@liferay/object-admin-rest-client-js';
+import {expect, mergeTests} from '@playwright/test';
+
+import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
+import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
+import {displayPageTemplatesPagesTest} from '../../../fixtures/displayPageTemplatesPagesTest';
+import {documentLibraryPagesTest} from '../../../fixtures/documentLibraryPages.fixtures';
+import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
+import {fragmentsPagesTest} from '../../../fixtures/fragmentPagesTest';
+import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
+import {loginTest} from '../../../fixtures/loginTest';
+import {masterPagesPagesTest} from '../../../fixtures/masterPagesPagesTest';
+import {objectPagesTest} from '../../../fixtures/objectPagesTest';
+import {pageEditorPagesTest} from '../../../fixtures/pageEditorPagesTest';
+import {pageManagementSiteTest} from '../../../fixtures/pageManagementSiteTest';
+import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
+import fillAndClickOutside from '../../../utils/fillAndClickOutside';
+import getRandomString from '../../../utils/getRandomString';
+import {getObjectERC} from '../../setup/page-management-site/main/utils/getObjectERC';
+import {goToObjectEntity} from '../../setup/page-management-site/main/utils/goToObjectEntity';
+import getFormContainerDefinition from '../main/utils/getFormContainerDefinition';
+import getFragmentDefinition from '../main/utils/getFragmentDefinition';
+import getPageDefinition from '../main/utils/getPageDefinition';
+
+const test = mergeTests(
+	apiHelpersTest,
+	dataApiHelpersTest,
+	displayPageTemplatesPagesTest,
+	documentLibraryPagesTest,
+	featureFlagsTest({
+		'LPD-11235': {enabled: true},
+		'LPD-17564': {enabled: true},
+		'LPD-60546': {enabled: true},
+		'LPS-178052': {enabled: true},
+	}),
+	fragmentsPagesTest,
+	isolatedSiteTest,
+	loginTest(),
+	masterPagesPagesTest,
+	objectPagesTest,
+	pageEditorPagesTest,
+	pageManagementSiteTest
+);
+
+test.describe('Captcha Fragment', () => {
+	test(
+		'The user could see an error message when submit a form with wrong captcha verification code',
+		{
+			tag: ['@LPS-151402', '@LPS-155168'],
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a captcha fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('Lemon')
+				)
+			).body;
+
+			const captchaDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-captcha',
+			});
+
+			const submitFragmentDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [captchaDefinition, submitFragmentDefinition],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to edit mode and assert captcha is disabled
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			await expect(page.locator('.form-input-captcha')).toHaveAttribute(
+				'disabled'
+			);
+
+			// Go to view mode and assert error message with wrong captcha verification code when submit the form
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			await expect(
+				page.getByText('CAPTCHA verification failed. Please try again.')
+			).toBeVisible();
+		}
+	);
+});
+
+test.describe('Checkbox Fragment', () => {
+	test(
+		'The page designer can configure checkbox fragment',
+		{
+			tag: '@LPS-151157',
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a checkbox fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const checkboxId = getRandomString();
+
+			const checkboxDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_boolean',
+				},
+				id: checkboxId,
+				key: 'INPUTS-checkbox',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [checkboxDefinition],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to edit mode
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			// Change label
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Label',
+				fragmentId: checkboxId,
+				tab: 'General',
+				value: 'Are you a fun of Stephen Curry?',
+			});
+
+			const checkboxInput = page.locator('.forms-checkbox');
+
+			await expect(
+				checkboxInput.getByText('Are you a fun of Stephen Curry?')
+			).not.toHaveClass(/sr-only/);
+
+			// Hide label
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Label',
+				fragmentId: checkboxId,
+				tab: 'General',
+				value: false,
+			});
+
+			await expect(
+				checkboxInput.getByText('Are you a fun of Stephen Curry?')
+			).toHaveClass(/sr-only/);
+
+			// Show help text
+
+			await expect(checkboxInput).not.toContainText(
+				/Add your help text here./
+			);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Help Text',
+				fragmentId: checkboxId,
+				tab: 'General',
+				value: true,
+			});
+
+			await expect(checkboxInput).toContainText(
+				/Add your help text here./
+			);
+		}
+	);
+
+	test(
+		'User should see error message below checkbox fragment',
+		{
+			tag: '@LPS-182728',
+		},
+		async ({apiHelpers, page, pageManagementSite}) => {
+
+			// Adds checkbox validation
+
+			const objectValidationRuleAPIClient =
+				await apiHelpers.buildRestClient(ObjectValidationRuleAPI);
+
+			const {body: objectValidationRule} =
+				await objectValidationRuleAPIClient.postObjectDefinitionByExternalReferenceCodeObjectValidationRule(
+					getObjectERC('All Fields'),
+					{
+						active: true,
+						engine: 'ddm',
+						engineLabel: 'Expression Builder',
+						errorLabel: {
+							en_US: 'Please accept the terms of use and Privacy Policy.',
+						},
+						name: {
+							en_US: 'Checkbox Validation',
+						},
+						objectValidationRuleSettings: [
+							{
+								name: 'outputObjectFieldExternalReferenceCode',
+								value: 'boolean-erc',
+							} as any,
+						],
+						outputType: 'partialValidation',
+						script: 'boolean == true',
+						system: false,
+					}
+				);
+
+			// Create a page with a form fragment with a checkbox fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const checkboxId = getRandomString();
+
+			const checkboxDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_boolean',
+				},
+				id: checkboxId,
+				key: 'INPUTS-checkbox',
+			});
+
+			const submitFragmentDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [checkboxDefinition, submitFragmentDefinition],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to view mode
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			// Assert error message
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			await expect(page.locator('.forms-checkbox')).toContainText(
+				'Please accept the terms of use and Privacy Policy.'
+			);
+
+			// Delete validation
+
+			await objectValidationRuleAPIClient.deleteObjectValidationRule(
+				objectValidationRule.id
+			);
+		}
+	);
+});
+
+test.describe('Date Fragment', () => {
+	test(
+		'The page designer could map date field to date fragment',
+		{
+			tag: ['@LPS-151158', '@LPS-155502'],
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a date fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const dateId = getRandomString();
+
+			const dateDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_date',
+				},
+				id: dateId,
+				key: 'INPUTS-date-input',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [dateDefinition],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to edit mode
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			// Change label
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Label',
+				fragmentId: dateId,
+				tab: 'General',
+				value: 'Expiration Date',
+			});
+
+			const dateInput = page.locator('.date-input');
+
+			await expect(
+				dateInput.getByText('Expiration Date')
+			).not.toHaveClass(/sr-only/);
+
+			// Hide label
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Label',
+				fragmentId: dateId,
+				tab: 'General',
+				value: false,
+			});
+
+			await expect(dateInput.getByText('Expiration Date')).toHaveClass(
+				/sr-only/
+			);
+
+			// Show help text
+
+			await expect(dateInput).not.toContainText(
+				/Add your help text here./
+			);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Help Text',
+				fragmentId: dateId,
+				tab: 'General',
+				value: true,
+			});
+
+			await expect(dateInput).toContainText(/Add your help text here./);
+		}
+	);
+
+	test(
+		'User should see error message below date fragment',
+		{
+			tag: '@LPS-182728',
+		},
+		async ({apiHelpers, page, pageManagementSite}) => {
+
+			// Adds date validation
+
+			const objectValidationRuleAPIClient =
+				await apiHelpers.buildRestClient(ObjectValidationRuleAPI);
+
+			const {body: objectValidationRule} =
+				await objectValidationRuleAPIClient.postObjectDefinitionByExternalReferenceCodeObjectValidationRule(
+					getObjectERC('All Fields'),
+					{
+						active: true,
+						engine: 'ddm',
+						engineLabel: 'Expression Builder',
+						errorLabel: {
+							en_US: 'Please enter a valid date.',
+						},
+						name: {
+							en_US: 'Date Validation',
+						},
+						objectValidationRuleSettings: [
+							{
+								name: 'outputObjectFieldExternalReferenceCode',
+								value: 'date-erc',
+							} as any,
+						],
+						outputType: 'partialValidation',
+						script: "futureDates(date, '2022-06-01')",
+						system: false,
+					}
+				);
+
+			// Create a page with a form fragment with a date fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const dateId = getRandomString();
+
+			const dateDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_date',
+				},
+				id: dateId,
+				key: 'INPUTS-date-input',
+			});
+
+			const submitFragmentDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [dateDefinition, submitFragmentDefinition],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to view mode
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			// Edit date
+
+			await page.locator('input[name="ObjectField_date"]').click();
+
+			await page.keyboard.type('07/11/2020');
+
+			await page.locator('body').click();
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			// Assert error message
+
+			await expect(page.locator('.date-input')).toContainText(
+				'Please enter a valid date.'
+			);
+			await expect(page.locator('.date-input input')).toBeFocused();
+
+			// Delete validation
+
+			await objectValidationRuleAPIClient.deleteObjectValidationRule(
+				objectValidationRule.id
+			);
+		}
+	);
+});
+
+test.describe('Date and Time Fragment', () => {
+	test(
+		'The page designer could map date and time field to date and time fragment',
+		{
+			tag: '@LPS-191312',
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a date and time fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const dateId = getRandomString();
+
+			const dateDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_date',
+				},
+				id: dateId,
+				key: 'INPUTS-date-input',
+			});
+
+			const dateTimeId = getRandomString();
+
+			const dateTimeDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_dateAndTime',
+				},
+				id: dateTimeId,
+				key: 'INPUTS-date-time-input',
+			});
+
+			const textDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_text',
+				},
+				id: getRandomString(),
+				key: 'INPUTS-text-input',
+			});
+
+			const submitFragmentDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [
+					dateDefinition,
+					dateTimeDefinition,
+					textDefinition,
+					submitFragmentDefinition,
+				],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to edit mode and change label
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Label',
+				fragmentId: dateTimeId,
+				tab: 'General',
+				value: 'Clock',
+			});
+
+			await pageEditorPage.publishPage();
+
+			// Go to view mode
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			// Edit date
+
+			await page.locator('input[name="ObjectField_date"]').click();
+
+			await page.keyboard.type('01/07/2023');
+
+			// Edit date and time
+
+			await page.locator('input[name="ObjectField_dateAndTime"]').click();
+
+			await page.keyboard.type('10/10/2022');
+			await page.keyboard.press('ArrowRight');
+			await page.keyboard.type('10:10');
+			await page.keyboard.press('ArrowRight');
+			await page.keyboard.type('AM');
+
+			await fillAndClickOutside(
+				page,
+				page.getByLabel('Text'),
+				'Date And Time'
+			);
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			// Assert success message
+
+			await expect(
+				page.getByText(
+					'Thank you. Your information was successfully received.'
+				)
+			).toBeVisible();
+
+			// Go to custom object admin
+
+			await goToObjectEntity({
+				entityName: 'All Fields',
+				page,
+			});
+
+			// Check the date and time of the object entry
+
+			const row = page.locator('.fds tbody tr').first();
+
+			await expect(row).toContainText('Oct 10, 2022, 10:10:00 AM');
+		}
+	);
+
+	test(
+		'User should see error message below date time fragment',
+		{
+			tag: ['@LPS-182728', '@LPD-75305'],
+		},
+		async ({apiHelpers, page, pageManagementSite}) => {
+
+			// Add date validation
+
+			const objectValidationRuleAPIClient =
+				await apiHelpers.buildRestClient(ObjectValidationRuleAPI);
+
+			const {body: objectValidationRule} =
+				await objectValidationRuleAPIClient.postObjectDefinitionByExternalReferenceCodeObjectValidationRule(
+					getObjectERC('All Fields'),
+					{
+						active: true,
+						engine: 'ddm',
+						engineLabel: 'Expression Builder',
+						errorLabel: {
+							en_US: 'Please enter a valid date.',
+						},
+						name: {
+							en_US: 'Date Time Validation',
+						},
+						objectValidationRuleSettings: [
+							{
+								name: 'outputObjectFieldExternalReferenceCode',
+								value: 'date-time-erc',
+							} as any,
+						],
+						outputType: 'partialValidation',
+						script: "futureDates(date, '2022-06-01')",
+						system: false,
+					}
+				);
+
+			// Create a page with a form fragment with a date time fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const dateTimeDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_dateAndTime',
+				},
+				id: getRandomString(),
+				key: 'INPUTS-date-time-input',
+			});
+
+			const submitFragmentDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [dateTimeDefinition, submitFragmentDefinition],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to view mode
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			// Edit date
+
+			await page.locator('input[name="ObjectField_dateAndTime"]').click();
+
+			await page.keyboard.type('10/10/2020');
+			await page.keyboard.press('ArrowRight');
+			await page.keyboard.type('10:10');
+			await page.keyboard.press('ArrowRight');
+			await page.keyboard.type('AM');
+
+			await page.locator('body').click();
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			// Assert error message
+
+			await expect(page.locator('.date-input')).toContainText(
+				'Please enter a valid date.'
+			);
+			await expect(page.locator('.date-input input')).toBeFocused();
+
+			// Delete validation
+
+			await objectValidationRuleAPIClient.deleteObjectValidationRule(
+				objectValidationRule.id
+			);
+		}
+	);
+});
+
+test.describe('Friendly URL Fragment', () => {
+	test(
+		'Check the mapping field',
+		{
+			tag: '@LPD-52418',
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create an object with the friendly url field enabled
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {body: objectDefinition} =
+				await objectDefinitionAPIClient.postObjectDefinition({
+					active: true,
+					enableFriendlyURLCustomization: true,
+					enableLocalization: true,
+					externalReferenceCode: 'erc',
+					label: {
+						en_US: 'Test',
+					},
+					name: 'Test',
+					objectFields: [
+						{
+							DBType: 'String',
+							businessType: 'Text',
+							externalReferenceCode: 'text-erc',
+							indexed: true,
+							indexedAsKeyword: true,
+							label: {
+								en_US: 'Text',
+							},
+							localized: true,
+							name: 'text',
+							required: false,
+						},
+					],
+					pluralLabel: {
+						en_US: 'Tests',
+					},
+					scope: 'company',
+					status: {
+						code: 0,
+					},
+				});
+
+			apiHelpers.data.push({
+				id: objectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			// Create a page with a Form fragment
+
+			const formId = getRandomString();
+
+			const formDefinition = getFormContainerDefinition({
+				id: formId,
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			// Map the form to the All Field object and add only the Friendly URL field
+
+			await pageEditorPage.mapFormFragment(formId, 'Test', [
+				'Friendly URL',
+			]);
+
+			await pageEditorPage.selectFragment(
+				await pageEditorPage.getFragmentId('Friendly URL')
+			);
+
+			// Check if the mapping field
+
+			await expect(
+				page.getByRole('combobox', {name: 'Field'})
+			).toHaveValue('ObjectEntry_objectEntryFriendlyURL');
+
+			// Change its label
+
+			await pageEditorPage.changeConfiguration({
+				fieldLabel: 'Label',
+				tab: 'General',
+				value: 'My new friendly url label',
+			});
+
+			await expect(
+				page.getByLabel('My new friendly url label')
+			).toBeAttached();
+		}
+	);
+
+	test(
+		'Check the friendly URL error',
+		{
+			tag: '@LPD-75305',
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create an object with a friendly url field
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {body: objectDefinition} =
+				await objectDefinitionAPIClient.postObjectDefinition({
+					active: true,
+					enableFriendlyURLCustomization: true,
+					enableLocalization: true,
+					externalReferenceCode: 'erc',
+					label: {
+						en_US: 'Test',
+					},
+					name: 'Test',
+					objectFields: [
+						{
+							DBType: 'String',
+							businessType: 'Text',
+							externalReferenceCode: 'new-friendly-url-erc',
+							indexed: true,
+							indexedAsKeyword: true,
+							label: {
+								en_US: 'New Friendly URL',
+							},
+							localized: true,
+							name: 'newFriendlyUrl',
+							required: false,
+						},
+					],
+					pluralLabel: {
+						en_US: 'Tests',
+					},
+					scope: 'company',
+					status: {
+						code: 0,
+					},
+				});
+
+			apiHelpers.data.push({
+				id: objectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			// Add a validation for the field
+
+			const objectValidationRuleAPIClient =
+				await apiHelpers.buildRestClient(ObjectValidationRuleAPI);
+
+			const {body: objectValidationRule} =
+				await objectValidationRuleAPIClient.postObjectDefinitionByExternalReferenceCodeObjectValidationRule(
+					'erc',
+					{
+						active: true,
+						engine: 'ddm',
+						engineLabel: 'Expression Builder',
+						errorLabel: {
+							en_US: 'Enter a valid URL',
+						},
+						externalReferenceCode: 'friendly-url-validation-erc',
+						name: {
+							en_US: 'Friendly URL Validation',
+						},
+						objectDefinitionExternalReferenceCode: 'erc',
+						objectValidationRuleSettings: [
+							{
+								name: 'outputObjectFieldExternalReferenceCode',
+								value: 'new-friendly-url-erc' as any,
+							},
+						],
+						outputType: 'partialValidation',
+						script: 'contains(newFriendlyUrl, "/")',
+						system: false,
+					}
+				);
+
+			// Create a page with a Form fragment and the field
+
+			const formId = getRandomString();
+
+			const formDefinition = getFormContainerDefinition({
+				id: formId,
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			// Map the form to the Test object and add only the New Friendly URL field
+
+			await pageEditorPage.mapFormFragment(formId, 'Test', [
+				'New Friendly URL',
+			]);
+
+			await pageEditorPage.publishPage();
+
+			// Go to view mode and check the field error
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			const newFriendlyUrlInput = page.getByLabel('New Friendly URL');
+
+			await newFriendlyUrlInput.fill('url');
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			await expect(page.getByText('Enter a valid URL')).toBeVisible();
+
+			await expect(newFriendlyUrlInput).toBeFocused();
+
+			// Delete validation
+
+			await objectValidationRuleAPIClient.deleteObjectValidationRule(
+				objectValidationRule.id
+			);
+		}
+	);
+});
+
+test.describe('Numeric input field', () => {
+	test('Check the Numeric input configuration', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		pageManagementSite,
+	}) => {
+
+		// Create a page with a Form fragment
+
+		const formId = getRandomString();
+
+		const formDefinition = getFormContainerDefinition({
+			id: formId,
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([formDefinition]),
+			siteId: pageManagementSite.id,
+			title: getRandomString(),
+		});
+
+		// Go to edit mode and map the form to Lemon object, specifically to the "Lemon Weight" field
+
+		await pageEditorPage.goto(layout, pageManagementSite.friendlyUrlPath);
+
+		await pageEditorPage.mapFormFragment(formId, 'Lemon', ['Lemon Weight']);
+
+		// Check Mark as Required field
+
+		const numericInputId = await pageEditorPage.getFragmentId('Numeric');
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Mark as Required',
+			fragmentId: numericInputId,
+			tab: 'General',
+			value: true,
+		});
+
+		const requireIcon = page
+			.locator('label', {hasText: 'Lemon Weight'})
+			.locator('svg.reference-mark');
+
+		await expect(requireIcon).toBeAttached();
+
+		// Check Label and Show Label fields
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Label',
+			fragmentId: numericInputId,
+			tab: 'General',
+			value: 'Lemon weight in grams',
+		});
+
+		const label = page.locator('label', {hasText: 'Lemon weight in grams'});
+
+		await expect(label).not.toHaveClass(/sr-only/);
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Show Label',
+			fragmentId: numericInputId,
+			tab: 'General',
+			value: false,
+		});
+
+		await expect(label).toHaveClass(/sr-only/);
+
+		// Check Help Text and Show Help Text fields
+
+		const helpText = page.getByText('Add your help text here.', {
+			exact: true,
+		});
+
+		await expect(helpText).not.toBeAttached();
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Show Help Text',
+			fragmentId: numericInputId,
+			tab: 'General',
+			value: true,
+		});
+
+		await expect(helpText).toBeVisible();
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Help Text',
+			fragmentId: numericInputId,
+			tab: 'General',
+			value: 'The lemon weight must be in grams',
+		});
+
+		await expect(
+			page.getByText('The lemon weight must be in grams')
+		).toBeVisible();
+
+		// Check Placeholder field
+
+		await pageEditorPage.changeFragmentConfiguration({
+			fieldLabel: 'Placeholder',
+			fragmentId: numericInputId,
+			tab: 'General',
+			value: 'Lemon weight in grams',
+		});
+
+		await expect(
+			page.getByPlaceholder('Lemon weight in grams')
+		).toBeVisible();
+	});
+
+	test('Check the numeric input error', async ({
+		apiHelpers,
+		page,
+		pageEditorPage,
+		pageManagementSite,
+	}) => {
+
+		// Create a new object validation rule
+
+		const objectValidationRuleAPIClient = await apiHelpers.buildRestClient(
+			ObjectValidationRuleAPI
+		);
+
+		const {body: objectValidationRule} =
+			await objectValidationRuleAPIClient.postObjectDefinitionByExternalReferenceCodeObjectValidationRule(
+				getObjectERC('Lemon'),
+				{
+					active: true,
+					engine: 'ddm',
+					engineLabel: 'Expression Builder',
+					errorLabel: {
+						en_US: 'The lemon weight must be greater than 0',
+					},
+					externalReferenceCode:
+						'lemon-weight-numeric-validation-erc',
+					name: {
+						en_US: 'Lemon Weight Validation',
+					},
+					objectDefinitionExternalReferenceCode: 'lemon-object-erc',
+					objectValidationRuleSettings: [
+						{
+							name: 'outputObjectFieldExternalReferenceCode',
+							value: 'lemon-weight-erc' as any,
+						},
+					],
+					outputType: 'partialValidation',
+					script: 'isEmpty(lemonWeight) OR lemonWeight > 0',
+					system: false,
+				}
+			);
+
+		// Create a page with a Form fragment
+
+		const formId = getRandomString();
+
+		const formDefinition = getFormContainerDefinition({
+			id: formId,
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([formDefinition]),
+			siteId: pageManagementSite.id,
+			title: getRandomString(),
+		});
+
+		// Go to edit mode and map the form to Lemon object, specifically to the "Lemon Weight" field
+
+		await pageEditorPage.goto(layout, pageManagementSite.friendlyUrlPath);
+
+		await pageEditorPage.mapFormFragment(formId, 'Lemon', ['Lemon Weight']);
+
+		await pageEditorPage.publishPage();
+
+		// Go to view mode and check that the input type is numeric and has the attributes max and min
+
+		await page.goto(
+			`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+		);
+
+		const lemonWeightInput = page.getByRole('spinbutton', {
+			name: 'Lemon Weight',
+		});
+
+		await expect(lemonWeightInput).toHaveAttribute('type', 'number');
+		await expect(lemonWeightInput).toHaveAttribute('max');
+		await expect(lemonWeightInput).toHaveAttribute('min');
+
+		// Submit the form with a wrong value
+
+		await lemonWeightInput.fill('-1');
+
+		await page.getByText('Submit', {exact: true}).click();
+
+		await expect(
+			page.getByText('The lemon weight must be greater than 0')
+		).toBeVisible();
+
+		await expect(lemonWeightInput).toBeFocused();
+
+		// Submit the form with a correct value
+
+		await lemonWeightInput.fill('10');
+
+		await page.getByText('Submit', {exact: true}).click();
+
+		await expect(
+			page.getByText(
+				'Thank you. Your information was successfully received.'
+			)
+		).toBeVisible();
+
+		// Delete validation
+
+		await objectValidationRuleAPIClient.deleteObjectValidationRule(
+			objectValidationRule.id
+		);
+	});
+});
+
+test.describe('Select From List input field', () => {
+	test(
+		'The field is translated correctly when switching languages',
+		{tag: '@LPD-69588'},
+		async ({apiHelpers, page, pageEditorPage, site}) => {
+
+			// Create an object Fruit
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {body: fruitObjectDefinition} =
+				await objectDefinitionAPIClient.postObjectDefinition({
+					active: true,
+					enableLocalization: true,
+					externalReferenceCode: 'erc_fruit',
+					label: {en_US: 'Fruit'},
+					name: 'Fruit',
+					objectFields: [
+						{
+							DBType: 'String',
+							businessType: 'Text',
+							externalReferenceCode: 'erc_fruit_name',
+							indexed: true,
+							indexedAsKeyword: false,
+							indexedLanguageId: 'en_US',
+							label: {en_US: 'Name'},
+							localized: true,
+							name: 'name',
+						},
+					],
+					pluralLabel: {en_US: 'Fruits'},
+					scope: 'company',
+					status: {code: 0},
+				});
+
+			apiHelpers.data.push({
+				id: fruitObjectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			// Create an object Apple
+
+			const {body: appleObjectDefinition} =
+				await objectDefinitionAPIClient.postObjectDefinition({
+					active: true,
+					enableLocalization: true,
+					externalReferenceCode: 'erc_apple',
+					label: {en_US: 'Apple'},
+					name: 'Apple',
+					objectFields: [
+						{
+							DBType: 'String',
+							businessType: 'Text',
+							externalReferenceCode: 'erc_apple_type',
+							indexed: true,
+							indexedAsKeyword: false,
+							indexedLanguageId: 'en_US',
+							label: {en_US: 'Apple Type'},
+							localized: true,
+							name: 'appleType',
+						},
+					],
+					panelCategoryKey: 'control_panel.object',
+					pluralLabel: {
+						en_US: 'Apples',
+					},
+					scope: 'company',
+					status: {code: 0},
+					titleObjectFieldName: 'appleType',
+				});
+
+			apiHelpers.data.push({
+				id: appleObjectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			// Create a relationship between Fruit and Apple objects
+
+			const objectRelationshipApiClient =
+				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
+
+			const {body: objectRelationship} =
+				await objectRelationshipApiClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
+					appleObjectDefinition.externalReferenceCode,
+					{
+						label: {en_US: 'Fruit Types', es_ES: 'Tipos de Frutas'},
+						name: 'fruitTypes',
+						objectDefinitionExternalReferenceCode1:
+							appleObjectDefinition.externalReferenceCode,
+						objectDefinitionExternalReferenceCode2:
+							fruitObjectDefinition.externalReferenceCode,
+						objectDefinitionId1: appleObjectDefinition.id,
+						objectDefinitionId2: fruitObjectDefinition.id,
+						objectDefinitionName2: fruitObjectDefinition.name,
+						type: 'oneToMany',
+					}
+				);
+
+			apiHelpers.data.push({
+				id: objectRelationship.id,
+				type: 'objectRelationship',
+			});
+
+			// Set values for the Apple object entry
+
+			const englishText = 'Golden apple';
+			const spanishText = 'Manzana Golden';
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					appleType_i18n: {
+						en_US: englishText,
+						es_ES: spanishText,
+					},
+				},
+				'c/' + appleObjectDefinition.name.toLowerCase() + 's'
+			);
+
+			// Create a page with a form mapped to 'Fruit' with the field 'Fruit Type'
+
+			const formId = getRandomString();
+
+			const formDefinition = getFormContainerDefinition({
+				id: formId,
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: site.id,
+				title: getRandomString(),
+			});
+
+			await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+			await pageEditorPage.mapFormFragment(formId, 'Fruit', [
+				'Fruit Type',
+			]);
+
+			await pageEditorPage.publishPage();
+
+			// Check the translations
+
+			await page.goto(
+				`/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			await page.getByPlaceholder('Choose an option').click();
+
+			await expect(
+				page.getByRole('combobox', {name: 'Fruit Types'})
+			).toBeVisible();
+
+			await expect(
+				page.getByRole('option', {name: englishText})
+			).toBeVisible();
+
+			await expect(
+				page.getByRole('option', {name: spanishText})
+			).not.toBeVisible();
+
+			await page.goto('/es');
+			await page.goto(
+				`/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			await page.getByPlaceholder('Seleccione una opción').click();
+
+			await expect(
+				page.getByRole('combobox', {name: 'Tipos de Frutas'})
+			).toBeVisible();
+
+			await expect(
+				page.getByRole('option', {name: englishText})
+			).not.toBeVisible();
+
+			await expect(
+				page.getByRole('option', {name: spanishText})
+			).toBeVisible();
+
+			// change back to english language
+
+			await page.goto('/en');
+		}
+	);
+
+	test(
+		'Show all picklist options after having selected an option in a Display Page Template',
+		{tag: '@LPD-72323'},
+		async ({
+			apiHelpers,
+			displayPageTemplatesPage,
+			page,
+			pageEditorPage,
+			site,
+		}) => {
+
+			// Create an object with a picklist field
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const listTypeDefinition =
+				await apiHelpers.listTypeAdmin.postRandomListTypeDefinition();
+
+			for (const option of ['Spain', 'Italy', 'Germany']) {
+				await apiHelpers.listTypeAdmin.postListTypeEntry({
+					key: option,
+					listTypeDefinitionExternalReferenceCode:
+						listTypeDefinition.externalReferenceCode,
+					name_i18n: {en_US: option},
+				});
+			}
+
+			const {body: objectDefinition} =
+				await objectDefinitionAPIClient.postObjectDefinition({
+					active: true,
+					externalReferenceCode: 'vegetableERC',
+					label: {en_US: 'Vegetable'},
+					name: 'Vegetable',
+					objectFields: [
+						{
+							DBType: 'String',
+							businessType: 'Picklist',
+							externalReferenceCode: 'originERC',
+							indexed: true,
+							indexedAsKeyword: false,
+							label: {en_US: 'Origin'},
+							listTypeDefinitionExternalReferenceCode:
+								listTypeDefinition.externalReferenceCode,
+							listTypeDefinitionId: listTypeDefinition.id,
+							name: 'origin',
+							required: false,
+						},
+					],
+					pluralLabel: {en_US: 'Vegetables'},
+					scope: 'company',
+					status: {code: 0},
+				});
+
+			apiHelpers.data.push({
+				id: objectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			// Create an entry for the object
+
+			const objectEntry = await apiHelpers.objectEntry.postObjectEntry(
+				{
+					origin_i18n: {
+						en_US: 'Spain',
+					},
+				},
+				'c/' + objectDefinition.name.toLowerCase() + 's'
+			);
+
+			// Create a display page
+
+			const displayPageTemplateName = getRandomString();
+
+			const className =
+				await apiHelpers.jsonWebServicesClassName.fetchClassName(
+					objectDefinition.className
+				);
+
+			await apiHelpers.jsonWebServicesLayoutPageTemplateEntry.addDisplayPageLayoutPageTemplateEntry(
+				{
+					classNameId: className.classNameId,
+					classTypeId: '0',
+					groupId: site.id,
+					name: displayPageTemplateName,
+				}
+			);
+
+			// Go to edit the display page template and add a From Container mapped to the Vegetable object
+
+			await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+
+			await displayPageTemplatesPage.editTemplate(
+				displayPageTemplateName
+			);
+
+			await pageEditorPage.addFragment(
+				'Form Components',
+				'Form Container'
+			);
+
+			await pageEditorPage.mapFormFragment(
+				await pageEditorPage.getFragmentId('Form Container'),
+				'Vegetable (Default)'
+			);
+
+			await displayPageTemplatesPage.publishTemplate();
+
+			// Go to the object display page and change the origin in the picklist field
+
+			await page.goto(
+				`/web${site.friendlyUrlPath}/e/${displayPageTemplateName}/${className.classNameId}/${objectEntry.id}`
+			);
+
+			const selectField = page.getByPlaceholder('Choose an Option');
+			const option = page.getByRole('option');
+
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: option.filter({hasText: 'Italy'}),
+				trigger: selectField,
+			});
+
+			await selectField.click();
+
+			await expect(option.filter({hasText: 'Spain'})).toBeVisible();
+			await expect(option.filter({hasText: 'Italy'})).toBeVisible();
+			await expect(option.filter({hasText: 'Germany'})).toBeVisible();
+
+			// Select the origin using the keyboard from the Open Menu Options button
+
+			const dropdownButton = page.getByLabel('Open Options Menu');
+
+			await dropdownButton.click();
+
+			await expect(option.filter({hasText: 'Spain'})).not.toBeVisible();
+			await expect(option.filter({hasText: 'Italy'})).not.toBeVisible();
+			await expect(option.filter({hasText: 'Germany'})).not.toBeVisible();
+
+			await page.keyboard.press('Enter');
+			await page.keyboard.press('ArrowDown');
+			await page.keyboard.press('Enter');
+
+			await expect(selectField).toHaveValue('Germany');
+		}
+	);
+});
+
+test.describe('URL Video Previewer Fragment', () => {
+	test(
+		'Configure URL Video Previewer fragment',
+		{
+			tag: '@LPD-55079',
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a URL Video Previewer fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const videoPreviewerId = getRandomString();
+
+			const videoPreviewerDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_text',
+				},
+				id: videoPreviewerId,
+				key: 'INPUTS-video-previewer-input',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [videoPreviewerDefinition],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to edit mode
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			// Change label
+
+			const inputLabel = page.locator('label', {
+				hasText: 'Type your video url here!',
+			});
+
+			await expect(inputLabel).not.toBeAttached();
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Label',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: 'Type your video url here!',
+			});
+
+			await expect(inputLabel).toBeAttached();
+
+			// Hide label
+
+			await expect(inputLabel).not.toHaveClass(/sr-only/);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Label',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: false,
+			});
+
+			await expect(inputLabel).toHaveClass(/sr-only/);
+
+			// Show help text
+
+			const videoPreviewerFragment = page.locator(
+				'.video-previewer-input'
+			);
+
+			await expect(videoPreviewerFragment).not.toContainText(
+				/Add your help text here./
+			);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Help Text',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: true,
+			});
+
+			await expect(videoPreviewerFragment).toContainText(
+				/Add your help text here./
+			);
+
+			// Add placeholder
+
+			await expect(page.getByPlaceholder('https://')).not.toBeAttached();
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Placeholder',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: 'https://',
+			});
+
+			await expect(page.getByPlaceholder('https://')).toBeAttached();
+
+			// Show characters count
+
+			await expect(page.getByText('0 / 280')).toHaveClass(/d-none/);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Characters Count',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: true,
+			});
+
+			await expect(page.getByText('0 / 280')).not.toHaveClass(/d-none/);
+
+			// Change preview label
+
+			const previewLabel = page.locator('label', {
+				hasText: 'This is my video preview',
+			});
+
+			await expect(previewLabel).not.toBeAttached();
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Preview Label',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: 'This is my video preview',
+			});
+
+			await expect(previewLabel).toBeAttached();
+
+			// Hide preview label
+
+			await expect(previewLabel).not.toHaveClass(/sr-only/);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Show Preview Label',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: false,
+			});
+
+			await expect(previewLabel).toHaveClass(/sr-only/);
+		}
+	);
+
+	test(
+		'Preview a video taking into account the localizable field',
+		{
+			tag: '@LPD-55079',
+		},
+		async ({apiHelpers, page, pageEditorPage, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a URL Video Previewer fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const localizationSelectDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'localization-select',
+			});
+
+			const submitButtonDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const videoPreviewerId = getRandomString();
+
+			const videoPreviewerDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_text',
+				},
+				id: videoPreviewerId,
+				key: 'INPUTS-video-previewer-input',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [
+					localizationSelectDefinition,
+					videoPreviewerDefinition,
+					submitButtonDefinition,
+				],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to view mode and check the preview for the default language
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			const input = page.getByLabel('Text');
+
+			const fillAndBlurInput = async (value: string) => {
+				await input.waitFor();
+				await input.fill(value);
+				await input.blur();
+			};
+
+			const iframe = page.locator('.video-preview iframe');
+
+			await expect(iframe).not.toBeAttached();
+
+			await fillAndBlurInput(
+				'https://www.youtube.com/watch?v=2EPZxIC5ogU'
+			);
+
+			await expect(iframe).toBeAttached();
+
+			await expect(iframe).toHaveAttribute(
+				'title',
+				'Life at Liferay - A Look into Liferay Culture'
+			);
+
+			// Fill the form for other language
+
+			const translationSelector = page.getByLabel(
+				'Select a language, current language:'
+			);
+
+			const japaneseOption = page
+				.getByRole('option')
+				.filter({hasText: 'ja-JP'});
+
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: japaneseOption,
+				trigger: translationSelector,
+			});
+
+			await fillAndBlurInput(
+				'https://www.youtube.com/watch?v=nlNUEBl53BI'
+			);
+
+			await expect(iframe).toHaveAttribute(
+				'title',
+				/Hello! from Liferay Japan/
+			);
+
+			// Change the language again and check that the video updates
+
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: page.getByRole('option').filter({hasText: 'en-US'}),
+				trigger: translationSelector,
+			});
+
+			await expect(iframe).toHaveAttribute(
+				'title',
+				'Life at Liferay - A Look into Liferay Culture'
+			);
+
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: japaneseOption,
+				trigger: translationSelector,
+			});
+
+			await expect(iframe).toHaveAttribute(
+				'title',
+				/Hello! from Liferay Japan/
+			);
+
+			// Go to edit mode and change the video title
+
+			await pageEditorPage.goto(
+				layout,
+				pageManagementSite.friendlyUrlPath
+			);
+
+			await pageEditorPage.changeFragmentConfiguration({
+				fieldLabel: 'Video Title',
+				fragmentId: videoPreviewerId,
+				tab: 'General',
+				value: 'This is my super cool video',
+			});
+
+			await pageEditorPage.publishPage();
+
+			// Check the video title
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			await fillAndBlurInput(
+				'https://www.youtube.com/watch?v=2EPZxIC5ogU'
+			);
+
+			await expect(iframe).toHaveAttribute(
+				'title',
+				'This is my super cool video'
+			);
+
+			// Clear the video preview
+
+			await fillAndBlurInput('');
+
+			await expect(iframe).not.toBeAttached();
+		}
+	);
+
+	test(
+		'Check the Video Previewer inline error',
+		{
+			tag: '@LPD-75305',
+		},
+		async ({apiHelpers, page, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a URL Video Previewer fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const objectValidationRuleAPIClient =
+				await apiHelpers.buildRestClient(ObjectValidationRuleAPI);
+
+			// Add a validation for the URL Video Previewer field
+
+			const {body: objectValidationRule} =
+				await objectValidationRuleAPIClient.postObjectDefinitionByExternalReferenceCodeObjectValidationRule(
+					'all-fields-object-erc',
+					{
+						active: true,
+						engine: 'ddm',
+						engineLabel: 'Expression Builder',
+						errorLabel: {
+							en_US: 'Enter a valid URL',
+						},
+						externalReferenceCode: 'url-validation-erc',
+						name: {
+							en_US: 'Url Validation',
+						},
+						objectDefinitionExternalReferenceCode:
+							'all-fields-object-erc',
+						objectValidationRuleSettings: [
+							{
+								name: 'outputObjectFieldExternalReferenceCode',
+								value: 'text-erc' as any,
+							},
+						],
+						outputType: 'partialValidation',
+						script: 'contains(text, "https://")',
+						system: false,
+					}
+				);
+
+			const submitButtonDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const videoPreviewerDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_text',
+				},
+				id: getRandomString(),
+				key: 'INPUTS-video-previewer-input',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [
+					videoPreviewerDefinition,
+					submitButtonDefinition,
+				],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			// Go to view mode and check the error
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			const videoURLInput = page.getByLabel('Text');
+
+			await videoURLInput.fill('video');
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			await expect(page.getByText('Enter a valid URL')).toBeVisible();
+
+			await expect(videoURLInput).toBeFocused();
+
+			// Delete validation
+
+			await objectValidationRuleAPIClient.deleteObjectValidationRule(
+				objectValidationRule.id
+			);
+		}
+	);
+
+	test(
+		'An error is shown when the number of input characters is exceeded',
+		{tag: ['@LPD-66593']},
+		async ({apiHelpers, page, pageManagementSite}) => {
+
+			// Create a page with a form fragment with a URL Video Previewer fragment
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {className: objectDefinitionClassName} = (
+				await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+					getObjectERC('All Fields')
+				)
+			).body;
+
+			const submitButtonDefinition = getFragmentDefinition({
+				id: getRandomString(),
+				key: 'INPUTS-submit-button',
+			});
+
+			const videoPreviewerDefinition = getFragmentDefinition({
+				fragmentConfig: {
+					inputFieldId: 'ObjectField_text',
+				},
+				id: getRandomString(),
+				key: 'INPUTS-video-previewer-input',
+			});
+
+			const formDefinition = getFormContainerDefinition({
+				id: getRandomString(),
+				objectDefinitionClassName,
+				pageElements: [
+					videoPreviewerDefinition,
+					submitButtonDefinition,
+				],
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([formDefinition]),
+				siteId: pageManagementSite.id,
+				title: getRandomString(),
+			});
+
+			await page.goto(
+				`/web${pageManagementSite.friendlyUrlPath}${layout.friendlyUrlPath}`
+			);
+
+			// Type 310 characters and check that the input error is shown
+
+			const inputError = page.getByText(
+				'Maximum Number of Characters Exceeded: 310 / 280'
+			);
+
+			const input = page.getByRole('textbox', {name: 'Text'});
+
+			await input.click();
+
+			await page.keyboard.type('a'.repeat(310));
+
+			await expect(inputError).toBeVisible();
+
+			// Submit the form and check the error
+
+			await page.getByText('Submit', {exact: true}).click();
+
+			await expect(inputError).not.toBeVisible();
+
+			await expect(input).toBeFocused();
+
+			await expect(
+				page.getByText('Value exceeds maximum length of 280.')
+			).toBeVisible();
+		}
+	);
+});

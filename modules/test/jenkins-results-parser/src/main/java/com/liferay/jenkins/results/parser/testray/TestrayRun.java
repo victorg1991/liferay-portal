@@ -6,6 +6,8 @@
 package com.liferay.jenkins.results.parser.testray;
 
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
+import com.liferay.jenkins.results.parser.test.clazz.group.AxisTestClassGroup;
+import com.liferay.jenkins.results.parser.test.clazz.group.FunctionalAxisTestClassGroup;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +27,10 @@ import org.json.JSONObject;
  * @author Michael Hashimoto
  */
 public class TestrayRun {
+
+	public static String getDefaultRunIDString() {
+		return _properties.getProperty("testray.environment.default[master]");
+	}
 
 	public List<Factor> getFactors() {
 		return factors;
@@ -79,6 +85,46 @@ public class TestrayRun {
 		private final String _name;
 		private final String _value;
 
+	}
+
+	protected TestrayRun(
+		TestrayBuild testrayBuild, AxisTestClassGroup axisTestClassGroup,
+		List<File> propertiesFiles) {
+
+		_testrayBuild = testrayBuild;
+
+		try {
+			_properties.putAll(JenkinsResultsParserUtil.getBuildProperties());
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+
+		for (int i = propertiesFiles.size() - 1; i >= 0; i--) {
+			_properties.putAll(
+				JenkinsResultsParserUtil.getProperties(propertiesFiles.get(i)));
+		}
+
+		initializeFactorsByAxisTestClassGroup(axisTestClassGroup);
+
+		JSONObject jsonObject = null;
+
+		String runIDString = getRunIDString();
+
+		for (TestrayRun testrayRun : testrayBuild.getTestrayRuns()) {
+			String testrayRunIDString = testrayRun.getRunIDString();
+
+			if (Objects.equals(
+					runIDString.toLowerCase(),
+					testrayRunIDString.toLowerCase())) {
+
+				jsonObject = testrayRun.getJSONObject();
+
+				break;
+			}
+		}
+
+		_jsonObject = jsonObject;
 	}
 
 	protected TestrayRun(TestrayBuild testrayBuild, JSONObject jsonObject) {
@@ -141,6 +187,48 @@ public class TestrayRun {
 
 	protected Properties getProperties() {
 		return _properties;
+	}
+
+	protected void initializeFactorsByAxisTestClassGroup(
+		AxisTestClassGroup axisTestClassGroup) {
+
+		factors = new ArrayList<>();
+
+		if (axisTestClassGroup == null) {
+			return;
+		}
+
+		String batchName = axisTestClassGroup.getBatchName();
+
+		if (axisTestClassGroup instanceof FunctionalAxisTestClassGroup) {
+			FunctionalAxisTestClassGroup functionalAxisTestClassGroup =
+				(FunctionalAxisTestClassGroup)axisTestClassGroup;
+
+			Properties poshiProperties =
+				functionalAxisTestClassGroup.getPoshiProperties();
+
+			String browserChromeVersion = poshiProperties.getProperty(
+				"browser.chrome.version");
+
+			if ((browserChromeVersion != null) &&
+				browserChromeVersion.equals("139.0")) {
+
+				batchName += "-chrome139";
+			}
+		}
+
+		for (String factorNameKey : _getFactorNameKeys()) {
+			String factoryName = _getFactorName(factorNameKey);
+			String factoryValue = _getFactorValue(batchName, factorNameKey);
+
+			if (JenkinsResultsParserUtil.isNullOrEmpty(factoryName) ||
+				JenkinsResultsParserUtil.isNullOrEmpty(factoryValue)) {
+
+				continue;
+			}
+
+			factors.add(new Factor(factoryName, factoryValue));
+		}
 	}
 
 	protected void initializeFactorsByBatchName(String batchName) {
@@ -288,9 +376,9 @@ public class TestrayRun {
 	private static final Pattern _factorValuePattern = Pattern.compile(
 		_PROPERTY_KEY_FACTOR_VALUE +
 			"\\[(?<nameKey>[^\\]]+)\\](\\[(?<valueKey>[^\\]]+)\\])?");
+	private static final Properties _properties = new Properties();
 
 	private final JSONObject _jsonObject;
-	private final Properties _properties = new Properties();
 	private final TestrayBuild _testrayBuild;
 
 }

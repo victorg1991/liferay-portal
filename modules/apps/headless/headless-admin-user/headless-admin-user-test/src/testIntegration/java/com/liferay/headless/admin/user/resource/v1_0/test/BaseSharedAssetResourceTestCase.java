@@ -35,6 +35,7 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.odata.entity.EntityField;
@@ -42,7 +43,6 @@ import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.search.test.rule.SearchTestRule;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
 import jakarta.annotation.Generated;
@@ -1124,6 +1124,14 @@ public abstract class BaseSharedAssetResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("file", additionalAssertFieldName)) {
+				if (sharedAsset.getFile() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("fileTypeIcon", additionalAssertFieldName)) {
 				if (sharedAsset.getFileTypeIcon() == null) {
 					valid = false;
@@ -1160,6 +1168,14 @@ public abstract class BaseSharedAssetResourceTestCase {
 
 			if (Objects.equals("title", additionalAssertFieldName)) {
 				if (sharedAsset.getTitle() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("visible", additionalAssertFieldName)) {
+				if (sharedAsset.getVisible() == null) {
 					valid = false;
 				}
 
@@ -1223,6 +1239,10 @@ public abstract class BaseSharedAssetResourceTestCase {
 
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
+
+		graphQLFields.add(new GraphQLField("externalReferenceCode"));
+
+		graphQLFields.add(new GraphQLField("id"));
 
 		for (java.lang.reflect.Field field :
 				getDeclaredFields(
@@ -1384,6 +1404,16 @@ public abstract class BaseSharedAssetResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("file", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						sharedAsset1.getFile(), sharedAsset2.getFile())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("fileTypeIcon", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						sharedAsset1.getFileTypeIcon(),
@@ -1443,6 +1473,16 @@ public abstract class BaseSharedAssetResourceTestCase {
 			if (Objects.equals("title", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						sharedAsset1.getTitle(), sharedAsset2.getTitle())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("visible", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						sharedAsset1.getVisible(), sharedAsset2.getVisible())) {
 
 					return false;
 				}
@@ -1773,6 +1813,11 @@ public abstract class BaseSharedAssetResourceTestCase {
 			return sb.toString();
 		}
 
+		if (entityFieldName.equals("file")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("fileTypeIcon")) {
 			Object object = sharedAsset.getFileTypeIcon();
 
@@ -1967,6 +2012,11 @@ public abstract class BaseSharedAssetResourceTestCase {
 			return sb.toString();
 		}
 
+		if (entityFieldName.equals("visible")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		throw new IllegalArgumentException(
 			"Invalid entity field " + entityFieldName);
 	}
@@ -2030,6 +2080,7 @@ public abstract class BaseSharedAssetResourceTestCase {
 				siteName = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				title = StringUtil.toLowerCase(RandomTestUtil.randomString());
+				visible = RandomTestUtil.randomBoolean();
 			}
 		};
 	}

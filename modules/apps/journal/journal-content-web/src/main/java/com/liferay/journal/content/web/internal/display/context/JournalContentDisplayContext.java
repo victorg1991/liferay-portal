@@ -273,7 +273,9 @@ public class JournalContentDisplayContext {
 			return _articleGroupId;
 		}
 
-		_articleGroupId = ParamUtil.getLong(_portletRequest, "groupId");
+		_articleGroupId = ParamUtil.getLong(
+			_portletRequest, "groupId",
+			_journalContentPortletInstanceConfiguration.groupId());
 
 		if (_articleGroupId > 0) {
 			return _articleGroupId;
@@ -984,7 +986,7 @@ public class JournalContentDisplayContext {
 
 		Layout layout = _themeDisplay.getLayout();
 
-		if (layout.isLayoutPrototypeLinkActive()) {
+		if (layout.isPortletLayoutPageTemplateEntryLinkActive()) {
 			_showSelectArticleLink = false;
 
 			return _showSelectArticleLink;

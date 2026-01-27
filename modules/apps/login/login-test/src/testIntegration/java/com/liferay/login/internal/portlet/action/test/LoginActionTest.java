@@ -44,8 +44,6 @@ import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.site.initializer.SiteInitializer;
@@ -65,7 +63,6 @@ import org.junit.runner.RunWith;
 /**
  * @author Jorge García
  */
-@FeatureFlag("LPD-6378")
 @RunWith(Arquillian.class)
 public class LoginActionTest {
 
@@ -99,9 +96,9 @@ public class LoginActionTest {
 
 		URL url = httpURLConnection.getURL();
 
-		Assert.assertTrue(
-			StringUtil.contains(
-				url.getQuery(), "p_p_state=exclusive", StringPool.BLANK));
+		String query = url.getQuery();
+
+		Assert.assertTrue(query.contains("p_p_state=exclusive"));
 	}
 
 	@Test
@@ -118,15 +115,15 @@ public class LoginActionTest {
 
 			Assert.assertEquals(302, httpURLConnection.getResponseCode());
 
+			String location = httpURLConnection.getHeaderField("Location");
+
 			Assert.assertTrue(
-				StringUtil.contains(
-					httpURLConnection.getHeaderField("Location"),
+				location.contains(
 					StringBundler.concat(
 						"_com_liferay_login_web_portlet_LoginPortlet_redirect=",
 						"http%3A%2F%2F", _company.getVirtualHostname(),
 						"%3A8080", HtmlUtil.escapeURL(contextPath),
-						"%2Fweb%2Fguest%2Fhome"),
-					StringPool.BLANK));
+						"%2Fweb%2Fguest%2Fhome")));
 		}
 	}
 
@@ -144,14 +141,14 @@ public class LoginActionTest {
 
 			URL url = httpURLConnection.getURL();
 
+			String query = url.getQuery();
+
 			Assert.assertTrue(
-				StringUtil.contains(
-					url.getQuery(),
+				query.contains(
 					StringBundler.concat(
 						"_com_liferay_login_web_portlet_LoginPortlet_redirect=",
 						"http%3A%2F%2F", _company.getVirtualHostname(),
-						"%3A8080%2Fweb%2Fguest%2Fhome"),
-					StringPool.BLANK));
+						"%3A8080%2Fweb%2Fguest%2Fhome")));
 		}
 	}
 
@@ -223,9 +220,9 @@ public class LoginActionTest {
 
 			url = httpURLConnection.getURL();
 
-			Assert.assertTrue(
-				StringUtil.contains(
-					url.getQuery(), "p_p_state=normal", StringPool.BLANK));
+			String query = url.getQuery();
+
+			Assert.assertTrue(query.contains("p_p_state=normal"));
 		}
 	}
 
@@ -237,7 +234,8 @@ public class LoginActionTest {
 			_layoutUtilityPageEntryLocalService.addLayoutUtilityPageEntry(
 				null, _serviceContext.getUserId(), group.getGroupId(), 0, 0,
 				true, RandomTestUtil.randomString(),
-				LayoutUtilityPageEntryConstants.TYPE_LOGIN, 0, _serviceContext);
+				LayoutUtilityPageEntryConstants.TYPE_LOGIN, null,
+				_serviceContext);
 
 		UserTestUtil.setUser(
 			_userLocalService.getGuestUser(TestPropsValues.getCompanyId()));

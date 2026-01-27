@@ -12,13 +12,16 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
 /**
  * @author Bruno Basto
  */
-@ExtendedObjectClassDefinition(category = "infrastructure")
+@ExtendedObjectClassDefinition(
+	category = "infrastructure",
+	scope = ExtendedObjectClassDefinition.Scope.COMPANY
+)
 @Meta.OCD(
 	description = "spa-configuration-description",
 	id = "com.liferay.frontend.js.spa.web.internal.configuration.SPAConfiguration",
 	localization = "content/Language", name = "spa-configuration-name"
 )
-public @interface SPAConfiguration {
+public interface SPAConfiguration {
 
 	@Meta.AD(
 		deflt = "-1", description = "cache-expiration-time-description",
@@ -27,17 +30,23 @@ public @interface SPAConfiguration {
 	public long cacheExpirationTime();
 
 	@Meta.AD(
+		description = "custom-excluded-paths-description",
+		name = "custom-excluded-paths-name", required = false
+	)
+	public String[] customExcludedPaths();
+
+	@Meta.AD(
+		deflt = "true", description = "enable-spa-description",
+		name = "enable-spa-name", required = false
+	)
+	public boolean enabled();
+
+	@Meta.AD(
 		deflt = ":not([target=\"_blank\"])|:not([data-senna-off])|:not([data-resource-href])",
 		description = "navigation-exception-selectors-description",
 		name = "navigation-exception-selectors-name", required = false
 	)
 	public String[] navigationExceptionSelectors();
-
-	@Meta.AD(
-		description = "custom-excluded-paths-description",
-		name = "custom-excluded-paths-name", required = false
-	)
-	public String[] customExcludedPaths();
 
 	@Meta.AD(
 		deflt = "false", description = "preload-css-description",

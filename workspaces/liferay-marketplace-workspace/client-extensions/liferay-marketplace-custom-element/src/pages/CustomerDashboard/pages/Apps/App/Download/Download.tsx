@@ -4,19 +4,17 @@
  */
 
 import ClayAlert from '@clayui/alert';
-import {ClayButtonWithIcon} from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import {useMemo, useState} from 'react';
 import {useOutletContext} from 'react-router-dom';
 import useSWR from 'swr';
 
+import ButtonWithIcon from '../../../../../../components/ButtonWithIcon';
 import ExternalLink from '../../../../../../components/ExternalLink';
+import {MarketplaceCategories} from '../../../../../../enums/Categories';
 import {LearnLinks} from '../../../../../../enums/Learn';
 import {OrderTypes} from '../../../../../../enums/Order';
-import {
-	ProductCategories,
-	ProductSpecificationKey,
-} from '../../../../../../enums/Product';
+import {ProductSpecificationKey} from '../../../../../../enums/Product';
 import useGetProductByOrderId from '../../../../../../hooks/useGetProductByOrderId';
 import i18n from '../../../../../../i18n';
 import {Liferay} from '../../../../../../liferay/liferay';
@@ -27,7 +25,7 @@ import DownloadTable from './DownloadTable';
 type OutletContext = ReturnType<typeof useGetProductByOrderId>;
 
 const downloadAlerts = {
-	[OrderTypes.CLOUDAPP]: {
+	[OrderTypes.CLOUD_APP]: {
 		link: LearnLinks.DEPLOYING_CLIENT_EXTENSIONS_LIFERAY_PAAS,
 		message:
 			'In case of your platform is Liferay PaaS or Liferay Self-Hosted and want to manually install this application, follow the recommendations in the following document',
@@ -123,7 +121,7 @@ const Download = () => {
 					'Liferay Portal ' +
 						getProductCategoriesByVocabularyName(
 							outletContext?.product?.categories || [],
-							ProductCategories.MARKETPLACE_LIFERAY_VERSION
+							MarketplaceCategories.MARKETPLACE_LIFERAY_VERSION
 						)
 							.map((versionName) => versionName)
 							.join(', '),
@@ -169,7 +167,7 @@ const Download = () => {
 
 					<ClayInput.GroupItem prepend shrink>
 						<ClayInput.GroupText className="bg-white border-0">
-							<ClayButtonWithIcon
+							<ButtonWithIcon
 								aria-label="Search"
 								className="border-0"
 								displayType="unstyled"

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {Node} from 'react-flow-renderer';
 
 import {
@@ -65,12 +65,14 @@ function buildObjectDefinitionNodeMock({
 			defaultLanguageId: 'en_US',
 			enableCategorization: true,
 			enableComments: false,
+			enableFormContainer: false,
 			enableFriendlyURLCustomization: false,
 			enableIndexSearch: false,
 			enableLocalization: false,
 			enableObjectEntryDraft: false,
 			enableObjectEntryHistory: false,
 			enableObjectEntrySchedule: false,
+			enableObjectEntrySubscription: false,
 			externalReferenceCode: objectDefinitionExternalReferenceCode,
 			friendlyURLSeparator: objectDefinitionName,
 			hasObjectDefinitionDeleteResourcePermission: false,

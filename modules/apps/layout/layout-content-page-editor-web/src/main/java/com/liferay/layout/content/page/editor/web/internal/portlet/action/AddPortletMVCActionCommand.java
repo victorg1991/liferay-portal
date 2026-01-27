@@ -164,8 +164,7 @@ public class AddPortletMVCActionCommand
 
 			JSONObject editableValueJSONObject =
 				_fragmentEntryProcessorRegistry.
-					getDefaultEditableValuesJSONObject(
-						StringPool.BLANK, StringPool.BLANK);
+					getDefaultEditableValuesJSONObject(StringPool.BLANK, null);
 
 			editableValueJSONObject.put(
 				"instanceId", instanceId
@@ -179,7 +178,7 @@ public class AddPortletMVCActionCommand
 			FragmentEntryLink fragmentEntryLink =
 				_fragmentEntryLinkLocalService.addFragmentEntryLink(
 					null, serviceContext.getUserId(),
-					serviceContext.getScopeGroupId(), 0, 0,
+					serviceContext.getScopeGroupId(), null, null, null,
 					segmentsExperienceId, themeDisplay.getPlid(),
 					StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
 					StringPool.BLANK, editableValueJSONObject.toString(),

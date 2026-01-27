@@ -13,6 +13,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.frontend.hashed.files.HashedFilesRegistryUtil;
 import com.liferay.portal.kernel.json.JSON;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -190,8 +191,13 @@ public class ThemeDisplay
 			return _clayCSSURL;
 		}
 
-		return PortalUtil.getStaticResourceURL(
-			getRequest(), getPathThemeCss() + "/clay.css");
+		_clayCSSURL = _getResource(
+			"/clay.css", getPathThemeCss(),
+			PortalUtil.isRightToLeft(_httpServletRequest) ? "/clay_rtl.css" :
+				"/clay.css",
+			_theme.getCssPath());
+
+		return _clayCSSURL;
 	}
 
 	public ColorScheme getColorScheme() {
@@ -557,8 +563,13 @@ public class ThemeDisplay
 			return _mainCSSURL;
 		}
 
-		return PortalUtil.getStaticResourceURL(
-			getRequest(), getPathThemeCss() + "/main.css");
+		_mainCSSURL = _getResource(
+			"/main.css", getPathThemeCss(),
+			PortalUtil.isRightToLeft(_httpServletRequest) ? "/main_rtl.css" :
+				"/main.css",
+			_theme.getCssPath());
+
+		return _mainCSSURL;
 	}
 
 	public String getMainJSURL() {
@@ -566,8 +577,11 @@ public class ThemeDisplay
 			return _mainJSURL;
 		}
 
-		return PortalUtil.getStaticResourceURL(
-			getRequest(), getPathThemeJavaScript() + "/main.js");
+		_mainJSURL = _getResource(
+			"/main.js", getPathThemeJavaScript(), "/main.js",
+			_theme.getJavaScriptPath());
+
+		return _mainJSURL;
 	}
 
 	public List<NavItem> getNavItems() throws PortalException {
@@ -594,7 +608,7 @@ public class ThemeDisplay
 	}
 
 	public String getPathContext() {
-		return _pathContext;
+		return _contextPath;
 	}
 
 	/**
@@ -1568,8 +1582,8 @@ public class ThemeDisplay
 		_pathColorSchemeImages = pathColorSchemeImages;
 	}
 
-	public void setPathContext(String pathContext) {
-		_pathContext = pathContext;
+	public void setPathContext(String contextPath) {
+		_contextPath = contextPath;
 	}
 
 	public void setPathControlPanelSpritemap(String pathControlPanelSpritemap) {
@@ -1976,6 +1990,35 @@ public class ThemeDisplay
 		return _layoutManagePagesInitialChildren;
 	}
 
+	private String _getResource(
+		String staticResourceURLName, String staticResourceURLPath,
+		String unhashedFileURIName, String unhashedFileURIPath) {
+
+		String prefix = PortalUtil.getPathModule();
+
+		String proxyPath = PortalUtil.getPathProxy();
+
+		prefix = prefix.substring(proxyPath.length());
+
+		String hashedFileURI = HashedFilesRegistryUtil.getHashedFileURI(
+			StringBundler.concat(
+				prefix, StringPool.SLASH, _theme.getServletContextName(),
+				unhashedFileURIPath, unhashedFileURIName));
+
+		if (Validator.isNull(hashedFileURI)) {
+			return PortalUtil.getStaticResourceURL(
+				getRequest(), staticResourceURLPath + staticResourceURLName);
+		}
+
+		try {
+			return PortalUtil.getCDNHost(getRequest()) + proxyPath +
+				hashedFileURI;
+		}
+		catch (PortalException portalException) {
+			throw new RuntimeException(portalException);
+		}
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(ThemeDisplay.class);
 
 	private static int _layoutManagePagesInitialChildren = Integer.MIN_VALUE;
@@ -1994,6 +2037,7 @@ public class ThemeDisplay
 	private int _companyLogoHeight;
 	private int _companyLogoWidth;
 	private Contact _contact;
+	private String _contextPath = StringPool.BLANK;
 	private Group _controlPanelGroup;
 	private Layout _controlPanelLayout;
 	private Device _device;
@@ -2031,7 +2075,6 @@ public class ThemeDisplay
 	private List<NavItem> _navItems;
 	private String _pathApplet = StringPool.BLANK;
 	private String _pathColorSchemeImages = StringPool.BLANK;
-	private String _pathContext = StringPool.BLANK;
 	private String _pathControlPanelSpritemap = StringPool.BLANK;
 	private String _pathFriendlyURLPrivateGroup = StringPool.BLANK;
 	private String _pathFriendlyURLPrivateUser = StringPool.BLANK;

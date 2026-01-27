@@ -90,6 +90,7 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -104,7 +105,6 @@ import com.liferay.portal.search.searcher.SearchResponse;
 import com.liferay.portal.search.searcher.Searcher;
 import com.liferay.portal.search.sort.SortOrder;
 import com.liferay.portal.search.sort.Sorts;
-import com.liferay.portal.util.PropsValues;
 
 import jakarta.portlet.ActionRequest;
 import jakarta.portlet.PortletURL;
@@ -234,7 +234,7 @@ public class ViewChangesDisplayContext {
 		List<DropdownItem> bulkActionDropdownItems = new ArrayList<>();
 
 		if (FeatureFlagManagerUtil.isEnabled("LPD-20183")) {
-			if ((_ctCollection.getStatus() == WorkflowConstants.STATUS_DRAFT) ||
+			if (_ctCollection.isInProgress() ||
 				(_ctCollection.getStatus() ==
 					WorkflowConstants.STATUS_EXPIRED)) {
 
@@ -254,7 +254,7 @@ public class ViewChangesDisplayContext {
 						"post", "move-changes", null));
 			}
 
-			if (_ctCollection.getStatus() == WorkflowConstants.STATUS_DRAFT) {
+			if (_ctCollection.isInProgress()) {
 				bulkActionDropdownItems.add(
 					new FDSActionDropdownItem(
 						PortletURLBuilder.createRenderURL(
@@ -271,6 +271,9 @@ public class ViewChangesDisplayContext {
 						"delete", "view-discard", null));
 			}
 		}
+
+		bulkActionDropdownItems.forEach(
+			dropdownItem -> dropdownItem.putData("highlighted", "true"));
 
 		return bulkActionDropdownItems;
 	}
@@ -297,7 +300,7 @@ public class ViewChangesDisplayContext {
 				_language.get(_httpServletRequest, "review-change"), "get",
 				"get", null));
 
-		if ((_ctCollection.getStatus() == WorkflowConstants.STATUS_DRAFT) ||
+		if (_ctCollection.isInProgress() ||
 			(_ctCollection.getStatus() == WorkflowConstants.STATUS_EXPIRED)) {
 
 			fdsActionDropdownItems.add(
@@ -320,7 +323,7 @@ public class ViewChangesDisplayContext {
 					"move-changes", null));
 		}
 
-		if (_ctCollection.getStatus() == WorkflowConstants.STATUS_DRAFT) {
+		if (_ctCollection.isInProgress()) {
 			fdsActionDropdownItems.add(
 				new FDSActionDropdownItem(
 					PortletURLBuilder.createRenderURL(
@@ -453,7 +456,8 @@ public class ViewChangesDisplayContext {
 			"itemsOverview", itemsOverviewJSONArray
 		).put(
 			"publicationSizeClassification",
-			_ctCollection.getScoreSizeClassification()
+			_language.get(
+				_httpServletRequest, _ctCollection.getScoreSizeClassification())
 		).build();
 	}
 
@@ -633,8 +637,7 @@ public class ViewChangesDisplayContext {
 		).put(
 			"discardURL",
 			() -> {
-				if ((_ctCollection.getStatus() !=
-						WorkflowConstants.STATUS_DRAFT) ||
+				if (!_ctCollection.isInProgress() ||
 					!CTCollectionPermission.contains(
 						_themeDisplay.getPermissionChecker(), _ctCollection,
 						ActionKeys.DELETE)) {
@@ -681,8 +684,7 @@ public class ViewChangesDisplayContext {
 		).put(
 			"moveChangesURL",
 			() -> {
-				if ((_ctCollection.getStatus() !=
-						WorkflowConstants.STATUS_DRAFT) ||
+				if (!_ctCollection.isInProgress() ||
 					!CTCollectionPermission.contains(
 						_themeDisplay.getPermissionChecker(), _ctCollection,
 						ActionKeys.UPDATE)) {
@@ -969,8 +971,7 @@ public class ViewChangesDisplayContext {
 		).put(
 			"publishURL",
 			() -> {
-				if ((_ctCollection.getStatus() !=
-						WorkflowConstants.STATUS_DRAFT) ||
+				if (!_ctCollection.isInProgress() ||
 					!CTCollectionPermission.contains(
 						_themeDisplay.getPermissionChecker(), _ctCollection,
 						CTActionKeys.PUBLISH)) {
@@ -1031,8 +1032,7 @@ public class ViewChangesDisplayContext {
 		).put(
 			"scheduleURL",
 			() -> {
-				if ((_ctCollection.getStatus() !=
-						WorkflowConstants.STATUS_DRAFT) ||
+				if (!_ctCollection.isInProgress() ||
 					!PropsValues.SCHEDULER_ENABLED ||
 					!CTCollectionPermission.contains(
 						_themeDisplay.getPermissionChecker(), _ctCollection,
@@ -1240,7 +1240,7 @@ public class ViewChangesDisplayContext {
 			PermissionChecker permissionChecker)
 		throws Exception {
 
-		if ((_ctCollection.getStatus() != WorkflowConstants.STATUS_DRAFT) &&
+		if (!_ctCollection.isInProgress() &&
 			(_ctCollection.getStatus() != WorkflowConstants.STATUS_EXPIRED)) {
 
 			return null;
@@ -1331,7 +1331,23 @@ public class ViewChangesDisplayContext {
 						"label", _language.get(_httpServletRequest, "edit")
 					).put(
 						"symbolLeft", "pencil"
-					));
+					)
+				).put(
+					JSONUtil.put(
+						"href",
+						PublicationsPortletURLUtil.getHref(
+							_renderResponse.createActionURL(),
+							ActionRequest.ACTION_NAME,
+							"/change_tracking/reindex_ct_collection",
+							"redirect", _themeDisplay.getURLCurrent(),
+							"ctCollectionId",
+							String.valueOf(_ctCollection.getCtCollectionId()))
+					).put(
+						"label", _language.get(_httpServletRequest, "reindex")
+					).put(
+						"symbolLeft", "reset"
+					)
+				);
 			}
 		}
 
@@ -1580,7 +1596,7 @@ public class ViewChangesDisplayContext {
 			List<WorkflowTask> workflowTasks = _getWorkflowTasks(
 				ctEntry, classPK, groupId);
 
-			if (workflowTasks == null) {
+			if (ListUtil.isEmpty(workflowTasks)) {
 				return true;
 			}
 
@@ -1593,14 +1609,8 @@ public class ViewChangesDisplayContext {
 				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					ctEntry.getCtCollectionId())) {
 
-			List<WorkflowTask> workflowTasks = _getWorkflowTasks(
-				ctEntry, classPK, groupId);
-
-			if (workflowTasks == null) {
-				return true;
-			}
-
-			return false;
+			return ListUtil.isEmpty(
+				_getWorkflowTasks(ctEntry, classPK, groupId));
 		}
 	}
 

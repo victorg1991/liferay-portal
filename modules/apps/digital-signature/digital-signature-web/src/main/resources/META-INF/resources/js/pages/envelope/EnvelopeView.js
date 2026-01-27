@@ -10,6 +10,7 @@ import ClayLoadingIndicator from '@clayui/loading-indicator';
 import {openToast} from 'frontend-js-components-web';
 import {createActionURL, createResourceURL, fetch} from 'frontend-js-web';
 import React, {useContext, useEffect, useState} from 'react';
+import {useParams} from 'react-router';
 
 import {AppContext} from '../../AppContext';
 import {BackButtonPortal} from '../../components/control-menu/ControlMenu';
@@ -56,7 +57,7 @@ const EnvelopeDetail = ({
 			/>
 		</div>
 
-		<QuestionLine question={Liferay.Language.get('to')}>
+		<QuestionLine question={Liferay.Language.get('to[recipient]')}>
 			{concatValues(recipients?.signers.map(({email}) => email))}
 		</QuestionLine>
 
@@ -103,12 +104,10 @@ const EnvelopeHeader = ({docusignStatus, emailSubject, envelopeId}) => {
 	);
 };
 
-function EnvelopeView({
-	match: {
-		params: {envelopeId},
-	},
-}) {
+function EnvelopeView() {
 	const {baseResourceURL} = useContext(AppContext);
+
+	const {envelopeId} = useParams();
 
 	const [{envelope, fileEntries = [], isLoading}, setEnvelope] = useState({
 		envelope: {},

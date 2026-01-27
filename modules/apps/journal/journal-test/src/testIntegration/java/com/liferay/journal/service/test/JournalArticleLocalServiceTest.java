@@ -23,6 +23,11 @@ import com.liferay.asset.link.service.AssetLinkLocalService;
 import com.liferay.data.engine.rest.dto.v2_0.DataDefinition;
 import com.liferay.data.engine.rest.resource.v2_0.DataDefinitionResource;
 import com.liferay.data.engine.rest.test.util.DataDefinitionTestUtil;
+import com.liferay.depot.constants.DepotConstants;
+import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.model.DepotEntryGroupRel;
+import com.liferay.depot.service.DepotEntryGroupRelLocalService;
+import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
@@ -606,68 +611,18 @@ public class JournalArticleLocalServiceTest {
 
 	@Test
 	public void testCopyArticle() throws Exception {
-		JournalArticle oldJournalArticle = JournalTestUtil.addArticle(
+		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			_group.getGroupId(),
 			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Test-1",
 			RandomTestUtil.randomString());
 
-		JournalArticle thirdJournalArticle = JournalTestUtil.addArticle(
-			_group.getGroupId(),
-			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, "Test-2",
-			oldJournalArticle.getContent());
+		_testCopyArticle(journalArticle, " (Copy)", "-copy-");
+		_testCopyArticle(journalArticle, " (Copy 1)", "-copy-1-");
 
-		JournalArticle newJournalArticle =
-			_journalArticleLocalService.copyArticle(
-				oldJournalArticle.getUserId(), oldJournalArticle.getGroupId(),
-				oldJournalArticle.getArticleId(), null, true,
-				oldJournalArticle.getVersion());
+		journalArticle = JournalTestUtil.updateArticle(
+			journalArticle, "Test-2");
 
-		Assert.assertNotEquals(oldJournalArticle, newJournalArticle);
-		Assert.assertNotEquals(
-			thirdJournalArticle.getUrlTitle(), newJournalArticle.getUrlTitle());
-
-		List<ResourcePermission> oldResourcePermissions =
-			_resourcePermissionLocalService.getResourcePermissions(
-				oldJournalArticle.getCompanyId(),
-				JournalArticle.class.getName(),
-				ResourceConstants.SCOPE_INDIVIDUAL,
-				String.valueOf(oldJournalArticle.getResourcePrimKey()));
-
-		List<ResourcePermission> newResourcePermissions =
-			_resourcePermissionLocalService.getResourcePermissions(
-				newJournalArticle.getCompanyId(),
-				JournalArticle.class.getName(),
-				ResourceConstants.SCOPE_INDIVIDUAL,
-				String.valueOf(newJournalArticle.getResourcePrimKey()));
-
-		Assert.assertEquals(
-			StringBundler.concat(
-				"Old resource permissions: ", oldResourcePermissions,
-				", new resource permissions: ", newResourcePermissions),
-			oldResourcePermissions.size(), newResourcePermissions.size());
-
-		for (int i = 0; i < oldResourcePermissions.size(); i++) {
-			ResourcePermission oldResourcePermission =
-				oldResourcePermissions.get(i);
-			ResourcePermission newResourcePermission =
-				newResourcePermissions.get(i);
-
-			Assert.assertNotEquals(
-				oldResourcePermission, newResourcePermission);
-
-			Assert.assertEquals(
-				oldResourcePermission.getRoleId(),
-				newResourcePermission.getRoleId());
-			Assert.assertEquals(
-				oldResourcePermission.getOwnerId(),
-				newResourcePermission.getOwnerId());
-			Assert.assertEquals(
-				oldResourcePermission.getActionIds(),
-				newResourcePermission.getActionIds());
-			Assert.assertEquals(
-				oldResourcePermission.isViewActionId(),
-				newResourcePermission.isViewActionId());
-		}
+		_testCopyArticle(journalArticle, " (Copy)", "-copy-");
 	}
 
 	@Test
@@ -1246,7 +1201,8 @@ public class JournalArticleLocalServiceTest {
 
 	@Test
 	public void testDeleteDDMStructurePredefinedValues() throws Exception {
-		Tuple tuple = _createJournalArticleWithPredefinedValues("Test Article");
+		Tuple tuple = _createJournalArticleWithPredefinedValues(
+			_group.getGroupId());
 
 		JournalArticle journalArticle = (JournalArticle)tuple.getObject(0);
 		DDMStructure ddmStructure = (DDMStructure)tuple.getObject(1);
@@ -1688,6 +1644,54 @@ public class JournalArticleLocalServiceTest {
 	}
 
 	@Test
+	public void testGetArticleDisplayWithContentFromDepotEntryWithDDMTemplate()
+		throws Exception {
+
+		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), RandomTestUtil.randomString()
+			).build(),
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), RandomTestUtil.randomString()
+			).build(),
+			DepotConstants.TYPE_ASSET_LIBRARY,
+			ServiceContextTestUtil.getServiceContext());
+
+		DepotEntryGroupRel depotEntryGroupRel =
+			_depotEntryGroupRelLocalService.addDepotEntryGroupRel(
+				depotEntry.getDepotEntryId(), _group.getGroupId());
+
+		_depotEntryGroupRelLocalService.updateDDMStructuresAvailable(
+			depotEntryGroupRel.getDepotEntryGroupRelId(), true);
+
+		Tuple tuple = _createJournalArticleWithPredefinedValues(
+			depotEntry.getGroupId());
+
+		JournalArticle journalArticle = (JournalArticle)tuple.getObject(0);
+
+		DDMStructure ddmStructure = (DDMStructure)tuple.getObject(1);
+
+		String ddmTemplateScript = RandomTestUtil.randomString();
+
+		DDMTemplate ddmTemplate = DDMTemplateTestUtil.addTemplate(
+			_group.getGroupId(), ddmStructure.getStructureId(),
+			PortalUtil.getClassNameId(JournalArticle.class),
+			TemplateConstants.LANG_TYPE_VM, ddmTemplateScript,
+			LocaleUtil.getSiteDefault());
+
+		String defaultLanguageId = LocaleUtil.toLanguageId(
+			LocaleUtil.getSiteDefault());
+
+		JournalArticleDisplay journalArticleDisplay =
+			_journalArticleLocalService.getArticleDisplay(
+				journalArticle, ddmTemplate.getTemplateKey(), Constants.VIEW,
+				defaultLanguageId, 1, null, _themeDisplay);
+
+		Assert.assertEquals(
+			ddmTemplateScript, journalArticleDisplay.getContent());
+	}
+
+	@Test
 	public void testGetArticleDisplayWithContentFromGlobalSite()
 		throws Exception {
 
@@ -1700,16 +1704,20 @@ public class JournalArticleLocalServiceTest {
 
 		DDMStructure ddmStructure = journalArticle.getDDMStructure();
 
+		String ddmTemplateScript1 = RandomTestUtil.randomString();
+
 		DDMTemplate ddmTemplate1 = DDMTemplateTestUtil.addTemplate(
 			company.getGroupId(), ddmStructure.getStructureId(),
 			PortalUtil.getClassNameId(JournalArticle.class),
-			TemplateConstants.LANG_TYPE_VM, "ddm template 1",
+			TemplateConstants.LANG_TYPE_VM, ddmTemplateScript1,
 			LocaleUtil.getSiteDefault());
+
+		String ddmTemplateScript2 = RandomTestUtil.randomString();
 
 		DDMTemplate ddmTemplate2 = DDMTemplateTestUtil.addTemplate(
 			company.getGroupId(), ddmStructure.getStructureId(),
 			PortalUtil.getClassNameId(JournalArticle.class),
-			TemplateConstants.LANG_TYPE_VM, "ddm template 2",
+			TemplateConstants.LANG_TYPE_VM, ddmTemplateScript2,
 			LocaleUtil.getSiteDefault());
 
 		String defaultLanguageId = LocaleUtil.toLanguageId(
@@ -1721,14 +1729,21 @@ public class JournalArticleLocalServiceTest {
 				defaultLanguageId, 1, null, _themeDisplay);
 
 		Assert.assertEquals(
-			"ddm template 1", journalArticleDisplay.getContent());
+			ddmTemplateScript1, journalArticleDisplay.getContent());
 
 		journalArticleDisplay = _journalArticleLocalService.getArticleDisplay(
 			journalArticle, ddmTemplate2.getTemplateKey(), Constants.VIEW,
 			defaultLanguageId, 1, null, _themeDisplay);
 
 		Assert.assertEquals(
-			"ddm template 2", journalArticleDisplay.getContent());
+			ddmTemplateScript2, journalArticleDisplay.getContent());
+
+		journalArticleDisplay = _journalArticleLocalService.getArticleDisplay(
+			journalArticle, ddmTemplate2.getTemplateKey(), Constants.VIEW,
+			defaultLanguageId, 1, null, null);
+
+		Assert.assertEquals(
+			ddmTemplateScript2, journalArticleDisplay.getContent());
 	}
 
 	@Test
@@ -2358,7 +2373,8 @@ public class JournalArticleLocalServiceTest {
 
 	@Test
 	public void testUpdateDDMStructurePredefinedValues() throws Exception {
-		Tuple tuple = _createJournalArticleWithPredefinedValues("Test Article");
+		Tuple tuple = _createJournalArticleWithPredefinedValues(
+			_group.getGroupId());
 
 		JournalArticle journalArticle = (JournalArticle)tuple.getObject(0);
 		DDMStructure ddmStructure = (DDMStructure)tuple.getObject(1);
@@ -2489,7 +2505,7 @@ public class JournalArticleLocalServiceTest {
 		Assert.assertEquals(assetTagId, assetTag.getTagId());
 	}
 
-	private Tuple _createJournalArticleWithPredefinedValues(String title)
+	private Tuple _createJournalArticleWithPredefinedValues(long groupId)
 		throws Exception {
 
 		Set<Locale> availableLocales = DDMFormTestUtil.createAvailableLocales(
@@ -2514,10 +2530,10 @@ public class JournalArticleLocalServiceTest {
 		ddmForm.addDDMFormField(ddmFormField);
 
 		DDMStructure ddmStructure = DDMStructureTestUtil.addStructure(
-			_group.getGroupId(), JournalArticle.class.getName(), ddmForm);
+			groupId, JournalArticle.class.getName(), ddmForm);
 
 		DDMTemplate ddmTemplate = DDMTemplateTestUtil.addTemplate(
-			_group.getGroupId(), ddmStructure.getStructureId(),
+			groupId, ddmStructure.getStructureId(),
 			PortalUtil.getClassNameId(JournalArticle.class),
 			TemplateConstants.LANG_TYPE_FTL,
 			JournalTestUtil.getSampleTemplateFTL(), LocaleUtil.US);
@@ -2535,7 +2551,7 @@ public class JournalArticleLocalServiceTest {
 			LocaleUtil.US.toString());
 
 		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
+			ServiceContextTestUtil.getServiceContext(groupId);
 
 		JournalArticle journalArticle =
 			_journalArticleLocalService.addArticleDefaultValues(
@@ -2543,7 +2559,7 @@ public class JournalArticleLocalServiceTest {
 				_classNameLocalService.getClassNameId(DDMStructure.class),
 				ddmStructure.getStructureId(),
 				HashMapBuilder.put(
-					LocaleUtil.US, title
+					LocaleUtil.US, RandomTestUtil.randomString()
 				).build(),
 				null, content, ddmStructure.getStructureId(),
 				ddmTemplate.getTemplateKey(), null, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2633,6 +2649,67 @@ public class JournalArticleLocalServiceTest {
 	private String _readFileToString(String fileName) throws Exception {
 		return new String(
 			FileUtil.getBytes(getClass(), "dependencies/" + fileName));
+	}
+
+	private void _testCopyArticle(
+			JournalArticle journalArticle, String titleSuffix,
+			String urlTitleSuffix)
+		throws Exception {
+
+		JournalArticle journalArticle1 =
+			_journalArticleLocalService.copyArticle(
+				journalArticle.getUserId(), journalArticle.getGroupId(),
+				journalArticle.getArticleId(), null, true,
+				journalArticle.getVersion());
+
+		Assert.assertNotEquals(journalArticle, journalArticle1);
+		Assert.assertEquals(
+			journalArticle.getTitle() + titleSuffix,
+			journalArticle1.getTitle());
+		Assert.assertEquals(
+			journalArticle.getUrlTitle() + urlTitleSuffix,
+			journalArticle1.getUrlTitle());
+
+		List<ResourcePermission> oldResourcePermissions =
+			_resourcePermissionLocalService.getResourcePermissions(
+				journalArticle.getCompanyId(), JournalArticle.class.getName(),
+				ResourceConstants.SCOPE_INDIVIDUAL,
+				String.valueOf(journalArticle.getResourcePrimKey()));
+
+		List<ResourcePermission> newResourcePermissions =
+			_resourcePermissionLocalService.getResourcePermissions(
+				journalArticle1.getCompanyId(), JournalArticle.class.getName(),
+				ResourceConstants.SCOPE_INDIVIDUAL,
+				String.valueOf(journalArticle1.getResourcePrimKey()));
+
+		Assert.assertEquals(
+			StringBundler.concat(
+				"Old resource permissions: ", oldResourcePermissions,
+				", new resource permissions: ", newResourcePermissions),
+			oldResourcePermissions.size(), newResourcePermissions.size());
+
+		for (int i = 0; i < oldResourcePermissions.size(); i++) {
+			ResourcePermission oldResourcePermission =
+				oldResourcePermissions.get(i);
+			ResourcePermission newResourcePermission =
+				newResourcePermissions.get(i);
+
+			Assert.assertNotEquals(
+				oldResourcePermission, newResourcePermission);
+
+			Assert.assertEquals(
+				oldResourcePermission.getRoleId(),
+				newResourcePermission.getRoleId());
+			Assert.assertEquals(
+				oldResourcePermission.getOwnerId(),
+				newResourcePermission.getOwnerId());
+			Assert.assertEquals(
+				oldResourcePermission.getActionIds(),
+				newResourcePermission.getActionIds());
+			Assert.assertEquals(
+				oldResourcePermission.isViewActionId(),
+				newResourcePermission.isViewActionId());
+		}
 	}
 
 	private String _toJSON(FileEntry fileEntry) {
@@ -2790,6 +2867,12 @@ public class JournalArticleLocalServiceTest {
 
 	@Inject
 	private DDMTemplateLinkLocalService _ddmTemplateLinkLocalService;
+
+	@Inject
+	private DepotEntryGroupRelLocalService _depotEntryGroupRelLocalService;
+
+	@Inject
+	private DepotEntryLocalService _depotEntryLocalService;
 
 	@Inject
 	private DLAppLocalService _dlAppLocalService;

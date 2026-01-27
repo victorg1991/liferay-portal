@@ -5,6 +5,7 @@
 
 package com.liferay.object.rest.internal.deployer;
 
+import com.liferay.headless.delivery.dto.v1_0.Comment;
 import com.liferay.headless.object.dto.v1_0.Collaborator;
 import com.liferay.object.deployer.ObjectDefinitionDeployer;
 import com.liferay.object.exception.NoSuchObjectDefinitionException;
@@ -18,9 +19,12 @@ import com.liferay.object.rest.internal.graphql.dto.v1_0.ObjectDefinitionGraphQL
 import com.liferay.object.rest.internal.jaxrs.application.ObjectEntryApplication;
 import com.liferay.object.rest.internal.jaxrs.context.provider.ObjectDefinitionContextProvider;
 import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectAssetCategoryExceptionMapper;
+import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectDefinitionScopeExceptionMapper;
 import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectEntryCountExceptionMapper;
 import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectEntryExpirationDateExceptionMapper;
+import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectEntryGroupIdExceptionMapper;
 import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectEntryManagerHttpExceptionMapper;
+import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectEntryScopeExceptionMapper;
 import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectEntryStatusExceptionMapper;
 import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectEntryValuesExceptionMapper;
 import com.liferay.object.rest.internal.jaxrs.exception.mapper.ObjectRelationshipDeletionTypeExceptionMapper;
@@ -32,9 +36,13 @@ import com.liferay.object.rest.internal.manager.v1_0.ObjectEntryMtoMObjectRelati
 import com.liferay.object.rest.internal.manager.v1_0.SystemObjectEntry1toMObjectRelationshipElementsParserImpl;
 import com.liferay.object.rest.internal.manager.v1_0.SystemObjectEntryMtoMObjectRelationshipElementsParserImpl;
 import com.liferay.object.rest.internal.openapi.v1_0.ObjectEntryOpenAPIResourceImpl;
+import com.liferay.object.rest.internal.resource.v1_0.BaseCollaboratorResourceImpl;
+import com.liferay.object.rest.internal.resource.v1_0.BaseCommentResourceImpl;
 import com.liferay.object.rest.internal.resource.v1_0.BaseObjectEntryResourceImpl;
 import com.liferay.object.rest.internal.resource.v1_0.CollaboratorResourceFactoryImpl;
 import com.liferay.object.rest.internal.resource.v1_0.CollaboratorResourceImpl;
+import com.liferay.object.rest.internal.resource.v1_0.CommentResourceFactoryImpl;
+import com.liferay.object.rest.internal.resource.v1_0.CommentResourceImpl;
 import com.liferay.object.rest.internal.resource.v1_0.ObjectEntryRelatedObjectsResourceImpl;
 import com.liferay.object.rest.internal.resource.v1_0.ObjectEntryResourceFactoryImpl;
 import com.liferay.object.rest.internal.resource.v1_0.ObjectEntryResourceImpl;
@@ -44,12 +52,14 @@ import com.liferay.object.rest.odata.entity.v1_0.provider.EntityModelProvider;
 import com.liferay.object.rest.openapi.v1_0.ObjectEntryOpenAPIResource;
 import com.liferay.object.rest.openapi.v1_0.ObjectEntryOpenAPIResourceProvider;
 import com.liferay.object.rest.resource.v1_0.CollaboratorResource;
+import com.liferay.object.rest.resource.v1_0.CommentResource;
 import com.liferay.object.rest.resource.v1_0.ObjectEntryResource;
 import com.liferay.object.scope.ObjectScopeProvider;
 import com.liferay.object.scope.ObjectScopeProviderRegistry;
 import com.liferay.object.service.ObjectActionLocalService;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
+import com.liferay.object.service.ObjectEntryService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.service.ObjectRelationshipService;
@@ -61,6 +71,8 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.db.partition.util.DBPartitionUtil;
+import com.liferay.portal.kernel.comment.CommentManager;
+import com.liferay.portal.kernel.comment.DiscussionPermission;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
@@ -91,6 +103,7 @@ import com.liferay.portal.vulcan.resource.OpenAPIResource;
 import com.liferay.sharing.model.SharingEntry;
 import com.liferay.sharing.service.SharingEntryLocalService;
 import com.liferay.sharing.service.SharingEntryService;
+import com.liferay.translation.manager.TranslationManager;
 
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Application;
@@ -209,6 +222,15 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 			_userGroupLocalService, _userLocalService);
 	}
 
+	private CommentResourceImpl _createCommentResourceImpl(
+		ObjectDefinition objectDefinition) {
+
+		return new CommentResourceImpl(
+			_commentManager, _discussionPermission, _dtoConverterRegistry,
+			objectDefinition, _objectEntryLocalService,
+			_objectEntryManagerRegistry);
+	}
+
 	private ObjectEntryResourceImpl _createObjectEntryResourceImpl(
 		ObjectDefinition objectDefinition, String restContextPath) {
 
@@ -216,9 +238,10 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 			_dtoConverterRegistry, _entityModelProvider, objectDefinition,
 			_objectDefinitionsMap.get(restContextPath),
 			_objectDefinitionLocalService, _objectEntryLocalService,
-			_objectEntryManagerRegistry, _objectFieldLocalService,
-			_objectRelationshipService, _objectScopeProviderRegistry,
-			_systemObjectDefinitionManagerRegistry);
+			_objectEntryManagerRegistry, _objectEntryService,
+			_objectFieldLocalService, _objectRelationshipLocalService,
+			_objectScopeProviderRegistry, _translationManager,
+			_userLocalService);
 	}
 
 	private List<ServiceRegistration<?>> _deploy(
@@ -263,6 +286,7 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 					_entityModelProvider, _extensionProviderRegistry,
 					objectDefinition, _objectDefinitionLocalService,
 					_objectEntryManagerRegistry.getObjectEntryManager(
+						objectDefinition.getCompanyId(),
 						objectDefinition.getStorageType()),
 					_objectFieldLocalService, objectFields,
 					_objectRelationshipLocalService, objectRelationships,
@@ -289,31 +313,20 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 		ObjectScopeProvider objectScopeProvider) {
 
 		try {
-			Method[] methods = BaseObjectEntryResourceImpl.class.getMethods();
-
 			List<String> excludedOperationIds = new ArrayList<>();
 
-			for (Method method : methods) {
-				Path path = method.getAnnotation(Path.class);
-
-				if (path == null) {
-					continue;
-				}
-
-				String value = path.value();
-
-				boolean groupAware = objectScopeProvider.isGroupAware();
-				boolean hasScope = value.contains("scopes");
-
-				if ((!groupAware && hasScope) ||
-					(groupAware && !hasScope &&
-					 !value.startsWith("/{objectEntryId}")) ||
-					(objectDefinition.isRootDescendantNode() &&
-					 value.endsWith("/permissions"))) {
-
-					excludedOperationIds.add(method.getName());
-				}
-			}
+			_processMethods(
+				excludedOperationIds,
+				BaseCollaboratorResourceImpl.class.getMethods(),
+				objectScopeProvider);
+			_processMethods(
+				excludedOperationIds,
+				BaseCommentResourceImpl.class.getMethods(),
+				objectScopeProvider);
+			_processMethods(
+				excludedOperationIds,
+				BaseObjectEntryResourceImpl.class.getMethods(),
+				objectScopeProvider);
 
 			Collections.sort(excludedOperationIds);
 
@@ -375,6 +388,11 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 
 	private String _getEntityClassName(ObjectDefinition objectDefinition) {
 		return ObjectEntry.class.getName() + "#" +
+			StringUtil.toLowerCase(objectDefinition.getShortName());
+	}
+
+	private String _getResourceLocatorKey(ObjectDefinition objectDefinition) {
+		return objectDefinition.getRESTContextPath() + "/" +
 			StringUtil.toLowerCase(objectDefinition.getShortName());
 	}
 
@@ -478,6 +496,56 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 			collaboratorResourceServiceRegistration.setProperties(properties);
 		}
 
+		properties = HashMapDictionaryBuilder.<String, Object>put(
+			"api.version", "v1.0"
+		).put(
+			"companyId", companyIds
+		).put(
+			"entity.class.name", Comment.class.getName()
+		).put(
+			"osgi.jaxrs.application.select",
+			"(osgi.jaxrs.name=" + osgiJaxRsName + ")"
+		).put(
+			"osgi.jaxrs.resource", "true"
+		).build();
+
+		_commentResourcePropertiesMap.put(restContextPath, properties);
+
+		ServiceRegistration<CommentResource>
+			commentResourceServiceRegistration =
+				_commentResourceServiceRegistrations.get(restContextPath);
+
+		if (commentResourceServiceRegistration == null) {
+			_commentResourceServiceRegistrations.put(
+				restContextPath,
+				_bundleContext.registerService(
+					CommentResource.class,
+					new PrototypeServiceFactory<CommentResource>() {
+
+						@Override
+						public CommentResource getService(
+							Bundle bundle,
+							ServiceRegistration<CommentResource>
+								serviceRegistration) {
+
+							return _createCommentResourceImpl(objectDefinition);
+						}
+
+						@Override
+						public void ungetService(
+							Bundle bundle,
+							ServiceRegistration<CommentResource>
+								serviceRegistration,
+							CommentResource commentResource) {
+						}
+
+					},
+					properties));
+		}
+		else {
+			commentResourceServiceRegistration.setProperties(properties);
+		}
+
 		_scopedServiceRegistrationsMap.compute(
 			restContextPath,
 			(key1, serviceRegistrationsMap) -> {
@@ -551,10 +619,6 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 								"batch.engine.task.item.delegate.class.name",
 								ObjectEntry.class.getName()
 							).put(
-								"batch.engine.task.item.delegate.item.class." +
-									"name",
-								objectDefinition.getClassName()
-							).put(
 								"batch.engine.task.item.delegate.name",
 								objectDefinition.getName()
 							).put(
@@ -573,6 +637,10 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 										ObjectDefinition.class.getName())
 							).put(
 								"crud.item.delegate", "true"
+							).put(
+								"export.import.vulcan.batch.engine.task.item." +
+									"delegate",
+								"true"
 							).build()),
 						_bundleContext.registerService(
 							ObjectRelationshipElementsParser.class,
@@ -655,13 +723,28 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 							() -> _createCollaboratorResourceImpl(),
 							_defaultPermissionCheckerFactory,
 							_expressionConvert, _filterParserProvider,
+							_groupLocalService,
+							_objectDefinitionsMap.get(restContextPath),
+							_resourceActionLocalService,
+							_resourcePermissionLocalService, _roleLocalService,
+							_sortParserProvider, _userLocalService),
+						HashMapDictionaryBuilder.<String, Object>put(
+							"resource.locator.key",
+							_getResourceLocatorKey(objectDefinition)
+						).build()),
+					_bundleContext.registerService(
+						CommentResource.Factory.class,
+						new CommentResourceFactoryImpl(
+							_companyLocalService,
+							() -> _createCommentResourceImpl(objectDefinition),
+							_defaultPermissionCheckerFactory,
+							_expressionConvert, _filterParserProvider,
 							_groupLocalService, _resourceActionLocalService,
 							_resourcePermissionLocalService, _roleLocalService,
 							_sortParserProvider, _userLocalService),
 						HashMapDictionaryBuilder.<String, Object>put(
 							"resource.locator.key",
-							objectDefinition.getRESTContextPath() + "/" +
-								objectDefinition.getShortName()
+							_getResourceLocatorKey(objectDefinition)
 						).build()),
 					_bundleContext.registerService(
 						ContextProvider.class,
@@ -692,6 +775,7 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 											serviceRegistration) {
 
 								return new ObjectEntryRelatedObjectsResourceImpl(
+									_entityModelProvider,
 									_objectDefinitionLocalService,
 									_objectEntryLocalService,
 									_objectEntryManagerRegistry,
@@ -727,7 +811,8 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 							_companyLocalService,
 							_defaultPermissionCheckerFactory,
 							_expressionConvert, _filterParserProvider,
-							_groupLocalService, objectDefinition,
+							_groupLocalService,
+							_objectDefinitionsMap.get(restContextPath),
 							() -> _createObjectEntryResourceImpl(
 								null, restContextPath),
 							_resourceActionLocalService,
@@ -735,8 +820,7 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 							_sortParserProvider, _userLocalService),
 						HashMapDictionaryBuilder.<String, Object>put(
 							"resource.locator.key",
-							objectDefinition.getRESTContextPath() + "/" +
-								objectDefinition.getShortName()
+							_getResourceLocatorKey(objectDefinition)
 						).build())),
 				_registerExceptionMappers(osgiJaxRsName)));
 	}
@@ -804,15 +888,43 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 				jaxRsApplicationDescriptor.getApplicationName()));
 	}
 
+	private void _processMethods(
+		List<String> excludedOperationIds, Method[] methods,
+		ObjectScopeProvider objectScopeProvider) {
+
+		for (Method method : methods) {
+			Path path = method.getAnnotation(Path.class);
+
+			if (path == null) {
+				continue;
+			}
+
+			String value = path.value();
+
+			boolean groupAware = objectScopeProvider.isGroupAware();
+			boolean hasScope = value.contains("scopes");
+
+			if ((!groupAware && hasScope) ||
+				(groupAware && !hasScope &&
+				 !value.startsWith("/{objectEntryId}"))) {
+
+				excludedOperationIds.add(method.getName());
+			}
+		}
+	}
+
 	private List<ServiceRegistration<?>> _registerExceptionMappers(
 		String jaxRsApplicationName) {
 
 		return TransformUtil.transform(
 			Arrays.<Supplier<ExceptionMapper<?>>>asList(
-				ObjectAssetCategoryExceptionMapper::new,
 				ObjectEntryManagerHttpExceptionMapper::new,
+				() -> new ObjectAssetCategoryExceptionMapper(_language),
+				ObjectDefinitionScopeExceptionMapper::new,
 				() -> new ObjectEntryCountExceptionMapper(_language),
 				() -> new ObjectEntryExpirationDateExceptionMapper(_language),
+				() -> new ObjectEntryGroupIdExceptionMapper(_language),
+				ObjectEntryScopeExceptionMapper::new,
 				() -> new ObjectEntryStatusExceptionMapper(_language),
 				() -> new ObjectEntryValuesExceptionMapper(_language),
 				() -> new ObjectRelationshipDeletionTypeExceptionMapper(
@@ -870,12 +982,7 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 		ObjectDefinition objectDefinition) {
 
 		long companyId = objectDefinition.getCompanyId();
-
 		String restContextPath = objectDefinition.getRESTContextPath();
-
-		if (objectDefinition.getPreviousRESTContextPath() != null) {
-			restContextPath = objectDefinition.getPreviousRESTContextPath();
-		}
 
 		_undeployObjectDefinitions(companyId, restContextPath);
 		_undeployRestContextPathCompanyIds(companyId, restContextPath);
@@ -1043,6 +1150,14 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 		_collaboratorResourceServiceRegistrationsMap = new HashMap<>();
 
 	@Reference
+	private CommentManager _commentManager;
+
+	private final Map<String, Dictionary<String, Object>>
+		_commentResourcePropertiesMap = new HashMap<>();
+	private final Map<String, ServiceRegistration<CommentResource>>
+		_commentResourceServiceRegistrations = new HashMap<>();
+
+	@Reference
 	private CompanyLocalService _companyLocalService;
 
 	private final Map<String, List<ComponentInstance>> _componentInstancesMap =
@@ -1053,6 +1168,9 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 
 	@Reference
 	private PermissionCheckerFactory _defaultPermissionCheckerFactory;
+
+	@Reference
+	private DiscussionPermission _discussionPermission;
 
 	@Reference
 	private DTOConverterRegistry _dtoConverterRegistry;
@@ -1103,6 +1221,9 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 		_objectEntryResourcePropertiesMap = new HashMap<>();
 	private final Map<String, ServiceRegistration<ObjectEntryResource>>
 		_objectEntryResourceServiceRegistrationsMap = new HashMap<>();
+
+	@Reference
+	private ObjectEntryService _objectEntryService;
 
 	@Reference
 	private ObjectFieldLocalService _objectFieldLocalService;
@@ -1160,6 +1281,9 @@ public class ObjectDefinitionDeployerImpl implements ObjectDefinitionDeployer {
 	@Reference
 	private SystemObjectDefinitionManagerRegistry
 		_systemObjectDefinitionManagerRegistry;
+
+	@Reference
+	private TranslationManager _translationManager;
 
 	@Reference
 	private UserGroupLocalService _userGroupLocalService;

@@ -8,6 +8,7 @@ package com.liferay.commerce.product.content.web.internal.item.selector;
 import com.liferay.commerce.constants.CommerceWebKeys;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.product.model.CPDefinition;
+import com.liferay.commerce.product.model.CProduct;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.util.CommerceUtil;
 import com.liferay.info.item.selector.InfoItemSelectorView;
@@ -21,7 +22,9 @@ import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.Portal;
@@ -101,6 +104,9 @@ public class CPDefinitionItemSelectorView
 	private CPDefinitionLocalService _cpDefinitionLocalService;
 
 	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
 	private ItemSelectorViewDescriptorRenderer<InfoItemItemSelectorCriterion>
 		_itemSelectorViewDescriptorRenderer;
 
@@ -156,6 +162,31 @@ public class CPDefinitionItemSelectorView
 				_portal.getClassNameId(CPDefinition.class.getName())
 			).put(
 				"classPK", _cpDefinition.getCPDefinitionId()
+			).put(
+				"externalReferenceCode",
+				() -> {
+					CProduct cProduct = _cpDefinition.getCProduct();
+
+					return cProduct.getExternalReferenceCode();
+				}
+			).put(
+				"scopeExternalReferenceCode",
+				() -> {
+					long scopeGroupId = themeDisplay.getRefererGroupId();
+
+					if (scopeGroupId <= 0) {
+						scopeGroupId = themeDisplay.getScopeGroupId();
+					}
+
+					if (_cpDefinition.getGroupId() == scopeGroupId) {
+						return null;
+					}
+
+					Group group = _groupLocalService.getGroup(
+						_cpDefinition.getGroupId());
+
+					return group.getExternalReferenceCode();
+				}
 			).put(
 				"title", _cpDefinition.getName(themeDisplay.getLanguageId())
 			).put(

@@ -7,6 +7,7 @@ package com.liferay.portal.security.permission;
 
 import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
 import com.liferay.petra.lang.HashUtil;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.cache.PortalCache;
 import com.liferay.portal.kernel.cache.PortalCacheHelperUtil;
 import com.liferay.portal.kernel.cache.PortalCacheManagerNames;
@@ -18,11 +19,13 @@ import com.liferay.portal.kernel.cluster.ClusterInvokeThreadLocal;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.UserBag;
 import com.liferay.portal.kernel.util.MethodHandler;
 import com.liferay.portal.kernel.util.MethodKey;
+import com.liferay.portal.kernel.util.PropsValues;
 
 import java.io.Serializable;
 
@@ -30,6 +33,7 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Charles May
@@ -74,19 +78,16 @@ public class PermissionCacheUtil {
 			return;
 		}
 
-		_clearPermissionChecksMap();
+		_clearCache(userIds);
 
-		for (long userId : userIds) {
-			_userBagPortalCache.remove(userId);
-
-			_userGroupRoleIdsPortalCacheIndexer.removeKeys(userId);
-			_userPrimaryKeyRolePortalCacheUserIdIndexer.removeKeys(userId);
-			_userRolePortalCacheIndexer.removeKeys(userId);
+		if (PropsValues.DATABASE_PARTITION_ENABLED) {
+			_sendClearCacheClusterMessage(
+				_dbPartitionClearCacheMethodKey,
+				CompanyThreadLocal.getCompanyId(), userIds);
 		}
-
-		_permissionPortalCache.removeAll();
-
-		_sendClearCacheClusterMessage(_clearCacheMethodKey, userIds);
+		else {
+			_sendClearCacheClusterMessage(_clearCacheMethodKey, userIds);
+		}
 	}
 
 	public static void clearPrimaryKeyRoleCache() {
@@ -118,24 +119,31 @@ public class PermissionCacheUtil {
 			return;
 		}
 
-		_clearPermissionChecksMap();
+		_clearResourcePermissionCache(scope, name, primKey);
 
 		if (scope == ResourceConstants.SCOPE_INDIVIDUAL) {
-			_permissionPortalCacheNamePrimKeyIndexer.removeKeys(
-				PermissionKeyNamePrimKeyIndexEncoder.encode(name, primKey));
-
-			_sendClearCacheClusterMessage(
-				_clearResourcePermissionCacheMethodKey, scope, name, primKey);
+			if (PropsValues.DATABASE_PARTITION_ENABLED) {
+				_sendClearCacheClusterMessage(
+					_dbPartitionClearResourcePermissionCacheMethodKey,
+					CompanyThreadLocal.getCompanyId(), scope, name, primKey);
+			}
+			else {
+				_sendClearCacheClusterMessage(
+					_clearResourcePermissionCacheMethodKey, scope, name,
+					primKey);
+			}
 		}
 		else if (scope == ResourceConstants.SCOPE_GROUP) {
-			_permissionPortalCacheGroupIdIndexer.removeKeys(
-				Long.valueOf(primKey));
-
-			_sendClearCacheClusterMessage(
-				_clearResourcePermissionCacheMethodKey, scope, name, primKey);
-		}
-		else {
-			_permissionPortalCache.removeAll();
+			if (PropsValues.DATABASE_PARTITION_ENABLED) {
+				_sendClearCacheClusterMessage(
+					_dbPartitionClearResourcePermissionCacheMethodKey,
+					CompanyThreadLocal.getCompanyId(), scope, name, primKey);
+			}
+			else {
+				_sendClearCacheClusterMessage(
+					_clearResourcePermissionCacheMethodKey, scope, name,
+					primKey);
+			}
 		}
 	}
 
@@ -161,11 +169,18 @@ public class PermissionCacheUtil {
 		return _userBagPortalCache.get(userId);
 	}
 
-	public static long[] getUserGroupRoleIds(long userId, long groupId) {
-		UserGroupRoleIdsKey userGroupRoleIdsKey = new UserGroupRoleIdsKey(
-			userId, groupId);
+	public static Map<Long, long[]> getUserGroupRoleIds(long userId) {
+		Map<Long, long[]> groupRoleIds = _userGroupRoleIdsPortalCache.get(
+			userId);
 
-		return _userGroupRoleIdsPortalCache.get(userGroupRoleIdsKey);
+		if (groupRoleIds == null) {
+			groupRoleIds = new ConcurrentHashMap<>();
+
+			PortalCacheHelperUtil.putWithoutReplicator(
+				_userGroupRoleIdsPortalCache, userId, groupRoleIds);
+		}
+
+		return groupRoleIds;
 	}
 
 	public static Boolean getUserPrimaryKeyRole(
@@ -222,20 +237,6 @@ public class PermissionCacheUtil {
 		}
 	}
 
-	public static void putUserGroupRoleIds(
-		long userId, long groupId, long[] roleIds) {
-
-		if (roleIds == null) {
-			return;
-		}
-
-		UserGroupRoleIdsKey userGroupRoleIdsKey = new UserGroupRoleIdsKey(
-			userId, groupId);
-
-		PortalCacheHelperUtil.putWithoutReplicator(
-			_userGroupRoleIdsPortalCache, userGroupRoleIdsKey, roleIds);
-	}
-
 	public static void putUserPrimaryKeyRole(
 		long userId, long primaryKey, String roleName, Boolean value) {
 
@@ -261,6 +262,32 @@ public class PermissionCacheUtil {
 			_userRolePortalCache, userRoleKey, value);
 	}
 
+	private static void _clearCache(long... userIds) {
+		if (ExportImportThreadLocal.isImportInProcess()) {
+			return;
+		}
+
+		_clearPermissionChecksMap();
+
+		for (long userId : userIds) {
+			_userBagPortalCache.remove(userId);
+			_userGroupRoleIdsPortalCache.remove(userId);
+
+			_userPrimaryKeyRolePortalCacheUserIdIndexer.removeKeys(userId);
+			_userRolePortalCacheIndexer.removeKeys(userId);
+		}
+
+		_permissionPortalCache.removeAll();
+	}
+
+	private static void _clearCache(long companyId, long... userIds) {
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
+
+			_clearCache(userIds);
+		}
+	}
+
 	private static void _clearPermissionChecksMap() {
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
@@ -272,6 +299,41 @@ public class PermissionCacheUtil {
 			if (permissionChecksMap != null) {
 				permissionChecksMap.clear();
 			}
+		}
+	}
+
+	private static void _clearResourcePermissionCache(
+		int scope, String name, String primKey) {
+
+		if (ExportImportThreadLocal.isImportInProcess() ||
+			!PermissionThreadLocal.isFlushResourcePermissionEnabled(
+				name, primKey)) {
+
+			return;
+		}
+
+		_clearPermissionChecksMap();
+
+		if (scope == ResourceConstants.SCOPE_INDIVIDUAL) {
+			_permissionPortalCacheNamePrimKeyIndexer.removeKeys(
+				PermissionKeyNamePrimKeyIndexEncoder.encode(name, primKey));
+		}
+		else if (scope == ResourceConstants.SCOPE_GROUP) {
+			_permissionPortalCacheGroupIdIndexer.removeKeys(
+				Long.valueOf(primKey));
+		}
+		else {
+			_permissionPortalCache.removeAll();
+		}
+	}
+
+	private static void _clearResourcePermissionCache(
+		long companyId, int scope, String name, String primKey) {
+
+		try (SafeCloseable safeCloseable =
+				CompanyThreadLocal.setCompanyIdWithSafeCloseable(companyId)) {
+
+			_clearResourcePermissionCache(scope, name, primKey);
 		}
 	}
 
@@ -291,11 +353,18 @@ public class PermissionCacheUtil {
 	}
 
 	private static final MethodKey _clearCacheMethodKey = new MethodKey(
-		PermissionCacheUtil.class, "clearCache", long[].class);
+		PermissionCacheUtil.class, "_clearCache", long[].class);
 	private static final MethodKey _clearResourcePermissionCacheMethodKey =
 		new MethodKey(
-			PermissionCacheUtil.class, "clearResourcePermissionCache",
+			PermissionCacheUtil.class, "_clearResourcePermissionCache",
 			int.class, String.class, String.class);
+	private static final MethodKey _dbPartitionClearCacheMethodKey =
+		new MethodKey(
+			PermissionCacheUtil.class, "_clearCache", long.class, long[].class);
+	private static final MethodKey
+		_dbPartitionClearResourcePermissionCacheMethodKey = new MethodKey(
+			PermissionCacheUtil.class, "_clearResourcePermissionCache",
+			long.class, int.class, String.class, String.class);
 	private static final PortalCache<PermissionKey, Boolean>
 		_permissionPortalCache = PortalCacheHelperUtil.getPortalCache(
 			PortalCacheManagerNames.MULTI_VM, PERMISSION_CACHE_NAME);
@@ -310,14 +379,10 @@ public class PermissionCacheUtil {
 	private static final PortalCache<Long, UserBag> _userBagPortalCache =
 		PortalCacheHelperUtil.getPortalCache(
 			PortalCacheManagerNames.MULTI_VM, USER_BAG_CACHE_NAME);
-	private static final PortalCache<UserGroupRoleIdsKey, long[]>
+	private static final PortalCache<Long, Map<Long, long[]>>
 		_userGroupRoleIdsPortalCache = PortalCacheHelperUtil.getPortalCache(
 			PortalCacheManagerNames.MULTI_VM,
 			PERMISSION_CHECKER_BAG_CACHE_NAME);
-	private static final PortalCacheIndexer<Long, UserGroupRoleIdsKey, long[]>
-		_userGroupRoleIdsPortalCacheIndexer = new PortalCacheIndexer<>(
-			new UserGroupRoleIdsKeyIndexEncoder(),
-			_userGroupRoleIdsPortalCache);
 	private static final PortalCache<UserPrimaryKeyRoleKey, Boolean>
 		_userPrimaryKeyRolePortalCache = PortalCacheHelperUtil.getPortalCache(
 			PortalCacheManagerNames.MULTI_VM, USER_PRIMARY_KEY_ROLE_CACHE_NAME);
@@ -408,51 +473,6 @@ public class PermissionCacheUtil {
 		@Override
 		public Map.Entry<?, ?> encode(PermissionKey permissionKey) {
 			return encode(permissionKey._name, permissionKey._primKey);
-		}
-
-	}
-
-	private static class UserGroupRoleIdsKey implements Serializable {
-
-		@Override
-		public boolean equals(Object object) {
-			UserGroupRoleIdsKey userGroupRoleIdsKey =
-				(UserGroupRoleIdsKey)object;
-
-			if ((userGroupRoleIdsKey._userId == _userId) &&
-				(userGroupRoleIdsKey._groupId == _groupId)) {
-
-				return true;
-			}
-
-			return false;
-		}
-
-		@Override
-		public int hashCode() {
-			int hashCode = HashUtil.hash(0, _userId);
-
-			return HashUtil.hash(hashCode, _groupId);
-		}
-
-		private UserGroupRoleIdsKey(long userId, long groupId) {
-			_userId = userId;
-			_groupId = groupId;
-		}
-
-		private static final long serialVersionUID = 1L;
-
-		private final long _groupId;
-		private final long _userId;
-
-	}
-
-	private static class UserGroupRoleIdsKeyIndexEncoder
-		implements IndexEncoder<Long, UserGroupRoleIdsKey> {
-
-		@Override
-		public Long encode(UserGroupRoleIdsKey userGroupRoleIdsKey) {
-			return userGroupRoleIdsKey._userId;
 		}
 
 	}

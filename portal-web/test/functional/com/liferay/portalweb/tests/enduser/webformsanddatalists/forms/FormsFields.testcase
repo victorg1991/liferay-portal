@@ -35,7 +35,6 @@ definition {
 	@description = "LPS-68182 - Verify that the Field Label is blank when adding a new Field"
 	@priority = 3
 	test AddingANewFieldCreatesADefaultLabel {
-		property portal.acceptance = "true";
 		property portal.upstream = "true";
 		property test.liferay.virtual.instance = "false";
 		property test.run.type = "single";
@@ -406,6 +405,8 @@ definition {
 
 		task ("Then the dropdown options for Acceptance Date are shown") {
 			for (var acceptedDateOptions : list "Future Dates,Past Dates,Range") {
+				SetWindowSize.maximizeWindow();
+
 				AssertVisible(
 					key_menuItem = ${acceptedDateOptions},
 					locator1 = "MenuItem#DROPDOWN_MENU_ITEM");

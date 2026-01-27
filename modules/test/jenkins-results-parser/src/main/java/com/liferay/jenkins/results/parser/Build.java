@@ -92,8 +92,6 @@ public interface Build {
 
 	public Element getGitHubMessageElement();
 
-	public Element getGitHubMessageUpstreamJobFailureElement();
-
 	public Map<String, String> getInjectedEnvironmentVariablesMap()
 		throws IOException;
 
@@ -179,6 +177,10 @@ public interface Build {
 
 	public boolean hasMaximumInvocationCount();
 
+	public boolean isBuildCached();
+
+	public boolean isBuildCachingEnabled();
+
 	public boolean isBuildModified();
 
 	public boolean isCompareToUpstream();
@@ -202,6 +204,8 @@ public interface Build {
 	public void setArchiveName(String archiveName);
 
 	public void setArchiveRootDir(File archiveRootDir);
+
+	public void setBuildCached(boolean buildCached);
 
 	public void setBuildURL(String buildURL);
 
@@ -273,6 +277,11 @@ public interface Build {
 
 			_buildURL = JenkinsResultsParserUtil.getBuildURL(
 				_build.getJobName(), getJenkinsMaster(), getQueueId());
+
+			String localBuildURL = JenkinsResultsParserUtil.getLocalURL(
+				_buildURL);
+
+			_buildURL = JenkinsResultsParserUtil.getRemoteURL(localBuildURL);
 
 			return _buildURL;
 		}

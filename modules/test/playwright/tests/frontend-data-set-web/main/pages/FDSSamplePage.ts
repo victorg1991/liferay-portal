@@ -8,11 +8,18 @@ import {FrameLocator, Locator, Page, expect} from '@playwright/test';
 import {ApiHelpers} from '../../../../helpers/ApiHelpers';
 import {liferayConfig} from '../../../../liferay.config';
 import getRandomString from '../../../../utils/getRandomString';
-import {VisualizationMode} from '../../../frontend-data-set-admin-web/main/utils/types';
+import {EFDSVisualizationMode, waitForFDS} from '../../../../utils/waitFor';
+import getFragmentDefinition from '../../../layout-content-page-editor-web/main/utils/getFragmentDefinition';
 import getPageDefinition from '../../../layout-content-page-editor-web/main/utils/getPageDefinition';
 import getWidgetDefinition from '../../../layout-content-page-editor-web/main/utils/getWidgetDefinition';
 
 export class FDSSamplePage {
+	readonly activeFiltersToolbar: {
+		clearButton: Locator;
+		clearSearchButton: Locator;
+		container: Locator;
+		searchResume: Locator;
+	};
 	private readonly apiHelpers: ApiHelpers;
 	readonly bulkActions: {
 		actionsDropdownButton: Locator;
@@ -20,24 +27,31 @@ export class FDSSamplePage {
 	};
 	readonly cards: {
 		container: Locator;
+		itemActionButtons: Locator;
 		items: Locator;
 	};
-	readonly customViewsActionsButton: Locator;
-	readonly customViewsDeleteAlert: Locator;
-	readonly customViewsSaveModal: Locator;
-	readonly customViewsSelectorButton: Locator;
+	readonly emptyStateContainer: Locator;
 	readonly fdsWrapper: Locator;
 	readonly fileDropModal: Locator;
+	readonly filterDropdownMenu: Locator;
 	readonly infoPanel: Locator;
 	readonly itemActionButton: Locator;
 	readonly itemActionsButtons: Locator;
 	readonly list: {
 		container: Locator;
+		itemActionButtons: Locator;
 		items: Locator;
 	};
-	readonly managementToolbar: Locator;
+	readonly managementToolbar: {
+		container: Locator;
+		filterButton: Locator;
+		searchButton: Locator;
+		searchInput: Locator;
+	};
 	readonly page: Page;
-	readonly showViewOptionsButton: Locator;
+	readonly paginator: {
+		itemsPerPageSelector: Locator;
+	};
 	readonly sidePanel: Locator;
 	readonly sidePanelFrame: FrameLocator;
 	readonly selectAllCheckbox: Locator;
@@ -51,13 +65,35 @@ export class FDSSamplePage {
 		container: Locator;
 		firstColumnHeader: Locator;
 		headerCells: Locator;
-		itemActionsCells: Locator;
+		itemActionButtons: Locator;
 		manageColumnsVisibilityButton: Locator;
 	};
 	readonly toggleInfoPanelButton: Locator;
+	readonly userViewsActionsButton: Locator;
+	readonly userViewsDeleteAlert: Locator;
+	readonly userViewsSaveModal: Locator;
+	readonly userViewsSelectorButton: Locator;
 	readonly visualizationModeSelector: Locator;
 
 	constructor(page: Page) {
+		const activeFiltersToolbarContainer: Locator = page.getByTestId(
+			'activeFiltersToolbar'
+		);
+
+		const searchResume =
+			activeFiltersToolbarContainer.locator('.search-resume');
+		this.activeFiltersToolbar = {
+			clearButton: activeFiltersToolbarContainer.getByRole('button', {
+				exact: true,
+				name: 'Clear',
+			}),
+			clearSearchButton: searchResume.getByRole('button', {
+				exact: true,
+				name: 'Clear Search',
+			}),
+			container: activeFiltersToolbarContainer,
+			searchResume,
+		};
 		this.apiHelpers = new ApiHelpers(page);
 		this.bulkActions = {
 			actionsDropdownButton: page
@@ -65,28 +101,22 @@ export class FDSSamplePage {
 				.getByLabel('Actions'),
 			container: page.locator('.bulk-actions'),
 		};
+
 		const cardsContainer = page.locator('.cards-container');
+
+		const cardItems = cardsContainer.locator('.card');
 
 		this.cards = {
 			container: cardsContainer,
-			items: cardsContainer.locator('.card'),
+			itemActionButtons: cardItems.getByLabel('More actions'),
+			items: cardItems,
 		};
-		this.customViewsActionsButton = page.getByLabel('Show View Actions', {
-			exact: true,
-		});
-		this.customViewsDeleteAlert = page.getByRole('dialog', {
-			name: 'Delete View',
-		});
-		this.customViewsSaveModal = page.getByRole('dialog', {
-			name: 'Save New View As',
-		});
-		this.customViewsSelectorButton = page.getByLabel('Views', {
-			exact: true,
-		});
+		this.emptyStateContainer = page.locator('.fds .c-empty-state');
 		this.fdsWrapper = page.locator('div.data-set-wrapper').first();
 		this.fileDropModal = page.getByRole('dialog', {
-			name: 'Files',
+			name: 'Custom dummy file uploader',
 		});
+		this.filterDropdownMenu = page.locator('.data-set-filter');
 		this.infoPanel = page.locator('.fds-info-panel');
 
 		this.itemActionsButtons = page.locator(
@@ -95,13 +125,41 @@ export class FDSSamplePage {
 
 		const listContainer = page.locator('.fds .list-sheet');
 
+		const listItems = listContainer.locator('.list-group-item');
+
 		this.list = {
 			container: listContainer,
-			items: listContainer.locator('.list-group-item'),
+			itemActionButtons: listItems.getByRole('button', {
+				exact: true,
+				name: 'Actions',
+			}),
+			items: listItems,
 		};
 
-		this.managementToolbar = page.getByTestId('managementToolbar');
+		const managementToolbarContainer =
+			page.getByTestId('managementToolbar');
+
+		this.managementToolbar = {
+			container: managementToolbarContainer,
+			filterButton: managementToolbarContainer.getByRole('button', {
+				name: 'Filter',
+			}),
+			searchButton: managementToolbarContainer.getByRole('button', {
+				name: 'Search',
+			}),
+			searchInput: managementToolbarContainer.locator(
+				'input[type="search"]'
+			),
+		};
+
 		this.page = page;
+
+		this.paginator = {
+			itemsPerPageSelector: page.getByLabel('Items Per Page', {
+				exact: true,
+			}),
+		};
+
 		this.selectAllCheckbox = page.getByText('Select All');
 
 		const selectionToolbarContainer = page.getByTestId('selectionToolbar');
@@ -111,9 +169,6 @@ export class FDSSamplePage {
 			container: selectionToolbarContainer,
 		};
 
-		this.showViewOptionsButton = page.getByLabel('Show View Options', {
-			exact: true,
-		});
 		this.sidePanel = page.locator('.fds-side-panel');
 		this.sidePanelFrame = this.sidePanel.frameLocator('iframe');
 		this.tablist = page.getByRole('tablist');
@@ -127,18 +182,54 @@ export class FDSSamplePage {
 			container: tableContainer,
 			firstColumnHeader: headerCells.nth(1),
 			headerCells,
-			itemActionsCells: tableContainer.locator('.cell-item-actions'),
+			itemActionButtons: tableContainer
+				.locator('.cell-item-actions')
+				.getByRole('button', {
+					exact: true,
+					name: 'Actions',
+				}),
 			manageColumnsVisibilityButton: tableContainer.getByTitle(
 				'Manage Columns Visibility'
 			),
 		};
 
-		this.toggleInfoPanelButton = page.getByLabel('Toggle Info Panel');
+		this.toggleInfoPanelButton = page
+			.getByLabel('Show Info Panel')
+			.or(page.getByLabel('Hide Info Panel'));
 
-		this.visualizationModeSelector = page.getByLabel('Show View Options');
+		this.userViewsActionsButton = page.getByLabel('Show View Actions', {
+			exact: true,
+		});
+		this.userViewsDeleteAlert = page.getByRole('dialog', {
+			name: 'Delete View',
+		});
+		this.userViewsSaveModal = page.getByRole('dialog', {
+			name: 'Save New View As',
+		});
+		this.userViewsSelectorButton = page.getByLabel('Views', {
+			exact: true,
+		});
+
+		this.visualizationModeSelector = page.getByLabel(/View Selected/);
 	}
 
-	async changeVisualizationMode(visualizationMode: VisualizationMode) {
+	async changeItemsPerPage({delta}: {delta: string}) {
+		await this.paginator.itemsPerPageSelector.click();
+
+		const dropdownItem = this.page.getByRole('option', {name: delta});
+
+		await dropdownItem.waitFor({state: 'visible'});
+
+		await dropdownItem.click();
+	}
+
+	async changeVisualizationMode({
+		page,
+		visualizationMode,
+	}: {
+		page: Page;
+		visualizationMode: EFDSVisualizationMode;
+	}) {
 		await this.visualizationModeSelector.waitFor({
 			state: 'visible',
 		});
@@ -149,6 +240,22 @@ export class FDSSamplePage {
 			.getByRole('listbox')
 			.getByRole('option', {name: visualizationMode})
 			.click();
+
+		await waitForFDS({page, visualizationMode});
+	}
+
+	async checkDropdownMenuIconsAreVisible(itemActionButton: Locator) {
+		const dropdownMenu = await this.getDropdownId(itemActionButton);
+
+		const menuItems = dropdownMenu.getByRole('menuitem');
+
+		for (const menuItem of await menuItems.all()) {
+			await expect
+				.soft(menuItem.locator('.lexicon-icon').first())
+				.toBeVisible();
+		}
+
+		await this.page.keyboard.press('Escape');
 	}
 
 	async clickItemAction(action: string, item: number = 0) {
@@ -170,6 +277,18 @@ export class FDSSamplePage {
 				name: action,
 			})
 			.click();
+	}
+
+	async getDropdownId(itemActionButton: Locator) {
+		await itemActionButton.click();
+
+		const dropdownId = await itemActionButton.getAttribute('aria-controls');
+
+		const dropdownMenu = this.page.locator(`#${dropdownId}`);
+
+		await dropdownMenu.filter({has: this.page.getByRole('menu')}).waitFor();
+
+		return dropdownMenu;
 	}
 
 	selectItemActionsByRow(text: string) {
@@ -240,15 +359,21 @@ export class FDSSamplePage {
 		await expect(navLink).toHaveClass(/active/);
 	}
 
-	async setupFDSSampleWidget({locale = 'en', site}) {
-		const widgetDefinition = getWidgetDefinition({
-			id: getRandomString(),
-			widgetName:
-				'com_liferay_frontend_data_set_sample_web_internal_portlet_FDSSamplePortlet',
-		});
-
+	async setupFDSSampleWidget({fragmentKeys = [], locale = 'en', site}) {
 		const layout = await this.apiHelpers.headlessDelivery.createSitePage({
-			pageDefinition: getPageDefinition([widgetDefinition]),
+			pageDefinition: getPageDefinition([
+				...fragmentKeys.map((fragmentKey) =>
+					getFragmentDefinition({
+						id: getRandomString(),
+						key: fragmentKey,
+					})
+				),
+				getWidgetDefinition({
+					id: getRandomString(),
+					widgetName:
+						'com_liferay_frontend_data_set_sample_web_internal_portlet_FDSSamplePortlet',
+				}),
+			]),
 			siteId: site.id,
 			title: getRandomString(),
 		});
@@ -258,26 +383,5 @@ export class FDSSamplePage {
 		await this.page.goto(url);
 
 		return {layout, url};
-	}
-
-	async selectVisualizationMode(
-		modeId: 'cards' | 'list' | 'customizedTable'
-	) {
-		await this.showViewOptionsButton.click();
-
-		const showViewOptionsDropdownId =
-			await this.showViewOptionsButton.getAttribute('aria-controls');
-
-		const showViewOptionsDropdown = this.page.locator(
-			`#${showViewOptionsDropdownId}`
-		);
-
-		await showViewOptionsDropdown.waitFor();
-
-		const menuItem = await showViewOptionsDropdown.locator(`#${modeId}`);
-
-		await expect(menuItem).toBeVisible();
-
-		await menuItem.click();
 	}
 }

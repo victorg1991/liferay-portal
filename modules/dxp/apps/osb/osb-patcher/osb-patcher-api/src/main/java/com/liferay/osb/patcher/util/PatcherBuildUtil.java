@@ -37,13 +37,10 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONDeserializer;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
-import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.transaction.Isolation;
@@ -55,8 +52,6 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-
-import java.io.FileNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -112,7 +107,7 @@ public class PatcherBuildUtil {
 
 				if (Validator.isNull(mainPatcherFix.getGitHash())) {
 					PatcherFixLocalServiceUtil.updateStatus(
-						mainPatcherFix.getPatcherFixId(),
+						user.getUserId(), mainPatcherFix.getPatcherFixId(),
 						WorkflowConstants.STATUS_FIX_ADDING);
 
 					int patcherBuildStatus =
@@ -124,7 +119,8 @@ public class PatcherBuildUtil {
 					}
 
 					patcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-						patcherBuild.getPatcherBuildId(), patcherBuildStatus);
+						user.getUserId(), patcherBuild.getPatcherBuildId(),
+						patcherBuildStatus);
 
 					workflowParentPatcherBuild(user, patcherBuild);
 
@@ -144,8 +140,8 @@ public class PatcherBuildUtil {
 
 		if (patcherAccount == null) {
 			addPatcherAccountPatcherBuild(
-				themeDisplay.getUserId(), patcherBuild.getPatcherBuildId(),
-				accountEntryCode);
+				themeDisplay.getUserId(), patcherBuild.getCompanyId(),
+				patcherBuild.getPatcherBuildId(), accountEntryCode);
 
 			patcherAccount = PatcherAccountLocalServiceUtil.getPatcherAccount(
 				accountEntryCode);
@@ -613,11 +609,6 @@ public class PatcherBuildUtil {
 		return WorkflowConstants.getStatusLabel(patcherBuild.getQaStatus());
 	}
 
-	public static String getQuarterReleaseBuildPath(String path) {
-		return com.liferay.petra.string.StringUtil.replace(
-			path, "fix-packs", "portal/hotfix");
-	}
-
 	public static List<PatcherBuild> getRelatedPatcherBuilds(
 		PatcherBuild patcherBuild) {
 
@@ -658,19 +649,20 @@ public class PatcherBuildUtil {
 		return relatedPatcherBuildFixIds;
 	}
 
-	public static String getSupportTicketURL(String supportTicket)
+	public static String getSupportTicketURL(
+			long companyId, String supportTicket)
 		throws Exception {
 
 		PatcherConfiguration patcherConfiguration =
 			ConfigurationProviderUtil.getCompanyConfiguration(
-				PatcherConfiguration.class, CompanyThreadLocal.getCompanyId());
+				PatcherConfiguration.class, companyId);
 
 		if (Validator.isNumber(supportTicket)) {
 			return patcherConfiguration.helpCenterURL() +
 				StringPool.FORWARD_SLASH + supportTicket;
 		}
 
-		return patcherConfiguration.lesaURL() + StringPool.FORWARD_SLASH +
+		return patcherConfiguration.jiraURL() + StringPool.FORWARD_SLASH +
 			supportTicket;
 	}
 
@@ -733,7 +725,7 @@ public class PatcherBuildUtil {
 
 		PatcherConfiguration patcherConfiguration =
 			ConfigurationProviderUtil.getCompanyConfiguration(
-				PatcherConfiguration.class, CompanyThreadLocal.getCompanyId());
+				PatcherConfiguration.class, patcherBuild.getCompanyId());
 
 		if (patcherConfiguration.patcherScanningEnabled()) {
 			return patcherBuild.isLatestSupportTicketBuild();
@@ -907,10 +899,7 @@ public class PatcherBuildUtil {
 		return false;
 	}
 
-	public static void notifyUsersInactivePatcherBuilds(
-			ThemeDisplay themeDisplay)
-		throws Exception {
-
+	public static void notifyUsersInactivePatcherBuilds() throws Exception {
 		Calendar calendar = new GregorianCalendar();
 
 		calendar.add(Calendar.HOUR, -3);
@@ -929,11 +918,9 @@ public class PatcherBuildUtil {
 		}
 
 		for (PatcherBuild patcherBuild : patcherBuilds) {
-			User user = UserLocalServiceUtil.getUser(patcherBuild.getUserId());
-
 			EmailUtil.sendPatcherTimeoutEmail(
-				patcherBuild, user.getEmailAddress(), themeDisplay,
-				patcherBuild.getUserId());
+				patcherBuild,
+				UserLocalServiceUtil.getUser(patcherBuild.getUserId()));
 
 			PatcherBuildLocalServiceUtil.updateNotified(
 				patcherBuild.getPatcherBuildId(), true);
@@ -979,8 +966,8 @@ public class PatcherBuildUtil {
 		}
 
 		patcherBuild = PatcherBuildLocalServiceUtil.updatePatcherBuild(
-			patcherBuild.getPatcherBuildId(), fileName, qaStatus, sourceName,
-			status);
+			user.getUserId(), patcherBuild.getPatcherBuildId(), fileName,
+			qaStatus, sourceName, status);
 
 		workflowParentPatcherBuild(user, patcherBuild);
 
@@ -1098,7 +1085,8 @@ public class PatcherBuildUtil {
 			}
 		}
 
-		PatcherBuildLocalServiceUtil.updateQaStatus(patcherBuildId, qaStatus);
+		PatcherBuildLocalServiceUtil.updateQaStatus(
+			user.getUserId(), patcherBuildId, qaStatus);
 	}
 
 	public static Map<Long, List<Long>> rebaseOtherProjectVersionPatcherFixes(
@@ -1205,28 +1193,7 @@ public class PatcherBuildUtil {
 		String hotfixFileName = getLiferayHotfixFileName(
 			patcherBuild.getFileName());
 
-		PatcherConfiguration patcherConfiguration =
-			ConfigurationProviderUtil.getCompanyConfiguration(
-				PatcherConfiguration.class, patcherBuild.getCompanyId());
-
-		String path =
-			patcherConfiguration.hotfixMountPath() + StringPool.FORWARD_SLASH +
-				patcherBuild.getFileName();
-
-		String quarterReleasePath = getQuarterReleaseBuildPath(path);
-
-		try {
-			HelpCenterUtil.addAttachmentComment(
-				hotfixFileName, patcherBuild, quarterReleasePath);
-		}
-		catch (FileNotFoundException fileNotFoundException) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(fileNotFoundException);
-			}
-
-			HelpCenterUtil.addAttachmentComment(
-				hotfixFileName, patcherBuild, path);
-		}
+		HelpCenterUtil.addAttachmentComment(hotfixFileName, patcherBuild);
 	}
 
 	public static void removePreviousMainFixVersionsFromBuildsFixes(
@@ -1329,8 +1296,8 @@ public class PatcherBuildUtil {
 
 		if (parentPatcherBuild.isNew()) {
 			addPatcherAccountPatcherBuild(
-				userId, parentPatcherBuild.getPatcherBuildId(),
-				accountEntryCode);
+				userId, parentPatcherBuild.getCompanyId(),
+				parentPatcherBuild.getPatcherBuildId(), accountEntryCode);
 
 			PatcherAccount patcherAccount =
 				PatcherAccountLocalServiceUtil.getPatcherAccount(
@@ -1388,7 +1355,7 @@ public class PatcherBuildUtil {
 
 		List<BaseModel<?>> sendToJenkinsBaseModels =
 			workflowRelatedPatcherBuildsToPendingStatus(
-				parentPatcherBuild, mergeOnly);
+				user, parentPatcherBuild, mergeOnly);
 
 		for (BaseModel<?> sendToJenkinsBaseModel : sendToJenkinsBaseModels) {
 			long status = WorkflowConstants.STATUS_ANY;
@@ -1594,8 +1561,9 @@ public class PatcherBuildUtil {
 				}
 
 				mainPatcherFix = PatcherFixLocalServiceUtil.updatePatcherFix(
-					mainPatcherFix.getPatcherFixId(), StringPool.BLANK,
-					StringPool.BLANK, WorkflowConstants.STATUS_FIX_ADDING);
+					user.getUserId(), mainPatcherFix.getPatcherFixId(),
+					StringPool.BLANK, StringPool.BLANK,
+					WorkflowConstants.STATUS_FIX_ADDING);
 			}
 			else {
 				mainPatcherFix = PatcherFixLocalServiceUtil.addPatcherFix(
@@ -1709,7 +1677,7 @@ public class PatcherBuildUtil {
 			parentPatcherBuild, isMergeOnly(parentPatcherBuild));
 
 		parentPatcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-			parentPatcherBuild.getPatcherBuildId(), status);
+			user.getUserId(), parentPatcherBuild.getPatcherBuildId(), status);
 
 		long patcherFixId = parentPatcherBuild.getPatcherFixId();
 
@@ -1737,7 +1705,7 @@ public class PatcherBuildUtil {
 		}
 		else if (status == WorkflowConstants.STATUS_BUILD_COMPLETE) {
 			parentPatcherBuild = PatcherBuildLocalServiceUtil.updateQaStatus(
-				parentPatcherBuild.getPatcherBuildId(),
+				user.getUserId(), parentPatcherBuild.getPatcherBuildId(),
 				workflowCompletedPatcherBuildQAStatus(parentPatcherBuild));
 
 			sendTestJenkinsRequest(user, parentPatcherBuild);
@@ -1745,7 +1713,7 @@ public class PatcherBuildUtil {
 	}
 
 	public static List<PatcherFix> workflowPatcherBuildIncompleteFixesToPending(
-			PatcherBuild patcherBuild)
+			User user, PatcherBuild patcherBuild)
 		throws Exception {
 
 		List<PatcherFix> pendingPatcherFixes = new ArrayList<>();
@@ -1774,7 +1742,8 @@ public class PatcherBuildUtil {
 				}
 
 				incompletePatcherFix = PatcherFixLocalServiceUtil.updateStatus(
-					incompletePatcherFix.getPatcherFixId(), status);
+					user.getUserId(), incompletePatcherFix.getPatcherFixId(),
+					status);
 			}
 
 			pendingPatcherFixes.add(incompletePatcherFix);
@@ -1785,7 +1754,7 @@ public class PatcherBuildUtil {
 
 	public static List<BaseModel<?>>
 			workflowRelatedPatcherBuildsToPendingStatus(
-				PatcherBuild parentPatcherBuild, boolean mergeOnly)
+				User user, PatcherBuild parentPatcherBuild, boolean mergeOnly)
 		throws Exception {
 
 		List<BaseModel<?>> sendToJenkinsBaseModels = new ArrayList<>();
@@ -1801,7 +1770,8 @@ public class PatcherBuildUtil {
 
 		for (PatcherBuild patcherBuild : patcherBuilds) {
 			List<PatcherFix> pendingPatcherFixes =
-				workflowPatcherBuildIncompleteFixesToPending(patcherBuild);
+				workflowPatcherBuildIncompleteFixesToPending(
+					user, patcherBuild);
 
 			sendToJenkinsBaseModels.addAll(pendingPatcherFixes);
 
@@ -1816,7 +1786,7 @@ public class PatcherBuildUtil {
 			}
 
 			patcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-				patcherBuild.getPatcherBuildId(), status);
+				user.getUserId(), patcherBuild.getPatcherBuildId(), status);
 
 			if (patcherBuild.isChildBuild() ||
 				!PatcherBuildRelUtil.hasChildPatcherBuilds(patcherBuild)) {
@@ -1868,7 +1838,8 @@ public class PatcherBuildUtil {
 	}
 
 	protected static void addPatcherAccountPatcherBuild(
-			long userId, long patcherBuildId, String accountEntryCode)
+			long userId, long companyId, long patcherBuildId,
+			String accountEntryCode)
 		throws Exception {
 
 		PatcherAccount patcherAccount =
@@ -1883,7 +1854,8 @@ public class PatcherBuildUtil {
 		}
 
 		patcherAccount = PatcherAccountLocalServiceUtil.addPatcherAccount(
-			userId, HelpCenterUtil.fetchAccountEntryId(accountEntryCode),
+			userId,
+			HelpCenterUtil.fetchAccountEntryId(accountEntryCode, companyId),
 			accountEntryCode);
 
 		PatcherBuildLocalServiceUtil.addPatcherAccountPatcherBuild(
@@ -2048,7 +2020,8 @@ public class PatcherBuildUtil {
 				OSBPatcherServletOutcome.STATUS_SUCCESS) {
 
 			PatcherFixLocalServiceUtil.updatePatcherFix(
-				patcherBuild.getPatcherFixId(), osbPatcherServletOutcomeResult,
+				user.getUserId(), patcherBuild.getPatcherFixId(),
+				osbPatcherServletOutcomeResult,
 				WorkflowConstants.STATUS_FIX_COMPLETE);
 
 			updatePatcherBuildStatusMergeComplete(user, patcherBuild);
@@ -2125,7 +2098,7 @@ public class PatcherBuildUtil {
 			}
 
 			PatcherFixLocalServiceUtil.updateStatus(
-				patcherBuild.getPatcherFixId(),
+				user.getUserId(), patcherBuild.getPatcherFixId(),
 				WorkflowConstants.STATUS_FIX_CONFLICT);
 
 			if ((patcherBuild.getStatus() ==
@@ -2134,14 +2107,14 @@ public class PatcherBuildUtil {
 					WorkflowConstants.STATUS_BUILD_CONFLICT_MERGING_ONLY)) {
 
 				patcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-					patcherBuild.getPatcherBuildId(),
+					user.getUserId(), patcherBuild.getPatcherBuildId(),
 					WorkflowConstants.STATUS_BUILD_CONFLICT_MERGING_ONLY);
 
 				workflowParentPatcherBuild(user, patcherBuild);
 			}
 			else {
 				patcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-					patcherBuild.getPatcherBuildId(),
+					user.getUserId(), patcherBuild.getPatcherBuildId(),
 					WorkflowConstants.STATUS_BUILD_CONFLICT);
 
 				workflowParentPatcherBuild(user, patcherBuild);
@@ -2149,11 +2122,11 @@ public class PatcherBuildUtil {
 		}
 		else {
 			PatcherFixLocalServiceUtil.updateStatus(
-				patcherBuild.getPatcherFixId(),
+				user.getUserId(), patcherBuild.getPatcherFixId(),
 				WorkflowConstants.STATUS_FIX_FAILED);
 
 			patcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-				patcherBuild.getPatcherBuildId(),
+				user.getUserId(), patcherBuild.getPatcherBuildId(),
 				WorkflowConstants.STATUS_BUILD_FAILED);
 
 			workflowParentPatcherBuild(user, patcherBuild);
@@ -2172,14 +2145,14 @@ public class PatcherBuildUtil {
 
 		if (isMergeOnly(patcherBuild)) {
 			patcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-				patcherBuild.getPatcherBuildId(),
+				user.getUserId(), patcherBuild.getPatcherBuildId(),
 				WorkflowConstants.STATUS_BUILD_CONFLICT_MERGING_ONLY);
 
 			workflowParentPatcherBuild(user, patcherBuild);
 		}
 		else {
 			patcherBuild = PatcherBuildLocalServiceUtil.updateStatus(
-				patcherBuild.getPatcherBuildId(),
+				user.getUserId(), patcherBuild.getPatcherBuildId(),
 				WorkflowConstants.STATUS_BUILD_COMPILING);
 
 			workflowParentPatcherBuild(user, patcherBuild);
@@ -2263,8 +2236,5 @@ public class PatcherBuildUtil {
 			throw new Exception("the-status-is-not-valid");
 		}
 	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		PatcherBuildUtil.class);
 
 }

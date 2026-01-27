@@ -41,41 +41,47 @@ public class ObjectDefinitionUpgradeProcess extends UpgradeProcess {
 				SQLTransformer.transform(
 					StringBundler.concat(
 						"select companyId, objectDefinitionId from ",
-						"ObjectDefinition where modifiable = [$TRUE$] and ",
-						"storageType ='",
-						ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT, "'")));
-			PreparedStatement preparedStatement2 = connection.prepareStatement(
-				"update ObjectDefinition set friendlyURLSeparator = ? where " +
-					"objectDefinitionId = ?");
-			ResultSet resultSet = preparedStatement1.executeQuery()) {
+						"ObjectDefinition where friendlyURLSeparator is null ",
+						"and modifiable = [$TRUE$] and storageType = ?")))) {
 
-			while (resultSet.next()) {
-				JSONObject friendlyURLSeparatorsJSONObject =
-					_friendlyURLSeparatorConfigurationManager.
-						getFriendlyURLSeparatorsJSONObject(
-							resultSet.getLong("companyId"));
+			preparedStatement1.setString(
+				1, ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT);
 
-				String friendlyURLSeparator =
-					friendlyURLSeparatorsJSONObject.getString(
-						ObjectEntry.class.getName());
+			try (PreparedStatement preparedStatement2 =
+					connection.prepareStatement(
+						"update ObjectDefinition set friendlyURLSeparator = " +
+							"? where objectDefinitionId = ?");
+				ResultSet resultSet = preparedStatement1.executeQuery()) {
 
-				if (Validator.isNull(friendlyURLSeparator)) {
-					friendlyURLSeparator =
-						FriendlyURLResolverConstants.URL_SEPARATOR_OBJECT_ENTRY;
+				while (resultSet.next()) {
+					JSONObject friendlyURLSeparatorsJSONObject =
+						_friendlyURLSeparatorConfigurationManager.
+							getFriendlyURLSeparatorsJSONObject(
+								resultSet.getLong("companyId"));
+
+					String friendlyURLSeparator =
+						friendlyURLSeparatorsJSONObject.getString(
+							ObjectEntry.class.getName());
+
+					if (Validator.isNull(friendlyURLSeparator)) {
+						friendlyURLSeparator =
+							FriendlyURLResolverConstants.
+								URL_SEPARATOR_OBJECT_ENTRY;
+					}
+
+					preparedStatement2.setString(
+						1,
+						StringUtil.removeSubstring(
+							friendlyURLSeparator, StringPool.SLASH));
+
+					preparedStatement2.setLong(
+						2, resultSet.getLong("objectDefinitionId"));
+
+					preparedStatement2.addBatch();
 				}
 
-				preparedStatement2.setString(
-					1,
-					StringUtil.removeSubstring(
-						friendlyURLSeparator, StringPool.SLASH));
-
-				preparedStatement2.setLong(
-					2, resultSet.getLong("objectDefinitionId"));
-
-				preparedStatement2.addBatch();
+				preparedStatement2.executeBatch();
 			}
-
-			preparedStatement2.executeBatch();
 		}
 	}
 

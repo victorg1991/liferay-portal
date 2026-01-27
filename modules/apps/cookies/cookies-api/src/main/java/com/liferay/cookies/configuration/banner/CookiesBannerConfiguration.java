@@ -15,7 +15,7 @@ import com.liferay.portal.kernel.settings.LocalizedValuesMap;
  * @author Olivér Kecskeméty
  */
 @ExtendedObjectClassDefinition(
-	category = "cookies", scope = ExtendedObjectClassDefinition.Scope.GROUP
+	category = "privacy", scope = ExtendedObjectClassDefinition.Scope.GROUP
 )
 @Meta.OCD(
 	id = "com.liferay.cookies.configuration.banner.CookiesBannerConfiguration",
@@ -25,21 +25,16 @@ public interface CookiesBannerConfiguration {
 
 	@ExtendedAttributeDefinition(requiredInput = true)
 	@Meta.AD(
-		deflt = "${language:cookies-banner-title}", name = "title",
-		required = false
-	)
-	public LocalizedValuesMap title();
-
-	@ExtendedAttributeDefinition(requiredInput = true)
-	@Meta.AD(
 		deflt = "${language:cookies-banner-content}", name = "content",
 		required = false
 	)
 	public LocalizedValuesMap content();
 
 	@ExtendedAttributeDefinition(requiredInput = true)
-	@Meta.AD(name = "privacy-policy-link", required = false)
-	public String privacyPolicyLink();
+	@Meta.AD(
+		deflt = "true", name = "include-decline-all-button", required = false
+	)
+	public boolean includeDeclineAllButton();
 
 	@ExtendedAttributeDefinition(requiredInput = true)
 	@Meta.AD(
@@ -49,9 +44,14 @@ public interface CookiesBannerConfiguration {
 	public LocalizedValuesMap linkDisplayText();
 
 	@ExtendedAttributeDefinition(requiredInput = true)
+	@Meta.AD(name = "privacy-policy-link", required = false)
+	public String privacyPolicyLink();
+
+	@ExtendedAttributeDefinition(requiredInput = true)
 	@Meta.AD(
-		deflt = "true", name = "include-decline-all-button", required = false
+		deflt = "${language:cookies-banner-title}", name = "title",
+		required = false
 	)
-	public boolean includeDeclineAllButton();
+	public LocalizedValuesMap title();
 
 }

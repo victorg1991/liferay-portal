@@ -8,6 +8,7 @@ package com.liferay.object.service;
 import com.liferay.object.model.ObjectEntryVersion;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.module.service.Snapshot;
+import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.util.List;
 
@@ -40,20 +41,19 @@ public class ObjectEntryVersionServiceUtil {
 	public static ObjectEntryVersion expireObjectEntryVersion(
 			com.liferay.object.model.ObjectEntry objectEntry,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext,
-			long userId, int version)
+			int version)
 		throws PortalException {
 
 		return getService().expireObjectEntryVersion(
-			objectEntry, serviceContext, userId, version);
+			objectEntry, serviceContext, version);
 	}
 
 	public static void expireObjectEntryVersions(
-			long userId, com.liferay.object.model.ObjectEntry objectEntry,
+			com.liferay.object.model.ObjectEntry objectEntry,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws Exception {
 
-		getService().expireObjectEntryVersions(
-			userId, objectEntry, serviceContext);
+		getService().expireObjectEntryVersions(objectEntry, serviceContext);
 	}
 
 	public static ObjectEntryVersion getObjectEntryVersion(
@@ -68,6 +68,15 @@ public class ObjectEntryVersionServiceUtil {
 		throws PortalException {
 
 		return getService().getObjectEntryVersions(objectEntryId, start, end);
+	}
+
+	public static List<ObjectEntryVersion> getObjectEntryVersions(
+			long objectEntryId, int start, int end,
+			OrderByComparator<ObjectEntryVersion> orderByComparator)
+		throws PortalException {
+
+		return getService().getObjectEntryVersions(
+			objectEntryId, start, end, orderByComparator);
 	}
 
 	public static int getObjectEntryVersionsCount(long objectEntryId)

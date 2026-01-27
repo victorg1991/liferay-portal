@@ -10,12 +10,17 @@ import {
 	ObjectDefinitions,
 	ObjectField,
 	ObjectRelationship,
-} from '../types/ObjectDefinition';
-import {ReferencedStructure, Structure} from '../types/Structure';
+} from '../../common/types/ObjectDefinition';
+import {
+	ReferencedStructure,
+	RepeatableGroup,
+	Structure,
+} from '../types/Structure';
 import {Uuid} from '../types/Uuid';
 import {Field, FieldType, MultiselectField, SingleSelectField} from './field';
 import getUuid from './getUuid';
 import isCustomObjectField from './isCustomObjectField';
+import sortChildren from './sortChildren';
 
 export default function buildStructure({
 	mainObjectDefinition,
@@ -35,13 +40,15 @@ export default function buildStructure({
 			parent: uuid,
 		}),
 		erc: mainObjectDefinition.externalReferenceCode,
-		id: mainObjectDefinition.id ?? null,
+		id: mainObjectDefinition.id,
 		label: mainObjectDefinition.label,
 		name: mainObjectDefinition.name ?? '',
 		spaces: getSpaces(mainObjectDefinition),
 		status: isPublished ? 'published' : 'draft',
+		system: mainObjectDefinition.system ?? false,
 		type: mainObjectDefinition.objectFolderExternalReferenceCode as Structure['type'],
 		uuid: getUuid(),
+		workflows: getWorkflows(mainObjectDefinition),
 	};
 }
 
@@ -76,18 +83,37 @@ export function buildChildren({
 	}
 
 	for (const objectRelationship of objectRelationships) {
-		const referencedStructure = buildReferencedStructure({
-			ancestors: [...ancestors, objectDefinition.externalReferenceCode],
-			erc: objectRelationship.objectDefinitionExternalReferenceCode2,
-			objectDefinitions,
-			parent,
-			relationshipName: objectRelationship.name,
-		});
+		if (isRepeatableGroup(objectRelationship, objectDefinitions)) {
+			const repeatableGroup = buildRepeatableGroup({
+				ancestors: [
+					...ancestors,
+					objectDefinition.externalReferenceCode,
+				],
+				erc: objectRelationship.objectDefinitionExternalReferenceCode2,
+				objectDefinitions,
+				parent,
+				relationshipName: objectRelationship.name,
+			});
 
-		children.set(referencedStructure.uuid, referencedStructure);
+			children.set(repeatableGroup.uuid, repeatableGroup);
+		}
+		else {
+			const referencedStructure = buildReferencedStructure({
+				ancestors: [
+					...ancestors,
+					objectDefinition.externalReferenceCode,
+				],
+				erc: objectRelationship.objectDefinitionExternalReferenceCode2,
+				objectDefinitions,
+				parent,
+				relationshipName: objectRelationship.name,
+			});
+
+			children.set(referencedStructure.uuid, referencedStructure);
+		}
 	}
 
-	return children;
+	return sortChildren(children);
 }
 
 export function buildField({
@@ -117,6 +143,7 @@ export function buildField({
 		indexableConfig,
 		label: objectField.label,
 		localized: objectField.localized,
+		locked: objectField.system,
 		name: objectField.name,
 		parent,
 		required: objectField.required,
@@ -151,7 +178,7 @@ export function buildReferencedStructure({
 }): ReferencedStructure {
 	const uuid = getUuid();
 
-	const objectDefinition = objectDefinitions.get(erc)!;
+	const objectDefinition = objectDefinitions[erc]!;
 
 	const url = new URL(window.location.href);
 
@@ -176,6 +203,41 @@ export function buildReferencedStructure({
 		relationshipName,
 		spaces: getSpaces(objectDefinition),
 		type: 'referenced-structure',
+		uuid,
+		workflows: getWorkflows(objectDefinition),
+	};
+}
+
+export function buildRepeatableGroup({
+	ancestors,
+	erc,
+	objectDefinitions,
+	parent,
+	relationshipName,
+}: {
+	ancestors: Array<ObjectDefinition['externalReferenceCode']>;
+	erc: RepeatableGroup['erc'];
+	objectDefinitions: ObjectDefinitions;
+	parent: Uuid;
+	relationshipName: ObjectRelationship['name'];
+}): RepeatableGroup {
+	const uuid = getUuid();
+
+	const objectDefinition = objectDefinitions[erc]!;
+
+	return {
+		children: buildChildren({
+			ancestors,
+			objectDefinition,
+			objectDefinitions,
+			parent: uuid,
+		}),
+		erc,
+		label: objectDefinition.label,
+		name: objectDefinition.name!,
+		parent,
+		relationshipName,
+		type: 'repeatable-group',
 		uuid,
 	};
 }
@@ -268,4 +330,34 @@ export function getSpaces(objectDefinition: ObjectDefinition) {
 			: acceptedGroupExternalReferenceCodes?.split(',') || [];
 
 	return spaces;
+}
+
+export function getWorkflows(objectDefinition: ObjectDefinition) {
+	const workflows: Structure['workflows'] = {};
+
+	const definitionLinks = objectDefinition.workflowDefinitionLinks || [];
+
+	for (const {
+		groupExternalReferenceCode,
+		workflowDefinitionName,
+	} of definitionLinks) {
+		workflows[groupExternalReferenceCode] = workflowDefinitionName;
+	}
+
+	return workflows;
+}
+
+function isRepeatableGroup(
+	objectRelationship: ObjectRelationship,
+	objectDefinitions: ObjectDefinitions
+) {
+	const objectDefinition =
+		objectDefinitions[
+			objectRelationship.objectDefinitionExternalReferenceCode2
+		];
+
+	return (
+		objectDefinition.objectFolderExternalReferenceCode ===
+		'L_CMS_STRUCTURE_REPEATABLE_GROUPS'
+	);
 }

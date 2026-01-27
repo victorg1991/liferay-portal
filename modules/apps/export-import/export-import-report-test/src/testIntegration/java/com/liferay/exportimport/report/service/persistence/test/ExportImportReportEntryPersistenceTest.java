@@ -134,17 +134,25 @@ public class ExportImportReportEntryPersistenceTest {
 
 		newExportImportReportEntry.setClassNameId(RandomTestUtil.nextLong());
 
+		newExportImportReportEntry.setClassPK(RandomTestUtil.nextLong());
+
 		newExportImportReportEntry.setExportImportConfigurationId(
 			RandomTestUtil.nextLong());
 
-		newExportImportReportEntry.setError(RandomTestUtil.randomString());
+		newExportImportReportEntry.setErrorMessage(
+			RandomTestUtil.randomString());
 
 		newExportImportReportEntry.setErrorStacktrace(
 			RandomTestUtil.randomString());
 
-		newExportImportReportEntry.setResolved(RandomTestUtil.randomBoolean());
+		newExportImportReportEntry.setModelNameLanguageKey(
+			RandomTestUtil.randomString());
+
+		newExportImportReportEntry.setOrigin(RandomTestUtil.nextInt());
 
 		newExportImportReportEntry.setType(RandomTestUtil.nextInt());
+
+		newExportImportReportEntry.setStatus(RandomTestUtil.nextInt());
 
 		_exportImportReportEntries.add(
 			_persistence.update(newExportImportReportEntry));
@@ -181,20 +189,29 @@ public class ExportImportReportEntryPersistenceTest {
 			existingExportImportReportEntry.getClassNameId(),
 			newExportImportReportEntry.getClassNameId());
 		Assert.assertEquals(
+			existingExportImportReportEntry.getClassPK(),
+			newExportImportReportEntry.getClassPK());
+		Assert.assertEquals(
 			existingExportImportReportEntry.getExportImportConfigurationId(),
 			newExportImportReportEntry.getExportImportConfigurationId());
 		Assert.assertEquals(
-			existingExportImportReportEntry.getError(),
-			newExportImportReportEntry.getError());
+			existingExportImportReportEntry.getErrorMessage(),
+			newExportImportReportEntry.getErrorMessage());
 		Assert.assertEquals(
 			existingExportImportReportEntry.getErrorStacktrace(),
 			newExportImportReportEntry.getErrorStacktrace());
 		Assert.assertEquals(
-			existingExportImportReportEntry.isResolved(),
-			newExportImportReportEntry.isResolved());
+			existingExportImportReportEntry.getModelNameLanguageKey(),
+			newExportImportReportEntry.getModelNameLanguageKey());
+		Assert.assertEquals(
+			existingExportImportReportEntry.getOrigin(),
+			newExportImportReportEntry.getOrigin());
 		Assert.assertEquals(
 			existingExportImportReportEntry.getType(),
 			newExportImportReportEntry.getType());
+		Assert.assertEquals(
+			existingExportImportReportEntry.getStatus(),
+			newExportImportReportEntry.getStatus());
 	}
 
 	@Test
@@ -238,9 +255,9 @@ public class ExportImportReportEntryPersistenceTest {
 			"ExportImportReportEntry", "mvccVersion", true,
 			"exportImportReportEntryId", true, "groupId", true, "companyId",
 			true, "createDate", true, "modifiedDate", true,
-			"classExternalReferenceCode", true, "classNameId", true,
-			"exportImportConfigurationId", true, "resolved", true, "type",
-			true);
+			"classExternalReferenceCode", true, "classNameId", true, "classPK",
+			true, "exportImportConfigurationId", true, "modelNameLanguageKey",
+			true, "origin", true, "type", true, "status", true);
 	}
 
 	@Test
@@ -502,17 +519,24 @@ public class ExportImportReportEntryPersistenceTest {
 
 		exportImportReportEntry.setClassNameId(RandomTestUtil.nextLong());
 
+		exportImportReportEntry.setClassPK(RandomTestUtil.nextLong());
+
 		exportImportReportEntry.setExportImportConfigurationId(
 			RandomTestUtil.nextLong());
 
-		exportImportReportEntry.setError(RandomTestUtil.randomString());
+		exportImportReportEntry.setErrorMessage(RandomTestUtil.randomString());
 
 		exportImportReportEntry.setErrorStacktrace(
 			RandomTestUtil.randomString());
 
-		exportImportReportEntry.setResolved(RandomTestUtil.randomBoolean());
+		exportImportReportEntry.setModelNameLanguageKey(
+			RandomTestUtil.randomString());
+
+		exportImportReportEntry.setOrigin(RandomTestUtil.nextInt());
 
 		exportImportReportEntry.setType(RandomTestUtil.nextInt());
+
+		exportImportReportEntry.setStatus(RandomTestUtil.nextInt());
 
 		_exportImportReportEntries.add(
 			_persistence.update(exportImportReportEntry));

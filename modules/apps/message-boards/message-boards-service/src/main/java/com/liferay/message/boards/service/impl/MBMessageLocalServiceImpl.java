@@ -17,6 +17,8 @@ import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
 import com.liferay.expando.kernel.service.ExpandoRowLocalService;
+import com.liferay.exportimport.kernel.empty.model.EmptyModelManager;
+import com.liferay.mail.kernel.service.MailService;
 import com.liferay.message.boards.constants.MBCategoryConstants;
 import com.liferay.message.boards.constants.MBConstants;
 import com.liferay.message.boards.constants.MBMessageConstants;
@@ -124,8 +126,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortletKeys;
-import com.liferay.portal.kernel.util.PrefsPropsUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.SubscriptionSender;
 import com.liferay.portal.kernel.util.TempFileEntryUtil;
@@ -134,7 +135,6 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.WorkflowHandlerRegistryUtil;
 import com.liferay.portal.kernel.workflow.WorkflowThreadLocal;
 import com.liferay.portal.linkback.LinkbackProducerUtil;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.ratings.kernel.service.RatingsStatsLocalService;
 import com.liferay.social.kernel.model.SocialActivityConstants;
 import com.liferay.subscription.service.SubscriptionLocalService;
@@ -384,7 +384,9 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 
 		MBMessage parentMBMessage = fetchMBMessage(parentMessageId);
 
-		if ((parentMBMessage != null) && !parentMBMessage.isApproved()) {
+		if ((parentMBMessage != null) && !parentMBMessage.isApproved() &&
+			(parentMBMessage.getStatus() != WorkflowConstants.STATUS_EMPTY)) {
+
 			throw new PortalException("Parent message is not approved");
 		}
 
@@ -473,7 +475,16 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 		message.setUrlSubject(
 			_getUniqueUrlSubject(groupId, messageId, subject));
 		message.setAllowPingbacks(allowPingbacks);
-		message.setStatus(WorkflowConstants.STATUS_DRAFT);
+
+		int status = WorkflowConstants.STATUS_DRAFT;
+
+		if (_emptyModelManager.isEmptyModel() &&
+			(parentMessageId != MBMessageConstants.DEFAULT_PARENT_MESSAGE_ID)) {
+
+			status = WorkflowConstants.STATUS_EMPTY;
+		}
+
+		message.setStatus(status);
 		message.setStatusByUserId(user.getUserId());
 		message.setStatusByUserName(userName);
 		message.setStatusDate(modifiedDate);
@@ -587,6 +598,10 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 			serviceContext.isAssetEntryVisible());
 
 		// Workflow
+
+		if (status == WorkflowConstants.STATUS_EMPTY) {
+			return message;
+		}
 
 		return _startWorkflowInstance(userId, message, serviceContext);
 	}
@@ -1540,6 +1555,37 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 		return mbMessagePersistence.findByC_C_S(classNameId, classPK, status);
 	}
 
+	@Indexable(type = IndexableType.REINDEX)
+	public MBMessage getOrAddEmptyDiscussionMessage(
+			String externalReferenceCode, long userId, long groupId,
+			String className, long classPK)
+		throws PortalException {
+
+		Group group = _groupLocalService.getGroup(groupId);
+
+		User user = _userLocalService.getUser(userId);
+
+		return _emptyModelManager.getOrAddEmptyModel(
+			MBMessage.class.getName(), group.getCompanyId(),
+			() -> {
+				MBMessageDisplay mbMessageDisplay =
+					mbMessageLocalService.getDiscussionMessageDisplay(
+						userId, groupId, className, classPK,
+						WorkflowConstants.STATUS_APPROVED);
+
+				MBThread mbThread = mbMessageDisplay.getThread();
+
+				return mbMessageLocalService.addDiscussionMessage(
+					externalReferenceCode, userId, user.getFullName(), groupId,
+					className, classPK, mbThread.getThreadId(),
+					mbThread.getRootMessageId(), String.valueOf(classPK),
+					StringPool.BLANK, new ServiceContext());
+			},
+			externalReferenceCode, this::fetchMBMessageByExternalReferenceCode,
+			this::getMBMessageByExternalReferenceCode, groupId,
+			MBMessage.class.getName());
+	}
+
 	@Override
 	public int getPositionInThread(long messageId) throws PortalException {
 		MBMessage message = mbMessagePersistence.findByPrimaryKey(messageId);
@@ -1999,6 +2045,7 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 
 		for (MBMessage message : messages) {
 			message.setUserName(userName);
+			message.setModifiedDate(message.getModifiedDate());
 
 			mbMessagePersistence.update(message);
 		}
@@ -2347,7 +2394,9 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 
 		String uniqueUrlSubject = urlSubject;
 
-		if (Objects.equals(StringPool.DASH, urlSubject)) {
+		if (Objects.equals(StringPool.DASH, urlSubject) ||
+			Objects.equals(urlSubject, "re-")) {
+
 			uniqueUrlSubject = urlSubject + mbMessageId;
 		}
 
@@ -2579,13 +2628,11 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 
 		String replyToAddress = StringPool.BLANK;
 
-		if (PrefsPropsUtil.getBoolean(
-				company.getCompanyId(),
-				PropsKeys.POP_SERVER_NOTIFICATIONS_ENABLED,
-				PropsValues.POP_SERVER_NOTIFICATIONS_ENABLED)) {
+		if (_mailService.isPOPServerNotificationsEnabled(
+				company.getCompanyId())) {
 
 			replyToAddress = MBMailUtil.getReplyToAddress(
-				message.getCategoryId(), message.getMessageId(),
+				_mailService, message.getCategoryId(), message.getMessageId(),
 				company.getMx(), fromAddress);
 		}
 
@@ -2632,7 +2679,7 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 
 			Date modifiedDate = parentMessage.getModifiedDate();
 
-			inReplyTo = _portal.getMailId(
+			inReplyTo = _mailService.getMailId(
 				company.getMx(), MBMailUtil.MESSAGE_POP_PORTLET_PREFIX,
 				message.getCategoryId(), parentMessage.getMessageId(),
 				modifiedDate.getTime());
@@ -3073,6 +3120,9 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 	private DLFileEntryLocalService _dlFileEntryLocalService;
 
 	@Reference
+	private EmptyModelManager _emptyModelManager;
+
+	@Reference
 	private ExpandoRowLocalService _expandoRowLocalService;
 
 	@Reference
@@ -3096,6 +3146,9 @@ public class MBMessageLocalServiceImpl extends MBMessageLocalServiceBaseImpl {
 
 	@Reference
 	private Localization _localization;
+
+	@Reference
+	private MailService _mailService;
 
 	@Reference
 	private MBCategoryPersistence _mbCategoryPersistence;

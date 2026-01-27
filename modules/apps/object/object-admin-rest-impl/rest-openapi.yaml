@@ -86,17 +86,22 @@ components:
                     type: boolean
                 enableComments:
                     type: boolean
+                enableFormContainer:
+                    type: boolean
                 enableFriendlyURLCustomization:
                     type: boolean
                 enableIndexSearch:
                     type: boolean
                 enableLocalization:
+                    readOnly: true
                     type: boolean
                 enableObjectEntryDraft:
                     type: boolean
                 enableObjectEntryHistory:
                     type: boolean
                 enableObjectEntrySchedule:
+                    type: boolean
+                enableObjectEntrySubscription:
                     type: boolean
                 enableObjectEntryVersioning:
                     type: boolean
@@ -153,6 +158,10 @@ components:
                 parameterRequired:
                     readOnly: true
                     type: boolean
+                permissions:
+                    items:
+                        type: permission
+                    type: array
                 pluralLabel:
                     additionalProperties:
                         type: string
@@ -175,6 +184,10 @@ components:
                     type: boolean
                 titleObjectFieldName:
                     type: string
+                workflowDefinitionLinks:
+                    items:
+                        $ref: "#/components/schemas/WorkflowDefinitionLink"
+                    type: array
             type: object
         ObjectDefinitionSetting:
             properties:
@@ -203,7 +216,7 @@ components:
                     readOnly: true
                     type: object
                 businessType:
-                    enum: [Aggregation, Attachment, AutoIncrement, Boolean, Date, DateTime, Decimal, Encrypted, Formula, Integer, LongInteger, LongText, MultiselectPicklist, Picklist, PrecisionDecimal, Relationship, RichText, Text]
+                    enum: [Aggregation, Assignee, Attachment, AutoIncrement, Boolean, Date, DateTime, Decimal, Encrypted, Formula, Integer, LongInteger, LongText, MultiselectPicklist, Picklist, PrecisionDecimal, Relationship, RichText, Text]
                     type: string
                 defaultValue:
                     deprecated: true
@@ -384,7 +397,7 @@ components:
                     format: int32
                     type: integer
                 type:
-                    enum: [categorization, regular]
+                    enum: [categorization, regular, seo]
                     type: string
             type: object
         ObjectLayoutColumn:
@@ -691,10 +704,17 @@ components:
                 label_i18n:
                     type: string
             type: object
+        WorkflowDefinitionLink:
+            properties:
+                groupExternalReferenceCode:
+                    type: string
+                workflowDefinitionName:
+                    type: string
+            type: object
 info:
     description:
         "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID
-        'com.liferay.object.admin.rest.client', and version '1.0.79'."
+        'com.liferay.object.admin.rest.client', and version '1.0.86'."
     license:
         name: Apache 2.0
         url: http://www.apache.org/licenses/LICENSE-2.0.html

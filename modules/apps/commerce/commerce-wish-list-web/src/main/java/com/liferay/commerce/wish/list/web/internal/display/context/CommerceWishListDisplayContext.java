@@ -273,7 +273,7 @@ public class CommerceWishListDisplayContext {
 
 		return _cpDefinitionHelper.getCPCatalogEntry(
 			commerceAccountId, commerceChannelGroupId, cpDefinitionId,
-			_commerceWishListRequestHelper.getLocale());
+			_commerceWishListRequestHelper.getLocale(), false);
 	}
 
 	public String getCPDefinitionURL(
@@ -334,6 +334,23 @@ public class CommerceWishListDisplayContext {
 				_commerceWishListRequestHelper.getScopeGroupId()));
 
 		return _searchContainer;
+	}
+
+	public boolean hasCommerceChannel() throws PortalException {
+		CommerceContext commerceContext =
+			_commerceWishListRequestHelper.getCommerceContext();
+
+		if (commerceContext == null) {
+			return false;
+		}
+
+		long commerceChannelId = commerceContext.getCommerceChannelId();
+
+		if (commerceChannelId > 0) {
+			return true;
+		}
+
+		return false;
 	}
 
 	public boolean isProductVisibleToAccount(long cpDefinitionId)

@@ -14,6 +14,7 @@ import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.odata.sort.SortParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
+import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineExportTaskResource;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
@@ -45,20 +46,14 @@ import org.osgi.annotation.versioning.ProviderType;
 @ProviderType
 public interface AssetLibraryResource {
 
-	public void deleteAssetLibrary(Long assetLibraryId) throws Exception;
+	public void deleteAssetLibrary(String assetLibraryExternalReferenceCode)
+		throws Exception;
 
 	public Response deleteAssetLibraryBatch(String callbackURL, Object object)
 		throws Exception;
 
-	public void deleteAssetLibraryByExternalReferenceCode(
-			String externalReferenceCode)
+	public void deleteAssetLibraryPin(String assetLibraryExternalReferenceCode)
 		throws Exception;
-
-	public void deleteAssetLibraryByExternalReferenceCodePin(
-			String externalReferenceCode)
-		throws Exception;
-
-	public void deleteAssetLibraryPin(Long assetLibraryId) throws Exception;
 
 	public Page<AssetLibrary> getAssetLibrariesPage(
 			String keywords, String search,
@@ -71,18 +66,24 @@ public interface AssetLibraryResource {
 			Pagination pagination)
 		throws Exception;
 
-	public AssetLibrary getAssetLibrary(Long assetLibraryId) throws Exception;
+	public AssetLibrary getAssetLibrary(
+			String assetLibraryExternalReferenceCode)
+		throws Exception;
 
-	public AssetLibrary getAssetLibraryByExternalReferenceCode(
-			String externalReferenceCode)
+	public Page<com.liferay.portal.vulcan.permission.Permission>
+			getAssetLibraryPermissionsPage(
+				String assetLibraryExternalReferenceCode, String roleNames)
 		throws Exception;
 
 	public AssetLibrary patchAssetLibrary(
-			Long assetLibraryId, AssetLibrary assetLibrary)
+			String assetLibraryExternalReferenceCode, AssetLibrary assetLibrary)
 		throws Exception;
 
-	public AssetLibrary patchAssetLibraryByExternalReferenceCode(
-			String externalReferenceCode, AssetLibrary assetLibrary)
+	public Response postAssetLibrariesPageExportBatch(
+			String keywords, String search,
+			com.liferay.portal.kernel.search.filter.Filter filter,
+			com.liferay.portal.kernel.search.Sort[] sorts, String callbackURL,
+			String contentType, String fieldNames)
 		throws Exception;
 
 	public AssetLibrary postAssetLibrary(AssetLibrary assetLibrary)
@@ -91,15 +92,21 @@ public interface AssetLibraryResource {
 	public Response postAssetLibraryBatch(String callbackURL, Object object)
 		throws Exception;
 
-	public AssetLibrary putAssetLibraryByExternalReferenceCode(
-			String externalReferenceCode, AssetLibrary assetLibrary)
+	public AssetLibrary putAssetLibrary(
+			String assetLibraryExternalReferenceCode, AssetLibrary assetLibrary)
 		throws Exception;
 
-	public AssetLibrary putAssetLibraryByExternalReferenceCodePin(
-			String externalReferenceCode)
+	public Response putAssetLibraryBatch(String callbackURL, Object object)
 		throws Exception;
 
-	public AssetLibrary putAssetLibraryPin(Long assetLibraryId)
+	public Page<com.liferay.portal.vulcan.permission.Permission>
+			putAssetLibraryPermissionsPage(
+				String assetLibraryExternalReferenceCode,
+				com.liferay.portal.vulcan.permission.Permission[] permissions)
+		throws Exception;
+
+	public AssetLibrary putAssetLibraryPin(
+			String assetLibraryExternalReferenceCode)
 		throws Exception;
 
 	public default void setContextAcceptLanguage(
@@ -141,6 +148,10 @@ public interface AssetLibraryResource {
 	public void setRoleLocalService(RoleLocalService roleLocalService);
 
 	public void setSortParserProvider(SortParserProvider sortParserProvider);
+
+	public void setVulcanBatchEngineExportTaskResource(
+		VulcanBatchEngineExportTaskResource
+			vulcanBatchEngineExportTaskResource);
 
 	public void setVulcanBatchEngineImportTaskResource(
 		VulcanBatchEngineImportTaskResource

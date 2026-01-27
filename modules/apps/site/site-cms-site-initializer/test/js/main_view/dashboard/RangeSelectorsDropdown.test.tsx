@@ -3,16 +3,30 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
-import {fireEvent, render, screen} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import React from 'react';
-
+import '@testing-library/jest-dom';
 import {
 	IRangeSelectorsDropdown,
 	RangeSelectors,
 	RangeSelectorsDropdown,
-} from '../../../../src/main/resources/META-INF/resources/js/main_view/dashboard/components/RangeSelectorsDropdown';
+} from '@liferay/analytics-reports-js-components-web';
+import {fireEvent, render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import React from 'react';
+
+jest.mock('frontend-js-web', () => ({
+	dateUtils: {
+		getFirstDayOfWeek: jest.fn(() => 0),
+		getWeekdaysShort: jest.fn(() => [
+			'Sun',
+			'Mon',
+			'Tue',
+			'Wed',
+			'Thu',
+			'Fri',
+			'Sat',
+		]),
+	},
+}));
 
 describe('[CMS Dashboard] Components: RangeSelectorsDropdown', () => {
 	const mockedOnChange = jest.fn();
@@ -22,6 +36,14 @@ describe('[CMS Dashboard] Components: RangeSelectorsDropdown', () => {
 			rangeKey: RangeSelectors.Last7Days,
 			rangeStart: '',
 		},
+		availableRangeKeys: [
+			RangeSelectors.Last24Hours,
+			RangeSelectors.Last7Days,
+			RangeSelectors.Last28Days,
+			RangeSelectors.Last30Days,
+			RangeSelectors.Last90Days,
+			RangeSelectors.CustomRange,
+		],
 		onChange: mockedOnChange,
 	};
 
@@ -81,48 +103,49 @@ describe('[CMS Dashboard] Components: RangeSelectorsDropdown', () => {
 		expect(mockedOnChange).toHaveBeenCalledTimes(1);
 	});
 
-	it('navigates drill down to select a custom range', async () => {
-		render(<RangeSelectorsDropdown {...mockedProps} />);
+	it('selects a custom date range and checks if it was selected', async () => {
+		const {rerender} = render(<RangeSelectorsDropdown {...mockedProps} />);
 
-		const RangeSelectorDropdown = screen.getByRole('button');
+		const rangeSelectorDropdown = screen.getByRole('button');
 
-		expect(RangeSelectorDropdown).toBeInTheDocument();
-		expect(RangeSelectorDropdown).toHaveTextContent('last-7-days');
+		expect(rangeSelectorDropdown).toHaveTextContent('last-7-days');
 
-		fireEvent.click(RangeSelectorDropdown);
+		await userEvent.click(rangeSelectorDropdown);
 
 		const customRangeOption = screen.getByRole('menuitem', {
 			name: /(custom-range)/,
 		});
 
-		fireEvent.click(customRangeOption);
+		await userEvent.click(customRangeOption);
 
-		const cancelButton = screen.getByTestId('cancel-button');
+		const rangeStartInput = (
+			await screen.findByTestId('range-start')
+		).querySelector('input.form-control');
 
-		expect(cancelButton).toBeInTheDocument();
+		const rangeEndInput = (
+			await screen.findByTestId('range-end')
+		).querySelector('input.form-control');
 
-		expect(screen.getByText('create-date-range')).toBeInTheDocument();
-		expect(screen.getByText('from')).toBeInTheDocument();
-		expect(screen.getByText('to')).toBeInTheDocument();
+		await userEvent.type(rangeStartInput as HTMLInputElement, '2025-05-10');
 
-		const rangeStartElement = screen.getByTestId('range-start');
-		const rangeEndElement = screen.getByTestId('range-end');
+		await userEvent.type(rangeEndInput as HTMLInputElement, '2025-05-20');
 
-		const rangeStartInput =
-			rangeStartElement.querySelector('input.form-control');
-		const rangeEndInput =
-			rangeEndElement.querySelector('input.form-control');
+		await userEvent.click(screen.getByRole('button', {name: 'add-filter'}));
 
-		await userEvent.type(rangeStartInput as HTMLInputElement, '2025-05-05');
-		await userEvent.type(rangeEndInput as HTMLInputElement, '2025-05-25');
+		const newProps = {
+			...mockedProps,
+			activeRangeSelector: {
+				rangeEnd: '2025-05-20',
+				rangeKey: RangeSelectors.CustomRange,
+				rangeStart: '2025-05-10',
+			},
+		};
 
-		fireEvent.click(screen.getByRole('button', {name: 'add-filter'}));
+		rerender(<RangeSelectorsDropdown {...newProps} />);
 
-		expect(mockedOnChange).toHaveBeenCalledWith({
-			rangeEnd: '2025-05-25',
-			rangeKey: 'custom',
-			rangeStart: '2025-05-05',
-		});
+		expect(rangeSelectorDropdown).toHaveTextContent(
+			'2025-05-10 - 2025-05-20'
+		);
 	});
 
 	it('navigates drill down to select a custom range and cancel action', async () => {
@@ -147,13 +170,13 @@ describe('[CMS Dashboard] Components: RangeSelectorsDropdown', () => {
 
 		expect(screen.getByText('create-date-range')).toBeInTheDocument();
 		expect(screen.getByText('from')).toBeInTheDocument();
-		expect(screen.getByText('to')).toBeInTheDocument();
+		expect(screen.getByText('to[date-time]')).toBeInTheDocument();
 
 		fireEvent.click(cancelButton);
 
 		expect(screen.queryByText('create-date-range')).not.toBeInTheDocument();
 		expect(screen.queryByText('from')).not.toBeInTheDocument();
-		expect(screen.queryByText('to')).not.toBeInTheDocument();
+		expect(screen.queryByText('to[date-time]')).not.toBeInTheDocument();
 	});
 
 	it('renders correctly with given classname', () => {

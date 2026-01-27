@@ -25,6 +25,7 @@ import {
 import {EActions} from '../../../helpers/ServerAdministrationHelper';
 import {liferayConfig} from '../../../liferay.config';
 import {InstanceSettingsPage} from '../../../pages/configuration-admin-web/InstanceSettingsPage';
+import {SystemSettingsPage} from '../../../pages/configuration-admin-web/SystemSettingsPage';
 import {GeneralPage} from '../../../pages/instance-configuration-web/GeneralPage';
 import {PagesAdminPage} from '../../../pages/layout-admin-web/PagesAdminPage';
 import {ApplicationsMenuPage} from '../../../pages/product-navigation-applications-menu/ApplicationsMenuPage';
@@ -75,6 +76,7 @@ import {
 	SECONDARY_SP_URL,
 	configureVirtualInstanceForSaml,
 	createCustomField,
+	createIdentityBrokerVirtualInstance,
 	createIdentityProviderVirtualInstance,
 	createServiceProviderVirtualInstance,
 	createUser,
@@ -99,6 +101,8 @@ export const test = mergeTests(
 );
 
 const resetAfterTestGeneralPage = new Set<string>();
+
+let resetSystemSettings = false;
 
 test.afterAll(async ({browser}) => {
 
@@ -161,7 +165,20 @@ test.afterEach(async ({browser}) => {
 
 		// Delete all connections
 
-		if ((await samlAdminPage.samlRoleField.inputValue()) === 'idp') {
+		if ((await samlAdminPage.samlRoleField.inputValue()) !== 'idp') {
+			const identityProviderConnectionsPage =
+				new IdentityProviderConnectionsPage(samlAdminPage.page);
+
+			await identityProviderConnectionsPage.goTo();
+
+			await identityProviderConnectionsPage.deleteIdentityProviderConnections();
+
+			await configureServiceProvider(newPage);
+
+			await samlAdminPage.applicationsMenuPage.goToSamlAdmin();
+		}
+
+		if ((await samlAdminPage.samlRoleField.inputValue()) !== 'sp') {
 			const serviceProviderConnectionsPage =
 				new ServiceProviderConnectionsPage(samlAdminPage.page);
 
@@ -171,21 +188,37 @@ test.afterEach(async ({browser}) => {
 
 			await configureIdentityProvider(newPage);
 		}
-		else {
-			const identityProviderConnectionsPage =
-				new IdentityProviderConnectionsPage(samlAdminPage.page);
-
-			await identityProviderConnectionsPage.goTo();
-
-			await identityProviderConnectionsPage.deleteIdentityProviderConnections();
-
-			await configureServiceProvider(newPage);
-		}
 
 		await newPage.close();
 	}
 
 	liferayConfig.environment.baseUrl = defaultBaseUrl;
+
+	if (resetSystemSettings) {
+		const newPage = await browser.newPage();
+
+		await performLogin(newPage, 'test');
+
+		const systemSettingsPage = new SystemSettingsPage(newPage);
+
+		await systemSettingsPage.goToSystemSetting('Login', 'Login');
+
+		await waitForLoading(systemSettingsPage.page);
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: systemSettingsPage.page.getByRole('menuitem', {
+				name: 'Reset Default Values',
+			}),
+			trigger: systemSettingsPage.page.getByRole('button', {
+				name: 'Actions',
+			}),
+		});
+
+		await waitForAlert(systemSettingsPage.page);
+
+		resetSystemSettings = false;
+	}
 });
 
 test.beforeAll(async ({browser}) => {
@@ -767,7 +800,7 @@ test('LPD-32187 AC2 TC2: Verify unsuccessful IdP initiated SSO with provided Rel
 		.getByLabel('Email Address')
 		.fill('invalidEmail@liferay.com');
 	await idpInstancePage.getByLabel('Password').fill('test');
-	await idpInstancePage.getByRole('button', {name: 'Sign In'}).click();
+	await idpInstancePage.getByRole('button', {name: 'Sign In'}).last().click();
 
 	// Assert failed authentication and still on IdP login page
 
@@ -921,7 +954,7 @@ test('LPD-32208 AC1 TC2 and TC3: Verify SP initiated SSO with RelayState and inv
 	await expect(await spInstancePage.getByText('Error:')).toBeVisible();
 
 	await expect(
-		await spInstancePage.getByRole('button', {name: 'Sign In'})
+		await spInstancePage.getByRole('button', {name: 'Sign In'}).last()
 	).toBeVisible();
 
 	expect(await spInstancePage.url()).toContain(DEFAULT_IDP_URL);
@@ -932,7 +965,7 @@ test('LPD-32208 AC1 TC2 and TC3: Verify SP initiated SSO with RelayState and inv
 		.getByLabel('Email Address')
 		.fill(userAccount.emailAddress);
 	await spInstancePage.getByLabel('Password').fill('test');
-	await spInstancePage.getByRole('button', {name: 'Sign In'}).click();
+	await spInstancePage.getByRole('button', {name: 'Sign In'}).last().click();
 
 	// Assert authentication and SP redirection
 
@@ -1160,7 +1193,7 @@ test('LPD-32210 AC1 TC2: Verify IdP initiated SSO with different instance redire
 
 	await newPage.getByLabel('Email Address').fill(userAccount.emailAddress);
 	await newPage.getByLabel('Password').fill('test');
-	await newPage.getByRole('button', {name: 'Sign In'}).click();
+	await newPage.getByRole('button', {name: 'Sign In'}).last().click();
 	await newPage.waitForTimeout(5000);
 
 	// Verify we have been redirected to SP instance
@@ -1370,7 +1403,7 @@ test('LPD-32210 AC1 TC5: Verify unsuccessful IdP initiated SSO with any redirect
 
 	await newPage.getByLabel('Email Address').fill('invalid@liferay.com');
 	await newPage.getByLabel('Password').fill('invalid');
-	await newPage.getByRole('button', {name: 'Sign In'}).click();
+	await newPage.getByRole('button', {name: 'Sign In'}).last().click();
 	await newPage.waitForTimeout(5000);
 
 	// Verify unsuccessful authentication
@@ -1439,22 +1472,15 @@ test('LPD-32213 AC1 TC1 and TC5: Verify SP initiated SSO from a restricted resou
 
 	await siteSettingsPage.goToSiteSetting('Login', 'Login');
 
-	await waitForLoading(siteSettingsPage.page);
+	const promptEnabled = siteSettingsPage.page.getByLabel('Prompt Enabled');
 
-	await siteSettingsPage.page.getByLabel('Prompt Enabled').setChecked(true);
+	await expect(promptEnabled).toBeVisible();
 
-	if (
-		await siteSettingsPage.page
-			.getByRole('button', {name: 'Save'})
-			.isVisible()
-	) {
-		await siteSettingsPage.page.getByRole('button', {name: 'Save'}).click();
-	}
-	else {
-		await siteSettingsPage.page
-			.getByRole('button', {name: 'Update'})
-			.click();
-	}
+	await promptEnabled.setChecked(true);
+
+	await siteSettingsPage.page
+		.getByRole('button', {name: /save|update/i})
+		.click();
 
 	await waitForAlert(siteSettingsPage.page);
 
@@ -1476,7 +1502,7 @@ test('LPD-32213 AC1 TC1 and TC5: Verify SP initiated SSO from a restricted resou
 
 	await newPage.getByLabel('Email Address').fill(userAccount.emailAddress);
 	await newPage.getByLabel('Password').fill('invalid');
-	await newPage.getByRole('button', {name: 'Sign In'}).click();
+	await newPage.getByRole('button', {name: 'Sign In'}).last().click();
 	await newPage.waitForTimeout(2000);
 
 	// Expect to remain unauthenticated on IdP
@@ -1489,7 +1515,7 @@ test('LPD-32213 AC1 TC1 and TC5: Verify SP initiated SSO from a restricted resou
 
 	await newPage.getByLabel('Email Address').fill(userAccount.emailAddress);
 	await newPage.getByLabel('Password').fill('test');
-	await newPage.getByRole('button', {name: 'Sign In'}).click();
+	await newPage.getByRole('button', {name: 'Sign In'}).last().click();
 
 	// Verify user is logged in
 
@@ -2705,7 +2731,7 @@ test('Verify during SP initiated SSO, RelayState is correct and present regardle
 		.fill(userAccount.emailAddress);
 	await spInstancePage.getByLabel('Password').fill('test');
 	await spInstancePage.getByLabel('Remember Me').check();
-	await spInstancePage.getByRole('button', {name: 'Sign In'}).click();
+	await spInstancePage.getByRole('button', {name: 'Sign In'}).last().click();
 
 	await spInstancePage
 		.getByTitle('User Profile Menu')
@@ -3325,4 +3351,343 @@ test('Verify the SAML configuration is not applied to the sites when ACS is disa
 	// Remove site from SP instance
 
 	await apiHelpers.headlessSite.deleteSite(String(site.id));
+});
+
+test('LPD-37323 AC1 TC1: Liferay as both IdP and SP handles the SSO flow by triggering an SP-initiated SSO to the correct external IdP', async ({
+	browser,
+}) => {
+	const localhostAdminPage = await browser.newPage();
+
+	await performLogin(localhostAdminPage, 'test');
+
+	const ibAdminPage = await createIdentityBrokerVirtualInstance(
+		browser,
+		localhostAdminPage,
+		SECONDARY_IDP_NAME
+	);
+
+	const idpAdminPage = await configureVirtualInstanceForSaml(
+		browser,
+		DEFAULT_IDP_NAME,
+		'Identity Provider'
+	);
+
+	// Clear default connections and make new ones with the both IdP and SP instance
+
+	const serviceProviderConnectionsPage = new ServiceProviderConnectionsPage(
+		idpAdminPage
+	);
+
+	await serviceProviderConnectionsPage.goTo();
+
+	await serviceProviderConnectionsPage.deleteServiceProviderConnections();
+
+	await connectSpAndIdp(
+		idpAdminPage,
+		DEFAULT_IDP_NAME,
+		ibAdminPage,
+		SECONDARY_IDP_NAME
+	);
+
+	const spAdminPage = await configureVirtualInstanceForSaml(
+		browser,
+		DEFAULT_SP_NAME,
+		'Service Provider'
+	);
+
+	const identityProviderConnectionsPage = new IdentityProviderConnectionsPage(
+		spAdminPage
+	);
+
+	await identityProviderConnectionsPage.goTo();
+
+	await identityProviderConnectionsPage.deleteIdentityProviderConnections();
+
+	await connectSpAndIdp(
+		ibAdminPage,
+		SECONDARY_IDP_NAME,
+		spAdminPage,
+		DEFAULT_SP_NAME
+	);
+
+	const userAccount = await createUser(idpAdminPage, DEFAULT_IDP_NAME);
+
+	const spInstancePage = await performSpInitiatedSSO(
+		browser,
+		userAccount.emailAddress,
+		DEFAULT_SP_URL
+	);
+
+	expect(await spInstancePage.url()).toContain(DEFAULT_SP_URL);
+
+	await expect(
+		await spInstancePage.getByTitle('User Profile Menu')
+	).toBeVisible();
+});
+
+test('LPD-37323 AC2/AC4 TC2: User switches between apps. When already logged in an app, if the User is redirected to another app that needs login, Liferay as both IdP and SP handles the connection', async ({
+	browser,
+}) => {
+	const localhostAdminPage = await browser.newPage();
+
+	await performLogin(localhostAdminPage, 'test');
+
+	// Enable Prompt Enabled option
+
+	const systemSettingsPage = new SystemSettingsPage(localhostAdminPage);
+
+	await systemSettingsPage.goToSystemSetting('Login', 'Login');
+
+	const promptEnabled = systemSettingsPage.page.getByLabel('Prompt Enabled');
+
+	await expect(promptEnabled).toBeVisible();
+
+	await promptEnabled.setChecked(true);
+
+	await systemSettingsPage.page
+		.getByRole('button', {name: /save|update/i})
+		.click();
+
+	await waitForAlert(systemSettingsPage.page);
+
+	resetSystemSettings = true;
+
+	const ibAdminPage = await createIdentityBrokerVirtualInstance(
+		browser,
+		localhostAdminPage,
+		SECONDARY_IDP_NAME
+	);
+
+	const secondarySpAdminPage = await createServiceProviderVirtualInstance(
+		browser,
+		SECONDARY_SP_NAME,
+		SECONDARY_SP_NAME,
+		localhostAdminPage
+	);
+
+	await connectSpAndIdp(
+		ibAdminPage,
+		SECONDARY_IDP_NAME,
+		secondarySpAdminPage,
+		SECONDARY_SP_NAME
+	);
+
+	// Create a new page on the secondary SP Instance
+
+	const pagesAdminPage = new PagesAdminPage(secondarySpAdminPage);
+
+	await pagesAdminPage.goto();
+
+	const pageTitle = getRandomString();
+
+	await pagesAdminPage.createNewPage({
+		name: pageTitle,
+	});
+
+	const spNewPageUrl = SECONDARY_SP_URL + '/web/guest/' + pageTitle;
+
+	// Remove guest view permission from new page
+
+	await pagesAdminPage.goto();
+
+	await pagesAdminPage.changePagesPermissions(
+		[pageTitle],
+		['guest_ACTION_VIEW']
+	);
+
+	const idpAdminPage = await configureVirtualInstanceForSaml(
+		browser,
+		DEFAULT_IDP_NAME,
+		'Identity Provider'
+	);
+
+	// Clear default connections and make new ones with the both IdP and SP instance
+
+	const serviceProviderConnectionsPage = new ServiceProviderConnectionsPage(
+		idpAdminPage
+	);
+
+	await serviceProviderConnectionsPage.goTo();
+
+	await serviceProviderConnectionsPage.deleteServiceProviderConnections();
+
+	await connectSpAndIdp(
+		idpAdminPage,
+		DEFAULT_IDP_NAME,
+		ibAdminPage,
+		SECONDARY_IDP_NAME
+	);
+
+	const spAdminPage = await configureVirtualInstanceForSaml(
+		browser,
+		DEFAULT_SP_NAME,
+		'Service Provider'
+	);
+
+	const identityProviderConnectionsPage = new IdentityProviderConnectionsPage(
+		spAdminPage
+	);
+
+	await identityProviderConnectionsPage.goTo();
+
+	await identityProviderConnectionsPage.deleteIdentityProviderConnections();
+
+	await connectSpAndIdp(
+		ibAdminPage,
+		SECONDARY_IDP_NAME,
+		spAdminPage,
+		DEFAULT_SP_NAME
+	);
+
+	const userAccount = await createUser(idpAdminPage, DEFAULT_IDP_NAME);
+
+	const spInstancePage = await performSpInitiatedSSO(
+		browser,
+		userAccount.emailAddress,
+		DEFAULT_SP_URL
+	);
+
+	expect(await spInstancePage.url()).toContain(DEFAULT_SP_URL);
+
+	await expect(
+		await spInstancePage.getByTitle('User Profile Menu')
+	).toBeVisible();
+
+	await spInstancePage.reload();
+
+	await spInstancePage.goto(spNewPageUrl);
+
+	// Verify user is logged in
+
+	await spInstancePage
+		.getByTitle('User Profile Menu')
+		.waitFor({timeout: 30 * 1000});
+
+	// Verify user is redirected back to restricted resource
+
+	expect(await spInstancePage.url()).toContain(spNewPageUrl);
+});
+
+test('LPD-62689: IdP initiated SLO is propagated correctly from Identity Brokers', async ({
+	browser,
+}) => {
+	const localhostAdminPage = await browser.newPage();
+
+	await performLogin(localhostAdminPage, 'test');
+
+	const ibAdminPage = await createIdentityBrokerVirtualInstance(
+		browser,
+		localhostAdminPage,
+		SECONDARY_IDP_NAME
+	);
+
+	const idpAdminPage = await configureVirtualInstanceForSaml(
+		browser,
+		DEFAULT_IDP_NAME,
+		'Identity Provider'
+	);
+
+	// Clear default connections and make new ones with the both IdP and SP instance
+
+	const serviceProviderConnectionsPage = new ServiceProviderConnectionsPage(
+		idpAdminPage
+	);
+
+	await serviceProviderConnectionsPage.goTo();
+
+	await serviceProviderConnectionsPage.deleteServiceProviderConnections();
+
+	await connectSpAndIdp(
+		idpAdminPage,
+		DEFAULT_IDP_NAME,
+		ibAdminPage,
+		SECONDARY_IDP_NAME
+	);
+
+	const spAdminPage = await configureVirtualInstanceForSaml(
+		browser,
+		DEFAULT_SP_NAME,
+		'Service Provider'
+	);
+
+	const identityProviderConnectionsPage = new IdentityProviderConnectionsPage(
+		spAdminPage
+	);
+
+	await identityProviderConnectionsPage.goTo();
+
+	await identityProviderConnectionsPage.deleteIdentityProviderConnections();
+
+	await connectSpAndIdp(
+		ibAdminPage,
+		SECONDARY_IDP_NAME,
+		spAdminPage,
+		DEFAULT_SP_NAME
+	);
+
+	const secondarySpAdminPage = await createServiceProviderVirtualInstance(
+		browser,
+		SECONDARY_SP_NAME,
+		SECONDARY_SP_NAME,
+		localhostAdminPage
+	);
+
+	await connectSpAndIdp(
+		ibAdminPage,
+		SECONDARY_IDP_NAME,
+		secondarySpAdminPage,
+		SECONDARY_SP_NAME
+	);
+
+	const userAccount = await createUser(idpAdminPage, DEFAULT_IDP_NAME);
+
+	const spInstancePage = await performSpInitiatedSSO(
+		browser,
+		userAccount.emailAddress,
+		DEFAULT_SP_URL
+	);
+
+	expect(await spInstancePage.url()).toContain(DEFAULT_SP_URL);
+
+	await expect(
+		await spInstancePage.getByTitle('User Profile Menu')
+	).toBeVisible();
+
+	await spInstancePage.goto(SECONDARY_SP_URL);
+
+	await clickSignInButton(spInstancePage);
+
+	await spInstancePage
+		.getByTitle('User Profile Menu')
+		.waitFor({timeout: 30 * 1000});
+
+	// IdP initiated SLO
+
+	await spInstancePage.goto(DEFAULT_IDP_URL);
+
+	await spInstancePage.getByTitle('User Profile Menu').click();
+
+	await spInstancePage.getByRole('menuitem', {name: 'Sign Out'}).click();
+
+	await spInstancePage.waitForTimeout(8000);
+
+	// Both SPs should also be logged out after IdP initiated SLO
+
+	for (const spUrl of [DEFAULT_SP_URL, SECONDARY_SP_URL]) {
+		await spInstancePage.goto(spUrl);
+
+		const signInButton = await spInstancePage.getByRole('button', {
+			name: 'Sign In',
+		});
+
+		expect(await signInButton).toBeVisible();
+	}
+
+	// Delete newly created virtual instance, and remove from afterAll deletion
+
+	await deleteVirtualInstance(SECONDARY_SP_NAME, localhostAdminPage);
+
+	await deleteAfterTestProviderConnections.delete(SECONDARY_SP_NAME);
+
+	await deleteAfterTestVirtualInstances.delete(SECONDARY_SP_NAME);
 });

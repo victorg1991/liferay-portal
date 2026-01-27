@@ -1,9 +1,9 @@
 {
 	"dependencies": {
-		"@clayui/alert": "3.129.1",
-		"@clayui/button": "3.136.0",
-		"@clayui/form": "3.140.0",
-		"@clayui/modal": "3.140.0",
+		"@clayui/alert": "*",
+		"@clayui/button": "*",
+		"@clayui/form": "*",
+		"@clayui/modal": "*",
 		"@liferay/accessibility-settings-state-web": "*",
 		"@liferay/cookies-banner-web": "*",
 		"@liferay/frontend-js-state-web": "*",
@@ -19,5 +19,5 @@
 		"checkFormat": "node-scripts format --check",
 		"format": "node-scripts format"
 	},
-	"version": "1.0.32"
+	"version": "1.0.39"
 }

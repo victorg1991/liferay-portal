@@ -1,3 +1,17 @@
-.cms-breadcrumb .breadcrumb-item {
-	font-size: 1.125rem;
+$cms-breadcrum-min-height: 72px !default;
+
+.cms-breadcrumb {
+	min-height: $cms-breadcrum-min-height;
+
+	.breadcrumb-item {
+		margin-right: 6px;
+
+		+ .breadcrumb-item {
+			padding-left: 21px;
+		}
+
+		.breadcrumb-link:not([href]) {
+			text-decoration: none;
+		}
+	}
 }

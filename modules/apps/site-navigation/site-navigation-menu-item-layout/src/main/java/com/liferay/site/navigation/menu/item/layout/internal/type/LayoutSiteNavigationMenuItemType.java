@@ -35,7 +35,6 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -114,12 +113,6 @@ public class LayoutSiteNavigationMenuItemType
 			return false;
 		}
 
-		if (!ArrayUtil.contains(
-				portletDataContext.getLayoutIds(), layout.getLayoutId())) {
-
-			return false;
-		}
-
 		LayoutRevision layoutRevision = _layoutStaging.getLayoutRevision(
 			layout);
 
@@ -135,7 +128,7 @@ public class LayoutSiteNavigationMenuItemType
 
 		portletDataContext.addReferenceElement(
 			siteNavigationMenuItem, siteNavigationMenuItemElement, layout,
-			PortletDataContext.REFERENCE_TYPE_DEPENDENCY, true);
+			PortletDataContext.REFERENCE_TYPE_DEPENDENCY_DISPOSABLE, true);
 
 		return true;
 	}
@@ -312,9 +305,7 @@ public class LayoutSiteNavigationMenuItemType
 	@Override
 	public String getTypeSettingsFromLayout(Layout layout) {
 		return UnicodePropertiesBuilder.put(
-			"groupId", String.valueOf(layout.getGroupId())
-		).put(
-			"layoutUuid", layout.getUuid()
+			"externalReferenceCode", layout.getExternalReferenceCode()
 		).put(
 			"privateLayout", String.valueOf(layout.isPrivateLayout())
 		).buildString();
@@ -338,6 +329,22 @@ public class LayoutSiteNavigationMenuItemType
 		}
 
 		return layout.getName(languageId);
+	}
+
+	@Override
+	public boolean hasModel(
+		long companyId, long groupId,
+		UnicodeProperties typeSettingsUnicodeProperties) {
+
+		Layout layout = _layoutLocalService.fetchLayoutByExternalReferenceCode(
+			typeSettingsUnicodeProperties.get("externalReferenceCode"),
+			groupId);
+
+		if (layout == null) {
+			return false;
+		}
+
+		return true;
 	}
 
 	@Override
@@ -402,9 +409,7 @@ public class LayoutSiteNavigationMenuItemType
 			UnicodePropertiesBuilder.fastLoad(
 				siteNavigationMenuItem.getTypeSettings()
 			).put(
-				"groupId", String.valueOf(layout.getGroupId())
-			).put(
-				"layoutUuid", layout.getUuid()
+				"externalReferenceCode", layout.getExternalReferenceCode()
 			).put(
 				"privateLayout", String.valueOf(layout.isPrivateLayout())
 			).buildString());
@@ -453,7 +458,8 @@ public class LayoutSiteNavigationMenuItemType
 				getParentSiteNavigationMenuItemIds(
 					siteNavigationMenuItem.getSiteNavigationMenuId(),
 					StringBundler.concat(
-						"%layoutUuid=", curLayout.getUuid(),
+						"%externalReferenceCode=",
+						curLayout.getExternalReferenceCode(),
 						StringPool.PERCENT));
 
 		for (Long parentSiteNavigationMenuItemId :
@@ -536,21 +542,21 @@ public class LayoutSiteNavigationMenuItemType
 				siteNavigationMenuItem.getTypeSettings()
 			).build();
 
-		String layoutUuid = typeSettingsUnicodeProperties.get("layoutUuid");
+		String externalReferenceCode = typeSettingsUnicodeProperties.get(
+			"externalReferenceCode");
 
-		boolean privateLayout = GetterUtil.getBoolean(
-			typeSettingsUnicodeProperties.get("privateLayout"));
+		long groupId = siteNavigationMenuItem.getGroupId();
 
-		Layout layout = _layoutLocalService.fetchLayoutByUuidAndGroupId(
-			layoutUuid, siteNavigationMenuItem.getGroupId(), privateLayout);
+		Layout layout = _layoutLocalService.fetchLayoutByExternalReferenceCode(
+			externalReferenceCode, groupId);
 
 		if ((layout == null) && _log.isWarnEnabled()) {
 			_log.warn(
 				StringBundler.concat(
 					"No layout found for site navigation menu item ID ",
 					siteNavigationMenuItem.getSiteNavigationMenuItemId(),
-					" with layout UUID ", layoutUuid, " and private layout ",
-					privateLayout));
+					" with external reference code ", externalReferenceCode,
+					" and group ID ", groupId));
 		}
 
 		return layout;
@@ -565,8 +571,6 @@ public class LayoutSiteNavigationMenuItemType
 				siteNavigationMenuItem.getTypeSettings()
 			).build();
 
-		String layoutUuid = typeSettingsUnicodeProperties.get("layoutUuid");
-
 		boolean privateLayout = GetterUtil.getBoolean(
 			typeSettingsUnicodeProperties.get("privateLayout"));
 
@@ -575,15 +579,16 @@ public class LayoutSiteNavigationMenuItemType
 		}
 
 		try {
-			Layout layout = _layoutLocalService.fetchLayoutByUuidAndGroupId(
-				layoutUuid, siteNavigationMenuItem.getGroupId(), privateLayout);
+			Layout layout =
+				_layoutLocalService.fetchLayoutByExternalReferenceCode(
+					typeSettingsUnicodeProperties.get("externalReferenceCode"),
+					siteNavigationMenuItem.getGroupId());
 
-			if ((layout == null) &&
-				ExportImportThreadLocal.isImportInProcess()) {
+			if ((layout != null) &&
+				(layout.isPrivateLayout() != privateLayout) &&
+				!ExportImportThreadLocal.isImportInProcess()) {
 
-				layout = _layoutLocalService.fetchLayoutByUuidAndGroupId(
-					layoutUuid, siteNavigationMenuItem.getGroupId(),
-					!privateLayout);
+				layout = null;
 			}
 
 			if (layout == null) {

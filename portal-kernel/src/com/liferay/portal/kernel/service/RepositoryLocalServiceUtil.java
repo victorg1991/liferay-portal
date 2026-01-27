@@ -314,6 +314,10 @@ public class RepositoryLocalServiceUtil {
 		return getService().getRepositories(start, end);
 	}
 
+	public static List<Repository> getRepositories(String portletId) {
+		return getService().getRepositories(portletId);
+	}
+
 	/**
 	 * Returns all the repositories matching the UUID and company.
 	 *
@@ -408,6 +412,10 @@ public class RepositoryLocalServiceUtil {
 		throws PortalException {
 
 		return getService().getTypeSettingsProperties(repositoryId);
+	}
+
+	public static boolean isHidden(long repositoryId) throws PortalException {
+		return getService().isHidden(repositoryId);
 	}
 
 	public static void updateRepository(

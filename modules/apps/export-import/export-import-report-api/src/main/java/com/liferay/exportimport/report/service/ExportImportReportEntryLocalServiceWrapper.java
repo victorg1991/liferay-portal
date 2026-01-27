@@ -33,15 +33,30 @@ public class ExportImportReportEntryLocalServiceWrapper
 
 	@Override
 	public com.liferay.exportimport.report.model.ExportImportReportEntry
+		addEmptyExportImportReportEntry(
+			long groupId, long companyId, String classExternalReferenceCode,
+			long classNameId, long exportImportConfigurationId,
+			String modelNameLanguageKey) {
+
+		return _exportImportReportEntryLocalService.
+			addEmptyExportImportReportEntry(
+				groupId, companyId, classExternalReferenceCode, classNameId,
+				exportImportConfigurationId, modelNameLanguageKey);
+	}
+
+	@Override
+	public com.liferay.exportimport.report.model.ExportImportReportEntry
 		addErrorExportImportReportEntry(
 			long groupId, long companyId, String classExternalReferenceCode,
-			long classNameId, long exportImportConfigurationId, String error,
-			String errorStacktrace) {
+			long classNameId, long classPK, long exportImportConfigurationId,
+			String errorMessage, String errorStacktrace,
+			String modelNameLanguageKey) {
 
 		return _exportImportReportEntryLocalService.
 			addErrorExportImportReportEntry(
 				groupId, companyId, classExternalReferenceCode, classNameId,
-				exportImportConfigurationId, error, errorStacktrace);
+				classPK, exportImportConfigurationId, errorMessage,
+				errorStacktrace, modelNameLanguageKey);
 	}
 
 	/**
@@ -62,18 +77,6 @@ public class ExportImportReportEntryLocalServiceWrapper
 
 		return _exportImportReportEntryLocalService.addExportImportReportEntry(
 			exportImportReportEntry);
-	}
-
-	@Override
-	public com.liferay.exportimport.report.model.ExportImportReportEntry
-		addIncompleteExportImportReportEntry(
-			long groupId, long companyId, String classExternalReferenceCode,
-			long classNameId, long exportImportConfigurationId) {
-
-		return _exportImportReportEntryLocalService.
-			addIncompleteExportImportReportEntry(
-				groupId, companyId, classExternalReferenceCode, classNameId,
-				exportImportConfigurationId);
 	}
 
 	/**

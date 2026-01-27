@@ -4,6 +4,7 @@
  */
 
 import {
+	ObjectDefinition,
 	ObjectDefinitionAPI,
 	ObjectFolderAPI,
 	ObjectRelationshipAPI,
@@ -21,15 +22,15 @@ import {pageEditorPagesTest} from '../../../fixtures/pageEditorPagesTest';
 import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import {waitForAlert} from '../../../utils/waitForAlert';
+import getFormContainerDefinition from '../../layout-content-page-editor-web/main/utils/getFormContainerDefinition';
 import getFragmentDefinition from '../../layout-content-page-editor-web/main/utils/getFragmentDefinition';
 import getPageDefinition from '../../layout-content-page-editor-web/main/utils/getPageDefinition';
-import {createObjectFields} from './utils/mockObjectFields';
+import {generateObjectFields} from './utils/generateObjectFields';
 
-export const test = mergeTests(
+const test = mergeTests(
 	collectionsPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-21926': {enabled: true},
 		'LPS-178052': {enabled: true},
 	}),
 	fragmentsPagesTest,
@@ -38,6 +39,48 @@ export const test = mergeTests(
 	objectPagesTest,
 	pageEditorPagesTest
 );
+
+const cmsTest = mergeTests(
+	test,
+	featureFlagsTest({
+		'LPD-17564': {enabled: true},
+		'LPS-178052': {enabled: true},
+	})
+);
+
+test.describe('Manage export/import object definitions', () => {
+	test('can export data structure from a custom object', async ({
+		apiHelpers,
+		page,
+		viewObjectDefinitionsPage,
+	}) => {
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
+
+		await viewObjectDefinitionsPage.goto();
+
+		const downloadPromise = page.waitForEvent('download');
+
+		await viewObjectDefinitionsPage.actionsButton.last().click();
+
+		await viewObjectDefinitionsPage.exportObjectDefinitionOption
+			.last()
+			.click();
+
+		const download = await downloadPromise;
+
+		expect(download.suggestedFilename()).toContain(
+			objectDefinition.externalReferenceCode
+		);
+	});
+});
 
 test.describe('Manage object definitions through Model Builder', () => {
 	test.beforeEach(({page}) => {
@@ -50,7 +93,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 	}) => {
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -198,13 +240,11 @@ test.describe('Manage object definitions through Model Builder', () => {
 	}) => {
 		const objectDefinition1 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 2},
 			});
 
 		const objectDefinition2 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 2},
 			});
 
@@ -260,7 +300,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 	}) => {
 		const objectDefinition1 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -317,6 +356,42 @@ test.describe('Manage object definitions through Model Builder', () => {
 		).toBeHidden();
 	});
 
+	test('hidden system object definitions are not displayed', async ({
+		modelBuilderDiagramPage,
+		page,
+	}) => {
+		const hiddenObjectDefinitionNames = [
+			'FunctionalCookieEntry',
+			'NecessaryCookieEntry',
+			'PerformanceCookieEntry',
+			'PersonalizationCookieEntry',
+		];
+
+		const responsePromise = page.waitForResponse((response) =>
+			response
+				.url()
+				.includes(
+					'/object-definitions?pageSize=-1&filter=hidden%20eq%20false'
+				)
+		);
+
+		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
+
+		const response = await responsePromise;
+
+		const body = await response.json();
+
+		const objectDefinitionNames = body.items.map(
+			(item: ObjectDefinition) => item.name
+		);
+
+		expect(
+			objectDefinitionNames.every(
+				(name: string) => !hiddenObjectDefinitionNames.includes(name)
+			)
+		).toBeTruthy();
+	});
+
 	test('linked object definitions are created when object definitions are related and put into different folders', async ({
 		apiHelpers,
 		modelBuilderDiagramPage,
@@ -335,7 +410,6 @@ test.describe('Manage object definitions through Model Builder', () => {
 
 		const objectDefinition2 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -526,6 +600,12 @@ test.describe('Manage object definitions through Model Builder', () => {
 		modelBuilderRightSidebarPage,
 		page,
 	}) => {
+		const objectFields = generateObjectFields({
+			objectFieldBusinessTypes: ['Text'],
+		});
+
+		const objectFieldName = objectFields[0].name;
+
 		const objectFolder =
 			await apiHelpers.objectAdmin.postRandomObjectFolder();
 
@@ -543,12 +623,7 @@ test.describe('Manage object definitions through Model Builder', () => {
 					pt_BR: 'Departamento',
 				},
 				name: 'Department',
-				objectFields: createObjectFields('text', [
-					{
-						label: 'Name',
-						name: 'name',
-					},
-				]),
+				objectFields,
 				objectFolderExternalReferenceCode:
 					objectFolder.externalReferenceCode,
 				panelCategoryKey: 'control_panel.object',
@@ -558,7 +633,7 @@ test.describe('Manage object definitions through Model Builder', () => {
 				},
 				scope: 'company',
 				status: {code: 0},
-				titleObjectFieldName: 'name',
+				titleObjectFieldName: objectFieldName,
 			});
 
 		apiHelpers.data.push({id: department.id, type: 'objectDefinition'});
@@ -614,7 +689,7 @@ test.describe('Manage object definitions through Model Builder', () => {
 			await modelBuilderRightSidebarPage.objectDefinitionLabelLocalizationButton.click();
 
 			await page
-				.getByRole('menuitem', {name: 'pt_BR Translated'})
+				.getByRole('option', {name: 'pt_BR language: Translated'})
 				.click();
 
 			await expect(
@@ -629,7 +704,9 @@ test.describe('Manage object definitions through Model Builder', () => {
 
 			await modelBuilderRightSidebarPage.objectDefinitionPluralLabelLocalizationButton.click();
 
-			await page.getByRole('menuitem', {name: 'en_US Default'}).click();
+			await page
+				.getByRole('option', {name: 'en_US language: Default'})
+				.click();
 
 			await expect(
 				modelBuilderRightSidebarPage.objectDefinitionPluralLabel
@@ -673,19 +750,79 @@ test.describe('Manage object definitions through Model Builder', () => {
 });
 
 test.describe('Manage object definitions through View Object Definitions', () => {
+	test('action buttons should be disabled while waiting for API responses', async ({
+		apiHelpers,
+		editObjectDetailsPage,
+		page,
+	}) => {
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 2},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
+
+		await page.route(
+			'**/object-definitions/by-external-reference-code/*',
+			async (route) => {
+				await new Promise((fulfill) => setTimeout(fulfill, 300));
+				await route.continue();
+			}
+		);
+
+		await editObjectDetailsPage.goto(objectDefinition.label['en_US']);
+
+		const publishButton = page.getByRole('button', {name: 'Publish'});
+
+		await expect(publishButton).toBeDisabled();
+
+		await page.waitForResponse(
+			'**/object-definitions/by-external-reference-code/*'
+		);
+
+		await expect(publishButton).toBeEnabled();
+
+		await publishButton.click();
+
+		const saveButton = page.getByRole('button', {name: 'save'});
+
+		await expect(publishButton).toBeDisabled();
+
+		await page.waitForResponse('**/object-definitions/*/publish');
+
+		await expect(saveButton).toBeDisabled();
+
+		await page.waitForResponse(
+			'**/object-definitions/by-external-reference-code/*'
+		);
+
+		await expect(saveButton).toBeEnabled();
+
+		await saveButton.click();
+
+		await expect(saveButton).toBeDisabled();
+
+		await page.waitForResponse(
+			'**/object-definitions/by-external-reference-code/*'
+		);
+
+		await expect(saveButton).toBeEnabled();
+	});
+
 	test('can delete an object definition by FDS action', async ({
 		apiHelpers,
 		viewObjectDefinitionsPage,
 	}) => {
 		const objectDefinition1 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 2},
 			});
 
 		const objectDefinition2 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 2},
 			});
 
@@ -727,6 +864,50 @@ test.describe('Manage object definitions through View Object Definitions', () =>
 			})
 		).toBeHidden();
 	});
+
+	test('cannot publish definition with duplicate friendlyURL prefix', async ({
+		apiHelpers,
+		editObjectDetailsPage,
+		page,
+	}) => {
+		const objectDefinition1 =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		const objectDefinition2 =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 2},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition1.id,
+			type: 'objectDefinition',
+		});
+
+		apiHelpers.data.push({
+			id: objectDefinition2.id,
+			type: 'objectDefinition',
+		});
+
+		await editObjectDetailsPage.goto(objectDefinition2.label['en_US']);
+
+		await editObjectDetailsPage.friendlyURLSeparator.fill(
+			`c_${objectDefinition1.name}`
+		);
+
+		await editObjectDetailsPage.publishButton.click();
+
+		await expect(editObjectDetailsPage.publishButton).toBeDisabled();
+
+		await expect(
+			page.getByText('Other asset types may use this prefix.', {
+				exact: true,
+			})
+		).toBeVisible();
+
+		await expect(editObjectDetailsPage.publishButton).toBeEnabled();
+	});
 });
 
 test.describe('Manage object definitions through a Page', () => {
@@ -739,7 +920,6 @@ test.describe('Manage object definitions through a Page', () => {
 	}) => {
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -778,7 +958,6 @@ test.describe('Manage object definitions through a Page', () => {
 	}) => {
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -822,4 +1001,81 @@ test.describe('Manage object definitions through a Page', () => {
 				.getByRole('menuitem', {name: objectDefinition.name})
 		).toBeVisible();
 	});
+});
+
+cmsTest.describe('Manage enableFormContainer configuration', () => {
+	cmsTest(
+		'can see object definition on form container list when configuration is enabled and cannot when it is disabled',
+		{tag: ['@LPD-64249']},
+		async ({apiHelpers, page, pageEditorPage, site}) => {
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const objectField = generateObjectFields({
+				objectFieldBusinessTypes: ['Text'],
+			});
+
+			const {body: objectDefinition} =
+				await objectDefinitionAPIClient.postObjectDefinition({
+					enableFormContainer: true,
+					label: {
+						en_US: 'ObjectDefinitionLabel' + getRandomInt(),
+					},
+					name: 'ObjectDefinitionName' + getRandomInt(),
+					objectFields: objectField,
+					pluralLabel: {
+						en_US: 'ObjectDefinitionsLabel' + getRandomInt(),
+					},
+					scope: 'company',
+					status: {code: 0},
+				});
+
+			apiHelpers.data.push({
+				id: objectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			const layout = await apiHelpers.headlessDelivery.createSitePage({
+				pageDefinition: getPageDefinition([
+					getFormContainerDefinition({
+						id: getRandomString(),
+					}),
+				]),
+				siteId: site.id,
+				title: getRandomString(),
+			});
+
+			await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+			const formContainerSelect = page.getByLabel('Content Type');
+
+			await formContainerSelect.selectOption(
+				objectDefinition.label['en_US']
+			);
+
+			await expect(
+				page.frameLocator('iframe').getByRole('cell', {
+					exact: true,
+					name: objectField[0].label['en_US'],
+				})
+			).toBeVisible();
+
+			await page.getByRole('button', {name: 'Cancel'}).click();
+
+			await objectDefinitionAPIClient.patchObjectDefinition(
+				objectDefinition.id,
+				{
+					enableFormContainer: false,
+				}
+			);
+
+			await page.reload();
+
+			await expect(
+				formContainerSelect.getByRole('option', {
+					name: objectDefinition.name,
+				})
+			).not.toBeAttached();
+		}
+	);
 });

@@ -4,14 +4,19 @@
  */
 
 import ClayForm from '@clayui/form';
+import ClayIcon from '@clayui/icon';
+import {ClayTooltipProvider} from '@clayui/tooltip';
 import {Toggle} from '@liferay/object-js-components-web';
 import {sub} from 'frontend-js-web';
 import React from 'react';
 
+import './ConfigurationContainer.scss';
+
 interface ConfigurationContainerProps {
 	hasUpdateObjectDefinitionPermission: boolean;
+	isApproved: boolean;
+	isEnableObjectEntrySchedule: boolean;
 	isLinkedObjectDefinition?: boolean;
-	isRootDescendantNode: boolean;
 	onSubmit?: (editedObjectDefinition?: Partial<ObjectDefinition>) => void;
 	setValues: (values: Partial<ObjectDefinition>) => void;
 	values: Partial<ObjectDefinition>;
@@ -19,8 +24,9 @@ interface ConfigurationContainerProps {
 
 export function ConfigurationContainer({
 	hasUpdateObjectDefinitionPermission,
+	isApproved,
+	isEnableObjectEntrySchedule,
 	isLinkedObjectDefinition,
-	isRootDescendantNode,
 	onSubmit,
 	setValues,
 	values,
@@ -36,7 +42,7 @@ export function ConfigurationContainer({
 		<div className="lfr-objects__object-definition-details-configuration">
 			<ClayForm.Group>
 				<Toggle
-					disabled={disabled || isRootDescendantNode}
+					disabled={disabled}
 					label={sub(
 						Liferay.Language.get('show-widget-in-x'),
 						Liferay.Language.get('page-builder')
@@ -78,12 +84,14 @@ export function ConfigurationContainer({
 				/>
 			</ClayForm.Group>
 
-			<ClayForm.Group>
+			<ClayForm.Group className="lfr-objects__comments-enable-comments">
 				<Toggle
 					disabled={disabled}
 					label={sub(
 						Liferay.Language.get('enable-x'),
-						Liferay.Language.get('comments-in-page-builder')
+						Liferay.FeatureFlags['LPD-43996']
+							? Liferay.Language.get('comments')
+							: Liferay.Language.get('comments-in-page-builder')
 					)}
 					name="enableComments"
 					onBlur={(event) => {
@@ -100,11 +108,29 @@ export function ConfigurationContainer({
 					}
 					toggled={values.enableComments}
 				/>
+
+				{Liferay.FeatureFlags['LPD-43996'] && (
+					<>
+						&nbsp;
+						<ClayTooltipProvider>
+							<span
+								title={Liferay.Language.get(
+									'you-can-manage-comments-in-the-headless-api-and-the-page-builder'
+								)}
+							>
+								<ClayIcon
+									className="lfr-objects__comments-tooltip-icon"
+									symbol="question-circle-full"
+								/>
+							</span>
+						</ClayTooltipProvider>
+					</>
+				)}
 			</ClayForm.Group>
 
 			<ClayForm.Group>
 				<Toggle
-					disabled={disabled || values.active}
+					disabled={disabled || isApproved}
 					label={sub(
 						Liferay.Language.get('enable-x'),
 						Liferay.Language.get('indexed-search')
@@ -176,29 +202,61 @@ export function ConfigurationContainer({
 			</ClayForm.Group>
 
 			{Liferay.FeatureFlags['LPD-17564'] && (
-				<ClayForm.Group>
-					<Toggle
-						disabled={disabled || values.active}
-						label={Liferay.Language.get(
-							'allow-users-to-schedule-a-display-expiration-and-review-date-for-entries'
-						)}
-						name="enableObjectEntrySchedule"
-						onBlur={(event) => {
-							event.stopPropagation();
-
-							if (onSubmit) {
-								onSubmit();
+				<>
+					<ClayForm.Group>
+						<Toggle
+							disabled={
+								disabled ||
+								(isEnableObjectEntrySchedule && isApproved)
 							}
-						}}
-						onToggle={() => {
-							setValues({
-								enableObjectEntrySchedule:
-									!values.enableObjectEntrySchedule,
-							});
-						}}
-						toggled={values.enableObjectEntrySchedule}
-					/>
-				</ClayForm.Group>
+							label={Liferay.Language.get(
+								'allow-users-to-schedule-a-display-expiration-and-review-date-for-entries'
+							)}
+							name="enableObjectEntrySchedule"
+							onBlur={(event) => {
+								event.stopPropagation();
+
+								if (onSubmit) {
+									onSubmit();
+								}
+							}}
+							onToggle={() => {
+								setValues({
+									enableObjectEntrySchedule:
+										!values.enableObjectEntrySchedule,
+								});
+							}}
+							toggled={values.enableObjectEntrySchedule}
+						/>
+					</ClayForm.Group>
+
+					<ClayForm.Group>
+						<Toggle
+							disabled={disabled}
+							label={sub(
+								Liferay.Language.get('enable-x'),
+								Liferay.Language.get(
+									'mapping-in-form-container'
+								)
+							)}
+							name="enableFormContainer"
+							onBlur={(event) => {
+								event.stopPropagation();
+
+								if (onSubmit) {
+									onSubmit();
+								}
+							}}
+							onToggle={() => {
+								setValues({
+									enableFormContainer:
+										!values.enableFormContainer,
+								});
+							}}
+							toggled={values.enableFormContainer}
+						/>
+					</ClayForm.Group>
+				</>
 			)}
 		</div>
 	);

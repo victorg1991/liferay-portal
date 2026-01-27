@@ -7,14 +7,12 @@ package com.liferay.fragment.entry.processor.editable.internal.mapper;
 
 import com.liferay.fragment.entry.processor.editable.mapper.EditableElementMapper;
 import com.liferay.fragment.entry.processor.helper.FragmentEntryProcessorHelper;
+import com.liferay.fragment.entry.processor.helper.LayoutReferenceResolver;
 import com.liferay.fragment.processor.FragmentEntryProcessorContext;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
-import com.liferay.portal.kernel.service.GroupLocalService;
-import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -135,11 +133,21 @@ public class LinkEditableElementMapper implements EditableElementMapper {
 				target = "_self";
 			}
 
+			if (StringUtil.equalsIgnoreCase(target, "_blank")) {
+				linkElement.attr("rel", "noopener noreferrer");
+			}
+
 			linkElement.attr("target", target);
 		}
 
 		if (Validator.isNull(href)) {
 			return;
+		}
+
+		boolean empty = false;
+
+		if (element.childNodeSize() == 0) {
+			empty = true;
 		}
 
 		linkElement.attr("href", href);
@@ -148,16 +156,25 @@ public class LinkEditableElementMapper implements EditableElementMapper {
 			linkElement.attr("rel", "nofollow");
 		}
 
+		Element parentElement = element.parent();
+
 		_replaceLinkContent(
-			element, firstChildElement, linkElement, replaceLink);
+			element, empty, firstChildElement, linkElement, replaceLink);
 
-		if (((linkElement != element) || processEditableTag) &&
-			Validator.isNotNull(element.html())) {
+		if (((linkElement != element) || processEditableTag) && !empty &&
+			(linkElement.parent() != element)) {
 
-			element.html(linkElement.outerHtml());
+			element.empty();
+
+			element.appendChild(linkElement);
 		}
-		else if ((linkElement != element) && Validator.isNull(element.html())) {
-			element.replaceWith(linkElement);
+		else if ((linkElement != element) && empty) {
+			if (element.parent() == parentElement) {
+				element.replaceWith(linkElement);
+			}
+			else {
+				parentElement.appendChild(linkElement);
+			}
 		}
 	}
 
@@ -168,6 +185,20 @@ public class LinkEditableElementMapper implements EditableElementMapper {
 
 		if (!_isMappedLayout(jsonObject)) {
 			return StringPool.BLANK;
+		}
+
+		JSONObject layoutJSONObject = jsonObject.getJSONObject("layout");
+
+		if (layoutJSONObject == null) {
+			return StringPool.POUND;
+		}
+
+		Layout layout = _layoutReferenceResolver.resolve(
+			fragmentEntryProcessorContext.getCompanyId(), layoutJSONObject,
+			fragmentEntryProcessorContext.getScopeGroupId());
+
+		if (layout == null) {
+			return StringPool.POUND;
 		}
 
 		HttpServletRequest httpServletRequest =
@@ -185,24 +216,6 @@ public class LinkEditableElementMapper implements EditableElementMapper {
 			return StringPool.BLANK;
 		}
 
-		JSONObject layoutJSONObject = jsonObject.getJSONObject("layout");
-
-		long groupId = layoutJSONObject.getLong("groupId");
-
-		Group group = _groupLocalService.fetchGroup(groupId);
-
-		if (group == null) {
-			return StringPool.POUND;
-		}
-
-		Layout layout = _layoutLocalService.fetchLayout(
-			groupId, layoutJSONObject.getBoolean("privateLayout"),
-			layoutJSONObject.getLong("layoutId"));
-
-		if (layout == null) {
-			return StringPool.POUND;
-		}
-
 		return _portal.getLayoutRelativeURL(layout, themeDisplay);
 	}
 
@@ -211,20 +224,36 @@ public class LinkEditableElementMapper implements EditableElementMapper {
 	}
 
 	private void _replaceLinkContent(
-		Element element, Element firstChildElement, Element linkElement,
-		boolean replaceLink) {
+		Element element, boolean empty, Element firstChildElement,
+		Element linkElement, boolean replaceLink) {
 
-		if (replaceLink && Validator.isNull(firstChildElement.html())) {
-			linkElement.html(firstChildElement.outerHtml());
-		}
-		else if (replaceLink && Validator.isNotNull(firstChildElement.html())) {
-			linkElement.html(firstChildElement.html());
-		}
-		else if (Validator.isNull(element.html())) {
-			linkElement.html(element.outerHtml());
+		if (replaceLink) {
+			if (linkElement == firstChildElement) {
+				return;
+			}
+
+			linkElement.empty();
+
+			if (firstChildElement.childNodeSize() == 0) {
+				linkElement.appendChild(firstChildElement);
+			}
+			else {
+				linkElement.appendChildren(firstChildElement.childNodes());
+			}
 		}
 		else {
-			linkElement.html(element.html());
+			if (linkElement == element) {
+				return;
+			}
+
+			linkElement.empty();
+
+			if (empty) {
+				linkElement.appendChild(element);
+			}
+			else {
+				linkElement.appendChildren(element.childNodes());
+			}
 		}
 	}
 
@@ -232,10 +261,7 @@ public class LinkEditableElementMapper implements EditableElementMapper {
 	private FragmentEntryProcessorHelper _fragmentEntryProcessorHelper;
 
 	@Reference
-	private GroupLocalService _groupLocalService;
-
-	@Reference
-	private LayoutLocalService _layoutLocalService;
+	private LayoutReferenceResolver _layoutReferenceResolver;
 
 	@Reference
 	private Portal _portal;

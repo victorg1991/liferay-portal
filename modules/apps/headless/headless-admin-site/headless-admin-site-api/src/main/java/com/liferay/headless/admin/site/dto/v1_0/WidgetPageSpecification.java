@@ -53,6 +53,103 @@ public class WidgetPageSpecification
 			WidgetPageSpecification.class, json);
 	}
 
+	@io.swagger.v3.oas.annotations.media.Schema
+	@Valid
+	public Settings getSettings() {
+		if (_settingsSupplier != null) {
+			settings = _settingsSupplier.get();
+
+			_settingsSupplier = null;
+		}
+
+		return settings;
+	}
+
+	public void setSettings(Settings settings) {
+		this.settings = settings;
+
+		_settingsSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setSettings(
+		UnsafeSupplier<Settings, Exception> settingsUnsafeSupplier) {
+
+		_settingsSupplier = () -> {
+			try {
+				return settingsUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Settings settings;
+
+	@JsonIgnore
+	private Supplier<Settings> _settingsSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema(
+		description = "The site template page specification's external reference code."
+	)
+	public String getSiteTemplatePageSpecificationExternalReferenceCode() {
+		if (_siteTemplatePageSpecificationExternalReferenceCodeSupplier !=
+				null) {
+
+			siteTemplatePageSpecificationExternalReferenceCode =
+				_siteTemplatePageSpecificationExternalReferenceCodeSupplier.
+					get();
+
+			_siteTemplatePageSpecificationExternalReferenceCodeSupplier = null;
+		}
+
+		return siteTemplatePageSpecificationExternalReferenceCode;
+	}
+
+	public void setSiteTemplatePageSpecificationExternalReferenceCode(
+		String siteTemplatePageSpecificationExternalReferenceCode) {
+
+		this.siteTemplatePageSpecificationExternalReferenceCode =
+			siteTemplatePageSpecificationExternalReferenceCode;
+
+		_siteTemplatePageSpecificationExternalReferenceCodeSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setSiteTemplatePageSpecificationExternalReferenceCode(
+		UnsafeSupplier<String, Exception>
+			siteTemplatePageSpecificationExternalReferenceCodeUnsafeSupplier) {
+
+		_siteTemplatePageSpecificationExternalReferenceCodeSupplier = () -> {
+			try {
+				return siteTemplatePageSpecificationExternalReferenceCodeUnsafeSupplier.
+					get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField(
+		description = "The site template page specification's external reference code."
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected String siteTemplatePageSpecificationExternalReferenceCode;
+
+	@JsonIgnore
+	private Supplier<String>
+		_siteTemplatePageSpecificationExternalReferenceCodeSupplier;
+
 	@io.swagger.v3.oas.annotations.media.Schema(
 		description = "The sections of a widget page."
 	)
@@ -126,44 +223,6 @@ public class WidgetPageSpecification
 
 		sb.append("{");
 
-		WidgetPageSection[] widgetPageSections = getWidgetPageSections();
-
-		if (widgetPageSections != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"widgetPageSections\": ");
-
-			sb.append("[");
-
-			for (int i = 0; i < widgetPageSections.length; i++) {
-				sb.append(String.valueOf(widgetPageSections[i]));
-
-				if ((i + 1) < widgetPageSections.length) {
-					sb.append(", ");
-				}
-			}
-
-			sb.append("]");
-		}
-
-		String externalReferenceCode = getExternalReferenceCode();
-
-		if (externalReferenceCode != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"externalReferenceCode\": ");
-
-			sb.append("\"");
-
-			sb.append(_escape(externalReferenceCode));
-
-			sb.append("\"");
-		}
-
 		Settings settings = getSettings();
 
 		if (settings != null) {
@@ -195,6 +254,67 @@ public class WidgetPageSpecification
 			sb.append("\"");
 		}
 
+		WidgetPageSection[] widgetPageSections = getWidgetPageSections();
+
+		if (widgetPageSections != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"widgetPageSections\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < widgetPageSections.length; i++) {
+				sb.append(String.valueOf(widgetPageSections[i]));
+
+				if ((i + 1) < widgetPageSections.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		com.liferay.portal.vulcan.custom.field.CustomField[] customFields =
+			getCustomFields();
+
+		if (customFields != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"customFields\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < customFields.length; i++) {
+				sb.append(customFields[i]);
+
+				if ((i + 1) < customFields.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		String externalReferenceCode = getExternalReferenceCode();
+
+		if (externalReferenceCode != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"externalReferenceCode\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(externalReferenceCode));
+
+			sb.append("\"");
+		}
+
 		Status status = getStatus();
 
 		if (status != null) {
@@ -205,9 +325,7 @@ public class WidgetPageSpecification
 			sb.append("\"status\": ");
 
 			sb.append("\"");
-
 			sb.append(status);
-
 			sb.append("\"");
 		}
 
@@ -221,9 +339,7 @@ public class WidgetPageSpecification
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(type);
-
 			sb.append("\"");
 		}
 

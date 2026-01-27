@@ -7,6 +7,7 @@ package com.liferay.headless.admin.site.resource.v1_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.asset.publisher.constants.AssetPublisherPortletKeys;
+import com.liferay.headless.admin.site.client.dto.v1_0.BasicWidgetPageWidgetInstance;
 import com.liferay.headless.admin.site.client.dto.v1_0.WidgetPageWidgetInstance;
 import com.liferay.headless.admin.site.client.problem.Problem;
 import com.liferay.layout.test.util.LayoutTestUtil;
@@ -40,13 +41,18 @@ public class WidgetPageWidgetInstanceResourceTest
 		_layout = LayoutTestUtil.addTypePortletLayout(testGroup.getGroupId());
 	}
 
+	@Ignore
 	@Override
 	@Test
-	public void testDeleteSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode()
-		throws Exception {
+	public void testBatchEngineDeleteImportTask() throws Exception {
+		super.testBatchEngineDeleteImportTask();
+	}
 
+	@Override
+	@Test
+	public void testDeleteSiteSitePageWidgetInstance() throws Exception {
 		WidgetPageWidgetInstance widgetPageWidgetInstance =
-			testPostSiteSiteByExternalReferenceCodeSitePageWidgetInstance_addWidgetPageWidgetInstance(
+			testPostSiteSitePageWidgetInstance_addWidgetPageWidgetInstance(
 				randomWidgetPageWidgetInstance());
 
 		_layout = _layoutLocalService.fetchLayout(_layout.getPlid());
@@ -60,10 +66,9 @@ public class WidgetPageWidgetInstanceResourceTest
 
 		Assert.assertTrue(layoutTypePortlet.hasPortletId(portletId));
 
-		widgetPageWidgetInstanceResource.
-			deleteSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode(
-				testGroup.getExternalReferenceCode(),
-				_layout.getExternalReferenceCode(), portletId);
+		widgetPageWidgetInstanceResource.deleteSiteSitePageWidgetInstance(
+			testGroup.getExternalReferenceCode(),
+			_layout.getExternalReferenceCode(), portletId);
 
 		_layout = _layoutLocalService.fetchLayout(_layout.getPlid());
 
@@ -72,10 +77,9 @@ public class WidgetPageWidgetInstanceResourceTest
 		Assert.assertFalse(layoutTypePortlet.hasPortletId(portletId));
 
 		try {
-			widgetPageWidgetInstanceResource.
-				deleteSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode(
-					testGroup.getExternalReferenceCode(),
-					_layout.getExternalReferenceCode(), portletId);
+			widgetPageWidgetInstanceResource.deleteSiteSitePageWidgetInstance(
+				testGroup.getExternalReferenceCode(),
+				_layout.getExternalReferenceCode(), portletId);
 
 			Assert.fail();
 		}
@@ -89,11 +93,9 @@ public class WidgetPageWidgetInstanceResourceTest
 
 	@Override
 	@Test
-	public void testGetSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode()
-		throws Exception {
-
+	public void testGetSiteSitePageWidgetInstance() throws Exception {
 		WidgetPageWidgetInstance postWidgetPageWidgetInstance =
-			testPostSiteSiteByExternalReferenceCodeSitePageWidgetInstance_addWidgetPageWidgetInstance(
+			testPostSiteSitePageWidgetInstance_addWidgetPageWidgetInstance(
 				randomWidgetPageWidgetInstance());
 
 		String portletId = PortletIdCodec.encode(
@@ -101,20 +103,18 @@ public class WidgetPageWidgetInstanceResourceTest
 			postWidgetPageWidgetInstance.getWidgetInstanceId());
 
 		WidgetPageWidgetInstance getWidgetPageWidgetInstance =
-			widgetPageWidgetInstanceResource.
-				getSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode(
-					testGroup.getExternalReferenceCode(),
-					_layout.getExternalReferenceCode(), portletId);
+			widgetPageWidgetInstanceResource.getSiteSitePageWidgetInstance(
+				testGroup.getExternalReferenceCode(),
+				_layout.getExternalReferenceCode(), portletId);
 
 		assertEquals(postWidgetPageWidgetInstance, getWidgetPageWidgetInstance);
 		assertValid(getWidgetPageWidgetInstance);
 
 		try {
-			widgetPageWidgetInstanceResource.
-				getSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode(
-					testGroup.getExternalReferenceCode(),
-					_layout.getExternalReferenceCode(),
-					RandomTestUtil.randomString());
+			widgetPageWidgetInstanceResource.getSiteSitePageWidgetInstance(
+				testGroup.getExternalReferenceCode(),
+				_layout.getExternalReferenceCode(),
+				RandomTestUtil.randomString());
 
 			Assert.fail();
 		}
@@ -126,33 +126,11 @@ public class WidgetPageWidgetInstanceResourceTest
 		}
 	}
 
-	@Ignore
 	@Override
 	@Test
-	public void testGraphQLGetSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode()
-		throws Exception {
-
-		super.
-			testGraphQLGetSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode();
-	}
-
-	@Ignore
-	@Override
-	@Test
-	public void testGraphQLGetSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCodeNotFound()
-		throws Exception {
-
-		super.
-			testGraphQLGetSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCodeNotFound();
-	}
-
-	@Override
-	@Test
-	public void testPatchSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode()
-		throws Exception {
-
+	public void testPatchSiteSitePageWidgetInstance() throws Exception {
 		WidgetPageWidgetInstance postWidgetPageWidgetInstance =
-			testPostSiteSiteByExternalReferenceCodeSitePageWidgetInstance_addWidgetPageWidgetInstance(
+			testPostSiteSitePageWidgetInstance_addWidgetPageWidgetInstance(
 				randomWidgetPageWidgetInstance());
 
 		String portletId = PortletIdCodec.encode(
@@ -160,23 +138,21 @@ public class WidgetPageWidgetInstanceResourceTest
 			postWidgetPageWidgetInstance.getWidgetInstanceId());
 
 		WidgetPageWidgetInstance patchWidgetPageWidgetInstance =
-			widgetPageWidgetInstanceResource.
-				patchSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode(
-					testGroup.getExternalReferenceCode(),
-					_layout.getExternalReferenceCode(), portletId,
-					postWidgetPageWidgetInstance);
+			widgetPageWidgetInstanceResource.patchSiteSitePageWidgetInstance(
+				testGroup.getExternalReferenceCode(),
+				_layout.getExternalReferenceCode(), portletId,
+				postWidgetPageWidgetInstance);
 
 		assertEquals(
 			postWidgetPageWidgetInstance, patchWidgetPageWidgetInstance);
 		assertValid(patchWidgetPageWidgetInstance);
 
 		try {
-			widgetPageWidgetInstanceResource.
-				patchSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode(
-					testGroup.getExternalReferenceCode(),
-					_layout.getExternalReferenceCode(),
-					RandomTestUtil.randomString(),
-					randomWidgetPageWidgetInstance());
+			widgetPageWidgetInstanceResource.patchSiteSitePageWidgetInstance(
+				testGroup.getExternalReferenceCode(),
+				_layout.getExternalReferenceCode(),
+				RandomTestUtil.randomString(),
+				randomWidgetPageWidgetInstance());
 
 			Assert.fail();
 		}
@@ -190,9 +166,22 @@ public class WidgetPageWidgetInstanceResourceTest
 
 	@Override
 	@Test
-	public void testPutSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode()
-		throws Exception {
+	public void testPostSiteSitePageWidgetInstance() throws Exception {
+		WidgetPageWidgetInstance randomWidgetPageWidgetInstance =
+			randomWidgetPageWidgetInstance();
 
+		WidgetPageWidgetInstance postWidgetPageWidgetInstance =
+			testPostSiteSitePageWidgetInstance_addWidgetPageWidgetInstance(
+				randomWidgetPageWidgetInstance);
+
+		assertEquals(
+			randomWidgetPageWidgetInstance, postWidgetPageWidgetInstance);
+		assertValid(postWidgetPageWidgetInstance);
+	}
+
+	@Override
+	@Test
+	public void testPutSiteSitePageWidgetInstance() throws Exception {
 		WidgetPageWidgetInstance widgetPageWidgetInstance =
 			randomWidgetPageWidgetInstance();
 
@@ -201,11 +190,10 @@ public class WidgetPageWidgetInstanceResourceTest
 			widgetPageWidgetInstance.getWidgetInstanceId());
 
 		WidgetPageWidgetInstance putWidgetPageWidgetInstance =
-			widgetPageWidgetInstanceResource.
-				putSiteSiteByExternalReferenceCodeWidgetInstanceWidgetInstanceExternalReferenceCode(
-					testGroup.getExternalReferenceCode(),
-					_layout.getExternalReferenceCode(), portletId,
-					widgetPageWidgetInstance);
+			widgetPageWidgetInstanceResource.putSiteSitePageWidgetInstance(
+				testGroup.getExternalReferenceCode(),
+				_layout.getExternalReferenceCode(), portletId,
+				widgetPageWidgetInstance);
 
 		assertEquals(widgetPageWidgetInstance, putWidgetPageWidgetInstance);
 		assertValid(putWidgetPageWidgetInstance);
@@ -224,7 +212,7 @@ public class WidgetPageWidgetInstanceResourceTest
 		throws Exception {
 
 		WidgetPageWidgetInstance widgetPageWidgetInstance =
-			new WidgetPageWidgetInstance();
+			new BasicWidgetPageWidgetInstance();
 
 		String portletName = AssetPublisherPortletKeys.ASSET_PUBLISHER;
 
@@ -234,6 +222,8 @@ public class WidgetPageWidgetInstanceResourceTest
 
 		widgetPageWidgetInstance.setParentSectionId("column-1");
 		widgetPageWidgetInstance.setPosition(_position++);
+		widgetPageWidgetInstance.setType(
+			WidgetPageWidgetInstance.Type.BASIC_WIDGET_PAGE_WIDGET_INSTANCE);
 		widgetPageWidgetInstance.setWidgetInstanceId(
 			PortletIdCodec.decodeInstanceId(portletId));
 		widgetPageWidgetInstance.setWidgetName(portletName);
@@ -242,22 +232,8 @@ public class WidgetPageWidgetInstanceResourceTest
 	}
 
 	@Override
-	protected WidgetPageWidgetInstance
-			testGetSiteSiteByExternalReferenceCodeSitePageWidgetInstancesPage_addWidgetPageWidgetInstance(
-				String siteExternalReferenceCode,
-				String sitePageExternalReferenceCode,
-				WidgetPageWidgetInstance widgetPageWidgetInstance)
-		throws Exception {
-
-		return widgetPageWidgetInstanceResource.
-			postSiteSiteByExternalReferenceCodeSitePageWidgetInstance(
-				siteExternalReferenceCode, sitePageExternalReferenceCode,
-				widgetPageWidgetInstance);
-	}
-
-	@Override
 	protected String
-			testGetSiteSiteByExternalReferenceCodeSitePageWidgetInstancesPage_getSitePageExternalReferenceCode()
+			testGetSiteSitePageWidgetInstance_getSitePageExternalReferenceCode()
 		throws Exception {
 
 		return _layout.getExternalReferenceCode();
@@ -265,14 +241,34 @@ public class WidgetPageWidgetInstanceResourceTest
 
 	@Override
 	protected WidgetPageWidgetInstance
-			testPostSiteSiteByExternalReferenceCodeSitePageWidgetInstance_addWidgetPageWidgetInstance(
+			testGetSiteSitePageWidgetInstancesPage_addWidgetPageWidgetInstance(
+				String siteExternalReferenceCode,
+				String sitePageExternalReferenceCode,
 				WidgetPageWidgetInstance widgetPageWidgetInstance)
 		throws Exception {
 
-		return widgetPageWidgetInstanceResource.
-			postSiteSiteByExternalReferenceCodeSitePageWidgetInstance(
-				testGroup.getExternalReferenceCode(),
-				_layout.getExternalReferenceCode(), widgetPageWidgetInstance);
+		return widgetPageWidgetInstanceResource.postSiteSitePageWidgetInstance(
+			siteExternalReferenceCode, sitePageExternalReferenceCode,
+			widgetPageWidgetInstance);
+	}
+
+	@Override
+	protected String
+			testGetSiteSitePageWidgetInstancesPage_getSitePageExternalReferenceCode()
+		throws Exception {
+
+		return _layout.getExternalReferenceCode();
+	}
+
+	@Override
+	protected WidgetPageWidgetInstance
+			testPostSiteSitePageWidgetInstance_addWidgetPageWidgetInstance(
+				WidgetPageWidgetInstance widgetPageWidgetInstance)
+		throws Exception {
+
+		return widgetPageWidgetInstanceResource.postSiteSitePageWidgetInstance(
+			testGroup.getExternalReferenceCode(),
+			_layout.getExternalReferenceCode(), widgetPageWidgetInstance);
 	}
 
 	private Layout _layout;

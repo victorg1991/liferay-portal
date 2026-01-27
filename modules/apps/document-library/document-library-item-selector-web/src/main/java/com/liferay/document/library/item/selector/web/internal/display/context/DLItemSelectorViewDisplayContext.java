@@ -30,6 +30,7 @@ import com.liferay.item.selector.ItemSelectorReturnTypeResolverHandler;
 import com.liferay.item.selector.criteria.file.criterion.CustomFileItemSelectorCriterion;
 import com.liferay.item.selector.criteria.info.item.criterion.InfoItemItemSelectorCriterion;
 import com.liferay.item.selector.taglib.servlet.taglib.util.RepositoryEntryBrowserTagUtil;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.dao.search.SearchPaginationUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -43,11 +44,9 @@ import com.liferay.portal.kernel.repository.RepositoryProviderUtil;
 import com.liferay.portal.kernel.repository.capabilities.FileEntryTypeCapability;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.Folder;
-import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
-import com.liferay.portal.kernel.search.SearchResult;
 import com.liferay.portal.kernel.search.SearchResultUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
@@ -72,7 +71,6 @@ import jakarta.portlet.PortletURL;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -191,44 +189,37 @@ public class DLItemSelectorViewDisplayContext<T extends ItemSelectorCriterion> {
 		).setParameter(
 			"folderId", getFolderId()
 		).setParameter(
-			"selectedTab", getTitle()
+			"selectedTab", _getSelectedTab()
 		).buildPortletURL();
 	}
 
 	public List<Object> getRepositoryEntries() throws Exception {
 		if (_isSearch()) {
-			Hits hits = _getHits();
-
-			Document[] docs = hits.getDocs();
-
-			List<Object> repositoryEntries = new ArrayList<>(docs.length);
-
-			List<SearchResult> searchResults =
+			return TransformUtil.transform(
 				SearchResultUtil.getSearchResults(
-					hits, _themeDisplay.getLocale());
+					_getHits(), _themeDisplay.getLocale()),
+				searchResult -> {
+					String className = searchResult.getClassName();
 
-			for (SearchResult searchResult : searchResults) {
-				String className = searchResult.getClassName();
+					if (className.equals(DLFileEntryConstants.getClassName())) {
+						return DLAppServiceUtil.getFileEntry(
+							searchResult.getClassPK());
+					}
 
-				if (className.equals(DLFileEntryConstants.getClassName())) {
-					repositoryEntries.add(
-						DLAppServiceUtil.getFileEntry(
-							searchResult.getClassPK()));
-				}
-				else if (className.equals(
+					if (className.equals(
 							DLFileShortcutConstants.getClassName())) {
 
-					repositoryEntries.add(
-						DLAppServiceUtil.getFileShortcut(
-							searchResult.getClassPK()));
-				}
-				else if (className.equals(DLFolderConstants.getClassName())) {
-					repositoryEntries.add(
-						DLAppServiceUtil.getFolder(searchResult.getClassPK()));
-				}
-			}
+						return DLAppServiceUtil.getFileShortcut(
+							searchResult.getClassPK());
+					}
 
-			return repositoryEntries;
+					if (className.equals(DLFolderConstants.getClassName())) {
+						return DLAppServiceUtil.getFolder(
+							searchResult.getClassPK());
+					}
+
+					return null;
+				});
 		}
 
 		OrderByComparator<Object> repositoryModelOrderByComparator =
@@ -580,6 +571,16 @@ public class DLItemSelectorViewDisplayContext<T extends ItemSelectorCriterion> {
 		return _searchContext;
 	}
 
+	private String _getSelectedTab() {
+		if (_selectedTab != null) {
+			return _selectedTab;
+		}
+
+		_selectedTab = ParamUtil.getString(_httpServletRequest, "selectedTab");
+
+		return _selectedTab;
+	}
+
 	private long _getStagingAwareGroupId() {
 		if (_groupId != null) {
 			return _groupId;
@@ -667,6 +668,7 @@ public class DLItemSelectorViewDisplayContext<T extends ItemSelectorCriterion> {
 	private Repository _repository;
 	private final boolean _search;
 	private SearchContext _searchContext;
+	private String _selectedTab;
 	private Boolean _showDragAndDropZone;
 	private final StagingGroupHelper _stagingGroupHelper;
 	private int[] _startAndEnd;

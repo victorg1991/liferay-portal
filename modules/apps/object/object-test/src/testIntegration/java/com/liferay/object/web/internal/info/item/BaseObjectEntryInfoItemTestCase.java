@@ -77,7 +77,8 @@ public abstract class BaseObjectEntryInfoItemTestCase {
 						RandomTestUtil.randomString())
 				).name(
 					"name"
-				).build()));
+				).build()),
+			false);
 
 		_objectEntry1 = ObjectEntryTestUtil.addObjectEntry(
 			0, _objectDefinition1.getObjectDefinitionId(),
@@ -93,7 +94,8 @@ public abstract class BaseObjectEntryInfoItemTestCase {
 						RandomTestUtil.randomString())
 				).name(
 					"name"
-				).build()));
+				).build()),
+			false);
 
 		objectEntry2 = ObjectEntryTestUtil.addObjectEntry(
 			0, objectDefinition2.getObjectDefinitionId(),
@@ -117,13 +119,13 @@ public abstract class BaseObjectEntryInfoItemTestCase {
 	}
 
 	protected void assertObjectEntryValues(String name1, String name2) {
-		_objectEntry1 = _objectEntryLocalService.fetchObjectEntry(
+		_objectEntry1 = objectEntryLocalService.fetchObjectEntry(
 			_objectEntry1.getObjectEntryId());
 
 		Assert.assertEquals(
 			name1, MapUtil.getString(_objectEntry1.getValues(), "name"));
 
-		objectEntry2 = _objectEntryLocalService.fetchObjectEntry(
+		objectEntry2 = objectEntryLocalService.fetchObjectEntry(
 			objectEntry2.getObjectEntryId());
 
 		Assert.assertEquals(
@@ -179,6 +181,9 @@ public abstract class BaseObjectEntryInfoItemTestCase {
 
 	protected ObjectEntry objectEntry2;
 
+	@Inject
+	protected ObjectEntryLocalService objectEntryLocalService;
+
 	private ServiceContext _getServiceContext() throws Exception {
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext();
@@ -213,10 +218,6 @@ public abstract class BaseObjectEntryInfoItemTestCase {
 	private ObjectDefinition _objectDefinition1;
 
 	private ObjectEntry _objectEntry1;
-
-	@Inject
-	private ObjectEntryLocalService _objectEntryLocalService;
-
 	private ObjectField _objectField;
 
 	@Inject

@@ -193,11 +193,11 @@ public class JavaParser {
 		if (rcurlyDetailAST != null) {
 			JavaClosingBrace javaClosingBrace = new JavaClosingBrace();
 
-			String curlyExpecedIndent = _getExpectedIndent(
+			String curlyExpectedIndent = _getExpectedIndent(
 				rcurlyDetailAST, fileContents);
 
 			String content = javaClosingBrace.toString(
-				curlyExpecedIndent, StringPool.BLANK, maxLineLength);
+				curlyExpectedIndent, StringPool.BLANK, maxLineLength);
 
 			parsedJavaClass.addJavaTerm(
 				content, DetailASTUtil.getStartPosition(rcurlyDetailAST),
@@ -1172,32 +1172,32 @@ public class JavaParser {
 			}
 		}
 		else if (detailAST.getType() == TokenTypes.LITERAL_SWITCH) {
-			List<DetailAST> caseGroupDetailASTList =
+			List<DetailAST> caseGroupDetailASTs =
 				DetailASTUtil.getAllChildTokens(
 					detailAST, false, TokenTypes.CASE_GROUP);
 
-			for (DetailAST caseGroupDetailAST : caseGroupDetailASTList) {
+			for (DetailAST caseGroupDetailAST : caseGroupDetailASTs) {
 				parsedJavaClass = _parseDetailAST(
 					parsedJavaClass, caseGroupDetailAST, fileContents,
 					maxLineLength);
 			}
 
-			List<DetailAST> switchRuleDetailASTList =
+			List<DetailAST> switchRuleDetailASTs =
 				DetailASTUtil.getAllChildTokens(
 					detailAST, false, TokenTypes.SWITCH_RULE);
 
-			for (DetailAST switchRuleDetailAST : switchRuleDetailASTList) {
+			for (DetailAST switchRuleDetailAST : switchRuleDetailASTs) {
 				parsedJavaClass = _parseDetailAST(
 					parsedJavaClass, switchRuleDetailAST, fileContents,
 					maxLineLength);
 			}
 		}
 		else if (detailAST.getType() == TokenTypes.LITERAL_TRY) {
-			List<DetailAST> literalCatchDetailASTList =
+			List<DetailAST> literalCatchDetailASTs =
 				DetailASTUtil.getAllChildTokens(
 					detailAST, false, TokenTypes.LITERAL_CATCH);
 
-			for (DetailAST literalCatchDetailAST : literalCatchDetailASTList) {
+			for (DetailAST literalCatchDetailAST : literalCatchDetailASTs) {
 				parsedJavaClass = _parseDetailAST(
 					parsedJavaClass, literalCatchDetailAST, fileContents,
 					maxLineLength);
@@ -1344,10 +1344,10 @@ public class JavaParser {
 		}
 
 		public void addReplaceContent(
-			String content, int startlineNumber, int endLineNumber) {
+			String content, int startLineNumber, int endLineNumber) {
 
 			_replaceContentMap.put(
-				startlineNumber, new Tuple(content, endLineNumber));
+				startLineNumber, new Tuple(content, endLineNumber));
 		}
 
 		public Tuple getReplaceContentTuple(int lineNumber) {

@@ -15,7 +15,6 @@ if (!user.isOnDemandUser()) {
 	portletDisplay.setShowBackIcon(true);
 }
 else {
-	portletDisplay.setBeta(true);
 	portletDisplay.setShowBackIcon(false);
 }
 
@@ -30,14 +29,12 @@ renderResponse.setTitle(LanguageUtil.get(request, "review-changes"));
 		/>
 	</div>
 
-	<c:if test='<%= FeatureFlagManagerUtil.isEnabled("LPD-20131") %>'>
-		<div>
-			<react:component
-				module="{ChangeTrackingOverview} from change-tracking-web"
-				props="<%= viewChangesDisplayContext.getItemsOverview() %>"
-			/>
-		</div>
-	</c:if>
+	<div>
+		<react:component
+			module="{ChangeTrackingOverview} from change-tracking-web"
+			props="<%= viewChangesDisplayContext.getItemsOverview() %>"
+		/>
+	</div>
 
 	<clay:navigation-bar
 		navigationItems="<%= viewChangesDisplayContext.getViewNavigationItems() %>"
@@ -54,6 +51,7 @@ renderResponse.setTitle(LanguageUtil.get(request, "review-changes"));
 			id="<%= PublicationsFDSNames.PUBLICATIONS_CHANGES %>"
 			selectedItemsKey="id"
 			selectionType="multiple"
+			style="fluid"
 		/>
 	</aui:form>
 </div>

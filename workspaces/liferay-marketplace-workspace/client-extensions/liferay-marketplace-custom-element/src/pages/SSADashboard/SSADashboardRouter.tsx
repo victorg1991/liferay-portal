@@ -1,0 +1,38 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {Route, Routes} from 'react-router-dom';
+
+import withProviders from '../../hoc/withProviders';
+import SSADashboardOutlet from './SSADashboardOutlet';
+import ManageUsers from './pages/ManageUsers';
+import MySaaSTrials from './pages/MySaaSTrials';
+import SaaSTrials from './pages/SaaSTrial';
+import TrialDetails from './pages/TrialDetails';
+
+import './index.scss';
+
+const SSADashboardRouter = () => (
+	<Routes>
+		<Route element={<SSADashboardOutlet />}>
+			<Route element={<MySaaSTrials />} index />
+
+			<Route element={<SaaSTrials />} path="saas-trials" />
+
+			<Route element={<TrialDetails />} path="details/:orderId" />
+
+			<Route element={<ManageUsers />} path="manage-users" />
+		</Route>
+	</Routes>
+);
+
+export default withProviders(SSADashboardRouter, {
+	breadcrumbProps: {
+		hiddenPaths: ['ssa-dashboard#/details'],
+	},
+	withBreadcrumbs: true,
+	withErrorBoundary: true,
+	withHashRouter: true,
+});

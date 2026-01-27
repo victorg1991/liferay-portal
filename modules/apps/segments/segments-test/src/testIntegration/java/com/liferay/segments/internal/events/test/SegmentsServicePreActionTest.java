@@ -43,6 +43,7 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.segments.configuration.SegmentsCompanyConfiguration;
 import com.liferay.segments.configuration.SegmentsConfiguration;
+import com.liferay.segments.configuration.provider.SegmentsConfigurationProvider;
 import com.liferay.segments.constants.SegmentsEntryConstants;
 import com.liferay.segments.constants.SegmentsWebKeys;
 import com.liferay.segments.model.SegmentsExperience;
@@ -103,6 +104,9 @@ public class SegmentsServicePreActionTest {
 								"segmentationEnabled", true
 							).build())) {
 
+				_segmentsConfigurationProvider.
+					clearSegmentsCompanyConfigurations();
+
 				LifecycleAction lifecycleAction = _getLifecycleAction();
 
 				MockHttpServletRequest mockHttpServletRequest =
@@ -124,7 +128,7 @@ public class SegmentsServicePreActionTest {
 					UnicodePropertiesBuilder.put(
 						LayoutTypeSettingsConstants.KEY_PUBLISHED, "true"
 					).buildString(),
-					false, false, Collections.emptyMap(), 0, serviceContext);
+					false, false, Collections.emptyMap(), null, serviceContext);
 
 				mockHttpServletRequest.setAttribute(
 					WebKeys.THEME_DISPLAY, _getThemeDisplay(layout));
@@ -159,6 +163,9 @@ public class SegmentsServicePreActionTest {
 								"segmentationEnabled", true
 							).build())) {
 
+				_segmentsConfigurationProvider.
+					clearSegmentsCompanyConfigurations();
+
 				LifecycleAction lifecycleAction = _getLifecycleAction();
 
 				MockHttpServletRequest mockHttpServletRequest =
@@ -176,7 +183,7 @@ public class SegmentsServicePreActionTest {
 					UnicodePropertiesBuilder.put(
 						LayoutTypeSettingsConstants.KEY_PUBLISHED, "true"
 					).buildString(),
-					false, false, Collections.emptyMap(), 0,
+					false, false, Collections.emptyMap(), null,
 					ServiceContextTestUtil.getServiceContext(
 						_group.getGroupId(), TestPropsValues.getUserId()));
 
@@ -235,6 +242,9 @@ public class SegmentsServicePreActionTest {
 								"segmentationEnabled", true
 							).build())) {
 
+				_segmentsConfigurationProvider.
+					clearSegmentsCompanyConfigurations();
+
 				LifecycleAction lifecycleAction = _getLifecycleAction();
 
 				MockHttpServletRequest mockHttpServletRequest =
@@ -256,7 +266,7 @@ public class SegmentsServicePreActionTest {
 					UnicodePropertiesBuilder.put(
 						LayoutTypeSettingsConstants.KEY_PUBLISHED, "true"
 					).buildString(),
-					false, false, Collections.emptyMap(), 0, serviceContext);
+					false, false, Collections.emptyMap(), null, serviceContext);
 
 				mockHttpServletRequest.setAttribute(
 					WebKeys.THEME_DISPLAY, _getThemeDisplay(layout));
@@ -299,6 +309,9 @@ public class SegmentsServicePreActionTest {
 								"segmentationEnabled", true
 							).build())) {
 
+				_segmentsConfigurationProvider.
+					clearSegmentsCompanyConfigurations();
+
 				LifecycleAction lifecycleAction = _getLifecycleAction();
 
 				MockHttpServletRequest mockHttpServletRequest =
@@ -340,6 +353,9 @@ public class SegmentsServicePreActionTest {
 								"segmentationEnabled", true
 							).build())) {
 
+				_segmentsConfigurationProvider.
+					clearSegmentsCompanyConfigurations();
+
 				LifecycleAction lifecycleAction = _getLifecycleAction();
 
 				MockHttpServletRequest mockHttpServletRequest =
@@ -380,6 +396,9 @@ public class SegmentsServicePreActionTest {
 								"segmentationEnabled", true
 							).build())) {
 
+				_segmentsConfigurationProvider.
+					clearSegmentsCompanyConfigurations();
+
 				LifecycleAction lifecycleAction = _getLifecycleAction();
 
 				MockHttpServletRequest mockHttpServletRequest =
@@ -401,7 +420,7 @@ public class SegmentsServicePreActionTest {
 					UnicodePropertiesBuilder.put(
 						LayoutTypeSettingsConstants.KEY_PUBLISHED, "true"
 					).buildString(),
-					false, false, Collections.emptyMap(), 0, serviceContext);
+					false, false, Collections.emptyMap(), null, serviceContext);
 
 				mockHttpServletRequest.setAttribute(
 					WebKeys.THEME_DISPLAY, _getThemeDisplay(layout));
@@ -489,6 +508,9 @@ public class SegmentsServicePreActionTest {
 
 	@Inject
 	private Portal _portal;
+
+	@Inject
+	private SegmentsConfigurationProvider _segmentsConfigurationProvider;
 
 	@Inject
 	private SegmentsExperienceLocalService _segmentsExperienceLocalService;

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2026 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -15,6 +15,7 @@ export class ApplicationsMenuPage {
 	private readonly announcementsItem: Locator;
 	private readonly apiBuilderMenuItem: Locator;
 	readonly applicationsMenuTabButton: Locator;
+	private readonly appManagerMenuItem: Locator;
 	private readonly auditItem: Locator;
 	private readonly blueprintsItem: Locator;
 	private readonly clientExtensionsLink: Locator;
@@ -23,9 +24,11 @@ export class ApplicationsMenuPage {
 	private readonly commerceCurrenciesMenuItem: Locator;
 	private readonly commerceDiscountsMenuItem: Locator;
 	private readonly commerceHealthCheckMenuItem: Locator;
+	private readonly commerceInventoryMenuItem: Locator;
 	private readonly commerceOrdersMenuItem: Locator;
 	private readonly commerceOrderTypesMenuItem: Locator;
 	private readonly commercePanelButton: Locator;
+	private readonly commercePriceListsMenuItem: Locator;
 	private readonly commerceProductConfigurationListsMenuItem: Locator;
 	private readonly commerceReturnsMenuItem: Locator;
 	private readonly commerceShipmentsMenuItem: Locator;
@@ -39,15 +42,18 @@ export class ApplicationsMenuPage {
 	private readonly dataMigrationCenterMenuItem: Locator;
 	private readonly dataSetManagerMenuItem: Locator;
 	private readonly defaultPermissionsLink: Locator;
+	private readonly digitalSalesRoomsMenuItem: Locator;
 	readonly exportMenuItem: Locator;
 	private readonly gogoShellItem: Locator;
 	private readonly homePage: HomePage;
 	readonly importMenuItem: Locator;
 	private readonly instanceSettingsMenuItem: Locator;
 	private readonly jobSchedulerMenuItem: Locator;
+	private readonly licenseManagerMenuItem: Locator;
 	private readonly metricsItem: Locator;
 	private readonly oAuth2Administration: Locator;
 	private readonly objectsMenuItem: Locator;
+	private readonly onDemandAdminItem: Locator;
 	private readonly page: Page;
 	private readonly passwordPoliciesAdminItem: Locator;
 	private readonly paymentsMenuItem: Locator;
@@ -66,6 +72,7 @@ export class ApplicationsMenuPage {
 	private readonly systemSettingsItem: Locator;
 	private readonly userGroupsItem: Locator;
 	private readonly usersAndOrganizationsItem: Locator;
+	readonly viewAllLink: Locator;
 	private readonly virtualInstancesItem: Locator;
 
 	constructor(page: Page) {
@@ -95,6 +102,10 @@ export class ApplicationsMenuPage {
 		});
 		this.applicationsMenuTabButton = page.getByRole('tab', {
 			name: 'Applications',
+		});
+		this.appManagerMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'App Manager',
 		});
 		this.auditItem = page.getByRole('menuitem', {
 			exact: true,
@@ -127,6 +138,10 @@ export class ApplicationsMenuPage {
 			exact: true,
 			name: 'Health Check',
 		});
+		this.commerceInventoryMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'Inventory',
+		});
 		this.commerceOrdersMenuItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Orders',
@@ -137,6 +152,10 @@ export class ApplicationsMenuPage {
 		});
 		this.commercePanelButton = page.getByRole('tab', {
 			name: 'Commerce',
+		});
+		this.commercePriceListsMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'Price Lists',
 		});
 		this.commerceProductConfigurationListsMenuItem = page.getByRole(
 			'menuitem',
@@ -192,6 +211,10 @@ export class ApplicationsMenuPage {
 			exact: true,
 			name: 'Default Permissions',
 		});
+		this.digitalSalesRoomsMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'Digital Sales Rooms',
+		});
 		this.exportMenuItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Export',
@@ -213,6 +236,10 @@ export class ApplicationsMenuPage {
 			exact: true,
 			name: 'Job Scheduler',
 		});
+		this.licenseManagerMenuItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'License Manager',
+		});
 		this.metricsItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Metrics',
@@ -224,6 +251,10 @@ export class ApplicationsMenuPage {
 		this.objectsMenuItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Objects',
+		});
+		this.onDemandAdminItem = page.getByRole('menuitem', {
+			exact: true,
+			name: 'On-Demand Admin',
 		});
 		this.page = page;
 		this.passwordPoliciesAdminItem = page.getByRole('menuitem', {
@@ -294,6 +325,7 @@ export class ApplicationsMenuPage {
 			exact: true,
 			name: 'Users and Organizations',
 		});
+		this.viewAllLink = page.getByRole('button', {name: 'View All'});
 		this.virtualInstancesItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Virtual Instances',
@@ -365,6 +397,11 @@ export class ApplicationsMenuPage {
 		await this.applicationsMenuTabButton.click();
 	}
 
+	async goToAppManager() {
+		await this.goToControlPanel();
+		await this.appManagerMenuItem.click();
+	}
+
 	async goToAudit() {
 		await this.goto();
 		await this.controlPanelButton.click();
@@ -406,6 +443,11 @@ export class ApplicationsMenuPage {
 		await this.commerceHealthCheckMenuItem.click();
 	}
 
+	async goToCommerceInventory(checkTabVisibility = true) {
+		await this.goToCommercePanel(checkTabVisibility);
+		await this.commerceInventoryMenuItem.click();
+	}
+
 	async goToCommerceOrders(checkTabVisibility = true) {
 		await this.goToCommercePanel(checkTabVisibility);
 		await this.commerceOrdersMenuItem.click();
@@ -419,6 +461,11 @@ export class ApplicationsMenuPage {
 	async goToCommercePanel(checkTabVisibility = true) {
 		await this.goto(checkTabVisibility);
 		await this.commercePanelButton.click();
+	}
+
+	async goToCommercePriceLists(checkTabVisibility = true) {
+		await this.goToCommercePanel(checkTabVisibility);
+		await this.commercePriceListsMenuItem.click();
 	}
 
 	async goToCommerceProductConfigurationLists(checkTabVisibility = true) {
@@ -496,6 +543,11 @@ export class ApplicationsMenuPage {
 		await this.defaultPermissionsLink.click();
 	}
 
+	async goToDigitalSalesRooms() {
+		await this.goToCommercePanel();
+		await this.digitalSalesRoomsMenuItem.click();
+	}
+
 	async goToExport() {
 		await this.goToApplicationsMenu();
 		await this.exportMenuItem.click();
@@ -534,6 +586,11 @@ export class ApplicationsMenuPage {
 		await this.jobSchedulerMenuItem.click();
 	}
 
+	async goToLicenseManager() {
+		await this.goToControlPanel();
+		await this.licenseManagerMenuItem.click();
+	}
+
 	async goToMetrics() {
 		await this.goToApplicationsMenu();
 		await this.metricsItem.click();
@@ -554,6 +611,11 @@ export class ApplicationsMenuPage {
 	async goToObjects() {
 		await this.goToControlPanel();
 		await this.objectsMenuItem.click();
+	}
+
+	async goToOnDemandAdmin() {
+		await this.goToControlPanel();
+		await this.onDemandAdminItem.click();
 	}
 
 	async goToPasswordPolicies() {

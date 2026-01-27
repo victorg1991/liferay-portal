@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {openModal} from 'frontend-js-components-web';
 import {fetch, sub} from 'frontend-js-web';
 
+import {openCMSModal} from './openCMSModal';
 import {displayErrorToast, displayRequestSuccessToast} from './toastUtil';
 
 const openGenericFDSDeleteConfirmationModal = (
@@ -13,9 +13,10 @@ const openGenericFDSDeleteConfirmationModal = (
 	deleteMethod: any,
 	deleteURL: any,
 	itemName: string,
-	loadData: any
+	loadData: any,
+	displayCustomSuccessToast?: () => void
 ) => {
-	openModal({
+	openCMSModal({
 		bodyHTML,
 		buttons: [
 			{
@@ -40,7 +41,12 @@ const openGenericFDSDeleteConfirmationModal = (
 							method: deleteMethod,
 						})
 							.then(() => {
-								displayRequestSuccessToast();
+								if (displayCustomSuccessToast) {
+									displayCustomSuccessToast();
+								}
+								else {
+									displayRequestSuccessToast();
+								}
 
 								loadData();
 							})

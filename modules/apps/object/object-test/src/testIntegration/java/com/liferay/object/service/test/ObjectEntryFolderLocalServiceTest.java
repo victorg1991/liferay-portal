@@ -7,6 +7,10 @@ package com.liferay.object.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.depot.constants.DepotRolesConstants;
+import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
+import com.liferay.exportimport.report.constants.ExportImportReportEntryConstants;
+import com.liferay.exportimport.report.model.ExportImportReportEntry;
+import com.liferay.exportimport.report.service.ExportImportReportEntryLocalService;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectEntryFolderConstants;
 import com.liferay.object.constants.ObjectFieldConstants;
@@ -21,9 +25,11 @@ import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.model.ObjectEntryFolder;
+import com.liferay.object.related.models.test.util.ObjectEntryTestUtil;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryFolderLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
+import com.liferay.object.test.util.ObjectEntryFolderTestUtil;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.lazy.referencing.LazyReferencingThreadLocal;
@@ -44,18 +50,25 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
+import com.liferay.trash.model.TrashEntry;
+import com.liferay.trash.service.TrashEntryLocalService;
 
 import java.io.Serializable;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
@@ -80,7 +93,9 @@ public class ObjectEntryFolderLocalServiceTest {
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -198,6 +213,19 @@ public class ObjectEntryFolderLocalServiceTest {
 				ResourceConstants.SCOPE_INDIVIDUAL,
 				String.valueOf(objectEntryFolder.getObjectEntryFolderId()),
 				role.getRoleId(), ActionKeys.ADD_ENTRY));
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testCopyObjectEntryFolder() throws Exception {
+		Group group1 = GroupTestUtil.addGroup();
+		Group group2 = GroupTestUtil.addGroup();
+
+		_testCopyObjectEntryFolder(group1.getGroupId());
+		_testCopyObjectEntryFolderDuplicateName(group1.getGroupId());
+		_testCopyObjectEntryFolderReplace(group1.getGroupId());
+		_testCopyObjectEntryFolderGroup(
+			group1.getGroupId(), group2.getGroupId());
 	}
 
 	@Test
@@ -321,38 +349,62 @@ public class ObjectEntryFolderLocalServiceTest {
 
 	@Test
 	@TestInfo("LPD-56833")
-	public void testGetOrAddIncompleteObjectEntryFolder() throws Exception {
+	public void testGetOrAddEmptyObjectEntryFolder() throws Exception {
 
 		// Lazy referencing disabled
 
 		String externalReferenceCode = RandomTestUtil.randomString();
 
 		AssertUtils.assertFailure(
-			NoSuchObjectEntryFolderException.class, null,
-			() ->
-				_objectEntryFolderLocalService.
-					getOrAddIncompleteObjectEntryFolder(
-						externalReferenceCode, TestPropsValues.getGroupId(),
-						TestPropsValues.getCompanyId(),
-						TestPropsValues.getUserId(),
-						ServiceContextTestUtil.getServiceContext()));
+			NoSuchObjectEntryFolderException.class,
+			String.format(
+				"No ObjectEntryFolder exists with the key {" +
+					"externalReferenceCode=%s, groupId=%s, companyId=%s}",
+				externalReferenceCode, TestPropsValues.getGroupId(),
+				TestPropsValues.getCompanyId()),
+			() -> _objectEntryFolderLocalService.getOrAddEmptyObjectEntryFolder(
+				externalReferenceCode, TestPropsValues.getGroupId(),
+				TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+				ServiceContextTestUtil.getServiceContext()));
 
 		// Lazy referencing enabled
 
 		try (SafeCloseable safeCloseable =
 				LazyReferencingThreadLocal.setEnabledWithSafeCloseable(true)) {
 
+			long exportImportConfigurationId = RandomTestUtil.randomLong();
+
+			ExportImportThreadLocal.setExportImportConfigurationId(
+				exportImportConfigurationId);
+
 			ObjectEntryFolder objectEntryFolder =
-				_objectEntryFolderLocalService.
-					getOrAddIncompleteObjectEntryFolder(
-						externalReferenceCode, TestPropsValues.getGroupId(),
-						TestPropsValues.getCompanyId(),
-						TestPropsValues.getUserId(),
-						ServiceContextTestUtil.getServiceContext());
+				_objectEntryFolderLocalService.getOrAddEmptyObjectEntryFolder(
+					externalReferenceCode, TestPropsValues.getGroupId(),
+					TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+					ServiceContextTestUtil.getServiceContext());
 
 			Assert.assertEquals(
-				WorkflowConstants.STATUS_INCOMPLETE,
-				objectEntryFolder.getStatus());
+				WorkflowConstants.STATUS_EMPTY, objectEntryFolder.getStatus());
+
+			List<ExportImportReportEntry> exportImportReportEntries =
+				_exportImportReportEntryLocalService.
+					getExportImportReportEntries(
+						TestPropsValues.getCompanyId(),
+						exportImportConfigurationId);
+
+			Assert.assertEquals(
+				exportImportReportEntries.toString(), 1,
+				exportImportReportEntries.size());
+			Assert.assertTrue(
+				ListUtil.exists(
+					exportImportReportEntries,
+					exportImportReportEntry ->
+						Objects.equals(
+							exportImportReportEntry.
+								getClassExternalReferenceCode(),
+							externalReferenceCode) &&
+						(exportImportReportEntry.getType() ==
+							ExportImportReportEntryConstants.TYPE_EMPTY)));
 
 			objectEntryFolder =
 				_objectEntryFolderLocalService.updateObjectEntryFolder(
@@ -368,6 +420,158 @@ public class ObjectEntryFolderLocalServiceTest {
 				WorkflowConstants.STATUS_APPROVED,
 				objectEntryFolder.getStatus());
 		}
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testMoveObjectEntryFolder() throws Exception {
+		Group group1 = GroupTestUtil.addGroup();
+		Group group2 = GroupTestUtil.addGroup();
+
+		_testMoveObjectEntryFolder(group1.getGroupId());
+		_testMoveObjectEntryFolderDuplicateName(group1.getGroupId());
+		_testMoveObjectEntryFolderReplace(group1.getGroupId());
+		_testMoveObjectEntryFolderGroup(
+			group1.getGroupId(), group2.getGroupId());
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testMoveObjectEntryFolderToTrash() throws Exception {
+		Group group = GroupTestUtil.addGroup();
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(group.getGroupId());
+
+		ObjectEntry objectEntry1 = ObjectEntryTestUtil.addObjectEntry(
+			group.getGroupId(), _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(
+				group.getGroupId(),
+				objectEntryFolder1.getObjectEntryFolderId());
+
+		ObjectEntry objectEntry2 = ObjectEntryTestUtil.addObjectEntry(
+			group.getGroupId(), _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder2.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder3 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(
+				group.getGroupId(),
+				objectEntryFolder2.getObjectEntryFolderId());
+
+		ObjectEntry objectEntry3 = ObjectEntryTestUtil.addObjectEntry(
+			group.getGroupId(), _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder3.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		objectEntryFolder2 =
+			_objectEntryFolderLocalService.moveObjectEntryFolderToTrash(
+				TestPropsValues.getUserId(), objectEntryFolder2,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+			objectEntryFolder2.getParentObjectEntryFolderId());
+
+		TrashEntry trashEntry = _trashEntryLocalService.fetchEntry(
+			ObjectEntryFolder.class.getName(),
+			objectEntryFolder2.getObjectEntryFolderId());
+
+		Assert.assertEquals(
+			objectEntryFolder1.getObjectEntryFolderId(),
+			GetterUtil.getLong(
+				trashEntry.getTypeSettingsProperty(
+					"parentObjectEntryFolderId")));
+
+		_assertObjectEntryFolderStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			objectEntryFolder1.getObjectEntryFolderId());
+		_assertObjectEntryFolderStatus(
+			WorkflowConstants.STATUS_IN_TRASH,
+			objectEntryFolder2.getObjectEntryFolderId());
+		_assertObjectEntryFolderStatus(
+			WorkflowConstants.STATUS_IN_TRASH,
+			objectEntryFolder3.getObjectEntryFolderId());
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED, objectEntry1.getObjectEntryId());
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_IN_TRASH, objectEntry2.getObjectEntryId());
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_IN_TRASH, objectEntry3.getObjectEntryId());
+
+		_objectEntryFolderLocalService.deleteObjectEntryFolder(
+			objectEntryFolder2.getObjectEntryFolderId());
+
+		Assert.assertNull(
+			_trashEntryLocalService.fetchEntry(
+				ObjectEntryFolder.class.getName(),
+				objectEntryFolder2.getObjectEntryFolderId()));
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testRestoreObjectEntryFolderFromTrash() throws Exception {
+		Group group = GroupTestUtil.addGroup();
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(group.getGroupId());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(
+				group.getGroupId(),
+				objectEntryFolder1.getObjectEntryFolderId());
+
+		ObjectEntry objectEntry1 = ObjectEntryTestUtil.addObjectEntry(
+			group.getGroupId(), _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder2.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		objectEntryFolder2 =
+			_objectEntryFolderLocalService.restoreObjectEntryFolderFromTrash(
+				TestPropsValues.getUserId(),
+				_objectEntryFolderLocalService.moveObjectEntryFolderToTrash(
+					TestPropsValues.getUserId(), objectEntryFolder2,
+					ServiceContextTestUtil.getServiceContext()),
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder1.getObjectEntryFolderId(),
+			objectEntryFolder2.getParentObjectEntryFolderId());
+
+		_assertObjectEntryFolderStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			objectEntryFolder1.getObjectEntryFolderId());
+		_assertObjectEntryFolderStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			objectEntryFolder2.getObjectEntryFolderId());
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED, objectEntry1.getObjectEntryId());
+
+		objectEntryFolder2 =
+			_objectEntryFolderLocalService.moveObjectEntryFolderToTrash(
+				TestPropsValues.getUserId(), objectEntryFolder2,
+				ServiceContextTestUtil.getServiceContext());
+
+		_objectEntryFolderLocalService.deleteObjectEntryFolder(
+			objectEntryFolder1.getObjectEntryFolderId());
+
+		objectEntryFolder2 =
+			_objectEntryFolderLocalService.restoreObjectEntryFolderFromTrash(
+				TestPropsValues.getUserId(), objectEntryFolder2,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+			objectEntryFolder2.getParentObjectEntryFolderId());
+
+		Assert.assertNull(
+			_trashEntryLocalService.fetchEntry(
+				ObjectEntryFolder.class.getName(),
+				objectEntryFolder2.getObjectEntryFolderId()));
 	}
 
 	@Test
@@ -506,8 +710,8 @@ public class ObjectEntryFolderLocalServiceTest {
 	private ObjectDefinition _addObjectDefinition() throws Exception {
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
-				TestPropsValues.getUserId(), 0, null, false, false, false,
-				false, false, false, false, null,
+				null, TestPropsValues.getUserId(), 0, null, false, true, false,
+				false, false, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(StringUtil.randomString()),
 				"A" + StringUtil.randomString(), null, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
@@ -518,7 +722,8 @@ public class ObjectEntryFolderLocalServiceTest {
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						ObjectFieldConstants.DB_TYPE_STRING,
-						RandomTestUtil.randomString(), "fieldName")));
+						RandomTestUtil.randomString(), "fieldName")),
+				Collections.emptyList(), new ServiceContext());
 
 		return _objectDefinitionLocalService.publishCustomObjectDefinition(
 			TestPropsValues.getUserId(),
@@ -552,6 +757,311 @@ public class ObjectEntryFolderLocalServiceTest {
 			name, ServiceContextTestUtil.getServiceContext());
 	}
 
+	private void _assertObjectEntryFolderStatus(
+		int expectedStatus, long objectEntryFolderId) {
+
+		ObjectEntryFolder objectEntryFolder =
+			_objectEntryFolderLocalService.fetchObjectEntryFolder(
+				objectEntryFolderId);
+
+		Assert.assertEquals(expectedStatus, objectEntryFolder.getStatus());
+	}
+
+	private void _assertObjectEntryStatus(
+		int expectedStatus, long objectEntryId) {
+
+		ObjectEntry objectEntry = _objectEntryLocalService.fetchObjectEntry(
+			objectEntryId);
+
+		Assert.assertEquals(expectedStatus, objectEntry.getStatus());
+	}
+
+	private void _testCopyObjectEntryFolder(long groupId) throws Exception {
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryTestUtil.addObjectEntry(
+			groupId, _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryFolder copyObjectEntryFolder =
+			_objectEntryFolderLocalService.copyObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), false,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			copyObjectEntryFolder.getParentObjectEntryFolderId(),
+			objectEntryFolder2.getObjectEntryFolderId());
+		Assert.assertEquals(
+			objectEntryFolder1.getName(), copyObjectEntryFolder.getName());
+		Assert.assertEquals(
+			1,
+			_objectEntryLocalService.getObjectEntryFolderObjectEntriesCount(
+				groupId, copyObjectEntryFolder.getObjectEntryFolderId()));
+	}
+
+	private void _testCopyObjectEntryFolderDuplicateName(long groupId)
+		throws Exception {
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		_objectEntryFolderLocalService.copyObjectEntryFolder(
+			TestPropsValues.getUserId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			objectEntryFolder2.getObjectEntryFolderId(), false,
+			ServiceContextTestUtil.getServiceContext());
+
+		ObjectEntryFolder copyObjectEntryFolder =
+			_objectEntryFolderLocalService.copyObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), false,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder2.getObjectEntryFolderId(),
+			copyObjectEntryFolder.getParentObjectEntryFolderId());
+		Assert.assertEquals(
+			objectEntryFolder1.getName() + " (Copy)",
+			copyObjectEntryFolder.getName());
+		Assert.assertEquals(
+			0,
+			_objectEntryLocalService.getObjectEntryFolderObjectEntriesCount(
+				groupId, copyObjectEntryFolder.getObjectEntryFolderId()));
+	}
+
+	private void _testCopyObjectEntryFolderGroup(
+			long sourceGroupId, long destinationGroupId)
+		throws Exception {
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(sourceGroupId);
+
+		ObjectEntryTestUtil.addObjectEntry(
+			sourceGroupId, _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(destinationGroupId);
+
+		ObjectEntryFolder copyObjectEntryFolder =
+			_objectEntryFolderLocalService.copyObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), true,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder2.getObjectEntryFolderId(),
+			copyObjectEntryFolder.getParentObjectEntryFolderId());
+		Assert.assertEquals(
+			1,
+			_objectEntryLocalService.getObjectEntryFolderObjectEntriesCount(
+				destinationGroupId,
+				copyObjectEntryFolder.getObjectEntryFolderId()));
+
+		Assert.assertNotNull(
+			_objectEntryFolderLocalService.fetchObjectEntryFolder(
+				objectEntryFolder1.getObjectEntryFolderId()));
+	}
+
+	private void _testCopyObjectEntryFolderReplace(long groupId)
+		throws Exception {
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryFolder duplicateObjectEntryFolder =
+			_objectEntryFolderLocalService.copyObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), false,
+				ServiceContextTestUtil.getServiceContext());
+
+		ObjectEntryFolder copyObjectEntryFolder =
+			_objectEntryFolderLocalService.copyObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), true,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder2.getObjectEntryFolderId(),
+			copyObjectEntryFolder.getParentObjectEntryFolderId());
+		Assert.assertEquals(
+			objectEntryFolder1.getName(), copyObjectEntryFolder.getName());
+
+		Assert.assertNull(
+			_objectEntryFolderLocalService.fetchObjectEntryFolder(
+				duplicateObjectEntryFolder.getObjectEntryFolderId()));
+	}
+
+	private void _testMoveObjectEntryFolder(long groupId) throws Exception {
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryTestUtil.addObjectEntry(
+			groupId, _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		objectEntryFolder1 =
+			_objectEntryFolderLocalService.moveObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), false,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder2.getObjectEntryFolderId(),
+			objectEntryFolder1.getParentObjectEntryFolderId());
+		Assert.assertEquals(
+			1,
+			_objectEntryLocalService.getObjectEntryFolderObjectEntriesCount(
+				groupId, objectEntryFolder1.getObjectEntryFolderId()));
+	}
+
+	private void _testMoveObjectEntryFolderDuplicateName(long groupId)
+		throws Exception {
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryTestUtil.addObjectEntry(
+			groupId, _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryFolder objectEntryFolder3 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(
+				groupId, objectEntryFolder2.getObjectEntryFolderId());
+
+		objectEntryFolder3.setName(objectEntryFolder1.getName());
+
+		objectEntryFolder3 =
+			_objectEntryFolderLocalService.updateObjectEntryFolder(
+				objectEntryFolder3);
+
+		objectEntryFolder1 =
+			_objectEntryFolderLocalService.moveObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), false,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder3.getName() + " (Copy)",
+			objectEntryFolder1.getName());
+		Assert.assertEquals(
+			objectEntryFolder2.getObjectEntryFolderId(),
+			objectEntryFolder1.getParentObjectEntryFolderId());
+		Assert.assertEquals(
+			1,
+			_objectEntryLocalService.getObjectEntryFolderObjectEntriesCount(
+				groupId, objectEntryFolder1.getObjectEntryFolderId()));
+	}
+
+	private void _testMoveObjectEntryFolderGroup(
+			long sourceGroupId, long destinationGroupId)
+		throws Exception {
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(sourceGroupId);
+
+		ObjectEntryTestUtil.addObjectEntry(
+			sourceGroupId, _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(destinationGroupId);
+
+		objectEntryFolder1 =
+			_objectEntryFolderLocalService.moveObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), false,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder2.getObjectEntryFolderId(),
+			objectEntryFolder1.getParentObjectEntryFolderId());
+		Assert.assertEquals(
+			1,
+			_objectEntryLocalService.getObjectEntryFolderObjectEntriesCount(
+				destinationGroupId,
+				objectEntryFolder1.getObjectEntryFolderId()));
+	}
+
+	private void _testMoveObjectEntryFolderReplace(long groupId)
+		throws Exception {
+
+		ObjectEntryFolder objectEntryFolder1 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryTestUtil.addObjectEntry(
+			groupId, _objectDefinition.getObjectDefinitionId(),
+			objectEntryFolder1.getObjectEntryFolderId(),
+			Collections.emptyMap());
+
+		ObjectEntryFolder objectEntryFolder2 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(groupId);
+
+		ObjectEntryFolder objectEntryFolder3 =
+			ObjectEntryFolderTestUtil.addObjectEntryFolder(
+				groupId, objectEntryFolder2.getObjectEntryFolderId());
+
+		objectEntryFolder3.setName(objectEntryFolder1.getName());
+
+		objectEntryFolder3 =
+			_objectEntryFolderLocalService.updateObjectEntryFolder(
+				objectEntryFolder3);
+
+		objectEntryFolder1 =
+			_objectEntryFolderLocalService.moveObjectEntryFolder(
+				TestPropsValues.getUserId(),
+				objectEntryFolder1.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), true,
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			objectEntryFolder3.getName(), objectEntryFolder1.getName());
+
+		Assert.assertNull(
+			_objectEntryFolderLocalService.fetchObjectEntryFolder(
+				objectEntryFolder3.getObjectEntryFolderId()));
+
+		Assert.assertEquals(
+			objectEntryFolder2.getObjectEntryFolderId(),
+			objectEntryFolder1.getParentObjectEntryFolderId());
+		Assert.assertEquals(
+			1,
+			_objectEntryLocalService.getObjectEntryFolderObjectEntriesCount(
+				groupId, objectEntryFolder1.getObjectEntryFolderId()));
+	}
+
+	@Inject
+	private ExportImportReportEntryLocalService
+		_exportImportReportEntryLocalService;
+
 	@DeleteAfterTestRun
 	private Group _group;
 
@@ -575,5 +1085,8 @@ public class ObjectEntryFolderLocalServiceTest {
 
 	private ServiceRegistration<ModelListener<ObjectEntryFolder>>
 		_serviceRegistration;
+
+	@Inject
+	private TrashEntryLocalService _trashEntryLocalService;
 
 }

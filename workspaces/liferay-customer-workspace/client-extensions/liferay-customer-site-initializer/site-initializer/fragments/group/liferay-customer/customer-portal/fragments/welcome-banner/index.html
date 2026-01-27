@@ -1,0 +1,46 @@
+[#assign
+	languageId = themeDisplay.getLanguageId()
+	userFirstName = themeDisplay.getUser().getFirstName()
+	userLastName = themeDisplay.getUser().getLastName()
+	welcomeText = languageUtil.get(locale, "welcome-to-customer-portal", "Welcome to Customer Portal")
+/]
+
+[#if languageId == "ja_JP" && userLastName?has_content]
+	[#assign welcomeText = languageUtil.format(locale, "welcome-x", userLastName)]
+[#elseif userFirstName?has_content]
+	[#assign welcomeText = languageUtil.format(locale, "welcome-x", userFirstName)]
+[/#if]
+
+<div class="align-items-center customer-portal-welcome-banner d-flex position-relative">
+	<div class="customer-portal-text ml-3 pl-5 text-neutral-0">
+		<div class="mb-4 pb-2">
+			${welcomeText}
+		</div>
+
+		<div>
+			<h2>
+				${languageUtil.get(locale, "projects")}
+			</h2>
+
+			<div class="text-paragraph">
+				${languageUtil.get(locale, "select-a-project-to-see-your-subscriptions-activate-your-products-and-view-team-members")}
+			</div>
+
+			<div class="text-container">
+				<div class="text-description">
+					${languageUtil.get(locale, "not-sure-how-to-start")}
+				</div>
+
+				<a href="https://support.liferay.com/w/getting-started-with-your-liferay-project-video-tutorials" target="_blank">
+					<button class="w-100">
+						<img class="customer-portal-img" src="[resources:icon_left.svg]" />
+
+						${languageUtil.get(locale, "view-our-resources")}
+					</button>
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<img class="customer-portal-welcome-img h-100 position-absolute w-100" src="[resources:banner_background_customer_portal.svg]" />
+</div>

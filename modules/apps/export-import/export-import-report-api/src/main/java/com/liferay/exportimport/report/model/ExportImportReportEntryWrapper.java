@@ -45,12 +45,15 @@ public class ExportImportReportEntryWrapper
 		attributes.put(
 			"classExternalReferenceCode", getClassExternalReferenceCode());
 		attributes.put("classNameId", getClassNameId());
+		attributes.put("classPK", getClassPK());
 		attributes.put(
 			"exportImportConfigurationId", getExportImportConfigurationId());
-		attributes.put("error", getError());
+		attributes.put("errorMessage", getErrorMessage());
 		attributes.put("errorStacktrace", getErrorStacktrace());
-		attributes.put("resolved", isResolved());
+		attributes.put("modelNameLanguageKey", getModelNameLanguageKey());
+		attributes.put("origin", getOrigin());
 		attributes.put("type", getType());
+		attributes.put("status", getStatus());
 
 		return attributes;
 	}
@@ -107,6 +110,12 @@ public class ExportImportReportEntryWrapper
 			setClassNameId(classNameId);
 		}
 
+		Long classPK = (Long)attributes.get("classPK");
+
+		if (classPK != null) {
+			setClassPK(classPK);
+		}
+
 		Long exportImportConfigurationId = (Long)attributes.get(
 			"exportImportConfigurationId");
 
@@ -114,10 +123,10 @@ public class ExportImportReportEntryWrapper
 			setExportImportConfigurationId(exportImportConfigurationId);
 		}
 
-		String error = (String)attributes.get("error");
+		String errorMessage = (String)attributes.get("errorMessage");
 
-		if (error != null) {
-			setError(error);
+		if (errorMessage != null) {
+			setErrorMessage(errorMessage);
 		}
 
 		String errorStacktrace = (String)attributes.get("errorStacktrace");
@@ -126,16 +135,29 @@ public class ExportImportReportEntryWrapper
 			setErrorStacktrace(errorStacktrace);
 		}
 
-		Boolean resolved = (Boolean)attributes.get("resolved");
+		String modelNameLanguageKey = (String)attributes.get(
+			"modelNameLanguageKey");
 
-		if (resolved != null) {
-			setResolved(resolved);
+		if (modelNameLanguageKey != null) {
+			setModelNameLanguageKey(modelNameLanguageKey);
+		}
+
+		Integer origin = (Integer)attributes.get("origin");
+
+		if (origin != null) {
+			setOrigin(origin);
 		}
 
 		Integer type = (Integer)attributes.get("type");
 
 		if (type != null) {
 			setType(type);
+		}
+
+		Integer status = (Integer)attributes.get("status");
+
+		if (status != null) {
+			setStatus(status);
 		}
 	}
 
@@ -175,6 +197,16 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
+	 * Returns the class pk of this export import report entry.
+	 *
+	 * @return the class pk of this export import report entry
+	 */
+	@Override
+	public long getClassPK() {
+		return model.getClassPK();
+	}
+
+	/**
 	 * Returns the company ID of this export import report entry.
 	 *
 	 * @return the company ID of this export import report entry
@@ -195,13 +227,13 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
-	 * Returns the error of this export import report entry.
+	 * Returns the error message of this export import report entry.
 	 *
-	 * @return the error of this export import report entry
+	 * @return the error message of this export import report entry
 	 */
 	@Override
-	public String getError() {
-		return model.getError();
+	public String getErrorMessage() {
+		return model.getErrorMessage();
 	}
 
 	/**
@@ -245,6 +277,16 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
+	 * Returns the model name language key of this export import report entry.
+	 *
+	 * @return the model name language key of this export import report entry
+	 */
+	@Override
+	public String getModelNameLanguageKey() {
+		return model.getModelNameLanguageKey();
+	}
+
+	/**
 	 * Returns the modified date of this export import report entry.
 	 *
 	 * @return the modified date of this export import report entry
@@ -265,6 +307,16 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
+	 * Returns the origin of this export import report entry.
+	 *
+	 * @return the origin of this export import report entry
+	 */
+	@Override
+	public int getOrigin() {
+		return model.getOrigin();
+	}
+
+	/**
 	 * Returns the primary key of this export import report entry.
 	 *
 	 * @return the primary key of this export import report entry
@@ -275,13 +327,13 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
-	 * Returns the resolved of this export import report entry.
+	 * Returns the status of this export import report entry.
 	 *
-	 * @return the resolved of this export import report entry
+	 * @return the status of this export import report entry
 	 */
 	@Override
-	public boolean getResolved() {
-		return model.getResolved();
+	public int getStatus() {
+		return model.getStatus();
 	}
 
 	/**
@@ -292,16 +344,6 @@ public class ExportImportReportEntryWrapper
 	@Override
 	public int getType() {
 		return model.getType();
-	}
-
-	/**
-	 * Returns <code>true</code> if this export import report entry is resolved.
-	 *
-	 * @return <code>true</code> if this export import report entry is resolved; <code>false</code> otherwise
-	 */
-	@Override
-	public boolean isResolved() {
-		return model.isResolved();
 	}
 
 	@Override
@@ -337,6 +379,16 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
+	 * Sets the class pk of this export import report entry.
+	 *
+	 * @param classPK the class pk of this export import report entry
+	 */
+	@Override
+	public void setClassPK(long classPK) {
+		model.setClassPK(classPK);
+	}
+
+	/**
 	 * Sets the company ID of this export import report entry.
 	 *
 	 * @param companyId the company ID of this export import report entry
@@ -357,13 +409,13 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
-	 * Sets the error of this export import report entry.
+	 * Sets the error message of this export import report entry.
 	 *
-	 * @param error the error of this export import report entry
+	 * @param errorMessage the error message of this export import report entry
 	 */
 	@Override
-	public void setError(String error) {
-		model.setError(error);
+	public void setErrorMessage(String errorMessage) {
+		model.setErrorMessage(errorMessage);
 	}
 
 	/**
@@ -409,6 +461,16 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
+	 * Sets the model name language key of this export import report entry.
+	 *
+	 * @param modelNameLanguageKey the model name language key of this export import report entry
+	 */
+	@Override
+	public void setModelNameLanguageKey(String modelNameLanguageKey) {
+		model.setModelNameLanguageKey(modelNameLanguageKey);
+	}
+
+	/**
 	 * Sets the modified date of this export import report entry.
 	 *
 	 * @param modifiedDate the modified date of this export import report entry
@@ -429,6 +491,16 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
+	 * Sets the origin of this export import report entry.
+	 *
+	 * @param origin the origin of this export import report entry
+	 */
+	@Override
+	public void setOrigin(int origin) {
+		model.setOrigin(origin);
+	}
+
+	/**
 	 * Sets the primary key of this export import report entry.
 	 *
 	 * @param primaryKey the primary key of this export import report entry
@@ -439,13 +511,13 @@ public class ExportImportReportEntryWrapper
 	}
 
 	/**
-	 * Sets whether this export import report entry is resolved.
+	 * Sets the status of this export import report entry.
 	 *
-	 * @param resolved the resolved of this export import report entry
+	 * @param status the status of this export import report entry
 	 */
 	@Override
-	public void setResolved(boolean resolved) {
-		model.setResolved(resolved);
+	public void setStatus(int status) {
+		model.setStatus(status);
 	}
 
 	/**

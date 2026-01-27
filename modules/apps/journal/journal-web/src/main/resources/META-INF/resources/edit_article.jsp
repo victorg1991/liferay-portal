@@ -213,7 +213,7 @@ journalEditArticleDisplayContext.setViewAttributes();
 								<clay:link
 									borderless="<%= true %>"
 									displayType="secondary"
-									href="<%= journalEditArticleDisplayContext.getBackURL() %>"
+									href="<%= PortalUtil.escapeRedirect(journalEditArticleDisplayContext.getBackURL()) %>"
 									label="cancel"
 									type="button"
 								/>
@@ -336,7 +336,7 @@ journalEditArticleDisplayContext.setViewAttributes();
 	<div class="contextual-sidebar-content">
 		<clay:container-fluid
 			cssClass="container-view"
-			size="lg"
+			size="xl"
 		>
 			<div class="article-content-content">
 				<%@ include file="/edit_article_exceptions.jspf" %>

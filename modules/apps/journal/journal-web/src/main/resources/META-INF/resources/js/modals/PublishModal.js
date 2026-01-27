@@ -14,6 +14,7 @@ import ScheduleOptions from '../ScheduleOptions';
 export default function PublishModal({
 	actionButton,
 	articleId,
+	buttonDisabled,
 	displayDate: defaultDisplayDate,
 	onCloseModal,
 	onPublishButtonClick,
@@ -66,7 +67,11 @@ export default function PublishModal({
 
 	return (
 		<ClayModal className="m-0" observer={observer} size="md">
-			<ClayModal.Header>{heading}</ClayModal.Header>
+			<ClayModal.Header
+				closeButtonAriaLabel={Liferay.Language.get('close')}
+			>
+				{heading}
+			</ClayModal.Header>
 
 			<ClayModal.Body className="m-0">
 				{showErrorAlert && dateError ? (
@@ -112,6 +117,7 @@ export default function PublishModal({
 						</ClayButton>
 
 						<ClayButton
+							disabled={buttonDisabled}
 							displayType="primary"
 							form={formId}
 							onClick={handleButtonClick}
@@ -153,7 +159,7 @@ function getLabels({actionButton, articleId, workflowEnabled}) {
 		return {
 			button: workflowEnabled
 				? Liferay.Language.get('submit-for-workflow')
-				: Liferay.Language.get('schedule'),
+				: Liferay.Language.get('schedule[verb]'),
 			description: articleId
 				? workflowEnabled
 					? Liferay.Language.get(

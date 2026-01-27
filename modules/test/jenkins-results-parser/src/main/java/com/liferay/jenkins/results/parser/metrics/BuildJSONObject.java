@@ -82,6 +82,10 @@ public class BuildJSONObject extends JSONObject {
 		return optLong("startTime");
 	}
 
+	public String getTestrayBuildURL() {
+		return optString("testrayBuildURL");
+	}
+
 	public String getTopLevelBuildURL() {
 		return _topLevelBuildURL;
 	}
@@ -94,7 +98,13 @@ public class BuildJSONObject extends JSONObject {
 		String url = getURL();
 
 		if (url.contains("-batch") || url.contains("-downstream") ||
-			url.contains("maintenance") || url.contains("-validation")) {
+			url.contains("-validation") ||
+			url.contains("app-server-bundle-builder") ||
+			url.contains("approve-github-collaborator-invites") ||
+			url.contains("archive") || url.contains("forward-") ||
+			url.contains("generate-") || url.contains("maintenance") ||
+			url.contains("scancode") || url.contains("sha-propagator") ||
+			url.contains("source-format")) {
 
 			return false;
 		}

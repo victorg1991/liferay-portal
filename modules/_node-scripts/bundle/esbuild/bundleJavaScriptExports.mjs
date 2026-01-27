@@ -22,6 +22,7 @@ import writeExportBridge from './writeExportBridge.mjs';
 export default async function bundleJavaScriptExports(
 	globalImports,
 	overridenPackageSymbols,
+	projectAlias,
 	projectExports,
 	projectWebContextPath
 ) {
@@ -36,6 +37,7 @@ export default async function bundleJavaScriptExports(
 				bundle(
 					globalImports,
 					overridenPackageSymbols,
+					projectAlias,
 					projectWebContextPath,
 					moduleName
 				)
@@ -46,13 +48,16 @@ export default async function bundleJavaScriptExports(
 async function bundle(
 	globalImports,
 	overridenPackageSymbols,
+	projectAlias,
 	projectWebContextPath,
 	moduleName
 ) {
 	const entryPoint = getEntryPoint(moduleName);
 
 	const esbuildConfig = {
+		alias: projectAlias,
 		bundle: true,
+		entryNames: '[dir]/[name].([hash])',
 		entryPoints: [entryPoint],
 		format: 'esm',
 		outdir: BUILD_MAIN_EXPORTS_PATH,
@@ -99,14 +104,17 @@ async function bundle(
 
 	const flatModuleName = getFlatName(moduleName);
 
-	await runEsbuild(esbuildConfig, flatModuleName);
+	const {metafile} = await runEsbuild(esbuildConfig, flatModuleName);
+	const {outputs} = metafile;
 
-	await relocateSourcemap(
-		path.join(
-			BUILD_MAIN_EXPORTS_PATH,
-			'exports',
-			`${flatModuleName}.js.map`
-		),
-		projectWebContextPath
-	);
+	await Promise.all([
+		...Object.keys(outputs).map(async (output) => {
+			if (output.endsWith('.map')) {
+				return relocateSourcemap(
+					path.join(output),
+					projectWebContextPath
+				);
+			}
+		}),
+	]);
 }

@@ -4,7 +4,7 @@
 	justify-content: space-evenly;
 
 	h1 {
-		font-weight: 700;
+		font-weight: 700 !important;
 	}
 
 	.button-explore {
@@ -45,85 +45,83 @@
 	}
 }
 
-.learn-home-cards-container {
-	.card-row {
-		gap: 2.5rem;
+.learn-header-container {
+	align-items: center;
+	display: flex;
+	justify-content: space-evenly;
 
-		@media (max-width: 991px) {
+	@media (max-width: 415px) {
+		font-size: 0.5rem;
+		padding-left: 1.5rem;
+		padding-right: 1.5rem;
+
+		.learn-home-header-buttons {
+			display: flex !important;
 			flex-direction: column !important;
+			width: 95%;
+			z-index: 1;
 		}
 	}
 
-	.learn-home-card {
-		cursor: pointer;
+	@media (max-width: 1287px) {
+		display: flex !important;
+		flex-direction: column !important;
+	}
+}
+
+.learn-home-assets-grid, 
+.learn-home-capabilities-grid {
+	align-items: stretch; 
+	display: grid;
+
+	> * > div[id^="fragment-"] {
+		box-sizing: border-box; 
 		height: 100%;
-		min-height: 313px;
+	}
+}
+.learn-home-assets-grid {
+	gap: 1rem;
+	grid-template-columns: repeat(3, 1fr);
 
-		&:hover {
-			background-color: var(--color-action-primary-hover-10, #edf3fe) !important;
-			border-color: var(--color-brand-primary-darken-1, #0053f0) !important;
-			border-radius: 10px !important;
-			border-width: 1px !important;
+}
+
+.learn-home-capabilities-grid {
+	gap: 1.125rem;
+	grid-template-columns: repeat(4, 1fr);
+}
+
+.learn-home-search-bar {
+	.input-group {
+		.input-group-inset {
+			border-radius: 5rem 0 0 5rem !important;
 		}
 
-		.home-card-cta {
-			font-size: 1.25rem;
-
-			.component-text {
-				align-items: center;
-				display: flex;
-				gap: 0.5rem;
-			}
-
-			p::after {
-				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' class='lexicon-icon lexicon-icon-order-arrow-right' role='presentation' viewBox='0 0 512 512' fill='%230B5FFF'%3E%3Cpath class='lexicon-icon-outline' d='M367.9,350.3l71.6-71.6c10.8-11.9,11.2-32.9,0-45.8l-71.6-71.6c-33.6-29.8-74.9,15.8-45.8,45.8l16.7,16.7H96c-42.5,0-42.5,64,0,64h242.8l-16.7,16.7C292.2,336.3,337,380,367.9,350.3z'%3E%3C/path%3E%3C/svg%3E");
-				content: '';
-				display: inline-block;
-				height: 1rem;
-				width: 1rem;
-			}
-
-			p:hover {
-				font-size: 1.25rem;
-			}
+		.input-group-inset-item {
+			border-radius: 0 5rem 5rem 0 !important;
 		}
+	}
+}
 
-		.home-card-description {
-			font-size: 1.25rem;
-			font-weight: 400 !important;
-		}
+.learn-welcome-container {
+	gap: 2.5rem;
+	
+	@media (max-width: 990px) {
+		gap: 1rem;
+	}
+}
 
-		.home-card-icon {
-			align-items: center;
-			background:
-				linear-gradient(
-					91.07deg,
-					#001742 0%,
-					#0011a8 24.6%,
-					#0b5fff 49%,
-					#0b5fff 74.5%,
-					#0b5fff 100%
-				),
-				radial-gradient(
-						26.56% 43.82% at 0% 0%,
-						#00256b 20.83%,
-						rgba(0, 37, 107, 0) 100%
-					)
-				radial-gradient(
-					14.55% 34.6% at 100% 34.6%,
-					rgba(55, 124, 255, 0.68) 0%,
-					rgba(55, 124, 255, 0) 100%
-				);
-			display: flex;
-			justify-content: center;
-		}
+@media (max-width: 768px) {
+	.learn-home-assets-grid, 
+	.learn-home-capabilities-grid {
+		gap: 1.5rem;
+		grid-template-columns: 1fr;
+	}
+}
 
-		@media (max-width: 1279px) {
-			width: 100% !important;
-		}
-
-		h2 {
-			font-weight: 700;
-		}
+@media (max-width: 1230px) {
+	.learn-home-assets-grid,
+	.learn-home-capabilities-grid {
+		gap: 0.75rem;
+		grid-template-columns: repeat(2, 1fr);
 	}
 }

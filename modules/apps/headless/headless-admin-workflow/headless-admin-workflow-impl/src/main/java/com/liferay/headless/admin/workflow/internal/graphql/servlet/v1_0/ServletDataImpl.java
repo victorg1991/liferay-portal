@@ -206,6 +206,11 @@ public class ServletDataImpl implements ServletData {
 							WorkflowInstanceResourceImpl.class,
 							"deleteWorkflowInstanceBatch"));
 					put(
+						"mutation#patchWorkflowInstance",
+						new ObjectValuePair<>(
+							WorkflowInstanceResourceImpl.class,
+							"patchWorkflowInstance"));
+					put(
 						"mutation#createWorkflowInstanceChangeTransition",
 						new ObjectValuePair<>(
 							WorkflowInstanceResourceImpl.class,
@@ -416,15 +421,30 @@ public class ServletDataImpl implements ServletData {
 							WorkflowTaskResourceImpl.class,
 							"getWorkflowInstanceWorkflowTasksPage"));
 					put(
+						"query#WorkflowInstance.workflowLogs",
+						new ObjectValuePair<>(
+							WorkflowLogResourceImpl.class,
+							"getWorkflowInstanceWorkflowLogsPage"));
+					put(
 						"query#WorkflowTask.hasAssignableUsers",
 						new ObjectValuePair<>(
 							WorkflowTaskResourceImpl.class,
 							"getWorkflowTaskHasAssignableUsers"));
 					put(
+						"query#WorkflowInstance.workflowTasksAssignedToMe",
+						new ObjectValuePair<>(
+							WorkflowTaskResourceImpl.class,
+							"getWorkflowInstanceWorkflowTasksAssignedToMePage"));
+					put(
 						"query#WorkflowTask.workflowInstance",
 						new ObjectValuePair<>(
 							WorkflowInstanceResourceImpl.class,
 							"getWorkflowInstance"));
+					put(
+						"query#WorkflowTasksBulkSelection.workflowDefinition",
+						new ObjectValuePair<>(
+							WorkflowDefinitionResourceImpl.class,
+							"getWorkflowDefinition"));
 					put(
 						"query#WorkflowTaskAssignToUser.workflowTask",
 						new ObjectValuePair<>(
@@ -454,26 +474,6 @@ public class ServletDataImpl implements ServletData {
 						new ObjectValuePair<>(
 							TransitionResourceImpl.class,
 							"getWorkflowInstanceNextTransitionsPage"));
-					put(
-						"query#WorkflowInstance.workflowLogs",
-						new ObjectValuePair<>(
-							WorkflowLogResourceImpl.class,
-							"getWorkflowInstanceWorkflowLogsPage"));
-					put(
-						"query#WorkflowInstance.workflowTasksAssignedToMe",
-						new ObjectValuePair<>(
-							WorkflowTaskResourceImpl.class,
-							"getWorkflowInstanceWorkflowTasksAssignedToMePage"));
-					put(
-						"query#WorkflowTasksBulkSelection.workflowDefinition",
-						new ObjectValuePair<>(
-							WorkflowDefinitionResourceImpl.class,
-							"getWorkflowDefinition"));
-					put(
-						"query#WorkflowTask.workflowLogs",
-						new ObjectValuePair<>(
-							WorkflowLogResourceImpl.class,
-							"getWorkflowTaskWorkflowLogsPage"));
 				}
 			};
 

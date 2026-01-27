@@ -68,7 +68,7 @@
 			<finder-column comparator="&lt;" name="expirationDate" />
 			<finder-column name="status" />
 		</finder>
-		<finder name="C_C_A" return-type="CommerceDiscount">
+		<finder name="C_C_A" return-type="CommerceDiscount" unique="true">
 			<finder-column name="companyId" />
 			<finder-column case-sensitive="false" name="couponCode" />
 			<finder-column name="active" />
@@ -235,6 +235,11 @@
 			<finder-column name="classNameId" />
 		</finder>
 		<finder name="CN_CPK" return-type="Collection">
+			<finder-column name="classNameId" />
+			<finder-column name="classPK" />
+		</finder>
+		<finder name="CD_CN_CPK" return-type="Collection">
+			<finder-column name="commerceDiscountId" />
 			<finder-column name="classNameId" />
 			<finder-column name="classPK" />
 		</finder>

@@ -13,6 +13,7 @@ import {rolesPagesTest} from '../../../fixtures/rolesPagesTest';
 import {usersAndOrganizationsPagesTest} from '../../../fixtures/usersAndOrganizationsPagesTest';
 import {TRole} from '../../../helpers/HeadlessAdminUserApiHelper';
 import {RolesPage} from '../../../pages/roles-admin-web/RolesPage';
+import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import {nextPage, setItemsPerPage} from '../../../utils/pagination';
 import {
@@ -26,7 +27,8 @@ import {setupBookmark} from './utils/bookmarks';
 export const test = mergeTests(
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-47858': {enabled: true},
+		'LPD-35443': {enabled: true},
+		'LPD-35914': {enabled: true},
 		'LPS-178052': {enabled: true},
 	}),
 	isolatedSiteTest,
@@ -116,7 +118,7 @@ test(
 		const title = getRandomString();
 
 		await rolePage.keyInput.fill(role.name);
-		await rolePage.nameInput.fill(title);
+		await rolePage.titleInput.fill(title);
 		await rolePage.saveButton.click();
 
 		await waitForAlert(page, 'Your request failed to complete', {
@@ -154,7 +156,7 @@ test(
 
 		await rolePage.descriptionInput.fill(description);
 		await rolePage.keyInput.fill(name);
-		await rolePage.nameInput.fill(title);
+		await rolePage.titleInput.fill(title);
 		await rolePage.saveButton.click();
 
 		await waitForAlert(page);
@@ -176,7 +178,7 @@ test(
 
 		await expect(rolePage.descriptionInput).toHaveValue(description);
 		await expect(rolePage.keyInput).toHaveValue(name);
-		await expect(rolePage.nameInput).toHaveValue(title);
+		await expect(rolePage.titleInput).toHaveValue(title);
 	}
 );
 
@@ -218,7 +220,7 @@ test(
 		await (await rolesPage.rolesTable.cellLink(key)).click();
 
 		await expect(rolePage.keyInput).toHaveValue(key);
-		await expect(rolePage.nameInput).toHaveValue('');
+		await expect(rolePage.titleInput).toHaveValue('');
 	}
 );
 
@@ -1939,5 +1941,370 @@ test(
 		await expect(
 			editUserPage.selectRegularRolesChooseButton('role21')
 		).toBeDisabled();
+	}
+);
+
+test(
+	'Can duplicate a role',
+	{tag: ['@LPD-58202']},
+	async ({
+		apiHelpers,
+		page,
+		roleDefinePermissionsPage,
+		rolePage,
+		rolesPage,
+	}) => {
+		page.on('dialog', (dialog) => dialog.accept());
+
+		const user = await apiHelpers.headlessAdminUser.postUserAccount();
+
+		userData[user.alternateName] = {
+			name: user.givenName,
+			password: 'test',
+			surname: user.familyName,
+		};
+
+		const companyId = await page.evaluate(() => {
+			return Liferay.ThemeDisplay.getCompanyId();
+		});
+
+		const role1 = await apiHelpers.headlessAdminUser.postRole({
+			name: getRandomString(),
+			rolePermissions: [
+				{
+					actionIds: ['VIEW_CONTROL_PANEL'],
+					primaryKey: companyId,
+					resourceName: '90',
+					scope: 1,
+				},
+				{
+					actionIds: ['ACCESS_IN_CONTROL_PANEL'],
+					primaryKey: companyId,
+					resourceName:
+						'com_liferay_roles_admin_web_portlet_RolesAdminPortlet',
+					scope: 1,
+				},
+				{
+					actionIds: ['VIEW'],
+					primaryKey: companyId,
+					resourceName: 'com.liferay.portal.kernel.model.Role',
+					scope: 1,
+				},
+				{
+					actionIds: ['UPDATE'],
+					primaryKey: companyId,
+					resourceName: 'com.liferay.portal.kernel.model.Role',
+					scope: 1,
+				},
+				{
+					actionIds: ['PERMISSIONS'],
+					primaryKey: companyId,
+					resourceName: 'com.liferay.portal.kernel.model.Role',
+					scope: 1,
+				},
+				{
+					actionIds: ['DEFINE_PERMISSIONS'],
+					primaryKey: companyId,
+					resourceName: 'com.liferay.portal.kernel.model.Role',
+					scope: 1,
+				},
+			],
+			roleType: 'regular',
+		});
+
+		await apiHelpers.headlessAdminUser.assignUserToRole(
+			role1.externalReferenceCode,
+			user.id
+		);
+
+		await performLogout(page);
+		await performLoginViaApi({page, screenName: user.alternateName});
+
+		await rolesPage.goto(false);
+
+		await rolesPage.rolesTable.changeView('Table');
+
+		const guestRoleName = 'Guest';
+
+		await rolesPage.rolesTable.search(guestRoleName);
+
+		await expect(rolesPage.rolesTable.cell(guestRoleName)).toBeVisible();
+
+		await (await rolesPage.rolesTable.rowActions(guestRoleName)).click();
+
+		await expect(rolesPage.duplicateMenuItem).not.toBeVisible();
+
+		await performLogout(page);
+		await performLoginViaApi({page, screenName: 'test'});
+
+		const role2 = await apiHelpers.headlessAdminUser.postRole({
+			name: getRandomString(),
+			rolePermissions: [
+				{
+					actionIds: ['ADD_ROLE'],
+					primaryKey: companyId,
+					resourceName: '90',
+					scope: 1,
+				},
+			],
+			roleType: 'regular',
+		});
+
+		await apiHelpers.headlessAdminUser.assignUserToRole(
+			role2.externalReferenceCode,
+			user.id
+		);
+
+		await performLogout(page);
+		await performLoginViaApi({page, screenName: user.alternateName});
+
+		await rolesPage.goto(false);
+
+		await rolesPage.rolesTable.search(guestRoleName);
+
+		await expect(rolesPage.rolesTable.cell(guestRoleName)).toBeVisible();
+
+		await (await rolesPage.rolesTable.rowActions(guestRoleName)).click();
+		await rolesPage.duplicateMenuItem.click();
+
+		await expect(rolesPage.copyFrameNewRoleNameInput).toBeVisible();
+
+		await rolesPage.copyFrameNewRoleNameInput.fill(guestRoleName);
+		await rolesPage.copyFrameSaveButton.click();
+
+		await expect(rolesPage.copyFrameUniqueNameErrorMessage).toBeVisible();
+
+		await rolesPage.copyFrameNewRoleNameInput.clear();
+		await rolesPage.copyFrameNewRoleNameInput.fill('a'.repeat(80));
+		await rolesPage.copyFrameSaveButton.click();
+
+		await expect(rolesPage.copyFrameValidNameErrorMessage).toBeVisible();
+
+		await rolesPage.copyFrameNewRoleNameInput.clear();
+		await rolesPage.copyFrameSaveButton.click();
+
+		await expect(rolesPage.copyFrameValidNameErrorMessage).toBeVisible();
+
+		const duplicateRoleName = 'role' + getRandomInt();
+
+		await rolesPage.copyFrameNewRoleNameInput.fill(duplicateRoleName);
+		await rolesPage.copyFrameSaveButton.click();
+
+		try {
+			await expect(rolePage.keyInput).toHaveValue(duplicateRoleName);
+
+			await rolePage.definePermissionsLink.click();
+
+			await expect(roleDefinePermissionsPage.searchInput).toBeVisible();
+			await expect(
+				roleDefinePermissionsPage.noRoleMessage
+			).not.toBeVisible();
+		}
+		finally {
+			await performLogout(page);
+			await performLoginViaApi({page, screenName: 'test'});
+
+			await rolesPage.goto();
+
+			await rolesPage.rolesTable.search(duplicateRoleName);
+
+			await expect(
+				rolesPage.rolesTable.cell(duplicateRoleName)
+			).toBeVisible();
+
+			await (
+				await rolesPage.rolesTable.rowActions(duplicateRoleName)
+			).click();
+			await rolesPage.deleteButton.click();
+		}
+	}
+);
+
+test(
+	'Can duplicate all types of roles',
+	{tag: ['@LPD-58202']},
+	async ({page, rolePage, rolesPage}) => {
+		page.on('dialog', (dialog) => dialog.accept());
+
+		const copyRole = async (roleName: string, roleType: string) => {
+			await expect(async () => {
+				await rolesPage.rolesLink(roleType).click();
+
+				await expect(rolesPage.rolesTable.searchInput).toBeEnabled({
+					timeout: 1000,
+				});
+
+				await (await rolesPage.rolesTable.rowActions(roleName)).click();
+			}).toPass();
+
+			await rolesPage.duplicateMenuItem.click();
+
+			await expect(rolesPage.copyFrameNewRoleNameInput).toBeEnabled();
+
+			const duplicateRoleName = `${roleType}${getRandomInt()}`;
+
+			await expect(async () => {
+				await rolesPage.copyFrameNewRoleNameInput.fill(
+					duplicateRoleName
+				);
+
+				await expect(rolesPage.copyFrameNewRoleNameInput).toHaveValue(
+					duplicateRoleName,
+					{timeout: 500}
+				);
+			}).toPass();
+
+			await rolesPage.copyFrameSaveButton.click();
+
+			await expect(rolePage.keyInput).toHaveValue(duplicateRoleName);
+
+			await rolePage.backButton.click();
+
+			await expect(
+				rolesPage.rolesTable.cell(duplicateRoleName)
+			).toBeVisible();
+
+			await (
+				await rolesPage.rolesTable.rowActions(duplicateRoleName)
+			).click();
+			await rolesPage.deleteButton.click();
+		};
+
+		await rolesPage.goto();
+
+		await rolesPage.rolesTable.changeView('Table');
+
+		await copyRole('Account Administrator', 'Account');
+		await copyRole('Asset Library Member', 'Asset Library');
+		await copyRole('Guest', 'Regular');
+		await copyRole('Organization User', 'Organization');
+		await copyRole('Site Member', 'Site');
+	}
+);
+
+test(
+	'Cannot duplicate a role with fixed permissions',
+	{tag: ['@LPD-69394']},
+	async ({rolesPage}) => {
+		await rolesPage.goto(false);
+
+		const rolesWithFixedPermissions = ['Administrator', 'Owner'];
+
+		for (const roleName of rolesWithFixedPermissions) {
+			await rolesPage.rolesTable.search(roleName);
+
+			await expect(rolesPage.rolesTable.cell(roleName)).toBeVisible();
+
+			await (await rolesPage.rolesTable.rowActions(roleName)).click();
+
+			await expect(rolesPage.duplicateMenuItem).not.toBeVisible();
+		}
+	}
+);
+
+test(
+	'Escape role name to avoid XSS injections',
+	{tag: '@LPD-67812'},
+	async ({apiHelpers, page, rolePage, rolesPage}) => {
+		const name = '"><img src=x onerror=alert(origin)></img>';
+
+		await rolesPage.goto();
+
+		await expect(rolesPage.rolesTable.searchInput).toBeEditable();
+
+		await expect(async () => {
+			await rolesPage.rolesTable.newButton.click();
+
+			await expect(rolePage.keyInput).toBeVisible();
+		}).toPass();
+
+		await rolePage.addRole(apiHelpers, {name, title: name});
+
+		page.on('dialog', async (dialog) => {
+			if (dialog.type() === 'alert') {
+				throw new Error('XSS detected');
+			}
+		});
+
+		await rolePage.backButton.click();
+
+		await expect(rolesPage.rolesTable.cell(name)).toHaveCount(1);
+	}
+);
+
+test(
+	'Escape role name to avoid XSS injection on role selection',
+	{tag: ['@LPD-67812']},
+	async ({
+		apiHelpers,
+		editUserPage,
+		page,
+		rolePage,
+		rolesPage,
+		usersAndOrganizationsPage,
+	}) => {
+		const name = '"><img src=x onerror=alert(origin)></img>';
+
+		await rolesPage.goto();
+
+		await expect(rolesPage.rolesTable.searchInput).toBeEditable();
+
+		await expect(async () => {
+			await rolesPage.rolesTable.newButton.click();
+
+			await expect(rolePage.keyInput).toBeVisible();
+		}).toPass();
+
+		await rolePage.addRole(apiHelpers, {name, title: name});
+
+		await rolePage.backButton.click();
+
+		const user = await apiHelpers.headlessAdminUser.postUserAccount();
+
+		await usersAndOrganizationsPage.goToUsers();
+		await (
+			await usersAndOrganizationsPage.usersTableRowLink(
+				user.alternateName
+			)
+		).click();
+
+		await expect(editUserPage.rolesLink).toBeVisible();
+
+		await editUserPage.rolesLink.click();
+
+		page.on('dialog', async (dialog) => {
+			if (dialog.type() === 'alert') {
+				throw new Error('XSS detected');
+			}
+		});
+
+		await editUserPage.selectRegularRolesButton.click();
+
+		await expect(editUserPage.selectRegularRolesSearchInput).toBeEnabled();
+	}
+);
+
+test(
+	'Cannot delete the Account Manager role',
+	{tag: ['@LPD-69451']},
+	async ({rolesPage}) => {
+		const roleName = 'Account Manager';
+
+		await rolesPage.goto();
+
+		await rolesPage.organizationRolesLink.click();
+
+		await expect(rolesPage.rolesTable.cell(roleName)).toBeVisible();
+
+		await expect(async () => {
+			await (await rolesPage.rolesTable.rowActions(roleName)).click();
+
+			await expect(rolesPage.duplicateMenuItem).toBeVisible({
+				timeout: 100,
+			});
+			await expect(rolesPage.deleteButton).not.toBeVisible({
+				timeout: 100,
+			});
+		}).toPass();
 	}
 );

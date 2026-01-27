@@ -90,7 +90,8 @@ import org.osgi.service.component.annotations.Reference;
 @Component(
 	property = {
 		"application.name=Liferay.Headless.Admin.User",
-		"dto.class.name=com.liferay.portal.kernel.model.User", "version=v1.0"
+		"dto.class.name=com.liferay.portal.kernel.model.User",
+		"service.ranking:Integer=" + Integer.MAX_VALUE, "version=v1.0"
 	},
 	service = DTOConverter.class
 )
@@ -278,6 +279,7 @@ public class UserResourceDTOConverter
 					});
 				setLanguageId(user::getLanguageId);
 				setLastLoginDate(user::getLastLoginDate);
+				setLoginDate(user::getLoginDate);
 				setName(user::getFullName);
 				setOrganizationBriefs(
 					() -> TransformUtil.transformToArray(
@@ -304,8 +306,7 @@ public class UserResourceDTOConverter
 					});
 				setRoleBriefs(
 					() -> {
-						UserBag userBag = UserBagFactoryUtil.create(
-							user.getUserId());
+						UserBag userBag = UserBagFactoryUtil.create(user);
 
 						return _toRoleBriefs(
 							dtoConverterContext, userBag.getRoles());

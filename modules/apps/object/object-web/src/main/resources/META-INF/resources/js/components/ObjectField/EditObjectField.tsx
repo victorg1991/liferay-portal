@@ -11,7 +11,7 @@ import {
 	saveAndReload,
 } from '@liferay/object-js-components-web';
 import {ILearnResourceContext} from 'frontend-js-components-web';
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {EditObjectFieldContent} from './EditObjectFieldContent';
 import {useObjectFieldForm} from './useObjectFieldForm';
@@ -20,7 +20,9 @@ import './EditObjectField.scss';
 
 export interface EditObjectFieldProps {
 	baseResourceURL: string;
+	ckEditor5Config?: object;
 	creationLanguageId: Liferay.Language.Locale;
+	decimalSeparator: string;
 	filterOperators: TFilterOperators;
 	forbiddenChars: string[];
 	forbiddenLastChars: string[];
@@ -36,7 +38,7 @@ export interface EditObjectFieldProps {
 
 export const objectFieldInitialValues: Partial<ObjectField> = {
 	DBType: '',
-	businessType: 'Text',
+	businessType: undefined,
 	externalReferenceCode: '',
 	id: 0,
 	indexed: true,
@@ -55,7 +57,9 @@ export const objectFieldInitialValues: Partial<ObjectField> = {
 
 export default function EditObjectField({
 	baseResourceURL,
+	ckEditor5Config,
 	creationLanguageId,
+	decimalSeparator,
 	filterOperators,
 	forbiddenChars,
 	forbiddenLastChars,
@@ -68,6 +72,9 @@ export default function EditObjectField({
 	readOnly,
 	workflowStatuses,
 }: EditObjectFieldProps) {
+	const [objectDefinition, setObjectDefinition] =
+		useState<ObjectDefinition>();
+
 	const onSubmit = async ({id, ...objectField}: ObjectField) => {
 		delete objectField.defaultValue;
 		delete objectField.listTypeDefinitionId;
@@ -97,8 +104,22 @@ export default function EditObjectField({
 			forbiddenLastChars,
 			forbiddenNames,
 			initialValues: objectFieldInitialValues,
+			objectFields: objectDefinition?.objectFields,
 			onSubmit,
 		});
+
+	useEffect(() => {
+		const makeFetch = async () => {
+			const objectDefinitionResponse =
+				await API.getObjectDefinitionByExternalReferenceCode(
+					objectDefinitionExternalReferenceCode
+				);
+
+			setObjectDefinition(objectDefinitionResponse);
+		};
+
+		makeFetch();
+	}, [objectDefinitionExternalReferenceCode]);
 
 	useEffect(() => {
 		if (errors.defaultValue) {
@@ -120,17 +141,17 @@ export default function EditObjectField({
 		>
 			<EditObjectFieldContent
 				baseResourceURL={baseResourceURL}
+				ckEditor5Config={ckEditor5Config}
 				containerWrapper={Card}
 				creationLanguageId={creationLanguageId}
+				decimalSeparator={decimalSeparator}
 				errors={errors}
 				filterOperators={filterOperators}
 				handleChange={handleChange}
 				isDefaultStorageType={isDefaultStorageType}
 				isRootDescendantNode={isRootDescendantNode}
 				learnResources={learnResources}
-				objectDefinitionExternalReferenceCode={
-					objectDefinitionExternalReferenceCode
-				}
+				objectDefinition={objectDefinition}
 				objectFieldId={objectFieldId}
 				readOnly={readOnly}
 				setValues={setValues}

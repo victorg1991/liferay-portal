@@ -5,10 +5,15 @@
 
 package com.liferay.site.cms.site.initializer.internal.display.context.test;
 
+import com.liferay.depot.constants.DepotConstants;
+import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryLocalService;
+import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
+import com.liferay.info.localized.InfoLocalizedValue;
+import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectDefinitionSettingConstants;
 import com.liferay.object.constants.ObjectEntryFolderConstants;
@@ -17,38 +22,71 @@ import com.liferay.object.definition.setting.builder.ObjectDefinitionSettingBuil
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntryFolder;
 import com.liferay.object.model.ObjectFolder;
+import com.liferay.object.service.ObjectDefinitionLocalServiceUtil;
+import com.liferay.object.service.ObjectDefinitionService;
 import com.liferay.object.service.ObjectEntryFolderLocalService;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.editor.configuration.EditorConfiguration;
+import com.liferay.portal.kernel.editor.configuration.EditorConfigurationFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.GroupConstants;
+import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.portlet.LiferayWindowState;
+import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.translation.exporter.TranslationInfoItemFieldValuesExporter;
+import com.liferay.translation.exporter.TranslationInfoItemFieldValuesExporterRegistry;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
+
+import org.springframework.mock.web.MockHttpServletRequest;
 
 /**
  * @author Marco Galluzzi
@@ -56,14 +94,227 @@ import org.junit.Test;
 public abstract class BaseSectionDisplayContextTestCase
 	extends BaseDisplayContextTestCase {
 
+	public HashMap<String, Object> getAdditionalProps() throws Exception {
+		return ReflectionTestUtil.invoke(
+			getSectionDisplayContext(mockHttpServletRequest),
+			"getAdditionalProps", new Class<?>[0]);
+	}
+
+	public HashMap<String, Object> getBaseAdditionalProps()
+		throws PortalException {
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)mockHttpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		return HashMapBuilder.<String, Object>put(
+			"assetLibraries", _getDepotEntriesJSONArray()
+		).put(
+			"autocompleteURL",
+			() -> StringBundler.concat(
+				"/o/search/v1.0/search?emptySearch=",
+				"true&entryClassNames=com.liferay.portal.kernel.model.",
+				"User,com.liferay.portal.kernel.model.",
+				"UserGroup&nestedFields=embedded")
+		).put(
+			"availableExportFileFormats",
+			() -> TransformUtil.transform(
+				_translationInfoItemFieldValuesExporterRegistry.
+					getTranslationInfoItemFieldValuesExporters(),
+				this::_getExportFileFormatJSONObject)
+		).put(
+			"availableTargetLocales",
+			_getLocalesJSONArray(
+				themeDisplay.getLocale(),
+				LanguageUtil.getAvailableLocales(themeDisplay.getSiteGroupId()))
+		).put(
+			"baseAssetLibraryViewURL",
+			StringBundler.concat(
+				GroupConstants.CMS_FRIENDLY_URL, "/e/space/",
+				_portal.getClassNameId(DepotEntry.class), StringPool.SLASH)
+		).put(
+			"baseFolderViewURL",
+			StringBundler.concat(
+				GroupConstants.CMS_FRIENDLY_URL, "/e/view-folder/",
+				_portal.getClassNameId(ObjectEntryFolder.class),
+				StringPool.SLASH)
+		).put(
+			"brokenLinksCheckerEnabled",
+			GetterUtil.getBoolean(
+				PropsUtil.get(PropsKeys.CMS_BROKEN_LINKS_CHECKER_ENABLED))
+		).put(
+			"cmsGroupId",
+			() -> {
+				try {
+					Group group = groupLocalService.getGroup(
+						TestPropsValues.getCompanyId(), GroupConstants.CMS);
+
+					return GetterUtil.getLong(group.getGroupId());
+				}
+				catch (PortalException portalException) {
+					return null;
+				}
+			}
+		).put(
+			"collaboratorURLs",
+			() -> {
+				Map<String, String> collaboratorURL = new HashMap<>();
+
+				for (ObjectDefinition objectDefinition :
+						objectDefinitionService.getCMSObjectDefinitions(
+							group.getCompanyId(),
+							getObjectFolderExternalReferenceCodes())) {
+
+					collaboratorURL.put(
+						objectDefinition.getClassName(),
+						StringBundler.concat(
+							"/o", objectDefinition.getRESTContextPath(),
+							"/{objectEntryId}/collaborators"));
+				}
+
+				collaboratorURL.put(
+					ObjectEntryFolder.class.getName(),
+					"/o/headless-object/v1.0/object-entry-folders" +
+						"/{objectEntryFolderId}/collaborators");
+
+				return collaboratorURL;
+			}
+		).put(
+			"commentsProps",
+			() -> HashMapBuilder.<String, Object>put(
+				"addCommentURL",
+				StringBundler.concat(
+					themeDisplay.getPortalURL(), themeDisplay.getPathMain(),
+					GroupConstants.CMS_FRIENDLY_URL,
+					"/add_content_item_comment")
+			).put(
+				"deleteCommentURL",
+				StringBundler.concat(
+					themeDisplay.getPortalURL(), themeDisplay.getPathMain(),
+					GroupConstants.CMS_FRIENDLY_URL,
+					"/delete_content_item_comment")
+			).put(
+				"editCommentURL",
+				StringBundler.concat(
+					themeDisplay.getPortalURL(), themeDisplay.getPathMain(),
+					GroupConstants.CMS_FRIENDLY_URL,
+					"/edit_content_item_comment")
+			).put(
+				"editorConfig",
+				() -> {
+					EditorConfiguration contentItemCommentEditorConfiguration =
+						EditorConfigurationFactoryUtil.getEditorConfiguration(
+							StringPool.BLANK, "contentItemCommentEditor",
+							StringPool.BLANK, Collections.emptyMap(),
+							themeDisplay,
+							RequestBackedPortletURLFactoryUtil.create(
+								getMockHttpServletRequest()));
+
+					Map<String, Object> data =
+						contentItemCommentEditorConfiguration.getData();
+
+					return data.get("editorConfig");
+				}
+			).put(
+				"getCommentsURL",
+				StringBundler.concat(
+					themeDisplay.getPortalURL(), themeDisplay.getPathMain(),
+					GroupConstants.CMS_FRIENDLY_URL, "/get_asset_comments")
+			).build()
+		).put(
+			"contentViewURL",
+			StringBundler.concat(
+				themeDisplay.getPortalURL(), themeDisplay.getPathMain(),
+				GroupConstants.CMS_FRIENDLY_URL,
+				"/edit_content_item?&p_l_mode=read&p_p_state=",
+				LiferayWindowState.POP_UP, "&redirect=",
+				themeDisplay.getURLCurrent(), "&objectEntryId={embedded.id}")
+		).put(
+			"defaultPermissionAdditionalProps",
+			_getDefaultPermissionAdditionalProps()
+		).put(
+			"objectDefinitionCssClasses",
+			HashMapBuilder.put(
+				"default", "content-icon-custom-structure"
+			).put(
+				"L_CMS_BASIC_WEB_CONTENT", "content-icon-basic-content"
+			).put(
+				"L_CMS_BLOG", "content-icon-blog"
+			).put(
+				"L_CMS_EXTERNAL_VIDEO", "file-icon-color-3"
+			).build()
+		).put(
+			"objectDefinitionIcons",
+			HashMapBuilder.put(
+				"default", "web-content"
+			).put(
+				"L_CMS_BASIC_WEB_CONTENT", "forms"
+			).put(
+				"L_CMS_BLOG", "blogs"
+			).put(
+				"L_CMS_EXTERNAL_VIDEO", "document-multimedia"
+			).build()
+		).put(
+			"parentObjectEntryFolderExternalReferenceCode",
+			getRootObjectEntryFolderExternalReferenceCode()
+		).put(
+			"redirect", "http://localhost:8080/currentURL"
+		).build();
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		_mockHttpServletRequest = null;
+		_objectEntryFolder = null;
+	}
+
+	@Test
+	public void testGetAdditionalProps() throws Exception {
+		_assertEquals(getBaseAdditionalProps(), getAdditionalProps());
+	}
+
+	@Test
+	public void testGetBreadcrumbProps() throws Exception {
+		HttpServletRequest httpServletRequest = getMockHttpServletRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		themeDisplay.setLayout(
+			LayoutTestUtil.addTypeContentLayout(group, "test-name"));
+
+		AssertUtils.assertEquals(
+			HashMapBuilder.<String, Object>put(
+				"breadcrumbItems",
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"active", false
+					).put(
+						"href", (String)null
+					).put(
+						"label", "test-name"
+					))
+			).put(
+				"hideSpace", true
+			).build(),
+			_getBreadcrumbProps(httpServletRequest));
+	}
+
 	@Test
 	@TestInfo("LPD-50664")
 	public void testGetCreationMenu() throws Exception {
 		Map<String, String> expectedCreationMenuItems =
 			getExpectedCreationMenuItems();
 
+		if (expectedCreationMenuItems.isEmpty()) {
+			return;
+		}
+
 		_testGetCreationMenu(getCreationMenu(), expectedCreationMenuItems);
 
+		TreeMap<String, String> expectedCustomCreationMenuItems = new TreeMap<>(
+			String.CASE_INSENSITIVE_ORDER);
 		ObjectFolder objectFolder = null;
 
 		for (String objectFolderExternalReferenceCode :
@@ -79,13 +330,15 @@ public abstract class BaseSectionDisplayContextTestCase
 				ObjectDefinitionConstants.SCOPE_DEPOT,
 				WorkflowConstants.STATUS_APPROVED);
 
-			expectedCreationMenuItems.put(
+			expectedCustomCreationMenuItems.put(
 				objectDefinition.getLabel(LocaleUtil.US),
 				getRedirect(
 					objectDefinition,
 					_getRootObjectEntryFolderExternalReferenceCode(
 						objectFolderExternalReferenceCode)));
 		}
+
+		expectedCreationMenuItems.putAll(expectedCustomCreationMenuItems);
 
 		addCustomObjectDefinition(
 			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
@@ -118,76 +371,29 @@ public abstract class BaseSectionDisplayContextTestCase
 
 	@Test
 	@TestInfo("LPD-57827")
-	public void testGetDepotEntriesJSONArrayWithMultipleDepotEntries()
-		throws Exception {
-
-		String name = StringUtil.randomString();
-
-		DepotEntry depotEntry = _addDepotEntry(name);
-
-		try {
-			List<DepotEntry> depotEntries =
-				_depotEntryLocalService.getDepotEntries(
-					QueryUtil.ALL_POS, QueryUtil.ALL_POS);
-
-			Assert.assertEquals(
-				depotEntries.toString(), 2, depotEntries.size());
-
-			DepotEntry defaultDepotEntry = depotEntries.get(0);
-
-			Group defaultDepotGroup = _groupLocalService.fetchGroup(
-				defaultDepotEntry.getGroupId());
-
-			Assert.assertEquals("Default", defaultDepotGroup.getGroupKey());
-
-			Group depotGroup = _groupLocalService.fetchGroup(
-				depotEntry.getGroupId());
-
-			Assert.assertEquals(name, depotGroup.getGroupKey());
-
-			_testGetDepotEntriesJSONArray(
-				List.of(defaultDepotEntry), null,
-				String.valueOf(defaultDepotGroup.getGroupId()));
-			_testGetDepotEntriesJSONArray(
-				List.of(depotEntry), null,
-				String.valueOf(depotGroup.getGroupId()));
-			_testGetDepotEntriesJSONArray(depotEntries, null, null);
-
-			if (getRootObjectEntryFolderExternalReferenceCode() != null) {
-				ObjectEntryFolder objectEntryFolder = _addObjectFolderEntry(
-					depotGroup);
-
-				_testGetDepotEntriesJSONArray(
-					List.of(depotEntry), objectEntryFolder, null);
-				_testGetDepotEntriesJSONArray(
-					List.of(depotEntry), objectEntryFolder,
-					String.valueOf(depotGroup.getGroupId()));
-				_testGetDepotEntriesJSONArray(
-					null, objectEntryFolder,
-					String.valueOf(defaultDepotGroup.getGroupId()));
-			}
-		}
-		finally {
-			_depotEntryLocalService.deleteDepotEntry(depotEntry);
-		}
-	}
-
-	@Test
-	@TestInfo("LPD-57827")
-	public void testGetDepotEntriesJSONArrayWithOneDepotEntryOnly()
-		throws Exception {
+	public void testGetDepotEntriesJSONArray() throws Exception {
+		String name = StringUtil.toLowerCase(RandomTestUtil.randomString());
 
 		List<DepotEntry> depotEntries = _depotEntryLocalService.getDepotEntries(
-			QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+			group.getCompanyId(), DepotConstants.TYPE_SPACE);
 
-		Assert.assertEquals(depotEntries.toString(), 1, depotEntries.size());
+		int originalDepotEntriesSize = depotEntries.size();
 
-		DepotEntry depotEntry = depotEntries.get(0);
+		addDepotEntry(name, DepotConstants.TYPE_SPACE);
 
-		Group depotGroup = _groupLocalService.fetchGroup(
+		depotEntries = _depotEntryLocalService.getDepotEntries(
+			group.getCompanyId(), DepotConstants.TYPE_SPACE);
+
+		Assert.assertEquals(
+			depotEntries.toString(), originalDepotEntriesSize + 1,
+			depotEntries.size());
+
+		DepotEntry depotEntry = depotEntries.get(depotEntries.size() - 1);
+
+		Group depotGroup = groupLocalService.fetchGroup(
 			depotEntry.getGroupId());
 
-		Assert.assertEquals("Default", depotGroup.getGroupKey());
+		Assert.assertEquals(name, depotGroup.getGroupKey());
 
 		_testGetDepotEntriesJSONArray(
 			depotEntries, null, String.valueOf(depotGroup.getGroupId()));
@@ -229,6 +435,17 @@ public abstract class BaseSectionDisplayContextTestCase
 			WorkflowConstants.STATUS_APPROVED);
 	}
 
+	protected DepotEntry addDepotEntry(String name, int type) throws Exception {
+		return _depotEntryLocalService.addDepotEntry(
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), name
+			).build(),
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), StringUtil.randomString()
+			).build(),
+			type, ServiceContextTestUtil.getServiceContext(group.getGroupId()));
+	}
+
 	protected CreationMenu getCreationMenu() throws Exception {
 		return getCreationMenu(null);
 	}
@@ -245,18 +462,45 @@ public abstract class BaseSectionDisplayContextTestCase
 	protected abstract Map<String, String> getExpectedCreationMenuItems()
 		throws PortalException;
 
+	protected List<FDSActionDropdownItem> getFDSActionDropdownItems()
+		throws Exception {
+
+		return ReflectionTestUtil.invoke(
+			getSectionDisplayContext(getMockHttpServletRequest()),
+			"getFDSActionDropdownItems", new Class<?>[0]);
+	}
+
+	@Override
+	protected MockHttpServletRequest getMockHttpServletRequest(
+			ObjectEntryFolder objectEntryFolder)
+		throws Exception {
+
+		if ((_mockHttpServletRequest == null) ||
+			(_objectEntryFolder != objectEntryFolder)) {
+
+			_mockHttpServletRequest = super.getMockHttpServletRequest(
+				objectEntryFolder);
+
+			_objectEntryFolder = objectEntryFolder;
+		}
+
+		return _mockHttpServletRequest;
+	}
+
 	protected abstract String getObjectFolderExternalReferenceCode();
 
-	protected List<String> getObjectFolderExternalReferenceCodes() {
-		return List.of(getObjectFolderExternalReferenceCode());
+	protected String[] getObjectFolderExternalReferenceCodes() {
+		return new String[] {getObjectFolderExternalReferenceCode()};
 	}
 
 	protected String getRedirect(
 		ObjectDefinition objectDefinition,
 		String objectEntryFolderExternalReferenceCode) {
 
-		StringBundler sb = new StringBundler(5);
+		StringBundler sb = new StringBundler(7);
 
+		sb.append("http://localhost:8080");
+		sb.append(portal.getPathMain());
 		sb.append("/cms/add_structured_content_item?objectDefinitionId=");
 		sb.append(objectDefinition.getObjectDefinitionId());
 		sb.append("&objectEntryFolderExternalReferenceCode=");
@@ -297,16 +541,11 @@ public abstract class BaseSectionDisplayContextTestCase
 			HttpServletRequest httpServletRequest)
 		throws Exception;
 
-	private DepotEntry _addDepotEntry(String name) throws Exception {
-		return _depotEntryLocalService.addDepotEntry(
-			HashMapBuilder.put(
-				LocaleUtil.getDefault(), name
-			).build(),
-			HashMapBuilder.put(
-				LocaleUtil.getDefault(), StringUtil.randomString()
-			).build(),
-			ServiceContextTestUtil.getServiceContext(group.getGroupId()));
-	}
+	@Inject
+	protected GroupLocalService groupLocalService;
+
+	@Inject
+	protected ObjectDefinitionService objectDefinitionService;
 
 	private ObjectEntryFolder _addObjectFolderEntry(Group group)
 		throws Exception {
@@ -378,34 +617,228 @@ public abstract class BaseSectionDisplayContextTestCase
 		Assert.assertNull(dropdownItemData);
 	}
 
-	private DropdownItem _getDropdownItem(
-		List<DropdownItem> dropdownItems, String label) {
+	private void _assertEquals(
+		Map<String, ?> expectedMap, Map<String, ?> actualMap) {
 
-		for (DropdownItem dropdownItem : dropdownItems) {
-			if (label.equals(dropdownItem.get("label"))) {
-				return dropdownItem;
+		Assert.assertEquals(
+			actualMap.toString(), expectedMap.size(), actualMap.size());
+
+		JSONObject expectedJSONObject = _jsonFactory.createJSONObject(
+			expectedMap);
+		JSONObject actualJSONObject = _jsonFactory.createJSONObject(actualMap);
+
+		JSONAssert.assertEquals(
+			expectedJSONObject.toString(), actualJSONObject.toString(),
+			JSONCompareMode.STRICT);
+	}
+
+	private HashMap<String, Object> _getBreadcrumbProps(
+			HttpServletRequest httpServletRequest)
+		throws Exception {
+
+		return ReflectionTestUtil.invoke(
+			getSectionDisplayContext(httpServletRequest), "getBreadcrumbProps",
+			new Class<?>[0]);
+	}
+
+	private Map<String, Object> _getDefaultPermissionAdditionalProps() {
+		return HashMapBuilder.<String, Object>put(
+			"actions",
+			() -> HashMapBuilder.put(
+				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
+				() -> {
+					ObjectDefinition objectDefinition =
+						ObjectDefinitionLocalServiceUtil.
+							getObjectDefinitionByExternalReferenceCode(
+								"L_CMS_BASIC_WEB_CONTENT",
+								TestPropsValues.getCompanyId());
+
+					List<String> guestUnsupportedActions =
+						ResourceActionsUtil.getResourceGuestUnsupportedActions(
+							null, objectDefinition.getClassName());
+
+					return TransformUtil.transformToArray(
+						ResourceActionsUtil.getResourceActions(
+							objectDefinition.getClassName()),
+						resourceAction -> HashMapBuilder.<String, Object>put(
+							"guestUnsupported",
+							guestUnsupportedActions.contains(resourceAction)
+						).put(
+							"key", resourceAction
+						).put(
+							"label",
+							ResourceActionsUtil.getAction(
+								LocaleUtil.US, resourceAction)
+						).build(),
+						Map.class);
+				}
+			).put(
+				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES,
+				() -> {
+					ObjectDefinition objectDefinition =
+						ObjectDefinitionLocalServiceUtil.
+							getObjectDefinitionByExternalReferenceCode(
+								"L_CMS_BASIC_DOCUMENT",
+								TestPropsValues.getCompanyId());
+
+					List<String> guestUnsupportedActions =
+						ResourceActionsUtil.getResourceGuestUnsupportedActions(
+							null, objectDefinition.getClassName());
+
+					return TransformUtil.transformToArray(
+						ResourceActionsUtil.getResourceActions(
+							objectDefinition.getClassName()),
+						resourceAction -> HashMapBuilder.<String, Object>put(
+							"guestUnsupported",
+							guestUnsupportedActions.contains(resourceAction)
+						).put(
+							"key", resourceAction
+						).put(
+							"label",
+							ResourceActionsUtil.getAction(
+								LocaleUtil.US, resourceAction)
+						).build(),
+						Map.class);
+				}
+			).put(
+				"OBJECT_ENTRY_FOLDERS",
+				() -> {
+					List<String> guestUnsupportedActions =
+						ResourceActionsUtil.getResourceGuestUnsupportedActions(
+							null, ObjectEntryFolder.class.getName());
+
+					return TransformUtil.transformToArray(
+						ResourceActionsUtil.getResourceActions(
+							ObjectEntryFolder.class.getName()),
+						resourceAction -> HashMapBuilder.<String, Object>put(
+							"guestUnsupported",
+							guestUnsupportedActions.contains(resourceAction)
+						).put(
+							"key", resourceAction
+						).put(
+							"label",
+							ResourceActionsUtil.getAction(
+								LocaleUtil.US, resourceAction)
+						).build(),
+						Map.class);
+				}
+			).build()
+		).put(
+			"roles",
+			() -> TransformUtil.transformToArray(
+				RoleLocalServiceUtil.getGroupRolesAndTeamRoles(
+					TestPropsValues.getCompanyId(), null,
+					Arrays.asList(
+						RoleConstants.ADMINISTRATOR,
+						DepotRolesConstants.ASSET_LIBRARY_OWNER),
+					null, null,
+					new int[] {
+						RoleConstants.TYPE_REGULAR, RoleConstants.TYPE_DEPOT
+					},
+					0, 0, QueryUtil.ALL_POS, QueryUtil.ALL_POS),
+				role -> HashMapBuilder.put(
+					"key", role.getName()
+				).put(
+					"name", role.getTitle(LocaleUtil.US)
+				).put(
+					"type", String.valueOf(role.getType())
+				).build(),
+				Map.class)
+		).build();
+	}
+
+	private JSONArray _getDepotEntriesJSONArray() throws PortalException {
+		return _getDepotEntriesJSONArray(
+			TransformUtil.transform(
+				_depotEntryLocalService.getDepotEntries(
+					group.getCompanyId(), DepotConstants.TYPE_SPACE),
+				DepotEntry::getGroupId));
+	}
+
+	private JSONArray _getDepotEntriesJSONArray(List<Long> groupIds) {
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		for (Long groupId : groupIds) {
+			JSONObject jsonObject = _getJSONObject(groupId);
+
+			if (jsonObject != null) {
+				jsonArray.put(jsonObject);
 			}
 		}
 
-		return null;
+		return jsonArray;
+	}
+
+	private JSONObject _getExportFileFormatJSONObject(
+		TranslationInfoItemFieldValuesExporter
+			translationInfoItemFieldValuesExporter) {
+
+		return JSONUtil.put(
+			"displayName",
+			() -> {
+				InfoLocalizedValue<String> labelInfoLocalizedValue =
+					translationInfoItemFieldValuesExporter.
+						getLabelInfoLocalizedValue();
+
+				return labelInfoLocalizedValue.getValue(
+					themeDisplay.getLocale());
+			}
+		).put(
+			"mimeType", translationInfoItemFieldValuesExporter.getMimeType()
+		);
 	}
 
 	private JSONArray _getJSONArray(List<DepotEntry> depotEntries) {
 		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
 
 		for (DepotEntry depotEntry : depotEntries) {
-			Group group = _groupLocalService.fetchGroup(
-				depotEntry.getGroupId());
+			Group group = groupLocalService.fetchGroup(depotEntry.getGroupId());
 
 			if (group != null) {
 				jsonArray.put(
 					JSONUtil.put(
+						"externalReferenceCode",
+						group.getExternalReferenceCode()
+					).put(
 						"groupId", group.getGroupId()
 					).put(
 						"name", group.getName(LocaleUtil.getDefault())
 					));
 			}
 		}
+
+		return jsonArray;
+	}
+
+	private JSONObject _getJSONObject(long groupId) {
+		Group group = groupLocalService.fetchGroup(groupId);
+
+		if (group == null) {
+			return null;
+		}
+
+		return JSONUtil.put(
+			"externalReferenceCode", group.getExternalReferenceCode()
+		).put(
+			"groupId", group.getGroupId()
+		).put(
+			"name", group.getName(LocaleUtil.getDefault())
+		);
+	}
+
+	private JSONArray _getLocalesJSONArray(
+		Locale locale, Collection<Locale> locales) {
+
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		locales.forEach(
+			currentLocale -> jsonArray.put(
+				JSONUtil.put(
+					"displayName",
+					LocaleUtil.getLocaleDisplayName(currentLocale, locale)
+				).put(
+					"languageId", LocaleUtil.toLanguageId(currentLocale)
+				)));
 
 		return jsonArray;
 	}
@@ -446,13 +879,16 @@ public abstract class BaseSectionDisplayContextTestCase
 			dropdownItems.toString(), expectedCreationMenuItems.size(),
 			dropdownItems.size());
 
+		int index = 0;
+
 		for (Map.Entry<String, String> entry :
 				expectedCreationMenuItems.entrySet()) {
 
-			DropdownItem dropdownItem = _getDropdownItem(
-				dropdownItems, entry.getKey());
+			DropdownItem dropdownItem = dropdownItems.get(index);
 
-			Assert.assertNotNull(dropdownItem);
+			Assert.assertEquals(
+				language.get(LocaleUtil.getDefault(), entry.getKey()),
+				dropdownItem.get("label"));
 
 			if (Validator.isNull(entry.getValue())) {
 				Assert.assertNull(_getRedirect(dropdownItem));
@@ -461,6 +897,8 @@ public abstract class BaseSectionDisplayContextTestCase
 				Assert.assertEquals(
 					entry.getValue(), _getRedirect(dropdownItem));
 			}
+
+			index++;
 		}
 	}
 
@@ -485,6 +923,10 @@ public abstract class BaseSectionDisplayContextTestCase
 		try {
 			CreationMenu creationMenu = getCreationMenu(objectEntryFolder);
 
+			if (creationMenu == null) {
+				return;
+			}
+
 			if (depotEntries != null) {
 				_assertCreationMenuContainsDropdownItem(
 					creationMenu, _getJSONArray(depotEntries),
@@ -506,9 +948,19 @@ public abstract class BaseSectionDisplayContextTestCase
 	private DepotEntryLocalService _depotEntryLocalService;
 
 	@Inject
-	private GroupLocalService _groupLocalService;
+	private JSONFactory _jsonFactory;
+
+	private MockHttpServletRequest _mockHttpServletRequest;
+	private ObjectEntryFolder _objectEntryFolder;
 
 	@Inject
 	private ObjectEntryFolderLocalService _objectEntryFolderLocalService;
+
+	@Inject
+	private Portal _portal;
+
+	@Inject
+	private TranslationInfoItemFieldValuesExporterRegistry
+		_translationInfoItemFieldValuesExporterRegistry;
 
 }

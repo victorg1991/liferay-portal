@@ -49,20 +49,27 @@ public class ObjectEntryInfoPermissionProviderTest {
 
 	@Test
 	public void testHasViewPermission() throws Exception {
-		_testHasViewPermissionForCustomObjectDefinition();
-		_testHasViewPermissionForModifiableSystemObjectDefinition(false);
-		_testHasViewPermissionForUnmodifiableSystemObjectDefinition();
+		_testHasViewPermissionForCustomObjectDefinition(false, true);
+		_testHasViewPermissionForCustomObjectDefinition(true, true);
+		_testHasViewPermissionForModifiableSystemObjectDefinition(false, false);
+		_testHasViewPermissionForModifiableSystemObjectDefinition(true, false);
+		_testHasViewPermissionForUnmodifiableSystemObjectDefinition(false);
+		_testHasViewPermissionForUnmodifiableSystemObjectDefinition(true);
 	}
 
 	@FeatureFlag("LPD-17564")
 	@Test
 	public void testHasViewPermissionWithFF() throws Exception {
-		_testHasViewPermissionForCustomObjectDefinition();
-		_testHasViewPermissionForModifiableSystemObjectDefinition(true);
-		_testHasViewPermissionForUnmodifiableSystemObjectDefinition();
+		_testHasViewPermissionForCustomObjectDefinition(false, false);
+		_testHasViewPermissionForCustomObjectDefinition(true, true);
+		_testHasViewPermissionForModifiableSystemObjectDefinition(false, false);
+		_testHasViewPermissionForModifiableSystemObjectDefinition(true, true);
+		_testHasViewPermissionForUnmodifiableSystemObjectDefinition(false);
+		_testHasViewPermissionForUnmodifiableSystemObjectDefinition(true);
 	}
 
-	private void _testHasViewPermissionForCustomObjectDefinition()
+	private void _testHasViewPermissionForCustomObjectDefinition(
+			boolean enableFormContainer, boolean expectedResult)
 		throws Exception {
 
 		ObjectDefinition objectDefinition =
@@ -76,6 +83,10 @@ public class ObjectEntryInfoPermissionProviderTest {
 						"a" + RandomTestUtil.randomString()
 					).build()));
 
+		objectDefinition.setEnableFormContainer(enableFormContainer);
+
+		objectDefinition = _objectDefinitionLocalService.updateObjectDefinition(
+			objectDefinition);
 		objectDefinition =
 			_objectDefinitionLocalService.publishCustomObjectDefinition(
 				TestPropsValues.getUserId(),
@@ -86,48 +97,6 @@ public class ObjectEntryInfoPermissionProviderTest {
 				_infoItemServiceRegistry.getFirstInfoItemService(
 					InfoPermissionProvider.class,
 					objectDefinition.getClassName());
-
-			Assert.assertNotNull(infoPermissionProvider);
-
-			Assert.assertTrue(
-				infoPermissionProvider.hasViewPermission(
-					PermissionThreadLocal.getPermissionChecker()));
-		}
-		finally {
-			_objectDefinitionLocalService.deleteObjectDefinition(
-				objectDefinition);
-		}
-	}
-
-	private void _testHasViewPermissionForModifiableSystemObjectDefinition(
-			boolean expectedResult)
-		throws Exception {
-
-		ObjectDefinition objectDefinition =
-			ObjectDefinitionTestUtil.addModifiableSystemObjectDefinition(
-				TestPropsValues.getUserId(), null, true,
-				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
-				"Test", null, null,
-				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
-				ObjectDefinitionConstants.SCOPE_SITE, null, 1,
-				Collections.singletonList(
-					ObjectFieldUtil.createObjectField(
-						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
-						ObjectFieldConstants.DB_TYPE_STRING,
-						RandomTestUtil.randomString(), StringUtil.randomId())));
-
-		objectDefinition =
-			_objectDefinitionLocalService.publishSystemObjectDefinition(
-				TestPropsValues.getUserId(),
-				objectDefinition.getObjectDefinitionId());
-
-		try {
-			InfoPermissionProvider<ObjectEntry> infoPermissionProvider =
-				_infoItemServiceRegistry.getFirstInfoItemService(
-					InfoPermissionProvider.class,
-					objectDefinition.getClassName());
-
-			Assert.assertNotNull(infoPermissionProvider);
 
 			Assert.assertEquals(
 				expectedResult,
@@ -140,7 +109,51 @@ public class ObjectEntryInfoPermissionProviderTest {
 		}
 	}
 
-	private void _testHasViewPermissionForUnmodifiableSystemObjectDefinition()
+	private void _testHasViewPermissionForModifiableSystemObjectDefinition(
+			boolean enableFormContainer, boolean expectedResult)
+		throws Exception {
+
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionTestUtil.addModifiableSystemObjectDefinition(
+				TestPropsValues.getUserId(), null,
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				"Test", null, null,
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				ObjectDefinitionConstants.SCOPE_SITE, null, 1,
+				Collections.singletonList(
+					ObjectFieldUtil.createObjectField(
+						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+						ObjectFieldConstants.DB_TYPE_STRING,
+						RandomTestUtil.randomString(), StringUtil.randomId())));
+
+		objectDefinition.setEnableFormContainer(enableFormContainer);
+
+		objectDefinition = _objectDefinitionLocalService.updateObjectDefinition(
+			objectDefinition);
+		objectDefinition =
+			_objectDefinitionLocalService.publishSystemObjectDefinition(
+				TestPropsValues.getUserId(),
+				objectDefinition.getObjectDefinitionId());
+
+		try {
+			InfoPermissionProvider<ObjectEntry> infoPermissionProvider =
+				_infoItemServiceRegistry.getFirstInfoItemService(
+					InfoPermissionProvider.class,
+					objectDefinition.getClassName());
+
+			Assert.assertEquals(
+				expectedResult,
+				infoPermissionProvider.hasViewPermission(
+					PermissionThreadLocal.getPermissionChecker()));
+		}
+		finally {
+			_objectDefinitionLocalService.deleteObjectDefinition(
+				objectDefinition);
+		}
+	}
+
+	private void _testHasViewPermissionForUnmodifiableSystemObjectDefinition(
+			boolean enableFormContainer)
 		throws Exception {
 
 		ObjectDefinition objectDefinition =
@@ -156,6 +169,11 @@ public class ObjectEntryInfoPermissionProviderTest {
 						ObjectFieldConstants.DB_TYPE_STRING,
 						RandomTestUtil.randomString(),
 						"x" + RandomTestUtil.randomString())));
+
+		objectDefinition.setEnableFormContainer(enableFormContainer);
+
+		objectDefinition = _objectDefinitionLocalService.updateObjectDefinition(
+			objectDefinition);
 
 		try {
 			Assert.assertNull(

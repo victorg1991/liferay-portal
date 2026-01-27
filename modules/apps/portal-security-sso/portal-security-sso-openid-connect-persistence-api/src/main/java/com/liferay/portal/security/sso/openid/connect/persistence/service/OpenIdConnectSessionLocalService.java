@@ -199,6 +199,9 @@ public interface OpenIdConnectSessionLocalService
 		DynamicQuery dynamicQuery, Projection projection);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public OpenIdConnectSession fetchCurrentOpenIdConnectSession();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public OpenIdConnectSession fetchOpenIdConnectSession(
 		long openIdConnectSessionId);
 
@@ -227,6 +230,16 @@ public interface OpenIdConnectSessionLocalService
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public OpenIdConnectSession getOpenIdConnectSession(
 			long openIdConnectSessionId)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public OpenIdConnectSession getOpenIdConnectSession(
+			long userId, String issuer)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public OpenIdConnectSession getOpenIdConnectSession(
+			String issuer, String sessionId)
 		throws PortalException;
 
 	/**

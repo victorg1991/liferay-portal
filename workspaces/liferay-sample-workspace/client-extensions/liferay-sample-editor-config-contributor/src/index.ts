@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {Plugin} from '@ckeditor/ckeditor5-core/dist/index.js';
+import {Fullscreen} from '@ckeditor/ckeditor5-fullscreen/dist/index.js';
+import {ButtonView} from '@ckeditor/ckeditor5-ui/dist/index.js';
 import {
 	EditorConfigTransformer,
 	EditorTransformer,
@@ -13,33 +16,76 @@ const editorConfigTransformer: EditorConfigTransformer<any> = (config) => {
 	// CKEditor 5
 
 	if (config?.editorType === 'ckeditor5') {
-		const separator = '|';
+		class HelloWorld extends Plugin {
+			init() {
+				const editor = this.editor;
+
+				editor.ui.componentFactory.add('helloworld', () => {
+					const button = new ButtonView();
+
+					button.set({
+						label: 'Hello',
+						withText: true,
+					});
+
+					button.on('execute', () => {
+						editor.model.change((writer) => {
+							editor.model.insertContent(
+								writer.createText('Hello World ')
+							);
+						});
+					});
+
+					return button;
+				});
+			}
+		}
+
 		const toolbar = [
+
+			// If plugin is in advanced preset, we can just add a toolabar entry.
+
 			'AccessibilityHelp',
-			separator,
 			'undo',
 			'redo',
-			separator,
-			{
-				icon: 'text',
-				items: ['bold', 'italic', 'underline'],
-				label: 'A dropdown with a custom icon',
-			},
-			separator,
 			'alignment',
-			separator,
 			{
 
-				// This dropdown has the icon disabled and a text label instead.
+				// A dropdown with custom icon.
+
+				icon: 'text',
+				items: ['bold', 'italic', 'underline'],
+				label: 'Text formatting',
+			},
+			{
+
+				// A dropdown with text label instead of icon.
 
 				icon: false,
 				items: ['bulletedList', 'numberedList'],
 				label: 'Lists',
 			},
+
+			// An official plugin that was added as extra in `frontend-editor-ckeditor-sample-web`.
+
+			'bookmark',
+
+			// A custom plugin that was added in `frontend-editor-ckeditor-sample-web`.
+
+			'timestamp',
+
+			// An official plugin not in advanced preset.
+
+			'fullscreen',
+
+			// A custom plugin.
+
+			'helloworld',
 		];
 
 		const updatedConfig = {
 			...config,
+			extraPlugins: [Fullscreen, HelloWorld],
 			toolbar,
 		};
 

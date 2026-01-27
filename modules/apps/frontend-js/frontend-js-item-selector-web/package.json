@@ -1,22 +1,32 @@
 {
 	"dependencies": {
-		"@clayui/autocomplete": "3.140.0",
-		"@clayui/core": "3.140.0",
-		"@clayui/data-provider": "3.140.0",
-		"@clayui/form": "3.140.0",
-		"@clayui/multi-select": "3.140.0",
-		"@clayui/shared": "3.140.0",
+		"@clayui/autocomplete": "*",
+		"@clayui/breadcrumb": "*",
+		"@clayui/button": "*",
+		"@clayui/core": "*",
+		"@clayui/data-provider": "*",
+		"@clayui/form": "*",
+		"@clayui/layout": "*",
+		"@clayui/link": "*",
+		"@clayui/modal": "*",
+		"@clayui/multi-select": "*",
+		"@clayui/shared": "*",
+		"@clayui/tooltip": "*",
+		"@liferay/frontend-data-set-web": "*",
+		"@liferay/frontend-js-react-web": "*",
+		"classnames": "2.3.1",
 		"frontend-js-web": "*",
 		"react": "18.2.0",
-		"react-dom": "18.2.0"
+		"react-dom": "18.2.0",
+		"uuid": "9.0.0"
 	},
 	"main": "index.ts",
-	"name": "frontend-js-item-selector-web",
+	"name": "@liferay/frontend-js-item-selector-web",
 	"scripts": {
 		"build": "node-scripts build",
 		"checkFormat": "node-scripts format --check",
 		"format": "node-scripts format",
 		"test": "node-scripts test"
 	},
-	"version": "1.0.2"
+	"version": "1.0.14"
 }

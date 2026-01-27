@@ -6,17 +6,22 @@
 export enum OrderCustomFields {
 	ANALYTICS_GROUP_ID = 'analytics-group-id',
 	CLOUD_PROVISIONING = 'cloud-provisioning',
-	END_DATE = 'trial-end-date',
+	KORONEIKI_PROJECT = 'koroneiki-project',
+	ORDER_METADATA = 'order-metadata',
 	PROJECT_NAME = 'project-name',
-	START_DATE = 'trial-start-date',
+	TRIAL_END_DATE = 'trial-end-date',
 	TRIAL_ERROR = 'trial-error',
 	TRIAL_SETTINGS = 'trial-settings',
-	VIRTUAL_HOST = 'trial-virtualhost',
+	TRIAL_START_DATE = 'trial-start-date',
+	TRIAL_VIRTUAL_HOST = 'trial-virtual-host',
 }
 
 export enum OrderStatus {
 	APPROVED = 'approved',
+	CANCELLED = 'cancelled',
 	COMPLETED = 'completed',
+	IN_PROGRESS = 'in-progress',
+	ON_HOLD = 'on-hold',
 	PENDING = 'pending',
 	PROCESSING = 'processing',
 }
@@ -24,9 +29,9 @@ export enum OrderStatus {
 export enum OrderTypes {
 	ADDONS = 'ADDONS',
 	CLIENT_EXTENSION = 'CLIENT_EXTENSION',
-	CLOUDAPP = 'CLOUDAPP',
+	CLOUD_APP = 'CLOUD_APP',
 	COMPOSITE_APP = 'COMPOSITE_APP',
-	DXPAPP = 'DXPAPP',
+	DXP_APP = 'DXP_APP',
 	LOW_CODE_CONFIGURATION = 'LOW_CODE_CONFIGURATION',
 	OTHER = 'OTHER',
 	SOLUTIONS7 = 'SOLUTIONS7',
@@ -44,17 +49,19 @@ export enum OrderWorkflowStatusCode {
 }
 
 export enum PaymentStatus {
+	CANCELED = 8,
+	FAILED = 4,
 	PAID = 0,
-	PENDING = 1,
 	PAYMENT_PENDING = 2,
+	PENDING = 1,
 }
 
 export const orderTypeLabel = {
 	[OrderTypes.ADDONS]: 'Add-Ons',
 	[OrderTypes.CLIENT_EXTENSION]: 'Client Extension',
-	[OrderTypes.CLOUDAPP]: 'Cloud',
+	[OrderTypes.CLOUD_APP]: 'Cloud',
 	[OrderTypes.COMPOSITE_APP]: 'Composite App',
-	[OrderTypes.DXPAPP]: 'DXP',
+	[OrderTypes.DXP_APP]: 'DXP',
 	[OrderTypes.LOW_CODE_CONFIGURATION]: 'Low-Code Configuration',
 	[OrderTypes.OTHER]: 'Other',
 	[OrderTypes.SSA_SAAS]: 'SSA SaaS',

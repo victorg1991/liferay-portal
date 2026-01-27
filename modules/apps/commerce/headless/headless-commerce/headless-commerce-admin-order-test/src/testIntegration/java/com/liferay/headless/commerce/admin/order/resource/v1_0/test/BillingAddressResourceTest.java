@@ -42,6 +42,7 @@ import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
+import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 
 import java.math.BigDecimal;
 
@@ -245,13 +246,6 @@ public class BillingAddressResourceTest
 		return _addAddress();
 	}
 
-	@Override
-	protected BillingAddress testGraphQLBillingAddress_addBillingAddress()
-		throws Exception {
-
-		return _addAddress();
-	}
-
 	private BillingAddress _addAddress() throws Exception {
 		Address address = _addressLocalService.addAddress(
 			RandomTestUtil.randomString(), _user.getUserId(),
@@ -290,7 +284,8 @@ public class BillingAddressResourceTest
 		ListTypeDefinition listTypeDefinition =
 			_listTypeDefinitionLocalService.addListTypeDefinition(
 				RandomTestUtil.randomString(), TestPropsValues.getUserId(),
-				false);
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				false, Collections.emptyList(), new ServiceContext());
 
 		ListTypeEntry listTypeEntry =
 			_listTypeEntryLocalService.addListTypeEntry(

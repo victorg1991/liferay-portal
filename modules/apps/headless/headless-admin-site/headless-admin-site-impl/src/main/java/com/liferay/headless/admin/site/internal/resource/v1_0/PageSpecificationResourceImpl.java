@@ -5,19 +5,23 @@
 
 package com.liferay.headless.admin.site.internal.resource.v1_0;
 
+import com.liferay.client.extension.type.manager.CETManager;
+import com.liferay.fragment.processor.FragmentEntryProcessorRegistry;
 import com.liferay.headless.admin.site.dto.v1_0.ContentPageSpecification;
 import com.liferay.headless.admin.site.dto.v1_0.DisplayPageTemplate;
 import com.liferay.headless.admin.site.dto.v1_0.MasterPage;
-import com.liferay.headless.admin.site.dto.v1_0.PageExperience;
 import com.liferay.headless.admin.site.dto.v1_0.PageSpecification;
 import com.liferay.headless.admin.site.dto.v1_0.PageTemplate;
 import com.liferay.headless.admin.site.dto.v1_0.Settings;
 import com.liferay.headless.admin.site.dto.v1_0.SitePage;
 import com.liferay.headless.admin.site.dto.v1_0.UtilityPage;
+import com.liferay.headless.admin.site.dto.v1_0.WidgetPageSpecification;
 import com.liferay.headless.admin.site.internal.resource.v1_0.util.GroupUtil;
 import com.liferay.headless.admin.site.internal.resource.v1_0.util.LayoutUtil;
+import com.liferay.headless.admin.site.internal.resource.v1_0.util.SettingsUtil;
 import com.liferay.headless.admin.site.resource.v1_0.PageSpecificationResource;
 import com.liferay.headless.common.spi.service.context.ServiceContextBuilder;
+import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.layout.constants.LayoutTypeSettingsConstants;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
@@ -28,6 +32,7 @@ import com.liferay.layout.utility.page.service.LayoutUtilityPageEntryService;
 import com.liferay.portal.kernel.exception.LockedLayoutException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -58,7 +63,7 @@ public class PageSpecificationResourceImpl
 	extends BasePageSpecificationResourceImpl {
 
 	@Override
-	public void deleteSiteSiteByExternalReferenceCodePageSpecification(
+	public void deleteSitePageSpecification(
 			String siteExternalReferenceCode,
 			String pageSpecificationExternalReferenceCode)
 		throws Exception {
@@ -89,7 +94,7 @@ public class PageSpecificationResourceImpl
 	)
 	@Override
 	public Page<PageSpecification>
-			getSiteSiteByExternalReferenceCodeDisplayPageTemplatePageSpecificationsPage(
+			getSiteDisplayPageTemplatePageSpecificationsPage(
 				String siteExternalReferenceCode,
 				@NestedFieldId(value = "externalReferenceCode") String
 					displayPageTemplateExternalReferenceCode)
@@ -122,11 +127,10 @@ public class PageSpecificationResourceImpl
 
 	@NestedField(parentClass = MasterPage.class, value = "pageSpecifications")
 	@Override
-	public Page<PageSpecification>
-			getSiteSiteByExternalReferenceCodeMasterPagePageSpecificationsPage(
-				String siteExternalReferenceCode,
-				@NestedFieldId(value = "externalReferenceCode") String
-					masterPageExternalReferenceCode)
+	public Page<PageSpecification> getSiteMasterPagePageSpecificationsPage(
+			String siteExternalReferenceCode,
+			@NestedFieldId(value = "externalReferenceCode") String
+				masterPageExternalReferenceCode)
 		throws Exception {
 
 		if (!FeatureFlagManagerUtil.isEnabled("LPD-35443")) {
@@ -155,10 +159,9 @@ public class PageSpecificationResourceImpl
 	}
 
 	@Override
-	public PageSpecification
-			getSiteSiteByExternalReferenceCodePageSpecification(
-				String siteExternalReferenceCode,
-				String pageSpecificationExternalReferenceCode)
+	public PageSpecification getSitePageSpecification(
+			String siteExternalReferenceCode,
+			String pageSpecificationExternalReferenceCode)
 		throws Exception {
 
 		if (!FeatureFlagManagerUtil.isEnabled("LPD-35443")) {
@@ -182,11 +185,10 @@ public class PageSpecificationResourceImpl
 
 	@NestedField(parentClass = PageTemplate.class, value = "pageSpecifications")
 	@Override
-	public Page<PageSpecification>
-			getSiteSiteByExternalReferenceCodePageTemplatePageSpecificationsPage(
-				String siteExternalReferenceCode,
-				@NestedFieldId(value = "externalReferenceCode") String
-					pageTemplateExternalReferenceCode)
+	public Page<PageSpecification> getSitePageTemplatePageSpecificationsPage(
+			String siteExternalReferenceCode,
+			@NestedFieldId(value = "externalReferenceCode") String
+				pageTemplateExternalReferenceCode)
 		throws Exception {
 
 		if (!FeatureFlagManagerUtil.isEnabled("LPD-35443")) {
@@ -219,11 +221,10 @@ public class PageSpecificationResourceImpl
 
 	@NestedField(parentClass = SitePage.class, value = "pageSpecifications")
 	@Override
-	public Page<PageSpecification>
-			getSiteSiteByExternalReferenceCodeSitePagePageSpecificationsPage(
-				String siteExternalReferenceCode,
-				@NestedFieldId(value = "externalReferenceCode") String
-					sitePageExternalReferenceCode)
+	public Page<PageSpecification> getSiteSitePagePageSpecificationsPage(
+			String siteExternalReferenceCode,
+			@NestedFieldId(value = "externalReferenceCode") String
+				sitePageExternalReferenceCode)
 		throws Exception {
 
 		if (!FeatureFlagManagerUtil.isEnabled("LPD-35443")) {
@@ -255,11 +256,10 @@ public class PageSpecificationResourceImpl
 
 	@NestedField(parentClass = UtilityPage.class, value = "pageSpecifications")
 	@Override
-	public Page<PageSpecification>
-			getSiteSiteByExternalReferenceCodeUtilityPagePageSpecificationsPage(
-				String siteExternalReferenceCode,
-				@NestedFieldId(value = "externalReferenceCode") String
-					utilityPageExternalReferenceCode)
+	public Page<PageSpecification> getSiteUtilityPagePageSpecificationsPage(
+			String siteExternalReferenceCode,
+			@NestedFieldId(value = "externalReferenceCode") String
+				utilityPageExternalReferenceCode)
 		throws Exception {
 
 		if (!FeatureFlagManagerUtil.isEnabled("LPD-35443")) {
@@ -281,11 +281,10 @@ public class PageSpecificationResourceImpl
 	}
 
 	@Override
-	public PageSpecification
-			putSiteSiteByExternalReferenceCodePageSpecification(
-				String siteExternalReferenceCode,
-				String pageSpecificationExternalReferenceCode,
-				PageSpecification pageSpecification)
+	public PageSpecification putSitePageSpecification(
+			String siteExternalReferenceCode,
+			String pageSpecificationExternalReferenceCode,
+			PageSpecification pageSpecification)
 		throws Exception {
 
 		if (!FeatureFlagManagerUtil.isEnabled("LPD-35443")) {
@@ -303,6 +302,7 @@ public class PageSpecificationResourceImpl
 			groupId, contextHttpServletRequest, null
 		).build();
 
+		serviceContext.setCompanyId(contextCompany.getCompanyId());
 		serviceContext.setUserId(contextUser.getUserId());
 
 		if (!layout.isTypeAssetDisplay() && !layout.isTypeContent()) {
@@ -318,10 +318,12 @@ public class PageSpecificationResourceImpl
 
 			return _pageSpecificationDTOConverter.toDTO(
 				LayoutUtil.updateLayout(
-					layout, layout.getNameMap(), layout.getTitleMap(),
-					layout.getDescriptionMap(), layout.getRobotsMap(),
-					layout.getFriendlyURLMap(), pageSpecification.getSettings(),
-					serviceContext));
+					_cetManager, _fragmentEntryProcessorRegistry,
+					_infoItemServiceRegistry, layout, layout.getNameMap(),
+					layout.getTitleMap(), layout.getDescriptionMap(),
+					layout.getKeywordsMap(), layout.getRobotsMap(),
+					layout.getFriendlyURLMap(), pageSpecification,
+					layout.getStatus(), serviceContext));
 		}
 
 		if (!Objects.equals(
@@ -337,11 +339,12 @@ public class PageSpecificationResourceImpl
 
 		return _pageSpecificationDTOConverter.toDTO(
 			LayoutUtil.updateLayout(
-				(ContentPageSpecification)pageSpecification, layout,
-				layout.getNameMap(), layout.getTitleMap(),
-				layout.getDescriptionMap(), layout.getRobotsMap(),
-				layout.getFriendlyURLMap(), WorkflowConstants.STATUS_DRAFT,
-				serviceContext));
+				_cetManager, _fragmentEntryProcessorRegistry,
+				_infoItemServiceRegistry, layout, layout.getNameMap(),
+				layout.getTitleMap(), layout.getDescriptionMap(),
+				layout.getKeywordsMap(), layout.getRobotsMap(),
+				layout.getFriendlyURLMap(), pageSpecification,
+				WorkflowConstants.STATUS_DRAFT, serviceContext));
 	}
 
 	@Override
@@ -349,64 +352,21 @@ public class PageSpecificationResourceImpl
 		PageSpecification pageSpecification,
 		PageSpecification existingPageSpecification) {
 
-		Settings settings = pageSpecification.getSettings();
+		Settings settings = SettingsUtil.getSettings(pageSpecification);
 
 		if (settings != null) {
-			Settings existingSettings = existingPageSpecification.getSettings();
+			if (pageSpecification instanceof ContentPageSpecification) {
+				ContentPageSpecification existingContentPageSpecification =
+					(ContentPageSpecification)existingPageSpecification;
 
-			if (settings.getColorSchemeName() != null) {
-				existingSettings.setColorSchemeName(
-					settings::getColorSchemeName);
+				existingContentPageSpecification.setSettings(() -> settings);
 			}
 
-			if (settings.getCss() != null) {
-				existingSettings.setCss(settings::getCss);
-			}
+			if (pageSpecification instanceof WidgetPageSpecification) {
+				WidgetPageSpecification existingWidgetPageSpecification =
+					(WidgetPageSpecification)existingPageSpecification;
 
-			if (settings.getFavIcon() != null) {
-				existingSettings.setFavIcon(settings::getFavIcon);
-			}
-
-			if (settings.getGlobalCSSClientExtensions() != null) {
-				existingSettings.setGlobalCSSClientExtensions(
-					settings::getGlobalCSSClientExtensions);
-			}
-
-			if (settings.getGlobalJSClientExtensions() != null) {
-				existingSettings.setGlobalJSClientExtensions(
-					settings::getGlobalJSClientExtensions);
-			}
-
-			if (settings.getJavascript() != null) {
-				existingSettings.setJavascript(settings::getJavascript);
-			}
-
-			if (settings.getMasterPageItemExternalReference() != null) {
-				existingSettings.setMasterPageItemExternalReference(
-					settings::getMasterPageItemExternalReference);
-			}
-
-			if (settings.getStyleBookItemExternalReference() != null) {
-				existingSettings.setStyleBookItemExternalReference(
-					settings::getStyleBookItemExternalReference);
-			}
-
-			if (settings.getThemeCSSClientExtension() != null) {
-				existingSettings.setThemeCSSClientExtension(
-					settings::getThemeCSSClientExtension);
-			}
-
-			if (settings.getThemeName() != null) {
-				existingSettings.setThemeName(settings::getThemeName);
-			}
-
-			if (settings.getThemeSettings() != null) {
-				existingSettings.setThemeSettings(settings::getThemeSettings);
-			}
-
-			if (settings.getThemeSpritemapClientExtension() != null) {
-				existingSettings.setThemeSpritemapClientExtension(
-					settings::getThemeSpritemapClientExtension);
+				existingWidgetPageSpecification.setSettings(() -> settings);
 			}
 		}
 
@@ -473,43 +433,13 @@ public class PageSpecificationResourceImpl
 			pageSpecificationExternalReferenceCode, groupId);
 	}
 
-	private PageExperience _getPageExperience(
-		ContentPageSpecification contentPageSpecification,
-		String pageExperienceExternalReferenceCode) {
-
-		for (PageExperience pageExperience :
-				contentPageSpecification.getPageExperiences()) {
-
-			if (!Objects.equals(
-					pageExperience.getExternalReferenceCode(),
-					pageExperienceExternalReferenceCode)) {
-
-				continue;
-			}
-
-			return pageExperience;
-		}
-
-		throw new UnsupportedOperationException();
-	}
-
 	private void _preparePatch(
 		ContentPageSpecification contentPageSpecification,
 		ContentPageSpecification existingContentPageSpecification) {
 
-		if (contentPageSpecification.getPageExperiences() == null) {
-			return;
-		}
-
-		for (PageExperience pageExperience :
-				contentPageSpecification.getPageExperiences()) {
-
-			PageExperience existingPageExperience = _getPageExperience(
-				existingContentPageSpecification,
-				pageExperience.getExternalReferenceCode());
-
-			existingPageExperience.setPageElements(
-				pageExperience::getPageElements);
+		if (contentPageSpecification.getPageExperiences() != null) {
+			existingContentPageSpecification.setPageExperiences(
+				contentPageSpecification::getPageExperiences);
 		}
 	}
 
@@ -519,7 +449,10 @@ public class PageSpecificationResourceImpl
 		Layout draftLayout = layout.fetchDraftLayout();
 
 		if (draftLayout == null) {
-			if (!layout.isTypePortlet()) {
+			if (!layout.isTypePortlet() &&
+				!Objects.equals(layout.getType(), LayoutConstants.TYPE_NODE) &&
+				!Objects.equals(layout.getType(), LayoutConstants.TYPE_URL)) {
+
 				throw new UnsupportedOperationException();
 			}
 
@@ -531,6 +464,15 @@ public class PageSpecificationResourceImpl
 			_pageSpecificationDTOConverter.toDTO(layout),
 			_pageSpecificationDTOConverter.toDTO(draftLayout));
 	}
+
+	@Reference
+	private CETManager _cetManager;
+
+	@Reference
+	private FragmentEntryProcessorRegistry _fragmentEntryProcessorRegistry;
+
+	@Reference
+	private InfoItemServiceRegistry _infoItemServiceRegistry;
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;

@@ -1,5 +1,8 @@
+const error = document.getElementById(
+	`${fragmentElementId}-numeric-input-error`
+);
 const numericInput = fragmentElement.querySelector(
-	`#${fragmentNamespace}-numeric-input`
+	`#${fragmentElementId}-numeric-input`
 );
 
 const isInteger = input.attributes.dataType === 'integer';
@@ -40,7 +43,11 @@ else {
 	const defaultLanguageId = themeDisplay.getDefaultLanguageId();
 
 	import('@liferay/fragment-impl/api').then(
-		({registerLocalizedInput, registerUnlocalizedInput}) => {
+		({focusInput, registerLocalizedInput, registerUnlocalizedInput}) => {
+			if (error) {
+				focusInput(numericInput);
+			}
+
 			if (input.localizable) {
 				const {onChange} = registerLocalizedInput({
 					defaultLanguageId,
@@ -48,7 +55,7 @@ else {
 					inputElement: numericInput,
 					inputName: input.name,
 					localizationInputsContainer: numericInput.parentNode,
-					namespace: fragmentNamespace,
+					namespace: fragmentElementId,
 				});
 
 				numericInput.addEventListener('change', (event) => {
@@ -60,12 +67,12 @@ else {
 					defaultLanguageId,
 					inputElement: numericInput,
 					readOnlyInputLabel: document.getElementById(
-						`${fragmentNamespace}-numeric-read-only`
+						`${fragmentElementId}-numeric-read-only`
 					),
 					unlocalizedFieldsState:
 						input.attributes.unlocalizedFieldsState,
 					unlocalizedMessageContainer: document.getElementById(
-						`${fragmentNamespace}-unlocalized-info`
+						`${fragmentElementId}-unlocalized-info`
 					),
 				});
 			}

@@ -7,8 +7,8 @@ import useTranslationProgress, {
 	fieldToTranslations,
 } from '../../../src/main/resources/META-INF/resources/js/translation_manager/useTranslationProgress';
 
-import '@testing-library/jest-dom/extend-expect';
-import {render, screen} from '@testing-library/react';
+import '@testing-library/jest-dom';
+import {fireEvent, render, screen, within} from '@testing-library/react';
 import {act, renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
@@ -100,11 +100,11 @@ describe('TranslationManager', () => {
 		);
 	});
 
-	it('attaches inputLocalized:localeChanged fire event on mount', () => {
+	it('fires `inputLocalized:localeChanged` event when language is changed', async () => {
 		const renderComponent = () =>
 			render(
 				<>
-					<div data-languageid="en_US" data-value="en_US" />
+					<div data-languageid="ca_ES" data-value="ca_ES" />
 
 					<TranslationManager {...DEFAULT_PROPS} />
 				</>
@@ -112,15 +112,36 @@ describe('TranslationManager', () => {
 
 		renderComponent();
 
-		const item = document.createElement('div');
-		item.dataset.value = 'en_US';
-		item.dataset.languageid = 'en_US';
+		userEvent.click(screen.getByRole('combobox'));
+
+		const listbox = await screen.findByRole('listbox');
+		fireEvent.click(within(listbox).getByText('ca-ES'));
+
+		const item = document.querySelector(
+			'[data-languageid="ca_ES"][data-value="ca_ES"]'
+		);
 
 		expect(global.Liferay.fire).toHaveBeenCalledWith(
 			'inputLocalized:localeChanged',
 			{
 				item,
 			}
+		);
+	});
+
+	it('does not fire `inputLocalized:localeChanged` event when language is not changed', async () => {
+		renderComponent();
+
+		(global.Liferay.fire as jest.Mock).mockClear();
+
+		userEvent.click(screen.getByRole('combobox'));
+
+		const listbox = await screen.findByRole('listbox');
+		fireEvent.click(within(listbox).getByText('en-US'));
+
+		expect(global.Liferay.fire).not.toHaveBeenCalledWith(
+			'inputLocalized:localeChanged',
+			expect.anything()
 		);
 	});
 
@@ -166,5 +187,28 @@ describe('TranslationManager', () => {
 			{fieldName: 'description', languages: ['ar_SA']},
 			{fieldName: 'name', languages: ['ca_ES']},
 		]);
+	});
+
+	it('shows two specific fields when switching from EN to ar_SA', async () => {
+		const descriptionMsg = document.createElement('p');
+		descriptionMsg.id =
+			DEFAULT_PROPS.namespace + 'descriptionNotTranslatableMessage';
+		descriptionMsg.hidden = true;
+		document.body.appendChild(descriptionMsg);
+
+		const friendlyMsg = document.createElement('p');
+		friendlyMsg.id =
+			DEFAULT_PROPS.namespace + 'friendlyURLNotTranslatableMessage';
+		friendlyMsg.hidden = true;
+		document.body.appendChild(friendlyMsg);
+
+		renderComponent();
+
+		userEvent.click(screen.getByRole('combobox'));
+		const listbox = await screen.findByRole('listbox');
+		fireEvent.click(within(listbox).getByText('ar-SA'));
+
+		expect(descriptionMsg.hidden).toBe(false);
+		expect(friendlyMsg.hidden).toBe(false);
 	});
 });

@@ -8,7 +8,8 @@ package com.liferay.roles.admin.internal.role.type.contributor;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.kernel.util.PropsValues;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.roles.admin.role.type.contributor.RoleTypeContributor;
 
 import java.util.Locale;
@@ -71,7 +72,9 @@ public class OrganizationRoleTypeContributor implements RoleTypeContributor {
 
 	@Override
 	public boolean isAllowDelete(Role role) {
-		if (role == null) {
+		if ((role == null) ||
+			StringUtil.equals(RoleConstants.ACCOUNT_MANAGER, role.getName())) {
+
 			return false;
 		}
 

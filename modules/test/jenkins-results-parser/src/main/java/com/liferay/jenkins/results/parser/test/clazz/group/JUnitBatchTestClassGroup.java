@@ -15,10 +15,12 @@ import com.liferay.jenkins.results.parser.job.property.JobProperty;
 import com.liferay.jenkins.results.parser.test.batch.JUnitTestBatch;
 import com.liferay.jenkins.results.parser.test.batch.JUnitTestSelector;
 import com.liferay.jenkins.results.parser.test.clazz.JUnitTestClass;
-import com.liferay.jenkins.results.parser.test.clazz.JUnitTestClassBalancedListSplitter;
 import com.liferay.jenkins.results.parser.test.clazz.TestClass;
+import com.liferay.jenkins.results.parser.test.clazz.TestClassBalancedListSplitter;
 import com.liferay.jenkins.results.parser.test.clazz.TestClassFactory;
 import com.liferay.jenkins.results.parser.test.clazz.TestClassMethod;
+import com.liferay.jenkins.results.parser.test.clazz.TestTaskBalancedListSplitter;
+import com.liferay.jenkins.results.parser.test.task.TestTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -204,6 +207,29 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 		jsonObject.put("target_duration", getTargetAxisDuration());
 
 		return jsonObject;
+	}
+
+	public List<String> getTestClassMethodNames(
+		File file, Map<String, List<String>> globTestClassMethodNamesMap) {
+
+		for (Map.Entry<String, List<String>> globTestClassMethodEntry :
+				globTestClassMethodNamesMap.entrySet()) {
+
+			String glob = globTestClassMethodEntry.getKey();
+
+			PathMatcher pathMatcher = JenkinsResultsParserUtil.toPathMatcher(
+				_getWorkingDirectory() + "/", glob);
+
+			if (pathMatcher.matches(file.toPath())) {
+				return globTestClassMethodNamesMap.get(glob);
+			}
+		}
+
+		return null;
+	}
+
+	public List<TestTask> getTestTasks() {
+		return new ArrayList<>();
 	}
 
 	public void writeTestCSVReportFile() throws Exception {
@@ -389,7 +415,7 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 
 	protected List<PathMatcher> getIncludesPathMatchers() {
 		if (!isRootCauseAnalysis()) {
-			return getPathMatchers(getIncludesJobProperties());
+			return getIncludePathMatchers(getIncludesJobProperties());
 		}
 
 		List<String> includeGlobs = new ArrayList<>();
@@ -619,15 +645,45 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 					0, TestClassGroupFactory.newAxisTestClassGroup(this));
 			}
 			else {
-				List<TestClass> batchTestClasses = new ArrayList<>(testClasses);
+				List<List<TestClass>> testClassLists = null;
 
-				JUnitTestClassBalancedListSplitter
-					jUnitTestClassBalancedListSplitter =
-						new JUnitTestClassBalancedListSplitter(
-							targetAxisDuration);
+				GroupingStrategy groupingStrategy = getGroupingStrategy();
 
-				List<List<TestClass>> testClassLists =
-					jUnitTestClassBalancedListSplitter.split(batchTestClasses);
+				if ((this instanceof ModulesJUnitBatchTestClassGroup) &&
+					((groupingStrategy ==
+						GroupingStrategy.TEST_TASK_AVERAGE_DURATION) ||
+					 (groupingStrategy ==
+						 GroupingStrategy.TEST_TASK_AVERAGE_TOTAL_DURATION) ||
+					 (groupingStrategy ==
+						 GroupingStrategy.TEST_TASK_LONGEST_DURATION))) {
+
+					TestTaskBalancedListSplitter testTaskBalancedListSplitter =
+						new TestTaskBalancedListSplitter(targetAxisDuration);
+
+					List<List<TestTask>> testTaskLists =
+						testTaskBalancedListSplitter.split(getTestTasks());
+
+					testClassLists = new ArrayList<>();
+
+					for (List<TestTask> testTasksList : testTaskLists) {
+						List<TestClass> testClassList = new ArrayList<>();
+
+						for (TestTask testTask : testTasksList) {
+							testClassList.addAll(testTask.getTestClasses());
+						}
+
+						testClassLists.add(testClassList);
+					}
+				}
+				else {
+					TestClassBalancedListSplitter
+						testClassBalancedListSplitter =
+							new TestClassBalancedListSplitter(
+								targetAxisDuration);
+
+					testClassLists = testClassBalancedListSplitter.split(
+						new ArrayList<>(testClasses));
+				}
 
 				for (List<TestClass> testClassList : testClassLists) {
 					AxisTestClassGroup axisTestClassGroup =
@@ -706,12 +762,10 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 
 		long start = System.currentTimeMillis();
 
-		List<PathMatcher> filterPathMatchers = getPathMatchers(
-			getFilterJobProperties());
 		List<PathMatcher> excludesPathMatchers = getPathMatchers(
 			getExcludesJobProperties());
-
-		BatchTestClassGroup batchTestClassGroup = this;
+		List<PathMatcher> filterPathMatchers = getPathMatchers(
+			getFilterJobProperties());
 
 		for (final File javaTestClassFile : _javaTestClassFiles) {
 			if (JenkinsResultsParserUtil.isFileExcluded(
@@ -725,8 +779,21 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 				continue;
 			}
 
-			TestClass testClass = TestClassFactory.newTestClass(
-				batchTestClassGroup, javaTestClassFile);
+			TestClass testClass = null;
+
+			List<String> testClassMethodNames = getTestClassMethodNames(
+				javaTestClassFile, getGlobTestClassMethodNamesMap());
+
+			if ((testClassMethodNames != null) &&
+				!testClassMethodNames.isEmpty()) {
+
+				testClass = TestClassFactory.newTestClass(
+					this, javaTestClassFile, testClassMethodNames);
+			}
+			else {
+				testClass = TestClassFactory.newTestClass(
+					this, javaTestClassFile);
+			}
 
 			if ((testClass != null) && !testClass.isIgnored() &&
 				testClass.hasTestClassMethods()) {
@@ -742,8 +809,6 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 				"[", getBatchName(), "] Found ",
 				String.valueOf(getTestClassCount()), " test classes in ",
 				JenkinsResultsParserUtil.toDurationString(duration)));
-
-		sortTestClasses();
 	}
 
 	protected void setTestClasses(JUnitTestSelector jUnitTestSelector) {
@@ -803,8 +868,6 @@ public class JUnitBatchTestClassGroup extends BatchTestClassGroup {
 				"[", getBatchName(), "] Found ",
 				String.valueOf(getTestClassCount()), " test classes in ",
 				JenkinsResultsParserUtil.toDurationString(duration)));
-
-		sortTestClasses();
 	}
 
 	private File _getWorkingDirectory() {

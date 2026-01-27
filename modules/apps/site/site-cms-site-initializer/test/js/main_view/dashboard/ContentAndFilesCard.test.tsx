@@ -3,20 +3,24 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
+import {
+	RangeSelectors,
+	TrendClassification,
+} from '@liferay/analytics-reports-js-components-web';
 import {
 	render,
 	screen,
 	waitForElementToBeRemoved,
+	within,
 } from '@testing-library/react';
 import React from 'react';
 
+import ApiHelper from '../../../../src/main/resources/META-INF/resources/js/common/services/ApiHelper';
 import {
 	ContentAndFilesCard,
 	IMetricsProps,
-	TrendClassification,
 } from '../../../../src/main/resources/META-INF/resources/js/main_view/dashboard/components/ContentAndFilesCard';
-import {RangeSelectors} from '../../../../src/main/resources/META-INF/resources/js/main_view/dashboard/components/RangeSelectorsDropdown';
 
 const mockedResponse: IMetricsProps = {
 	categoriesCount: 10,
@@ -49,9 +53,9 @@ describe('[CMS Dashboard] Components: ContentAndFilesCard', () => {
 	});
 
 	it('renders correctly with given props', async () => {
-		global.fetch = jest.fn().mockResolvedValue({
-			json: () => Promise.resolve(mockedResponse),
-			ok: true,
+		jest.spyOn(ApiHelper, 'get').mockResolvedValue({
+			data: mockedResponse,
+			error: null,
 		});
 
 		render(<WrappedComponent />);
@@ -77,16 +81,15 @@ describe('[CMS Dashboard] Components: ContentAndFilesCard', () => {
 	});
 
 	it('renders correctly with POSITIVE trend', async () => {
-		global.fetch = jest.fn().mockResolvedValue({
-			json: () =>
-				Promise.resolve({
-					...mockedResponse,
-					trend: {
-						classification: TrendClassification.Positive,
-						percentage: -42,
-					},
-				}),
-			ok: true,
+		jest.spyOn(ApiHelper, 'get').mockResolvedValue({
+			data: {
+				...mockedResponse,
+				trend: {
+					classification: TrendClassification.Positive,
+					percentage: 42,
+				},
+			},
+			error: null,
 		});
 
 		render(<WrappedComponent />);
@@ -95,24 +98,28 @@ describe('[CMS Dashboard] Components: ContentAndFilesCard', () => {
 			screen.getByTestId('loading-animation')
 		);
 
-		const Trend = screen.getByText('42%').parentElement;
+		const trendParent = screen.getByText('42%')
+			.parentElement as HTMLElement;
+		expect(trendParent).toBeInTheDocument();
+		expect(trendParent).toHaveTextContent('42%');
+		expect(trendParent).toHaveClass('text-success');
 
-		expect(Trend).toBeInTheDocument();
-		expect(Trend).toHaveTextContent('42%');
-		expect(Trend).toHaveClass('text-success');
+		const trendIcon = within(trendParent).getByRole('presentation', {
+			name: 'caret-top',
+		});
+		expect(trendIcon).toBeInTheDocument();
 	});
 
 	it('renders correctly with NEGATIVE trend', async () => {
-		global.fetch = jest.fn().mockResolvedValue({
-			json: () =>
-				Promise.resolve({
-					...mockedResponse,
-					trend: {
-						classification: TrendClassification.Negative,
-						percentage: 42,
-					},
-				}),
-			ok: true,
+		jest.spyOn(ApiHelper, 'get').mockResolvedValue({
+			data: {
+				...mockedResponse,
+				trend: {
+					classification: TrendClassification.Negative,
+					percentage: -42,
+				},
+			},
+			error: null,
 		});
 
 		render(<WrappedComponent />);
@@ -121,9 +128,37 @@ describe('[CMS Dashboard] Components: ContentAndFilesCard', () => {
 			screen.getByTestId('loading-animation')
 		);
 
-		const Trend = screen.getByText('42%').parentElement;
-		expect(Trend).toBeInTheDocument();
-		expect(Trend).toHaveTextContent('42%');
-		expect(Trend).toHaveClass('text-danger');
+		const trendParent = screen.getByText('42%')
+			.parentElement as HTMLElement;
+		expect(trendParent).toBeInTheDocument();
+		expect(trendParent).toHaveTextContent('42%');
+		expect(trendParent).toHaveClass('text-danger');
+
+		const trendIcon = within(trendParent).getByRole('presentation', {
+			name: 'caret-bottom',
+		});
+		expect(trendIcon).toBeInTheDocument();
+	});
+
+	it('formats percentage to two decimal places correctly', async () => {
+		jest.spyOn(ApiHelper, 'get').mockResolvedValue({
+			data: {
+				...mockedResponse,
+				trend: {
+					classification: TrendClassification.Positive,
+					percentage: 3.14159265,
+				},
+			},
+			error: null,
+		});
+
+		render(<WrappedComponent />);
+
+		await waitForElementToBeRemoved(
+			screen.getByTestId('loading-animation')
+		);
+
+		const percentageText = screen.getByText('3.14%');
+		expect(percentageText).toBeInTheDocument();
 	});
 });

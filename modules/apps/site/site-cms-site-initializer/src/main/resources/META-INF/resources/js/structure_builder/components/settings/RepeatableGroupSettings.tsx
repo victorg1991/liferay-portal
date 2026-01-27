@@ -6,17 +6,21 @@
 import ClayLabel from '@clayui/label';
 import ClayLayout from '@clayui/layout';
 import ClayTabs from '@clayui/tabs';
+import {useId} from 'frontend-js-components-web';
 import React, {useEffect} from 'react';
 
 import focusInvalidElement from '../../../common/utils/focusInvalidElement';
-import {useStateDispatch} from '../../contexts/StateContext';
+import {useSelector, useStateDispatch} from '../../contexts/StateContext';
+import selectErrors from '../../selectors/selectErrors';
 import {RepeatableGroup} from '../../types/Structure';
 import Breadcrumb from '../Breadcrumb';
 import {LocalizedInput} from '../LocalizedInput';
 
 export default function RepeatableGroupSettings({
+	disabled,
 	group,
 }: {
+	disabled?: boolean;
 	group: RepeatableGroup;
 }) {
 	useEffect(() => {
@@ -32,19 +36,11 @@ export default function RepeatableGroupSettings({
 					<ClayTabs.Item>
 						{Liferay.Language.get('general')}
 					</ClayTabs.Item>
-
-					<ClayTabs.Item>
-						{Liferay.Language.get('search')}
-					</ClayTabs.Item>
 				</ClayTabs.List>
 
 				<ClayTabs.Panels fade>
 					<ClayTabs.TabPane className="px-0">
-						<GeneralTab group={group} />
-					</ClayTabs.TabPane>
-
-					<ClayTabs.TabPane className="px-0">
-						<SearchTab />
+						<GeneralTab disabled={disabled} group={group} />
 					</ClayTabs.TabPane>
 				</ClayTabs.Panels>
 			</ClayTabs>
@@ -52,8 +48,18 @@ export default function RepeatableGroupSettings({
 	);
 }
 
-function GeneralTab({group}: {group: RepeatableGroup}) {
+function GeneralTab({
+	disabled,
+	group,
+}: {
+	disabled?: boolean;
+	group: RepeatableGroup;
+}) {
 	const dispatch = useStateDispatch();
+
+	const errors = useSelector(selectErrors(group.uuid));
+
+	const labelInputId = useId();
 
 	return (
 		<div>
@@ -68,7 +74,10 @@ function GeneralTab({group}: {group: RepeatableGroup}) {
 			</div>
 
 			<LocalizedInput
+				disabled={disabled}
+				error={errors.get('label')}
 				formGroupClassName="mt-4"
+				id={labelInputId}
 				label={Liferay.Language.get('label')}
 				onSave={(translations) => {
 					dispatch({
@@ -82,8 +91,4 @@ function GeneralTab({group}: {group: RepeatableGroup}) {
 			/>
 		</div>
 	);
-}
-
-function SearchTab() {
-	return <div />;
 }

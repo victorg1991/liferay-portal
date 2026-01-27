@@ -105,7 +105,7 @@ boolean singleSelect = ParamUtil.getBoolean(request, "singleSelect", true);
 				value="<%= accountUserDisplay.getAccountRoleNamesString(accountEntryDisplay.getAccountEntryId(), locale) %>"
 			/>
 
-			<c:if test='<%= FeatureFlagManagerUtil.isEnabled("LPD-47858") %>'>
+			<c:if test='<%= FeatureFlagManagerUtil.isEnabled("LPD-35914") %>'>
 				<liferay-ui:search-container-column-text
 					cssClass="table-cell-expand-smallest"
 					name="status"
@@ -208,7 +208,7 @@ boolean singleSelect = ParamUtil.getBoolean(request, "singleSelect", true);
 									.replace('TOKEN_TITLE', label);
 
 								searchContainer.addRow(
-									[selectedItem.entityname, '', removeButton],
+									[entityName, '', removeButton],
 									entityId
 								);
 

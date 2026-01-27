@@ -5,9 +5,11 @@
 
 package com.liferay.account.internal.object.system;
 
+import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountEntryTable;
 import com.liferay.account.service.AccountEntryLocalService;
+import com.liferay.account.service.AccountEntryService;
 import com.liferay.headless.admin.user.dto.v1_0.Account;
 import com.liferay.headless.admin.user.resource.v1_0.AccountResource;
 import com.liferay.object.constants.ObjectDefinitionConstants;
@@ -23,6 +25,8 @@ import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -44,10 +48,12 @@ public class AccountEntrySystemObjectDefinitionManager
 	extends BaseSystemObjectDefinitionManager {
 
 	@Override
-	public long addBaseModel(User user, Map<String, Object> values)
+	public long addBaseModel(
+			boolean checkPermissions, User user, Map<String, Object> values)
 		throws Exception {
 
-		AccountResource accountResource = _buildAccountResource(false, user);
+		AccountResource accountResource = _buildAccountResource(
+			checkPermissions);
 
 		Account account = accountResource.postAccount(_toAccount(values));
 
@@ -152,12 +158,22 @@ public class AccountEntrySystemObjectDefinitionManager
 	}
 
 	@Override
+	public BaseModel<?> getOrAddEmptyBaseModel(
+			String externalReferenceCode, User user)
+		throws PortalException {
+
+		return _accountEntryService.getOrAddEmptyAccountEntry(
+			externalReferenceCode, externalReferenceCode,
+			AccountConstants.ACCOUNT_ENTRY_TYPE_BUSINESS);
+	}
+
+	@Override
 	public Page<?> getPage(
 			User user, String search, Filter filter, Pagination pagination,
 			Sort[] sorts)
 		throws Exception {
 
-		AccountResource accountResource = _buildAccountResource(true, user);
+		AccountResource accountResource = _buildAccountResource(true);
 
 		return accountResource.getAccountsPage(
 			search, filter, pagination, sorts);
@@ -193,7 +209,7 @@ public class AccountEntrySystemObjectDefinitionManager
 			long primaryKey, User user, Map<String, Object> values)
 		throws Exception {
 
-		AccountResource accountResource = _buildAccountResource(false, user);
+		AccountResource accountResource = _buildAccountResource(true);
 
 		Account account = accountResource.patchAccount(
 			primaryKey, _toAccount(values));
@@ -201,10 +217,13 @@ public class AccountEntrySystemObjectDefinitionManager
 		setExtendedProperties(Account.class.getName(), account, user, values);
 	}
 
-	private AccountResource _buildAccountResource(
-		boolean checkPermissions, User user) {
-
+	private AccountResource _buildAccountResource(boolean checkPermissions) {
 		AccountResource.Builder builder = _accountResourceFactory.create();
+
+		PermissionChecker permissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		User user = permissionChecker.getUser();
 
 		return builder.checkPermissions(
 			checkPermissions
@@ -234,6 +253,9 @@ public class AccountEntrySystemObjectDefinitionManager
 
 	@Reference
 	private AccountEntryLocalService _accountEntryLocalService;
+
+	@Reference
+	private AccountEntryService _accountEntryService;
 
 	@Reference
 	private AccountResource.Factory _accountResourceFactory;

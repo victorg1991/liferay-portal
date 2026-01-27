@@ -41,6 +41,10 @@ import org.json.JSONArray;
  */
 public class BuildHistoryProcessor {
 
+	public static File getBaseDir() {
+		return _baseDir;
+	}
+
 	public static ExecutorService getExecutorService() {
 		return _executorService;
 	}
@@ -75,7 +79,7 @@ public class BuildHistoryProcessor {
 
 			};
 
-		return _getBuildHistories(duration, null, null, biConsumer, startTime);
+		return _getBuildHistories(biConsumer, duration, null, null, startTime);
 	}
 
 	public static Collection<BuildHistory> newDefaultJobHistories(
@@ -96,7 +100,7 @@ public class BuildHistoryProcessor {
 
 			};
 
-		return _getBuildHistories(duration, null, null, biConsumer, startTime);
+		return _getBuildHistories(biConsumer, duration, null, null, startTime);
 	}
 
 	public static Collection<BuildHistory> newTestSuiteJobHistories(
@@ -159,7 +163,37 @@ public class BuildHistoryProcessor {
 			};
 
 		return _getBuildHistories(
-			duration, null, jobNamePattern, biConsumer, startTime);
+			biConsumer, duration, null, jobNamePattern, startTime);
+	}
+
+	public static Collection<BuildHistory> newTopLevelBuildHistories(
+		long duration, long startTime) {
+
+		BiConsumer<Set<BuildJSONObject>, Map<String, BuildHistory>> biConsumer =
+			new BiConsumer<Set<BuildJSONObject>, Map<String, BuildHistory>>() {
+
+				@Override
+				public void accept(
+					Set<BuildJSONObject> buildJSONObjects,
+					Map<String, BuildHistory> buildHistories) {
+
+					Set<BuildJSONObject> topLevelBuildJSONObjects =
+						new HashSet<>();
+
+					for (BuildJSONObject buildJSONObject : buildJSONObjects) {
+						if (buildJSONObject.isTopLevelBuild()) {
+							topLevelBuildJSONObjects.add(buildJSONObject);
+						}
+					}
+
+					_addToBuildHistoriesMap(
+						topLevelBuildJSONObjects, buildHistories, duration,
+						new GroupByJobName(), startTime);
+				}
+
+			};
+
+		return _getBuildHistories(biConsumer, duration, null, null, startTime);
 	}
 
 	public static Collection<BuildHistory> newUtilizationBuildHistories(
@@ -180,7 +214,7 @@ public class BuildHistoryProcessor {
 
 			};
 
-		return _getBuildHistories(duration, null, null, biConsumer, startTime);
+		return _getBuildHistories(biConsumer, duration, null, null, startTime);
 	}
 
 	public static Collection<BuildHistory> newUtilizationTestTypeBuildHistories(
@@ -201,7 +235,11 @@ public class BuildHistoryProcessor {
 
 			};
 
-		return _getBuildHistories(duration, null, null, biConsumer, startTime);
+		return _getBuildHistories(biConsumer, duration, null, null, startTime);
+	}
+
+	public static void setBaseDir(File baseDir) {
+		_baseDir = baseDir;
 	}
 
 	private static void _addToBuildHistoriesMap(
@@ -230,11 +268,10 @@ public class BuildHistoryProcessor {
 	}
 
 	private static Collection<BuildHistory> _getBuildHistories(
-		long duration, Pattern jobNameExcludesPattern,
-		Pattern jobNameIncludesPattern,
 		BiConsumer<Set<BuildJSONObject>, Map<String, BuildHistory>>
 			buildHistoryBiConsumer,
-		long startTime) {
+		long duration, Pattern jobNameExcludesPattern,
+		Pattern jobNameIncludesPattern, long startTime) {
 
 		Map<String, BuildHistory> buildHistoriesMap = new HashMap<>();
 
@@ -279,7 +316,7 @@ public class BuildHistoryProcessor {
 	private static Set<BuildJSONObject> _getBuildJSONObjects(
 		String dateString) {
 
-		File dateDir = new File(_BASE_DIR, dateString);
+		File dateDir = new File(_baseDir, dateString);
 
 		if (dateDir.listFiles() == null) {
 			return Collections.emptySet();
@@ -301,9 +338,7 @@ public class BuildHistoryProcessor {
 						try {
 							String jsonFileName = jsonFile.getCanonicalPath();
 
-							if (jsonFileName.contains("test-1-0") ||
-								jsonFileName.contains("test-1-41")) {
-
+							if (jsonFileName.contains("test-1-0")) {
 								return null;
 							}
 
@@ -410,10 +445,9 @@ public class BuildHistoryProcessor {
 		return mergedBuildHistory;
 	}
 
-	private static final File _BASE_DIR;
-
 	private static final Integer _THREAD_COUNT = 8;
 
+	private static File _baseDir;
 	private static final Properties _buildProperties;
 	private static final ExecutorService _executorService =
 		JenkinsResultsParserUtil.getNewThreadPoolExecutor(_THREAD_COUNT, true);
@@ -430,7 +464,7 @@ public class BuildHistoryProcessor {
 			}
 		};
 
-		_BASE_DIR = new File(
+		_baseDir = new File(
 			_buildProperties.getProperty("archive.ci.build.data.tmp.dir"),
 			"builds");
 	}
@@ -530,6 +564,10 @@ public class BuildHistoryProcessor {
 				return TestBatchType.MAINTENANCE.toString();
 			}
 
+			if (jobName.equals("app-server-bundle-builder")) {
+				return TestBatchType.PORTAL_BUNDLE_BUILD.toString();
+			}
+
 			if (buildJSONObject.isTopLevelBuild()) {
 				return TestBatchType.TOP_LEVEL_BUILD.toString();
 			}
@@ -579,7 +617,8 @@ public class BuildHistoryProcessor {
 
 			INTEGRATION("Integration"), MAINTENANCE("Maintenance"),
 			MINIMAL("Minimal"), OTHER("Other"), PLAYWRIGHT("Playwright"),
-			POSHI("Poshi"), TOP_LEVEL_BUILD("Top Level Build"), UNIT("Unit");
+			PORTAL_BUNDLE_BUILD("Portal Bundle Build"), POSHI("Poshi"),
+			TOP_LEVEL_BUILD("Top Level Build"), UNIT("Unit");
 
 			@Override
 			public String toString() {
@@ -653,6 +692,18 @@ public class BuildHistoryProcessor {
 				weekday = true;
 			}
 
+			if (jobName.contains("maintenance") ||
+				jobName.contains("verification")) {
+
+				if (weekday) {
+					return Category.MAINTENANCE_AND_VERIFICATION_WEEKDAYS.
+						toString();
+				}
+
+				return Category.MAINTENANCE_AND_VERIFICATION_WEEKENDS.
+					toString();
+			}
+
 			if (jobName.contains("test-portal-acceptance-pullrequest")) {
 				if (weekday) {
 					return Category.PORTAL_PULLREQUEST_WEEKDAYS.toString();
@@ -661,7 +712,9 @@ public class BuildHistoryProcessor {
 				return Category.PORTAL_PULLREQUEST_WEEKENDS.toString();
 			}
 
-			if (jobName.contains("release") || jobName.contains("upstream")) {
+			if (jobName.contains("portal") &&
+				(jobName.contains("release") || jobName.contains("upstream"))) {
+
 				if (weekday) {
 					return Category.PORTAL_RELEASE_AND_UPSTREAM_WEEKDAYS.
 						toString();
@@ -679,6 +732,10 @@ public class BuildHistoryProcessor {
 
 		private enum Category {
 
+			MAINTENANCE_AND_VERIFICATION_WEEKDAYS(
+				"Maintenance & Verification (Weekdays)"),
+			MAINTENANCE_AND_VERIFICATION_WEEKENDS(
+				"Maintenance & Verification (Weekends)"),
 			OTHER_WEEKDAYS("Other (Weekdays)"),
 			OTHER_WEEKENDS("Other (Weekends)"),
 			PORTAL_PULLREQUEST_WEEKDAYS("Portal Pull Requests (Weekdays)"),

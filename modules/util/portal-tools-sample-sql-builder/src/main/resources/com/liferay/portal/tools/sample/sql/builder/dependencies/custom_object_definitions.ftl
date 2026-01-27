@@ -19,6 +19,12 @@ ${dataFactory.toInsertSQL(listTypeDefinitionModel)}
 
 ${dataFactory.toInsertSQL(objectDefinitionModel)}
 
+${dataFactory.getDynamicObjectDefinitionTableCreateSQL(objectDefinitionModel, objectFieldModels)}
+
+${dataFactory.getExtensionDynamicObjectDefinitionTableCreateSQL(objectDefinitionModel)}
+
+<#assign relatedTicketObjectEntryId = 0 />
+
 <#list dataFactory.newObjectEntryModels(objectDefinitionModel.getObjectDefinitionId()) as objectEntryModel>
 	<#assign
 		dlFileEntryModel = dataFactory.newDLFileEntryModel(dlFolderModel, "FileEntry" + objectEntryModel.getObjectEntryId(), "txt", "text/plain", dataFactory.getCounterNext())
@@ -35,9 +41,13 @@ ${dataFactory.toInsertSQL(objectDefinitionModel)}
 
 	<@insertAssetEntry _entry = objectEntryModel />
 
-	<#list dataFactory.generateDynamicSQLs(objectDefinitionModel.getDBTableName(), dlFileEntryModel.getFileEntryId(), objectEntryModel.getObjectEntryId(), objectFieldModels, objectEntryModel.getUserId()) as dynamicSQL>
+	<#list dataFactory.generateDynamicSQLs(objectDefinitionModel.getDBTableName(), dlFileEntryModel.getFileEntryId(), objectEntryModel.getObjectEntryId(), objectFieldModels, relatedTicketObjectEntryId, objectEntryModel.getUserId()) as dynamicSQL>
 		${dynamicSQL}
 	</#list>
+
+	<#assign relatedTicketObjectEntryId = objectEntryModel.getObjectEntryId() />
+
+	${csvFileWriter.write("objectEntry",virtualHostModel.hostname + "," + objectEntryModel.getObjectEntryId() + "\n")}
 </#list>
 
 <#list objectFieldModels as objectFieldModel>
@@ -67,11 +77,9 @@ ${dataFactory.toInsertSQL(objectDefinitionModel)}
 	</#if>
 </#list>
 
-${dataFactory.toInsertSQL(dataFactory.newObjectRelationshipModel(objectDefinitionModel.getObjectDefinitionId()))}
-
-${dataFactory.getDynamicObjectDefinitionTableCreateSQL(objectDefinitionModel, objectFieldModels)}
-
-${dataFactory.getExtensionDynamicObjectDefinitionTableCreateSQL(objectDefinitionModel)}
+<#list dataFactory.newObjectRelationshipModels(objectDefinitionModel.getObjectDefinitionId()) as objectRelationshipModel>
+	${dataFactory.toInsertSQL(objectRelationshipModel)}
+</#list>
 
 <#list dataFactory.newResourcePermissionModels(objectDefinitionModel) as resourcePermissionModel>
 	${dataFactory.toInsertSQL(resourcePermissionModel)}

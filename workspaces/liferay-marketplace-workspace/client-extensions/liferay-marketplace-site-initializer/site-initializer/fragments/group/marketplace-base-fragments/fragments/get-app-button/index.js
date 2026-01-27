@@ -10,9 +10,7 @@
 const contactPublisherButtonElement = fragmentElement.querySelector(
 	'button#contact-publisher'
 );
-const contactPublisherModal = document.querySelector(
-	'#help-and-support-link-contact-button'
-);
+const contactPublisherModal = document.querySelector('#contact-publisher');
 const getAppButtonElement = fragmentElement.querySelector('button#get-app');
 const getAppDescriptionElement = fragmentElement.querySelector(
 	'#get-app-description'
@@ -24,13 +22,6 @@ const isFreeApp = (productSpecifications = []) =>
 		(productSpecification) =>
 			productSpecification.specificationKey === 'price-model' &&
 			productSpecification.value === 'Free'
-	);
-
-const isLowCodeConfiguration = (productSpecifications = []) =>
-	productSpecifications.some(
-		(productSpecification) =>
-			productSpecification.specificationKey === 'type' &&
-			productSpecification.value === 'low-code-configuration'
 	);
 
 const trackAnalytics = (key, options) => {
@@ -74,45 +65,13 @@ const getProductPrice = async (product) => {
 
 	const licenseTypeText =
 		licenseType?.value === 'Perpetual' ? 'One-Time' : 'Annually';
-	const currency = await getCurrentCurrency();
-
-	let displayPrice = '';
-
-	if (currency) {
-		const convertedPrice = standardSku?.price?.price * currency.rate;
-
-		displayPrice = `${currency.symbol} ${convertedPrice?.toFixed(2)}`;
-	}
-	else {
-		displayPrice = standardSku?.price?.priceFormatted
-			?.replace(' ', '')
-			?.replace(',', '.');
-	}
-
-	const price = `${hasTrialSku ? '30-day trial or' : ''} ${displayPrice}`;
+	const price = `${hasTrialSku ? '30-day trial or' : ''} ${standardSku?.price?.priceFormatted}`;
 
 	return `${price} ${licenseTypeText}`;
 };
 
-const openLowCodeHelpModal = () => {
-	Liferay.Util.openModal({
-		bodyHTML: getHelpModal(),
-		center: true,
-		headerHTML: 'How to Install a Low Code App',
-		size: 'md',
-	});
-};
-
 const customizeGetAppButton = async (product) => {
-	const isLowCodeApp = isLowCodeConfiguration(product.productSpecifications);
-
 	getAppButtonElement.onclick = () => {
-		if (isLowCodeApp) {
-			openLowCodeHelpModal();
-
-			return;
-		}
-
 		trackAnalytics('Click on Get App Button', {
 			isFree: isFreeApp(product.productSpecifications),
 			productName: product.name,

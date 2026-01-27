@@ -16,7 +16,6 @@ import com.liferay.fragment.service.FragmentEntryLocalServiceUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
@@ -97,8 +96,9 @@ public class FragmentCollectionContributorTest {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), _group.getGroupId(), 0, 0,
-				segmentsExperienceId, layout.getPlid(), StringPool.BLANK,
+				null, TestPropsValues.getUserId(), _group.getGroupId(), null,
+				null, null, segmentsExperienceId, layout.getPlid(),
+				StringPool.BLANK,
 				"<div data-lfr-editable-id=\"editable-1\" " +
 					"data-lfr-editable-type=\"rich-text\">EDITABLE 1</div>",
 				StringPool.BLANK, StringPool.BLANK, null, StringPool.BLANK, 0,
@@ -129,8 +129,8 @@ public class FragmentCollectionContributorTest {
 			Assert.assertEquals(
 				modifiedHtml, persistedFragmentEntryLink.getHtml());
 
-			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-				persistedFragmentEntryLink.getEditableValues());
+			JSONObject jsonObject =
+				persistedFragmentEntryLink.getEditableValuesJSONObject();
 
 			JSONObject editableFragmentEntryProcessorJSONObject =
 				jsonObject.getJSONObject(

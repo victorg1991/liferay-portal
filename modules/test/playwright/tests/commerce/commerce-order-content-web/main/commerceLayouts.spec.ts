@@ -37,7 +37,9 @@ export const test = mergeTests(
 	dataApiHelpersTest,
 	displayPageTemplatesPagesTest,
 	featureFlagsTest({
+		'LPD-10562': {enabled: true},
 		'LPD-20379': {enabled: true},
+		'LPD-58472': {enabled: true},
 		'LPS-178052': {enabled: true},
 	}),
 	pageEditorPagesTest,
@@ -581,7 +583,9 @@ test(
 			.fill('2024-09-11');
 		await commerceLayoutsPage.saveButton.click();
 
-		await expect(page.getByText('9/11/24', {exact: true})).toBeVisible();
+		await expect(
+			page.getByText('Sep 11, 2024', {exact: true})
+		).toBeVisible();
 
 		await commerceLayoutsPage
 			.infoBoxButton('Requested Delivery Date')
@@ -591,7 +595,9 @@ test(
 			.fill('2024-09-13');
 		await commerceLayoutsPage.saveButton.click();
 
-		await expect(page.getByText('9/13/24', {exact: true})).toBeVisible();
+		await expect(
+			page.getByText('Sep 13, 2024', {exact: true})
+		).toBeVisible();
 
 		await apiHelpers.headlessCommerceDeliveryCart.checkoutCart(cart.id);
 
@@ -804,8 +810,6 @@ test(
 		pageEditorPage,
 		site,
 	}) => {
-		test.setTimeout(180000);
-
 		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
 
 		const displayPageTemplateName = getRandomString();
@@ -893,11 +897,10 @@ test(
 			channel.id
 		);
 
-		await page.waitForLoadState('networkidle');
-
 		await page.goto(
 			liferayConfig.environment.baseUrl +
-				`/web/${site.name}/order/${cart.id}`
+				`/web/${site.name}/order/${cart.id}`,
+			{waitUntil: 'networkidle'}
 		);
 
 		await expect(
@@ -930,7 +933,8 @@ test(
 
 		await page.goto(
 			liferayConfig.environment.baseUrl +
-				`/web/${site.name}/order/${cart.id}`
+				`/web/${site.name}/order/${cart.id}`,
+			{waitUntil: 'networkidle'}
 		);
 
 		await expect(
@@ -958,6 +962,7 @@ test(
 		).toBeChecked();
 
 		await commerceLayoutsPage.saveButton.click();
+		await page.waitForLoadState('load');
 
 		await expect(
 			commerceLayoutsPage.infoBoxValue(paymentMethod2)
@@ -1271,18 +1276,10 @@ test(
 				type: 'business',
 			});
 
-			await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
-				account.id,
-				['demo.unprivileged@liferay.com']
-			);
 			user =
 				await apiHelpers.headlessAdminUser.getUserAccountByEmailAddress(
 					'demo.unprivileged@liferay.com'
 				);
-
-			const siteRole =
-				await apiHelpers.headlessAdminUser.getRoleByName('Site Member');
-
 			const rolesResponse =
 				await apiHelpers.headlessAdminUser.getAccountRoles(account.id);
 
@@ -1295,6 +1292,14 @@ test(
 				accountRoleBuyer[0].id,
 				user.emailAddress
 			);
+			await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
+				account.id,
+				['demo.unprivileged@liferay.com']
+			);
+
+			const siteRole =
+				await apiHelpers.headlessAdminUser.getRoleByName('Site Member');
+
 			await apiHelpers.headlessAdminUser.assignUserToSite(
 				siteRole.id,
 				site.id,
@@ -1618,15 +1623,32 @@ test(
 				reorderCount: 1,
 				submitCount: 1,
 			});
-			await commerceLayoutsPage.orderActionsButton('Reorder').click();
+			try {
+				await commerceLayoutsPage.orderActionsButton('Reorder').click();
 
-			await expect(
-				page.getByRole('heading', {name: String(cart2.id)})
-			).toHaveCount(0);
+				await expect(
+					page.getByRole('heading', {name: String(cart2.id)})
+				).toHaveCount(0);
 
-			await commerceLayoutsPage.expectOrderActionButtons({
-				submitCount: 1,
-			});
+				await commerceLayoutsPage.expectOrderActionButtons({
+					submitCount: 1,
+				});
+			}
+			finally {
+				await performLogout(page);
+				await performLoginViaApi({page, screenName: 'test'});
+
+				const orders =
+					await apiHelpers.headlessCommerceAdminOrder.getOrdersPage();
+
+				if (orders && orders.items) {
+					for (const order of orders.items) {
+						await apiHelpers.headlessCommerceAdminOrder.deleteOrder(
+							order.id
+						);
+					}
+				}
+			}
 		});
 	}
 );
@@ -2000,6 +2022,10 @@ test(
 			)
 		).toBe(true);
 
+		await expect(
+			commerceLayoutsPage.infoBoxButton('Order notes')
+		).toBeVisible();
+
 		await commerceLayoutsPage.infoBoxButton('Order notes').click();
 
 		await expect(page.getByText(comment.items[0].author)).toBeVisible();
@@ -2007,6 +2033,34 @@ test(
 		await expect(commerceLayoutsPage.iconLock).toBeHidden();
 
 		await performLogout(page);
+
+		await performLoginViaApi({page, screenName: 'test'});
+
+		await apiHelpers.headlessCommerceAdminOrder.postOrder({
+			accountId: account.id,
+			channelId: channel.id,
+			name: 'order',
+			orderItems: [
+				{
+					quantity: 1,
+					skuId: sku.id.toString(),
+				},
+			],
+			orderStatus: '1',
+		});
+
+		await performLogout(page);
+
+		await performLoginViaApi({page, screenName: 'demo.unprivileged'});
+
+		await page.goto(
+			liferayConfig.environment.baseUrl +
+				`/web/${site.name}/order/${cart.id}`
+		);
+
+		await expect(
+			commerceLayoutsPage.infoBoxButton('Order notes')
+		).toBeVisible();
 	}
 );
 
@@ -2095,7 +2149,8 @@ test(
 
 		await page.goto(
 			liferayConfig.environment.baseUrl +
-				`/web/${site.name}/order/${cart.id}`
+				`/web/${site.name}/order/${cart.id}`,
+			{waitUntil: 'networkidle'}
 		);
 
 		await expect(
@@ -2130,8 +2185,8 @@ test(
 			await dialog.accept();
 		});
 
-		await (await commerceThemeClassicOrdersPage.tableRow(11, 'Actions')).row
-			.getByRole('button')
+		await (await commerceThemeClassicOrdersPage.tableRow(1, cart.id)).row
+			.getByRole('button', {name: 'Actions'})
 			.click();
 		await commerceThemeClassicOrdersPage
 			.orderTableMenuItem('Delete')

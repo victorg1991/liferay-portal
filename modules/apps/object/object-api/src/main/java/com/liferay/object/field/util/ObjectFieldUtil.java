@@ -5,6 +5,7 @@
 
 package com.liferay.object.field.util;
 
+import com.liferay.document.library.util.DLURLHelper;
 import com.liferay.dynamic.data.mapping.expression.CreateExpressionRequest;
 import com.liferay.dynamic.data.mapping.expression.DDMExpression;
 import com.liferay.dynamic.data.mapping.expression.DDMExpressionException;
@@ -20,17 +21,26 @@ import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectFieldSetting;
 import com.liferay.object.service.ObjectEntryLocalServiceUtil;
+import com.liferay.object.service.ObjectEntryService;
 import com.liferay.object.service.ObjectFieldLocalServiceUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
@@ -177,6 +187,62 @@ public class ObjectFieldUtil {
 			false, false);
 	}
 
+	public static String getAttachmentDownloadURL(
+			DLURLHelper dlURLHelper, FileEntry fileEntry, long groupId,
+			String objectDefinitionExternalReferenceCode,
+			ObjectEntry objectEntry, ObjectEntryService objectEntryService,
+			ObjectField objectField, PermissionChecker permissionChecker,
+			ThemeDisplay themeDisplay)
+		throws PortalException {
+
+		String downloadURL = dlURLHelper.getDownloadURL(
+			fileEntry, fileEntry.getFileVersion(), themeDisplay,
+			StringPool.BLANK);
+
+		String groupExternalReferenceCode = StringPool.BLANK;
+
+		Group group = GroupLocalServiceUtil.fetchGroup(groupId);
+
+		if (group != null) {
+			groupExternalReferenceCode = group.getExternalReferenceCode();
+		}
+
+		downloadURL = HttpComponentsUtil.addParameter(
+			downloadURL, "groupExternalReferenceCode",
+			groupExternalReferenceCode);
+
+		downloadURL = HttpComponentsUtil.addParameter(
+			downloadURL, "objectDefinitionExternalReferenceCode",
+			objectDefinitionExternalReferenceCode);
+
+		if (objectEntry == null) {
+			return downloadURL;
+		}
+
+		downloadURL = HttpComponentsUtil.addParameter(
+			downloadURL, "objectEntryExternalReferenceCode",
+			objectEntry.getExternalReferenceCode());
+
+		if (!FeatureFlagManagerUtil.isEnabled(
+				fileEntry.getCompanyId(), "LPD-17564") ||
+			(objectField == null)) {
+
+			return downloadURL;
+		}
+
+		if (!fileEntry.containsPermission(
+				permissionChecker, ActionKeys.DOWNLOAD) ||
+			!objectEntryService.hasModelResourcePermission(
+				objectEntry, objectField.getAttachmentDownloadActionKey())) {
+
+			return StringPool.BLANK;
+		}
+
+		return HttpComponentsUtil.addParameter(
+			downloadURL, "objectFieldExternalReferenceCode",
+			objectField.getExternalReferenceCode());
+	}
+
 	public static String getCounterName(ObjectField objectField) {
 		return StringBundler.concat(
 			"object.field.auto.increment#", objectField.getCompanyId(),
@@ -195,6 +261,9 @@ public class ObjectFieldUtil {
 		}
 		else if (value.length() == 21) {
 			return "yyyy-MM-dd HH:mm:ss.S";
+		}
+		else if ((value.length() == 22) && (value.charAt(10) != 'T')) {
+			return "yyyy-MM-dd HH:mm:ss.SS";
 		}
 		else if (value.length() == 23) {
 			if (value.charAt(10) == 'T') {
@@ -223,6 +292,36 @@ public class ObjectFieldUtil {
 
 	public static boolean isMetadata(String objectFieldName) {
 		return _metadataObjectFieldNames.contains(objectFieldName);
+	}
+
+	public static boolean isReadOnly(
+			DDMExpressionFactory ddmExpressionFactory, ObjectEntry objectEntry,
+			ObjectField objectField, long userId)
+		throws PortalException {
+
+		if (!Objects.equals(
+				objectField.getReadOnly(),
+				ObjectFieldConstants.READ_ONLY_CONDITIONAL)) {
+
+			return isReadOnly(null, objectField, null);
+		}
+
+		if (objectEntry == null) {
+			return isReadOnly(
+				ddmExpressionFactory, objectField,
+				ObjectFieldSettingUtil.getDefaultValues(
+					ddmExpressionFactory, objectField.getObjectDefinitionId()));
+		}
+
+		return isReadOnly(
+			ddmExpressionFactory, objectField,
+			HashMapBuilder.<String, Object>putAll(
+				ObjectEntryLocalServiceUtil.getSystemValues(objectEntry)
+			).putAll(
+				ObjectEntryLocalServiceUtil.getValues(objectEntry)
+			).put(
+				"currentUserId", userId
+			).build());
 	}
 
 	public static boolean isReadOnly(
@@ -260,41 +359,6 @@ public class ObjectFieldUtil {
 		return false;
 	}
 
-	public static boolean isReadOnly(
-			DDMExpressionFactory ddmExpressionFactory,
-			String objectEntryExternalReferenceCode, ObjectField objectField,
-			long userId)
-		throws PortalException {
-
-		if (!Objects.equals(
-				objectField.getReadOnly(),
-				ObjectFieldConstants.READ_ONLY_CONDITIONAL)) {
-
-			return isReadOnly(null, objectField, null);
-		}
-
-		if (objectEntryExternalReferenceCode == null) {
-			return isReadOnly(
-				ddmExpressionFactory, objectField,
-				ObjectFieldSettingUtil.getDefaultValues(
-					objectField.getObjectDefinitionId()));
-		}
-
-		ObjectEntry objectEntry = ObjectEntryLocalServiceUtil.getObjectEntry(
-			objectEntryExternalReferenceCode,
-			objectField.getObjectDefinitionId());
-
-		return isReadOnly(
-			ddmExpressionFactory, objectField,
-			HashMapBuilder.<String, Object>putAll(
-				ObjectEntryLocalServiceUtil.getSystemValues(objectEntry)
-			).putAll(
-				ObjectEntryLocalServiceUtil.getValues(objectEntry)
-			).put(
-				"currentUserId", userId
-			).build());
-	}
-
 	public static Map<String, ObjectField> toObjectFieldsMap(
 		List<ObjectField> objectFields) {
 
@@ -327,7 +391,7 @@ public class ObjectFieldUtil {
 				existingValues.put(
 					objectField.getName(),
 					ObjectFieldSettingUtil.getDefaultValue(
-						null, objectField, null));
+						ddmExpressionFactory, objectField, values));
 			}
 
 			if (objectField.isLocalized()) {

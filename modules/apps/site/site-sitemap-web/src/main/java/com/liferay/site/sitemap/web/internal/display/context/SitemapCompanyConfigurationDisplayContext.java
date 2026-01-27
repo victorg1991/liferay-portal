@@ -7,6 +7,10 @@ package com.liferay.site.sitemap.web.internal.display.context;
 
 import com.liferay.item.selector.ItemSelector;
 import com.liferay.item.selector.criteria.GroupItemSelectorReturnType;
+import com.liferay.object.item.selector.ObjectDefinitionItemSelectorCriterion;
+import com.liferay.object.item.selector.ObjectDefinitionItemSelectorReturnType;
+import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.model.Group;
@@ -24,6 +28,7 @@ import com.liferay.portal.kernel.util.comparator.GroupNameComparator;
 import com.liferay.site.configuration.manager.SitemapConfigurationManager;
 import com.liferay.site.item.selector.SiteItemSelectorCriterion;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,6 +40,7 @@ public class SitemapCompanyConfigurationDisplayContext {
 		GroupLocalService groupLocalService, ItemSelector itemSelector,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse,
+		ObjectDefinitionLocalService objectDefinitionLocalService,
 		SitemapConfigurationManager sitemapConfigurationManager,
 		ThemeDisplay themeDisplay) {
 
@@ -42,53 +48,14 @@ public class SitemapCompanyConfigurationDisplayContext {
 		_itemSelector = itemSelector;
 		_liferayPortletRequest = liferayPortletRequest;
 		_liferayPortletResponse = liferayPortletResponse;
+		_objectDefinitionLocalService = objectDefinitionLocalService;
 		_sitemapConfigurationManager = sitemapConfigurationManager;
 		_themeDisplay = themeDisplay;
 	}
 
-	public String getEventName() {
-		if (_eventName != null) {
-			return _eventName;
-		}
-
-		_eventName = _liferayPortletResponse.getNamespace() + "selectGroup";
-
-		return _eventName;
-	}
-
-	public String getGroupSelectorURL() throws Exception {
-		if (_groupSelectorURL != null) {
-			return _groupSelectorURL;
-		}
-
-		SiteItemSelectorCriterion siteItemSelectorCriterion =
-			new SiteItemSelectorCriterion();
-
-		siteItemSelectorCriterion.setAllowNavigation(false);
-		siteItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
-			new GroupItemSelectorReturnType());
-
-		Group guestGroup = _getGuestGroup();
-
-		siteItemSelectorCriterion.setExcludedGroupIds(
-			new long[] {guestGroup.getGroupId()});
-
-		siteItemSelectorCriterion.setIncludeCompany(false);
-		siteItemSelectorCriterion.setIncludeParentSites(true);
-		siteItemSelectorCriterion.setIncludeRecentSites(false);
-
-		_groupSelectorURL = String.valueOf(
-			_itemSelector.getItemSelectorURL(
-				RequestBackedPortletURLFactoryUtil.create(
-					_liferayPortletRequest),
-				getEventName(), siteItemSelectorCriterion));
-
-		return _groupSelectorURL;
-	}
-
-	public SearchContainer<Group> getSearchContainer() throws Exception {
-		if (_searchContainer != null) {
-			return _searchContainer;
+	public SearchContainer<Group> getGroupSearchContainer() throws Exception {
+		if (_groupSearchContainer != null) {
+			return _groupSearchContainer;
 		}
 
 		SearchContainer<Group> searchContainer = new SearchContainer<>(
@@ -109,9 +76,112 @@ public class SitemapCompanyConfigurationDisplayContext {
 
 		searchContainer.setResultsAndTotal(groups);
 
-		_searchContainer = searchContainer;
+		_groupSearchContainer = searchContainer;
 
-		return _searchContainer;
+		return _groupSearchContainer;
+	}
+
+	public String getGroupSelectorURL() throws Exception {
+		if (_groupSelectorURL != null) {
+			return _groupSelectorURL;
+		}
+
+		SiteItemSelectorCriterion siteItemSelectorCriterion =
+			new SiteItemSelectorCriterion();
+
+		siteItemSelectorCriterion.setAllowNavigation(false);
+		siteItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+			new GroupItemSelectorReturnType());
+		siteItemSelectorCriterion.setIncludeCompany(false);
+		siteItemSelectorCriterion.setIncludeParentSites(true);
+		siteItemSelectorCriterion.setIncludeRecentSites(false);
+
+		_groupSelectorURL = String.valueOf(
+			_itemSelector.getItemSelectorURL(
+				RequestBackedPortletURLFactoryUtil.create(
+					_liferayPortletRequest),
+				getSelectGroupEventName(), siteItemSelectorCriterion));
+
+		return _groupSelectorURL;
+	}
+
+	public SearchContainer<ObjectDefinition>
+			getObjectDefinitionSearchContainer()
+		throws Exception {
+
+		if (_objectDefinitionSearchContainer != null) {
+			return _objectDefinitionSearchContainer;
+		}
+
+		List<String> headerNames = new ArrayList<>();
+
+		headerNames.add("object-label");
+		headerNames.add(null);
+
+		SearchContainer<ObjectDefinition> searchContainer =
+			new SearchContainer<>(
+				_liferayPortletRequest,
+				_liferayPortletResponse.createRenderURL(), headerNames,
+				"no-objects-or-cms-structures-were-found");
+
+		searchContainer.setResultsAndTotal(
+			ListUtil.filter(
+				TransformUtil.transformToList(
+					_sitemapConfigurationManager.
+						getCompanySitemapObjectDefinitionIds(
+							_themeDisplay.getCompanyId()),
+					objectDefinitionId ->
+						_objectDefinitionLocalService.fetchObjectDefinition(
+							objectDefinitionId)),
+				objectDefinition -> objectDefinition != null));
+
+		_objectDefinitionSearchContainer = searchContainer;
+
+		return _objectDefinitionSearchContainer;
+	}
+
+	public String getObjectDefinitionSelectorURL() throws Exception {
+		if (_objectDefinitionSelectorURL != null) {
+			return _objectDefinitionSelectorURL;
+		}
+
+		ObjectDefinitionItemSelectorCriterion
+			objectDefinitionItemSelectorCriterion =
+				new ObjectDefinitionItemSelectorCriterion();
+
+		objectDefinitionItemSelectorCriterion.setDesiredItemSelectorReturnTypes(
+			new ObjectDefinitionItemSelectorReturnType());
+
+		_objectDefinitionSelectorURL = String.valueOf(
+			_itemSelector.getItemSelectorURL(
+				RequestBackedPortletURLFactoryUtil.create(
+					_liferayPortletRequest),
+				getSelectObjectDefinitionEventName(),
+				objectDefinitionItemSelectorCriterion));
+
+		return _objectDefinitionSelectorURL;
+	}
+
+	public String getSelectGroupEventName() {
+		if (_selectGroupEventName != null) {
+			return _selectGroupEventName;
+		}
+
+		_selectGroupEventName =
+			_liferayPortletResponse.getNamespace() + "selectGroup";
+
+		return _selectGroupEventName;
+	}
+
+	public String getSelectObjectDefinitionEventName() {
+		if (_selectObjectDefinitionEventName != null) {
+			return _selectObjectDefinitionEventName;
+		}
+
+		_selectObjectDefinitionEventName =
+			_liferayPortletResponse.getNamespace() + "selectObjectDefinition";
+
+		return _selectObjectDefinitionEventName;
 	}
 
 	public boolean hasVirtualHost(Group group) {
@@ -157,14 +227,18 @@ public class SitemapCompanyConfigurationDisplayContext {
 		return _guestGroup;
 	}
 
-	private String _eventName;
 	private final GroupLocalService _groupLocalService;
+	private SearchContainer<Group> _groupSearchContainer;
 	private String _groupSelectorURL;
 	private Group _guestGroup;
 	private final ItemSelector _itemSelector;
 	private final LiferayPortletRequest _liferayPortletRequest;
 	private final LiferayPortletResponse _liferayPortletResponse;
-	private SearchContainer<Group> _searchContainer;
+	private final ObjectDefinitionLocalService _objectDefinitionLocalService;
+	private SearchContainer<ObjectDefinition> _objectDefinitionSearchContainer;
+	private String _objectDefinitionSelectorURL;
+	private String _selectGroupEventName;
+	private String _selectObjectDefinitionEventName;
 	private final SitemapConfigurationManager _sitemapConfigurationManager;
 	private final ThemeDisplay _themeDisplay;
 

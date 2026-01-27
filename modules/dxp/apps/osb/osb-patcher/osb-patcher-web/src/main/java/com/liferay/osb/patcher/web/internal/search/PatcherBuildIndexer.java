@@ -6,6 +6,7 @@
 package com.liferay.osb.patcher.web.internal.search;
 
 import com.liferay.osb.patcher.configuration.PatcherConfiguration;
+import com.liferay.osb.patcher.constants.PatcherBuildConstants;
 import com.liferay.osb.patcher.constants.WorkflowConstants;
 import com.liferay.osb.patcher.model.PatcherAccount;
 import com.liferay.osb.patcher.model.PatcherBuild;
@@ -96,12 +97,12 @@ public class PatcherBuildIndexer extends BaseIndexer<PatcherBuild> {
 			contextBooleanFilter.addRequiredTerm("latestKeyBuild", true);
 		}
 
-		String patcherBuildAccountEntryCode = GetterUtil.getString(
-			searchContext.getAttribute("patcherBuildAccountEntryCode"));
+		String accountEntryCode = GetterUtil.getString(
+			searchContext.getAttribute("accountEntryCode"));
 
-		if (Validator.isNotNull(patcherBuildAccountEntryCode)) {
+		if (Validator.isNotNull(accountEntryCode)) {
 			contextBooleanFilter.addRequiredTerm(
-				"patcherBuildAccountEntryCode", patcherBuildAccountEntryCode);
+				"accountEntryCode", accountEntryCode);
 		}
 
 		int qaStatus = GetterUtil.getInteger(
@@ -120,7 +121,7 @@ public class PatcherBuildIndexer extends BaseIndexer<PatcherBuild> {
 
 		int type = GetterUtil.getInteger(searchContext.getAttribute("type"));
 
-		if (type >= 0) {
+		if (type != PatcherBuildConstants.TYPE_ANY) {
 			contextBooleanFilter.addRequiredTerm("type", type);
 		}
 	}
@@ -137,8 +138,7 @@ public class PatcherBuildIndexer extends BaseIndexer<PatcherBuild> {
 		}
 
 		addSearchTerm(searchQuery, searchContext, Field.ENTRY_CLASS_PK, false);
-		addSearchTerm(
-			searchQuery, searchContext, "patcherBuildAccountEntryCode", true);
+		addSearchTerm(searchQuery, searchContext, "accountEntryCode", true);
 		addSearchTerm(searchQuery, searchContext, "patcherBuildName", true);
 		addSearchTerm(
 			searchQuery, searchContext, "patcherProjectVersionName", true);
@@ -191,9 +191,8 @@ public class PatcherBuildIndexer extends BaseIndexer<PatcherBuild> {
 			_patcherAccountLocalService.getPatcherAccount(
 				patcherBuild.getPatcherAccountId());
 
-		document.addText(
-			"patcherBuildAccountEntryCode",
-			patcherAccount.getAccountEntryCode());
+		document.addKeyword(
+			"accountEntryCode", patcherAccount.getAccountEntryCode());
 
 		document.addKeyword("patcherBuildId", patcherBuild.getPatcherBuildId());
 		document.addText("patcherBuildName", patcherBuild.getName());

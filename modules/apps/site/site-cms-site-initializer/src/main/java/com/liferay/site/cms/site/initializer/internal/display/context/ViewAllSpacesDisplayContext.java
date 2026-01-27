@@ -5,34 +5,54 @@
 
 package com.liferay.site.cms.site.initializer.internal.display.context;
 
+import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.model.DepotEntryPin;
 import com.liferay.depot.service.DepotEntryPinLocalService;
+import com.liferay.exportimport.constants.ExportImportPortletKeys;
 import com.liferay.frontend.data.set.model.FDSActionDropdownItem;
+import com.liferay.frontend.data.set.model.FDSActionDropdownItemBuilder;
+import com.liferay.frontend.data.set.model.FDSActionDropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.GroupConstants;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.security.permission.ResourceActionsUtil;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.site.cms.site.initializer.internal.util.ActionUtil;
+import com.liferay.site.cms.site.initializer.internal.util.PermissionUtil;
 
 import jakarta.portlet.ActionRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Marco Leo
@@ -56,38 +76,61 @@ public class ViewAllSpacesDisplayContext {
 
 	public Map<String, Object> getAdditionalProps() {
 		return HashMapBuilder.<String, Object>put(
+			"baseSpaceURL", ActionUtil.getBaseSpaceURL(_themeDisplay)
+		).put(
+			"defaultPermissionAdditionalProps",
+			PermissionUtil.getDefaultPermissionAdditionalProps(
+				_httpServletRequest, _themeDisplay)
+		).put(
 			"pinnedAssetLibraryIds",
 			TransformUtil.transformToArray(
 				_depotEntryPinLocalService.getUserDepotEntryPins(
 					_themeDisplay.getUserId(), QueryUtil.ALL_POS,
 					QueryUtil.ALL_POS),
 				DepotEntryPin::getDepotEntryId, Long.class)
+		).put(
+			"spacePermissionAdditionalProps",
+			_getSpacePermissionAdditionalProps()
 		).build();
 	}
 
 	public String getAPIURL() {
-		return "/o/headless-asset-library/v1.0/asset-libraries?nestedFields=" +
-			"numberOfSites,numberOfUserAccounts,numberOfUserGroups";
+		return "/o/headless-asset-library/v1.0/asset-libraries?filter=type " +
+			"eq 'Space'&nestedFields=numberOfConnectedSites" +
+				",numberOfUserAccounts,numberOfUserGroups";
+	}
+
+	public Map<String, Object> getBreadcrumbProps() throws PortalException {
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray();
+
+		_addBreadcrumbItem(jsonArray, false, null, _getLayoutName());
+
+		return HashMapBuilder.<String, Object>put(
+			"breadcrumbItems", jsonArray
+		).put(
+			"hideSpace", true
+		).build();
 	}
 
 	public List<DropdownItem> getBulkActionDropdownItems() {
 		return ListUtil.fromArray(
 			new FDSActionDropdownItem(
-				"#", "document", "sampleBulkAction",
-				LanguageUtil.get(_httpServletRequest, "label"), null, null,
-				null));
+				StringPool.BLANK, "password-policies", "permissions",
+				LanguageUtil.get(_httpServletRequest, "permissions"), null,
+				null, null),
+			new FDSActionDropdownItem(
+				StringPool.BLANK, "password-policies", "default-permissions",
+				LanguageUtil.get(_httpServletRequest, "default-permissions"),
+				null, null, null));
 	}
 
 	public CreationMenu getCreationMenu() {
 		return CreationMenuBuilder.addPrimaryDropdownItem(
 			dropdownItem -> {
-				dropdownItem.setHref(
-					StringBundler.concat(
-						_themeDisplay.getPathFriendlyURLPublic(),
-						GroupConstants.CMS_FRIENDLY_URL, "/new-space"));
+				dropdownItem.setHref(_getNewSpaceCreationURL());
 				dropdownItem.setIcon("forms");
 				dropdownItem.setLabel(
-					_language.get(_httpServletRequest, "space"));
+					_language.get(_httpServletRequest, "add-space"));
 			}
 		).build();
 	}
@@ -104,7 +147,9 @@ public class ViewAllSpacesDisplayContext {
 		).build();
 	}
 
-	public List<FDSActionDropdownItem> getFDSActionDropdownItems() {
+	public List<FDSActionDropdownItem> getFDSActionDropdownItems()
+		throws Exception {
+
 		return ListUtil.fromArray(
 			new FDSActionDropdownItem(
 				"#", "pin", "pin",
@@ -117,47 +162,217 @@ public class ViewAllSpacesDisplayContext {
 				"unpin", "unpin", "headless"),
 			new FDSActionDropdownItem(
 				StringBundler.concat(
-					_themeDisplay.getPathFriendlyURLPublic(),
-					GroupConstants.CMS_FRIENDLY_URL, "/e/space-settings/",
-					_portal.getClassNameId(DepotEntry.class), "/{id}?redirect=",
-					_themeDisplay.getURLCurrent()),
+					ActionUtil.getBaseSpaceSettingsURL(_themeDisplay),
+					"{id}?redirect=", _themeDisplay.getURLCurrent()),
 				"cog", "edit",
 				LanguageUtil.get(_httpServletRequest, "space-settings"), "get",
 				"update", null),
 			new FDSActionDropdownItem(
-				"#", "users", "view-members",
-				LanguageUtil.get(_httpServletRequest, "view-members"), "get",
+				ActionUtil.getControlPanelPortletURL(
+					_themeDisplay, ExportImportPortletKeys.EXPORT),
+				"export", "export",
+				LanguageUtil.get(_httpServletRequest, "export"), "get",
 				"update", null),
 			new FDSActionDropdownItem(
-				PortletURLBuilder.create(
-					PortalUtil.getControlPanelPortletURL(
-						_httpServletRequest,
-						"com_liferay_portlet_configuration_web_portlet_" +
-							"PortletConfigurationPortlet",
-						ActionRequest.RENDER_PHASE)
-				).setMVCPath(
-					"/edit_permissions.jsp"
-				).setRedirect(
-					_themeDisplay.getURLCurrent()
-				).setParameter(
-					"modelResource", DepotEntry.class.getName()
-				).setParameter(
-					"modelResourceDescription", "{name}"
-				).setParameter(
-					"resourcePrimKey", "{id}"
-				).setWindowState(
-					LiferayWindowState.POP_UP
-				).buildString(),
-				"password-policies", "permissions",
-				_language.get(_httpServletRequest, "permissions"), "get", null,
-				"modal-permissions"),
+				ActionUtil.getControlPanelPortletURL(
+					_themeDisplay, ExportImportPortletKeys.IMPORT),
+				"import", "import",
+				LanguageUtil.get(_httpServletRequest, "import"), "get",
+				"update", null),
 			new FDSActionDropdownItem(
-				_language.get(
-					_httpServletRequest,
-					"are-you-sure-you-want-to-delete-this-entry"),
-				null, "trash", "delete",
+				null, "users", "view-members",
+				LanguageUtil.get(_httpServletRequest, "view-members"), "get",
+				"assign-members", null),
+			new FDSActionDropdownItem(
+				null, "users", "view-members",
+				LanguageUtil.get(_httpServletRequest, "view-members"), "get",
+				"view-members", null),
+			new FDSActionDropdownItem(
+				null, "globe", "view-connected-sites",
+				LanguageUtil.get(_httpServletRequest, "view-connected-sites"),
+				"get", "connect-sites", null),
+			new FDSActionDropdownItem(
+				null, "globe", "view-connected-sites",
+				LanguageUtil.get(_httpServletRequest, "view-connected-sites"),
+				"get", "view-connected-sites", null),
+			_getPermissionsFDSActionDropdownItem(_httpServletRequest),
+			new FDSActionDropdownItem(
+				"{actions.delete.href}", "trash", "delete",
 				_language.get(_httpServletRequest, "delete"), "delete",
-				"delete", "headless"));
+				"delete", null));
+	}
+
+	private void _addBreadcrumbItem(
+		JSONArray jsonArray, boolean active, String friendlyURL, String label) {
+
+		jsonArray.put(
+			JSONUtil.put(
+				"active", active
+			).put(
+				"href", friendlyURL
+			).put(
+				"label", label
+			));
+	}
+
+	private String _getLayoutName() {
+		Layout layout = _themeDisplay.getLayout();
+
+		if (layout == null) {
+			return null;
+		}
+
+		return layout.getName(_themeDisplay.getLocale(), true);
+	}
+
+	private String _getNewSpaceCreationURL() {
+		return StringBundler.concat(
+			_themeDisplay.getPathFriendlyURLPublic(),
+			GroupConstants.CMS_FRIENDLY_URL, "/new-space?backURL=",
+			_themeDisplay.getURLCurrent());
+	}
+
+	private FDSActionDropdownItem _getPermissionsFDSActionDropdownItem(
+		HttpServletRequest httpServletRequest) {
+
+		return FDSActionDropdownItemBuilder.setFDSActionDropdownItems(
+			FDSActionDropdownItemList.of(
+				FDSActionDropdownItemBuilder.setHref(
+					PortletURLBuilder.create(
+						_portal.getControlPanelPortletURL(
+							httpServletRequest,
+							"com_liferay_portlet_configuration_web_portlet_" +
+								"PortletConfigurationPortlet",
+							ActionRequest.RENDER_PHASE)
+					).setMVCPath(
+						"/edit_permissions.jsp"
+					).setRedirect(
+						_themeDisplay.getURLCurrent()
+					).setParameter(
+						"modelResource", DepotEntry.class.getName()
+					).setParameter(
+						"modelResourceDescription", "{name}"
+					).setParameter(
+						"resourceGroupId", "{siteId}"
+					).setParameter(
+						"resourcePrimKey", "{id}"
+					).setWindowState(
+						LiferayWindowState.POP_UP
+					).buildString()
+				).setIcon(
+					"password-policies"
+				).setLabel(
+					_language.get(httpServletRequest, "permissions")
+				).setMethod(
+					"get"
+				).setPermissionKey(
+					"permissions"
+				).setTarget(
+					"modal-permissions"
+				).build(
+					"permissions"
+				),
+				FDSActionDropdownItemBuilder.setHref(
+					StringPool.BLANK
+				).setIcon(
+					"password-policies"
+				).setLabel(
+					LanguageUtil.get(httpServletRequest, "default-permissions")
+				).setPermissionKey(
+					"permissions"
+				).build(
+					"default-permissions"
+				),
+				FDSActionDropdownItemBuilder.setHref(
+					StringPool.BLANK
+				).setIcon(
+					"password-policies"
+				).setLabel(
+					LanguageUtil.get(
+						httpServletRequest,
+						"edit-and-propagate-default-permissions")
+				).setPermissionKey(
+					"permissions"
+				).build(
+					"edit-and-propagate-default-permissions"
+				))
+		).setIcon(
+			"password-policies"
+		).setLabel(
+			_language.get(httpServletRequest, "permissions")
+		).setPermissionKey(
+			"permissions"
+		).setType(
+			"contextual"
+		).build(
+			"permissions-menu"
+		);
+	}
+
+	private Map<String, Object> _getSpacePermissionAdditionalProps() {
+		return HashMapBuilder.<String, Object>put(
+			"actions",
+			() -> {
+				List<String> guestUnsupportedActions =
+					ResourceActionsUtil.getResourceGuestUnsupportedActions(
+						null, DepotEntry.class.getName());
+
+				return TransformUtil.transformToArray(
+					ResourceActionsUtil.getResourceActions(
+						DepotEntry.class.getName()),
+					resourceAction -> HashMapBuilder.<String, Object>put(
+						"guestUnsupported",
+						guestUnsupportedActions.contains(resourceAction)
+					).put(
+						"key", resourceAction
+					).put(
+						"label",
+						ResourceActionsUtil.getAction(
+							_httpServletRequest, resourceAction)
+					).build(),
+					Map.class);
+			}
+		).put(
+			"roles",
+			() -> {
+				Map<Long, Set<String>> availableResourcePermissionActionIds =
+					ResourcePermissionLocalServiceUtil.
+						getAvailableResourcePermissionActionIds(
+							_themeDisplay.getCompanyId(),
+							DepotEntry.class.getName(),
+							ResourceConstants.SCOPE_COMPANY,
+							String.valueOf(_themeDisplay.getCompanyId()),
+							ResourceActionsUtil.getResourceActions(
+								DepotEntry.class.getName()));
+
+				return TransformUtil.transformToArray(
+					RoleLocalServiceUtil.getGroupRolesAndTeamRoles(
+						_themeDisplay.getCompanyId(), null,
+						Arrays.asList(
+							RoleConstants.ADMINISTRATOR,
+							DepotRolesConstants.ASSET_LIBRARY_OWNER),
+						null, null,
+						new int[] {
+							RoleConstants.TYPE_REGULAR, RoleConstants.TYPE_DEPOT
+						},
+						0, 0, QueryUtil.ALL_POS, QueryUtil.ALL_POS),
+					role -> HashMapBuilder.<String, Object>put(
+						"actions",
+						() -> ArrayUtil.toStringArray(
+							availableResourcePermissionActionIds.getOrDefault(
+								role.getRoleId(), new HashSet<>()))
+					).put(
+						"externalReferenceCode", role.getExternalReferenceCode()
+					).put(
+						"key", role.getName()
+					).put(
+						"name", role.getTitle(_themeDisplay.getLocale())
+					).put(
+						"type", String.valueOf(role.getType())
+					).build(),
+					Map.class);
+			}
+		).build();
 	}
 
 	private final DepotEntryPinLocalService _depotEntryPinLocalService;

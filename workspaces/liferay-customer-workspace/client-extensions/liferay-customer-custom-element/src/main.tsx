@@ -11,23 +11,20 @@ import {Root, createRoot} from 'react-dom/client';
 import {SWRConfig} from 'swr';
 
 import {AppPropertiesContext} from './contexts/AppPropertiesContext';
-import AttachmentUploader from './features/attachment-uploader';
+import Attachments from './features/attachments';
 import Onboarding from './features/onboarding';
 import Project from './features/project';
 import Projects from './features/projects';
 import SecurityVulnerabilities from './features/security-vulnerabilities';
 import useApollo from './hooks/useApollo';
 import useGlobalNetworkIndicator from './hooks/useGlobalNetworkIndicator';
-import {Liferay} from './services/liferay';
 import getIconSpriteMap from './utils/getIconSpriteMap';
 import swrCacheProvider from './utils/swrCacheProvider';
 
 import './main.css';
 
-const ELEMENT_ID = 'liferay-customer-custom-element';
-
 const AppRoutes = {
-	attachmentUploader: AttachmentUploader,
+	attachments: Attachments,
 	onboarding: Onboarding,
 	project: Project,
 	projects: Projects,
@@ -42,15 +39,17 @@ type Properties = {
 	articleGettingStartedWithLiferayEnterpriseSearchURL: string | null;
 	articleNotifiedWhenMyActivationKeyIsAboutToExpireURL: string | null;
 	articleWhatIsMyInstanceSizingValueURL: string | null;
+	createTicketURL: string | null;
 	featureFlags?: string[];
-	helpCenterURL: string | null;
 	importDate?: Date | null;
+	jiraFLSPortalURL: string | null;
+	jiraFLSProject: string | null;
+	jiraHCPortalURL: string | null;
 	submitSupportTicketURL: string | null;
 	theOverviewPageURL: string | null;
 };
 
 type APIs = {
-	gravatarAPI: string | null;
 	provisioningServerAPI: string | null;
 };
 
@@ -121,13 +120,16 @@ class CustomerPortalWebComponent extends HTMLElement {
 			articleWhatIsMyInstanceSizingValueURL: super.getAttribute(
 				'article-what-is-my-instance-sizing-value-url'
 			),
+			createTicketURL: super.getAttribute('create-ticket-url'),
 			featureFlags: (super.getAttribute('feature-flags') ?? '')
 				.split(',')
 				.map((featureflag) => featureflag.trim()),
-			helpCenterURL: super.getAttribute('help-center-url'),
 			importDate: super.getAttribute('import-date')
 				? new Date(super.getAttribute('import-date') as string)
 				: undefined,
+			jiraFLSPortalURL: super.getAttribute('jira-fls-portal-url'),
+			jiraFLSProject: super.getAttribute('jira-fls-project'),
+			jiraHCPortalURL: super.getAttribute('jira-hc-portal-url'),
 			submitSupportTicketURL: super.getAttribute(
 				'submit-support-ticket-url'
 			),
@@ -136,15 +138,7 @@ class CustomerPortalWebComponent extends HTMLElement {
 			),
 		};
 
-		if (
-			!properties.featureFlags.includes('LPS-153478') &&
-			(Liferay.FeatureFlags as any)['LPS-153478']
-		) {
-			properties.featureFlags.push('LPS-153478');
-		}
-
 		const apis = {
-			gravatarAPI: super.getAttribute('gravatar-api'),
 			provisioningServerAPI: super.getAttribute(
 				'provisioning-server-api'
 			),
@@ -173,6 +167,18 @@ class CustomerPortalWebComponent extends HTMLElement {
 	}
 }
 
-if (!customElements.get(ELEMENT_ID)) {
-	customElements.define(ELEMENT_ID, CustomerPortalWebComponent);
+if (!customElements.get('liferay-customer-custom-element')) {
+	customElements.define(
+		'liferay-customer-custom-element',
+		CustomerPortalWebComponent
+	);
+}
+
+class CustomerPortalWebComponentTesting extends CustomerPortalWebComponent {}
+
+if (!customElements.get('liferay-customer-custom-element-testing')) {
+	customElements.define(
+		'liferay-customer-custom-element-testing',
+		CustomerPortalWebComponentTesting
+	);
 }

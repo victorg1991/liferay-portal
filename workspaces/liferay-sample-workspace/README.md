@@ -18,7 +18,7 @@ The standard directory name of a client extension is broken up into several part
 
 For `liferay-sample-batch`, the owner is `liferay` and the project is `sample`. The owner and the project must not contain `-` since we use `-` to differentiate the owner from the project.
 
-The third part is usually one of the available client extension types: batch, custom-element, fds-cell-renderer, global-css, global-js, iframe, notification-type, oauth-application-headless-server, oauth-application-user-agent, object-action, site-initializer, static-content, theme-css, theme-favicon, theme-spritemap, or workflow-action.
+The third part is usually one of the available client extension types: batch, custom-element, fds-cell-renderer, global-css, global-js, iframe, notification-type, oahs, oaua, object-action, site-initializer, static-content, theme-css, theme-favicon, theme-spritemap, or workflow-action.
 
 For `liferay-sample-batch`, the third part is the client extension type `batch`.
 
@@ -65,6 +65,10 @@ For `liferay-sample-etc-cron` and `liferay-sample-etc-spring-boot` the third typ
 - *liferay-sample-custom-element-5*
 
 	Build a custom element that uses `@clayui/badge`, `react`, and `react-dom` packages that Liferay makes publicly available through import maps.
+
+- *liferay-sample-custom-element-6*
+
+	Build a custom element that uses `react`, `react-dom`, and `vite`.
 
 - *liferay-sample-editor-config-contributor*
 

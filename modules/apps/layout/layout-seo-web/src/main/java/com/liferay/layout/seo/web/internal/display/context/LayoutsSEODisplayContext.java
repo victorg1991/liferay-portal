@@ -55,12 +55,12 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.URLCodec;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
 import com.liferay.site.display.context.GroupDisplayContextHelper;
 
@@ -281,14 +281,16 @@ public class LayoutsSEODisplayContext {
 		LayoutSEOEntry layoutSEOEntry = getSelLayoutSEOEntry();
 
 		if ((layoutSEOEntry == null) ||
-			(layoutSEOEntry.getOpenGraphImageFileEntryId() == 0)) {
+			Validator.isNull(layoutSEOEntry.getOpenGraphImageFileEntryERC())) {
 
 			return StringPool.BLANK;
 		}
 
 		try {
-			FileEntry fileEntry = _dlAppService.getFileEntry(
-				layoutSEOEntry.getOpenGraphImageFileEntryId());
+			FileEntry fileEntry =
+				_dlAppService.getFileEntryByExternalReferenceCode(
+					layoutSEOEntry.getOpenGraphImageFileEntryERC(),
+					layoutSEOEntry.getOpenGraphImageFileEntryGroupId());
 
 			if (fileEntry.isInTrash()) {
 				return StringPool.BLANK;
@@ -307,14 +309,16 @@ public class LayoutsSEODisplayContext {
 		LayoutSEOEntry layoutSEOEntry = getSelLayoutSEOEntry();
 
 		if ((layoutSEOEntry == null) ||
-			(layoutSEOEntry.getOpenGraphImageFileEntryId() == 0)) {
+			Validator.isNull(layoutSEOEntry.getOpenGraphImageFileEntryERC())) {
 
 			return StringPool.BLANK;
 		}
 
 		try {
-			FileEntry fileEntry = _dlAppService.getFileEntry(
-				layoutSEOEntry.getOpenGraphImageFileEntryId());
+			FileEntry fileEntry =
+				_dlAppService.getFileEntryByExternalReferenceCode(
+					layoutSEOEntry.getOpenGraphImageFileEntryERC(),
+					layoutSEOEntry.getOpenGraphImageFileEntryGroupId());
 
 			if (fileEntry.isInTrash()) {
 				return StringPool.BLANK;

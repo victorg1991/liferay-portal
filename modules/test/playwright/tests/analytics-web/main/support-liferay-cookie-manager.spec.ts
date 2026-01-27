@@ -18,7 +18,7 @@ import {
 	goNextStep,
 	goToAnalyticsCloudInstanceSettings,
 	syncAllContacts,
-	syncSite,
+	toggleSiteSync,
 } from '../../analytics-settings-web/main/utils/analytics-settings';
 import {createChannel} from '../../osb-faro-web/main/utils/channel';
 import {createDataSource} from '../../osb-faro-web/main/utils/data-source';
@@ -45,7 +45,7 @@ async function changeCookiePreference({
 
 	await page.getByRole('menuitem', {name: 'Instance Settings'}).click();
 
-	await page.getByRole('link', {name: 'Cookies'}).click();
+	await page.getByRole('link', {name: 'Privacy'}).click();
 
 	const cookieBannerCheckbox = await page.getByLabel('Enabled');
 
@@ -110,7 +110,7 @@ async function connectACToDXP({
 
 	await connectToAnalyticsCloud(page, {token});
 
-	await syncSite({
+	await toggleSiteSync({
 		channelName,
 		page,
 	});

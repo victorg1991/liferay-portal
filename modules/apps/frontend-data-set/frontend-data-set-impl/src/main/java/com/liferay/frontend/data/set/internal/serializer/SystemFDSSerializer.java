@@ -27,10 +27,14 @@ import com.liferay.frontend.data.set.view.FDSViewContextContributor;
 import com.liferay.frontend.data.set.view.FDSViewContextContributorRegistry;
 import com.liferay.frontend.data.set.view.FDSViewRegistry;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
+import com.liferay.object.rest.manager.v1_0.ObjectEntryManagerRegistry;
+import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -72,7 +76,8 @@ public class SystemFDSSerializer
 
 	@Override
 	public String serializeAdditionalAPIURLParameters(
-		String fdsName, HttpServletRequest httpServletRequest) {
+		String fdsName, HttpServletRequest httpServletRequest,
+		boolean interpolate, JSONObject tokenResolutionsJSONObject) {
 
 		SystemFDSEntry systemFDSEntry =
 			systemFDSEntryRegistry.getSystemFDSEntry(fdsName);
@@ -85,13 +90,18 @@ public class SystemFDSSerializer
 			httpServletRequest, systemFDSEntry.getRESTApplication(),
 			systemFDSEntry.getRESTEndpoint(), systemFDSEntry.getRESTSchema()
 		).addQueryString(
-			systemFDSEntry.getAdditionalAPIURLParameters()
-		).buildQueryString();
+			systemFDSEntry.getAdditionalAPIURLParameters(httpServletRequest)
+		).setTokenResolutions(
+			tokenResolutionsJSONObject
+		).buildQueryString(
+			interpolate
+		);
 	}
 
 	@Override
 	public String serializeAPIURL(
-		String fdsName, HttpServletRequest httpServletRequest) {
+		String fdsName, HttpServletRequest httpServletRequest,
+		boolean interpolate, JSONObject tokenResolutionsJSONObject) {
 
 		SystemFDSEntry systemFDSEntry =
 			systemFDSEntryRegistry.getSystemFDSEntry(fdsName);
@@ -103,7 +113,11 @@ public class SystemFDSSerializer
 		return createFDSAPIURLBuilder(
 			httpServletRequest, systemFDSEntry.getRESTApplication(),
 			systemFDSEntry.getRESTEndpoint(), systemFDSEntry.getRESTSchema()
-		).build();
+		).setTokenResolutions(
+			tokenResolutionsJSONObject
+		).build(
+			interpolate
+		);
 	}
 
 	@Override
@@ -156,6 +170,20 @@ public class SystemFDSSerializer
 
 		return serializeFilters(
 			Collections.emptyList(), fdsName, httpServletRequest);
+	}
+
+	@Override
+	public boolean serializeHideManagementBarInEmptyState(
+		String fdsName, HttpServletRequest httpServletRequest) {
+
+		SystemFDSEntry systemFDSEntry =
+			systemFDSEntryRegistry.getSystemFDSEntry(fdsName);
+
+		if (systemFDSEntry == null) {
+			return false;
+		}
+
+		return systemFDSEntry.getHideManagementBarInEmptyState();
 	}
 
 	@Override
@@ -231,6 +259,36 @@ public class SystemFDSSerializer
 	}
 
 	@Override
+	public JSONArray serializeSnapshots(
+		String fdsName, HttpServletRequest httpServletRequest) {
+
+		try {
+			return serializeSnapshots(
+				fdsName, httpServletRequest, _objectDefinitionLocalService,
+				_objectEntryManagerRegistry);
+		}
+		catch (Exception exception) {
+			_log.error("Unable to serialize snapshots", exception);
+
+			return JSONUtil.putAll();
+		}
+	}
+
+	@Override
+	public boolean serializeSnapshotsEnabled(
+		String fdsName, HttpServletRequest httpServletRequest) {
+
+		SystemFDSEntry systemFDSEntry =
+			systemFDSEntryRegistry.getSystemFDSEntry(fdsName);
+
+		if (systemFDSEntry == null) {
+			return false;
+		}
+
+		return systemFDSEntry.getSnapshotsEnabled();
+	}
+
+	@Override
 	public List<FDSSortItem> serializeSorts(
 		String fdsName, HttpServletRequest httpServletRequest) {
 
@@ -256,7 +314,7 @@ public class SystemFDSSerializer
 				"contentRendererModuleURL",
 				fdsView.getContentRendererModuleURL()
 			).put(
-				"default", fdsView.isDefault()
+				"default", fdsView.isDefault(fdsName)
 			).put(
 				"label",
 				LanguageUtil.get(
@@ -376,6 +434,9 @@ public class SystemFDSSerializer
 		}
 	}
 
+	private static final Log _log = LogFactoryUtil.getLog(
+		SystemFDSSerializer.class);
+
 	private static final SystemFDSEntry _systemFDSEntry = new SystemFDSEntry() {
 
 		public int getDefaultItemsPerPage() {
@@ -417,5 +478,11 @@ public class SystemFDSSerializer
 		}
 
 	};
+
+	@Reference
+	private ObjectDefinitionLocalService _objectDefinitionLocalService;
+
+	@Reference
+	private ObjectEntryManagerRegistry _objectEntryManagerRegistry;
 
 }

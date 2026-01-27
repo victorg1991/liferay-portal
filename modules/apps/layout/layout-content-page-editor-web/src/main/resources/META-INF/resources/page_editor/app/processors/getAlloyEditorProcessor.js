@@ -161,7 +161,8 @@ export default function getAlloyEditorProcessor(
 						removeListener: () =>
 							document.removeEventListener(
 								'click',
-								onClickOutside
+								onClickOutside,
+								true
 							),
 					},
 					nativeEditor.on('key', (event) => {
@@ -169,7 +170,9 @@ export default function getAlloyEditorProcessor(
 							(event.data.keyCode === ENTER_KEYCODE ||
 								event.data.keyCode === SHIFT_ENTER_KEYCODE) &&
 							_element &&
-							(_element.getAttribute('type') === 'text' ||
+							(_element.getAttribute('type') === 'link' ||
+								_element.getAttribute('type') === 'text' ||
+								_element.dataset.lfrEditableType === 'link' ||
 								_element.dataset.lfrEditableType === 'text')
 						) {
 							event.cancel();
@@ -187,7 +190,11 @@ export default function getAlloyEditorProcessor(
 							// Ignoring the blur event, because we don't want to destroy the editor
 							// when opening a selector (image or link).
 
-							document.addEventListener('click', onClickOutside);
+							document.addEventListener(
+								'click',
+								onClickOutside,
+								true
+							);
 						}
 					}),
 

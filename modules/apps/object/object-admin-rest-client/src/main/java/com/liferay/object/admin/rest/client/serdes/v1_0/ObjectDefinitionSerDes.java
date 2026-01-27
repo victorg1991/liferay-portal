@@ -13,6 +13,7 @@ import com.liferay.object.admin.rest.client.dto.v1_0.ObjectLayout;
 import com.liferay.object.admin.rest.client.dto.v1_0.ObjectRelationship;
 import com.liferay.object.admin.rest.client.dto.v1_0.ObjectValidationRule;
 import com.liferay.object.admin.rest.client.dto.v1_0.ObjectView;
+import com.liferay.object.admin.rest.client.dto.v1_0.WorkflowDefinitionLink;
 import com.liferay.object.admin.rest.client.json.BaseJSONParser;
 
 import jakarta.annotation.Generated;
@@ -198,6 +199,16 @@ public class ObjectDefinitionSerDes {
 			sb.append(objectDefinition.getEnableComments());
 		}
 
+		if (objectDefinition.getEnableFormContainer() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"enableFormContainer\": ");
+
+			sb.append(objectDefinition.getEnableFormContainer());
+		}
+
 		if (objectDefinition.getEnableFriendlyURLCustomization() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -256,6 +267,16 @@ public class ObjectDefinitionSerDes {
 			sb.append("\"enableObjectEntrySchedule\": ");
 
 			sb.append(objectDefinition.getEnableObjectEntrySchedule());
+		}
+
+		if (objectDefinition.getEnableObjectEntrySubscription() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"enableObjectEntrySubscription\": ");
+
+			sb.append(objectDefinition.getEnableObjectEntrySubscription());
 		}
 
 		if (objectDefinition.getEnableObjectEntryVersioning() != null) {
@@ -562,6 +583,26 @@ public class ObjectDefinitionSerDes {
 			sb.append(objectDefinition.getParameterRequired());
 		}
 
+		if (objectDefinition.getPermissions() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"permissions\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < objectDefinition.getPermissions().length; i++) {
+				sb.append(objectDefinition.getPermissions()[i]);
+
+				if ((i + 1) < objectDefinition.getPermissions().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		if (objectDefinition.getPluralLabel() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -675,6 +716,33 @@ public class ObjectDefinitionSerDes {
 			sb.append(_escape(objectDefinition.getTitleObjectFieldName()));
 
 			sb.append("\"");
+		}
+
+		if (objectDefinition.getWorkflowDefinitionLinks() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"workflowDefinitionLinks\": ");
+
+			sb.append("[");
+
+			for (int i = 0;
+				 i < objectDefinition.getWorkflowDefinitionLinks().length;
+				 i++) {
+
+				sb.append(
+					String.valueOf(
+						objectDefinition.getWorkflowDefinitionLinks()[i]));
+
+				if ((i + 1) <
+						objectDefinition.getWorkflowDefinitionLinks().length) {
+
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
 		}
 
 		sb.append("}");
@@ -797,6 +865,15 @@ public class ObjectDefinitionSerDes {
 				String.valueOf(objectDefinition.getEnableComments()));
 		}
 
+		if (objectDefinition.getEnableFormContainer() == null) {
+			map.put("enableFormContainer", null);
+		}
+		else {
+			map.put(
+				"enableFormContainer",
+				String.valueOf(objectDefinition.getEnableFormContainer()));
+		}
+
 		if (objectDefinition.getEnableFriendlyURLCustomization() == null) {
 			map.put("enableFriendlyURLCustomization", null);
 		}
@@ -851,6 +928,16 @@ public class ObjectDefinitionSerDes {
 				"enableObjectEntrySchedule",
 				String.valueOf(
 					objectDefinition.getEnableObjectEntrySchedule()));
+		}
+
+		if (objectDefinition.getEnableObjectEntrySubscription() == null) {
+			map.put("enableObjectEntrySubscription", null);
+		}
+		else {
+			map.put(
+				"enableObjectEntrySubscription",
+				String.valueOf(
+					objectDefinition.getEnableObjectEntrySubscription()));
 		}
 
 		if (objectDefinition.getEnableObjectEntryVersioning() == null) {
@@ -1010,6 +1097,15 @@ public class ObjectDefinitionSerDes {
 				String.valueOf(objectDefinition.getParameterRequired()));
 		}
 
+		if (objectDefinition.getPermissions() == null) {
+			map.put("permissions", null);
+		}
+		else {
+			map.put(
+				"permissions",
+				String.valueOf(objectDefinition.getPermissions()));
+		}
+
 		if (objectDefinition.getPluralLabel() == null) {
 			map.put("pluralLabel", null);
 		}
@@ -1087,6 +1183,15 @@ public class ObjectDefinitionSerDes {
 				String.valueOf(objectDefinition.getTitleObjectFieldName()));
 		}
 
+		if (objectDefinition.getWorkflowDefinitionLinks() == null) {
+			map.put("workflowDefinitionLinks", null);
+		}
+		else {
+			map.put(
+				"workflowDefinitionLinks",
+				String.valueOf(objectDefinition.getWorkflowDefinitionLinks()));
+		}
+
 		return map;
 	}
 
@@ -1144,6 +1249,11 @@ public class ObjectDefinitionSerDes {
 				return false;
 			}
 			else if (Objects.equals(
+						jsonParserFieldName, "enableFormContainer")) {
+
+				return false;
+			}
+			else if (Objects.equals(
 						jsonParserFieldName,
 						"enableFriendlyURLCustomization")) {
 
@@ -1169,6 +1279,11 @@ public class ObjectDefinitionSerDes {
 			}
 			else if (Objects.equals(
 						jsonParserFieldName, "enableObjectEntrySchedule")) {
+
+				return false;
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "enableObjectEntrySubscription")) {
 
 				return false;
 			}
@@ -1241,6 +1356,9 @@ public class ObjectDefinitionSerDes {
 			else if (Objects.equals(jsonParserFieldName, "parameterRequired")) {
 				return false;
 			}
+			else if (Objects.equals(jsonParserFieldName, "permissions")) {
+				return false;
+			}
 			else if (Objects.equals(jsonParserFieldName, "pluralLabel")) {
 				return true;
 			}
@@ -1270,6 +1388,11 @@ public class ObjectDefinitionSerDes {
 			}
 			else if (Objects.equals(
 						jsonParserFieldName, "titleObjectFieldName")) {
+
+				return false;
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "workflowDefinitionLinks")) {
 
 				return false;
 			}
@@ -1352,6 +1475,14 @@ public class ObjectDefinitionSerDes {
 				}
 			}
 			else if (Objects.equals(
+						jsonParserFieldName, "enableFormContainer")) {
+
+				if (jsonParserFieldValue != null) {
+					objectDefinition.setEnableFormContainer(
+						(Boolean)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(
 						jsonParserFieldName,
 						"enableFriendlyURLCustomization")) {
 
@@ -1395,6 +1526,14 @@ public class ObjectDefinitionSerDes {
 
 				if (jsonParserFieldValue != null) {
 					objectDefinition.setEnableObjectEntrySchedule(
+						(Boolean)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "enableObjectEntrySubscription")) {
+
+				if (jsonParserFieldValue != null) {
+					objectDefinition.setEnableObjectEntrySubscription(
 						(Boolean)jsonParserFieldValue);
 				}
 			}
@@ -1601,6 +1740,26 @@ public class ObjectDefinitionSerDes {
 						(Boolean)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "permissions")) {
+				if (jsonParserFieldValue != null) {
+					Object[] jsonParserFieldValues =
+						(Object[])jsonParserFieldValue;
+
+					com.liferay.object.admin.rest.client.permission.Permission[]
+						permissionsArray = new
+						com.liferay.object.admin.rest.client.permission.
+							Permission[jsonParserFieldValues.length];
+
+					for (int i = 0; i < permissionsArray.length; i++) {
+						permissionsArray[i] =
+							com.liferay.object.admin.rest.client.permission.
+								Permission.toDTO(
+									(String)jsonParserFieldValues[i]);
+					}
+
+					objectDefinition.setPermissions(permissionsArray);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "pluralLabel")) {
 				if (jsonParserFieldValue != null) {
 					objectDefinition.setPluralLabel(
@@ -1656,6 +1815,29 @@ public class ObjectDefinitionSerDes {
 				if (jsonParserFieldValue != null) {
 					objectDefinition.setTitleObjectFieldName(
 						(String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "workflowDefinitionLinks")) {
+
+				if (jsonParserFieldValue != null) {
+					Object[] jsonParserFieldValues =
+						(Object[])jsonParserFieldValue;
+
+					WorkflowDefinitionLink[] workflowDefinitionLinksArray =
+						new WorkflowDefinitionLink
+							[jsonParserFieldValues.length];
+
+					for (int i = 0; i < workflowDefinitionLinksArray.length;
+						 i++) {
+
+						workflowDefinitionLinksArray[i] =
+							WorkflowDefinitionLinkSerDes.toDTO(
+								(String)jsonParserFieldValues[i]);
+					}
+
+					objectDefinition.setWorkflowDefinitionLinks(
+						workflowDefinitionLinksArray);
 				}
 			}
 		}

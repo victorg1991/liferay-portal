@@ -6,6 +6,8 @@
 package com.liferay.object.definition.util;
 
 import com.liferay.batch.engine.unit.BatchEngineUnitThreadLocal;
+import com.liferay.object.constants.ObjectDefinitionConstants;
+import com.liferay.object.constants.ObjectPortletKeys;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolver;
@@ -17,7 +19,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.util.PortalInstances;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author Alejandro Tardín
@@ -27,11 +28,19 @@ public class ObjectDefinitionUtil {
 	public static String getModifiableSystemObjectDefinitionRESTContextPath(
 		String name) {
 
-		if (PortalRunMode.isTestMode() && Objects.equals(name, "Test")) {
+		if (PortalRunMode.isTestMode() && StringUtil.startsWith(name, "Test")) {
 			return "/test";
 		}
 
 		return _allowedModifiableSystemObjectDefinitionNames.get(name);
+	}
+
+	public static String getPortletId(String className) {
+		return StringUtil.replaceFirst(
+			className,
+			ObjectDefinitionConstants.
+				CLASS_NAME_PREFIX_CUSTOM_OBJECT_DEFINITION,
+			ObjectPortletKeys.OBJECT_DEFINITIONS + StringPool.UNDERLINE);
 	}
 
 	public static boolean isAllowedModifiableSystemObjectDefinitionName(
@@ -65,7 +74,8 @@ public class ObjectDefinitionUtil {
 	}
 
 	public static boolean isInvokerBundleAllowed() {
-		if (PortalInstances.isCurrentCompanyInDeletionProcess() ||
+		if (ObjectDefinitionThreadLocal.isSkipBundleAllowedCheck() ||
+			PortalInstances.isCurrentCompanyInDeletionProcess() ||
 			PortalRunMode.isTestMode() || StartupHelperUtil.isUpgrading()) {
 
 			return true;
@@ -97,11 +107,13 @@ public class ObjectDefinitionUtil {
 	}
 
 	private static final String[] _ALLOWED_INVOKER_BUNDLE_SYMBOLIC_NAMES = {
-		"com.liferay.commerce.service", "com.liferay.cookies.impl",
+		"com.liferay.ai.hub.site.initializer", "com.liferay.commerce.service",
+		"com.liferay.cookies.impl", "com.liferay.digital.sales.room.impl",
 		"com.liferay.frontend.data.set.admin.web",
 		"com.liferay.frontend.data.set.impl",
 		"com.liferay.headless.builder.impl", "com.liferay.list.type.service",
-		"com.liferay.notification.service", "com.liferay.object.service",
+		"com.liferay.mcp.server", "com.liferay.notification.service",
+		"com.liferay.object.service", "com.liferay.site.initializer.cmp",
 		"com.liferay.site.initializer.cms"
 	};
 
@@ -119,13 +131,25 @@ public class ObjectDefinitionUtil {
 		).put(
 			"APISort", "/headless-builder/sorts"
 		).put(
-			"BasicDocument", "/cms/basic-documents"
-		).put(
-			"BasicWebContent", "/cms/basic-web-contents"
-		).put(
-			"Blog", "/cms/blogs"
-		).put(
 			"Bookmark", "/bookmarks"
+		).put(
+			"CMPProject", "/cmp/projects"
+		).put(
+			"CMPTask", "/cmp/tasks"
+		).put(
+			"CMSBasicDocument", "/cms/basic-documents"
+		).put(
+			"CMSBasicWebContent", "/cms/basic-web-contents"
+		).put(
+			"CMSBlog", "/cms/blogs"
+		).put(
+			"CMSBulkActionTask", "/cms/bulk-action-tasks"
+		).put(
+			"CMSBulkActionTaskItem", "/cms/bulk-action-task-items"
+		).put(
+			"CMSDefaultPermission", "/cms/default-permissions"
+		).put(
+			"CMSExternalVideo", "/cms/external-videos"
 		).put(
 			"CommerceReturn", "/commerce/returns"
 		).put(
@@ -133,25 +157,28 @@ public class ObjectDefinitionUtil {
 		).put(
 			"DataSet", "/data-set-admin/data-sets"
 		).put(
-			"DataSetAction", "/data-set-admin/data-sets/actions"
+			"DataSetAction", "/data-set-admin/actions"
 		).put(
-			"DataSetCardsSection", "/data-set-admin/data-sets/cards-sections"
+			"DataSetCardsSection", "/data-set-admin/cards-sections"
 		).put(
 			"DataSetClientExtensionFilter",
-			"/data-set-admin/data-sets/client-extension-filters"
+			"/data-set-admin/client-extension-filters"
 		).put(
-			"DataSetDateFilter", "/data-set-admin/data-sets/date-filters"
+			"DataSetDateFilter", "/data-set-admin/date-filters"
 		).put(
-			"DataSetListSection", "/data-set-admin/data-sets/list-sections"
+			"DataSetListSection", "/data-set-admin/list-sections"
 		).put(
-			"DataSetSelectionFilter",
-			"/data-set-admin/data-sets/selection-filters"
+			"DataSetSelectionFilter", "/data-set-admin/selection-filters"
 		).put(
-			"DataSetSort", "/data-set-admin/data-sets/sorts"
+			"DataSetSnapshot", "/data-set-admin/snapshots"
 		).put(
-			"DataSetTableSection", "/data-set-admin/data-sets/table-sections"
+			"DataSetSort", "/data-set-admin/sorts"
 		).put(
-			"ExternalVideo", "/cms/external-videos"
+			"DataSetTableSection", "/data-set-admin/table-sections"
+		).put(
+			"DSRRoom", "/digital-sales-room/rooms"
+		).put(
+			"DSRTemplate", "/digital-sales-room/templates"
 		).put(
 			"FDSAction", "/data-set-manager/actions"
 		).put(
@@ -177,6 +204,10 @@ public class ObjectDefinitionUtil {
 			"FunctionalCookieEntry", "/functional-cookies-entries"
 		).put(
 			"KnowledgeBase", "/cms/knowledge-bases"
+		).put(
+			"MCPServer", "/mcp/servers"
+		).put(
+			"MCPServerPrompt", "/mcp/server-prompts"
 		).put(
 			"NecessaryCookieEntry", "/necessary-cookies-entries"
 		).put(

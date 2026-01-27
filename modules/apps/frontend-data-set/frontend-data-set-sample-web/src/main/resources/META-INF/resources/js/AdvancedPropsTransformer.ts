@@ -4,19 +4,45 @@
  */
 
 import {DEFAULT_FETCH_HEADERS} from '@liferay/frontend-data-set-web';
+import classNames from 'classnames';
 import {openModal} from 'frontend-js-components-web';
 import {fetch} from 'frontend-js-web';
 
 import CustomAuthorTableCell from './CustomAuthorTableCell';
 import SampleInfoPanel from './SampleInfoPanel';
+import dummyUploader from './dummyUploader';
+import {advancedFDSAtom} from './utils/atoms';
 
 import type {
+	ICardSchema,
 	IFileDropSettings,
 	IInternalRenderer,
+	IItemsActions,
+	IView,
 } from '@liferay/frontend-data-set-web';
+
+function applyStyles(itemsActions: Array<IItemsActions>): Array<IItemsActions> {
+	return itemsActions.map((action: IItemsActions) => {
+		const newItems = action.items ? applyStyles(action.items) : undefined;
+		const itemsChanged = newItems !== action.items;
+
+		const needsStyling = action?.data?.id === 'sampleDeleteMessage';
+
+		if (!itemsChanged && !needsStyling) {
+			return action;
+		}
+
+		return {
+			...action,
+			...(itemsChanged && {items: newItems}),
+			...(needsStyling && {className: 'text-danger'}),
+		};
+	});
+}
 
 export default function propsTransformer({
 	additionalProps: {greeting},
+	itemsActions,
 	selectedItemsKey,
 	...otherProps
 }: any) {
@@ -29,18 +55,100 @@ export default function propsTransformer({
 	const fileDropSettings: IFileDropSettings = {
 		enabled: true,
 		isDropTarget: ({item}: {item: any}) => item.color !== 'Green',
+		onFileDrop: dummyUploader,
 	};
+
+	const views: Array<IView> = otherProps.views;
+
+	const cardView = views.find((view) => view.name === 'cards')!;
+
+	cardView.setItemComponentProps = ({
+		item,
+		props,
+	}: {
+		item: any;
+		props: any;
+	}) => {
+		if (item.title === 'Sample1') {
+			const schema = cardView.schema as ICardSchema;
+
+			return {
+				...props,
+				imgProps: {
+					src: '/documents/d/guest/planet-png',
+				},
+				stickerProps: {
+					displayType: 'outline-7',
+					position: 'bottom-left',
+					shape: 'circle',
+				},
+				title: `${item[schema.title]} 🚀`,
+			};
+		}
+
+		return props;
+	};
+
+	const listView = views.find((view) => view.name === 'list')!;
+
+	listView.setItemComponentProps = ({
+		item,
+		props,
+	}: {
+		item: any;
+		props: any;
+	}) => {
+		if (item.title === 'Sample1') {
+			return {
+				...props,
+				className: classNames('sample-css-class', props.className),
+			};
+		}
+
+		return props;
+	};
+
+	const tableView = views.find((view) =>
+		view.name?.toLowerCase().includes('table')
+	)!;
+
+	tableView.setItemComponentProps = ({
+		item,
+		props,
+	}: {
+		item: any;
+		props: any;
+	}) => {
+		if (item.title === 'Sample1') {
+			return {
+				...props,
+				className: classNames('sample-css-class', props.className),
+			};
+		}
+
+		return props;
+	};
+
+	const filtersGroups = [
+		{filters: ['date', 'color'], label: 'Group 1'},
+		{filters: ['clientExtension', 'invalid', 'size'], label: 'Group 2'},
+		{filters: ['status', 'title'], label: 'Group 3'},
+	];
 
 	return {
 		...otherProps,
+		atom: advancedFDSAtom,
 		customRenderers: {
 			tableCell: [customAuthorTableCellRenderer],
 		},
 		fileDropSettings,
+		filtersGroups,
 		infoPanelComponent: SampleInfoPanel,
+		itemsActions: applyStyles(itemsActions),
 		onActionDropdownItemClick({
 			action,
 			itemData,
+			items,
 			loadData,
 			openSidePanel,
 		}: any) {
@@ -51,13 +159,22 @@ export default function propsTransformer({
 				loadData();
 			}
 			else if (action.data.id === 'sampleMessage') {
-				alert(`${greeting} ${itemData.title}!`);
+				const itemsIds = items
+					.map((item: any): string => item.id)
+					.join(',');
+
+				const currentItemPos =
+					items.findIndex((item: any) => item.id === itemData.id) + 1;
+
+				alert(
+					`${greeting} ${itemData.title}! You are ${itemData.id}, the element #${currentItemPos} in [${itemsIds}]`
+				);
 			}
 		},
 		onBulkActionItemClick({
 			action,
 			loadData,
-			selectedData: {items, keyValues, selectAll},
+			selectedData: {filters, items, keyValues, searchQuery, selectAll},
 		}: any) {
 			if (action.data.id === 'sampleBulkAction') {
 				openModal({
@@ -91,11 +208,18 @@ export default function propsTransformer({
 
 			if (action.data.id === 'testBulkAction') {
 				fetch(action.href, {
-					body: JSON.stringify({items, keyValues, selectAll}),
+					body: JSON.stringify({
+						filters,
+						items,
+						keyValues,
+						searchQuery,
+						selectAll,
+					}),
 					headers: DEFAULT_FETCH_HEADERS,
 					method: action.data.method,
 				});
 			}
 		},
+		views,
 	};
 }

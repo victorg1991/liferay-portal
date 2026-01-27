@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {ClayDropDownWithItems} from '@clayui/drop-down';
 import {FrontendDataSet} from '@liferay/frontend-data-set-web';
-import {openModal} from 'frontend-js-components-web';
 import {navigate, sub} from 'frontend-js-web';
-import React from 'react';
+import React, {ComponentProps} from 'react';
 
+import {ActionDropdownItemProps} from '../../../common/components/Breadcrumb';
+import {openCMSModal} from '../../../common/utils/openCMSModal';
 import MultipleSpacesRenderer from '../../props_transformer/cell_renderers/MultipleSpacesRenderer';
 import {executeAsyncItemAction} from '../../props_transformer/utils/executeAsyncItemAction';
 import CategorizationToolbar from '../CategorizationToolbar';
@@ -16,12 +18,19 @@ import EditTagsModal from './EditTagsModal';
 import MergeTagsModal from './MergeTagsModal';
 
 export default function ViewTags({
+	actionItems,
+	cmsGroupId,
 	dataSetId,
+	invalidTagCharacters,
 	tagUsagesURL,
 	tagsURL,
 	vocabulariesURL,
 }: {
+	actionItems: ComponentProps<typeof ClayDropDownWithItems>['items'] &
+		ActionDropdownItemProps;
+	cmsGroupId: number;
 	dataSetId: string;
+	invalidTagCharacters: string;
 	tagUsagesURL: string;
 	tagsURL: string;
 	vocabulariesURL: string;
@@ -33,7 +42,7 @@ export default function ViewTags({
 			{
 				label: Liferay.Language.get('new'),
 				onClick: () => {
-					openModal({
+					openCMSModal({
 						contentComponent: ({
 							closeModal,
 						}: {
@@ -41,7 +50,9 @@ export default function ViewTags({
 						}) =>
 							CreateTagsModal({
 								closeModal,
+								cmsGroupId,
 								dataSetId,
+								invalidTagCharacters,
 							}),
 						size: 'md',
 					});
@@ -107,7 +118,7 @@ export default function ViewTags({
 		itemData: any;
 		loadData: () => {};
 	}) => {
-		openModal({
+		openCMSModal({
 			bodyHTML: Liferay.Language.get(
 				'are-you-sure-you-want-to-delete-this-tag'
 			),
@@ -153,7 +164,7 @@ export default function ViewTags({
 		itemData: any;
 		loadData: () => {};
 	}) => {
-		openModal({
+		openCMSModal({
 			contentComponent: ({closeModal}: {closeModal: () => void}) =>
 				EditTagsModal({
 					assetLibraries: itemData.assetLibraries,
@@ -174,14 +185,17 @@ export default function ViewTags({
 		itemData: any;
 		loadData: () => {};
 	}) => {
-		openModal({
+		openCMSModal({
 			contentComponent: ({closeModal}: {closeModal: () => void}) =>
 				MergeTagsModal({
 					closeModal,
+					cmsGroupId,
 					loadData,
-					tagId: itemData.id,
-					tagName: itemData.name,
+					selectIntoTags: [
+						{label: itemData.name, value: itemData.id},
+					],
 				}),
+			id: 'mergeModal',
 			size: 'md',
 		});
 	};
@@ -212,13 +226,14 @@ export default function ViewTags({
 	return (
 		<div className="categorization-section">
 			<CategorizationToolbar
+				actionItems={actionItems}
 				activeTab="tags"
 				tagsURL={tagsURL}
 				vocabulariesURL={vocabulariesURL}
 			/>
 
 			<FrontendDataSet
-				apiURL="/o/headless-admin-taxonomy/v1.0/keywords"
+				apiURL={`/o/headless-admin-taxonomy/v1.0/sites/${cmsGroupId}/keywords`}
 				creationMenu={creationMenu}
 				customRenderers={{
 					tableCell: [
@@ -258,6 +273,7 @@ export default function ViewTags({
 						label: Liferay.Language.get('merge'),
 					},
 					{
+						className: 'text-danger',
 						data: {
 							permissionKey: 'delete',
 						},

@@ -10,7 +10,7 @@ import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountRole;
 import com.liferay.account.service.base.AccountRoleLocalServiceBaseImpl;
 import com.liferay.account.service.persistence.AccountEntryPersistence;
-import com.liferay.exportimport.kernel.incomplete.model.IncompleteModelManager;
+import com.liferay.exportimport.kernel.empty.model.EmptyModelManager;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -42,7 +42,6 @@ import com.liferay.portal.search.searcher.SearchResponse;
 import com.liferay.portal.search.searcher.Searcher;
 import com.liferay.portal.util.PortalInstances;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -222,18 +221,15 @@ public class AccountRoleLocalServiceImpl
 		return accountRolePersistence.findByAccountEntryId(accountEntryIds);
 	}
 
-	@Override
-	public AccountRole getOrAddIncompleteAccountRole(
+	public AccountRole getOrAddEmptyAccountRole(
 			String externalReferenceCode, long companyId, long userId,
 			long accountEntryId, String name)
-		throws Exception {
+		throws PortalException {
 
-		return _incompleteModelManager.getOrAddIncompleteModel(
-			AccountRole.class, companyId, externalReferenceCode,
-			this::fetchAccountRoleByExternalReferenceCode,
-			this::getAccountRoleByExternalReferenceCode,
+		return _emptyModelManager.getOrAddEmptyModel(
+			AccountRole.class, companyId,
 			() -> {
-				Role role = _roleLocalService.getOrAddIncompleteRole(
+				Role role = _roleLocalService.getOrAddEmptyRole(
 					externalReferenceCode, companyId, userId,
 					AccountRole.class.getName(),
 					AccountConstants.ACCOUNT_ENTRY_ID_DEFAULT, name,
@@ -245,7 +241,11 @@ public class AccountRoleLocalServiceImpl
 				accountRole.setAccountEntryId(accountEntryId);
 
 				return updateAccountRole(accountRole);
-			});
+			},
+			externalReferenceCode,
+			this::fetchAccountRoleByExternalReferenceCode,
+			this::getAccountRoleByExternalReferenceCode,
+			AccountRole.class.getName());
 	}
 
 	@Override
@@ -305,18 +305,17 @@ public class AccountRoleLocalServiceImpl
 			long accountEntryId, long[] accountRoleIds, long userId)
 		throws PortalException {
 
-		List<AccountRole> removeAccountRoles = new ArrayList<>();
+		List<AccountRole> removeAccountRoles = TransformUtil.transform(
+			getAccountRoles(accountEntryId, userId),
+			accountRole -> {
+				if (!ArrayUtil.contains(
+						accountRoleIds, accountRole.getAccountRoleId())) {
 
-		List<AccountRole> currentAccountRoles = getAccountRoles(
-			accountEntryId, userId);
+					return accountRole;
+				}
 
-		for (AccountRole accountRole : currentAccountRoles) {
-			if (!ArrayUtil.contains(
-					accountRoleIds, accountRole.getAccountRoleId())) {
-
-				removeAccountRoles.add(accountRole);
-			}
-		}
+				return null;
+			});
 
 		associateUser(accountEntryId, accountRoleIds, userId);
 
@@ -410,7 +409,7 @@ public class AccountRoleLocalServiceImpl
 	private AccountEntryPersistence _accountEntryPersistence;
 
 	@Reference
-	private IncompleteModelManager _incompleteModelManager;
+	private EmptyModelManager _emptyModelManager;
 
 	@Reference
 	private ResourceLocalService _resourceLocalService;

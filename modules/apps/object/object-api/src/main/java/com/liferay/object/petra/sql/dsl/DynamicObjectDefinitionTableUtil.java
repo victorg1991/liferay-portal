@@ -6,13 +6,18 @@
 package com.liferay.object.petra.sql.dsl;
 
 import com.liferay.object.constants.ObjectFieldConstants;
+import com.liferay.object.model.ObjectDefinition;
+import com.liferay.object.model.ObjectField;
+import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
 import com.liferay.portal.kernel.dao.db.DBType;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 
 import java.math.BigDecimal;
@@ -22,7 +27,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Feliphe Marinho
@@ -59,14 +66,61 @@ public class DynamicObjectDefinitionTableUtil {
 			dataType, "(", getMaxLength(businessType), ")");
 	}
 
+	public static DynamicObjectDefinitionTable getDynamicObjectDefinitionTable(
+		boolean extension, ObjectDefinition objectDefinition,
+		List<ObjectField> objectFields) {
+
+		String dbTableName = objectDefinition.getDBTableName();
+
+		if (extension) {
+			dbTableName = objectDefinition.getExtensionDBTableName();
+		}
+
+		String finalDBTableName = dbTableName;
+
+		return new DynamicObjectDefinitionTable(
+			objectDefinition,
+			ListUtil.filter(
+				objectFields,
+				objectField -> Objects.equals(
+					finalDBTableName, objectField.getDBTableName())),
+			dbTableName);
+	}
+
+	public static DynamicObjectDefinitionTable getDynamicObjectDefinitionTable(
+			boolean extension, ObjectDefinition objectDefinition,
+			ObjectFieldLocalService objectFieldLocalService)
+		throws PortalException {
+
+		// TODO Cache this across the cluster with proper invalidation when the
+		// object definition or its object fields are updated
+
+		String dbTableName = objectDefinition.getDBTableName();
+
+		if (extension) {
+			dbTableName = objectDefinition.getExtensionDBTableName();
+		}
+
+		return new DynamicObjectDefinitionTable(
+			objectDefinition,
+			objectFieldLocalService.getObjectFields(
+				objectDefinition.getObjectDefinitionId(), dbTableName),
+			dbTableName);
+	}
+
 	public static Class<?> getJavaClass(String dbType) {
 		return _javaClasses.get(dbType);
 	}
 
 	public static int getMaxLength(String businessType) {
 		if (StringUtil.equals(
-				businessType,
-				ObjectFieldConstants.BUSINESS_TYPE_MULTISELECT_PICKLIST)) {
+				businessType, ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT)) {
+
+			return 65000;
+		}
+		else if (StringUtil.equals(
+					businessType,
+					ObjectFieldConstants.BUSINESS_TYPE_MULTISELECT_PICKLIST)) {
 
 			if (DBManagerUtil.getDBType() == DBType.SQLSERVER) {
 				return 4000;
@@ -102,6 +156,25 @@ public class DynamicObjectDefinitionTableUtil {
 
 	public static Integer getSQLType(String dbType) {
 		return _sqlTypes.get(dbType);
+	}
+
+	public static String getUpdateDefaultValueSQL(
+		String columnName, String dbType, Object defaultValue,
+		String tableName) {
+
+		String sql = StringPool.BLANK;
+
+		if (dbType.equals(ObjectFieldConstants.DB_TYPE_STRING)) {
+			sql = StringBundler.concat(
+				"update ", tableName, " set ", columnName, " = '", defaultValue,
+				"' where ", columnName, " is null");
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("SQL: " + sql);
+		}
+
+		return sql;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

@@ -182,6 +182,7 @@ public class OrderResourceTest extends BaseOrderResourceTestCase {
 		super.testGetOrdersPage();
 
 		_testGetOrdersPageWithFilter();
+		_testGetOrdersPageWithSearch();
 	}
 
 	@Ignore
@@ -309,6 +310,15 @@ public class OrderResourceTest extends BaseOrderResourceTestCase {
 	@Test
 	public void testGraphQLDeleteOrder() throws Exception {
 		super.testGraphQLDeleteOrder();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLDeleteOrderByExternalReferenceCode()
+		throws Exception {
+
+		super.testGraphQLDeleteOrderByExternalReferenceCode();
 	}
 
 	@Override
@@ -548,6 +558,29 @@ public class OrderResourceTest extends BaseOrderResourceTestCase {
 
 		Assert.assertEquals(1, page.getTotalCount());
 
+		assertContains(order, (List<Order>)page.getItems());
+	}
+
+	private void _testGetOrdersPageWithSearch() throws Exception {
+		Order randomOrder = randomOrder();
+
+		AccountEntry accountEntry = _accountEntryLocalService.addAccountEntry(
+			StringPool.BLANK, _user.getUserId(), 0,
+			RandomTestUtil.randomString() + "1a2b3c",
+			RandomTestUtil.randomString(), null,
+			RandomTestUtil.randomString() + "@liferay.com", null, null,
+			"business", 1, _serviceContext);
+
+		randomOrder.setAccountExternalReferenceCode(
+			accountEntry.getExternalReferenceCode());
+		randomOrder.setAccountId(accountEntry.getAccountEntryId());
+
+		Order order = testGetOrdersPage_addOrder(randomOrder);
+
+		Page<Order> page = orderResource.getOrdersPage(
+			"1a2b3c", null, Pagination.of(1, 10), null);
+
+		Assert.assertEquals(1, page.getTotalCount());
 		assertContains(order, (List<Order>)page.getItems());
 	}
 

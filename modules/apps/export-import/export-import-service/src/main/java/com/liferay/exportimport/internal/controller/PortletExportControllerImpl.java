@@ -342,7 +342,7 @@ public class PortletExportControllerImpl implements PortletExportController {
 
 		// Data
 
-		if (exportPortletData) {
+		if (exportPortletData || portletDataHandler.isHidden()) {
 			jakarta.portlet.PortletPreferences jxPortletPreferences = null;
 
 			if (ExportImportThreadLocal.isInitialLayoutStagingInProcess()) {
@@ -556,7 +556,9 @@ public class PortletExportControllerImpl implements PortletExportController {
 		element.addAttribute(
 			"portlet-configuration", configurationOptionsSB.toString());
 
-		element.addAttribute("portlet-data", String.valueOf(exportPortletData));
+		element.addAttribute(
+			"portlet-data",
+			String.valueOf(exportPortletData || portletDataHandler.isHidden()));
 		element.addAttribute(
 			"schema-version", portletDataHandler.getSchemaVersion());
 
@@ -680,7 +682,7 @@ public class PortletExportControllerImpl implements PortletExportController {
 			PortletDataHandlerKeys.UPDATE_LAST_PUBLISH_DATE);
 
 		if (ExportImportThreadLocal.isStagingInProcess() &&
-			updateLastPublishDate) {
+			!portletDataHandler.isBatch() && updateLastPublishDate) {
 
 			DateRange adjustedDateRange = new DateRange(
 				portletLastPublishDate, portletDataContext.getEndDate());

@@ -96,6 +96,19 @@ public class CISystemStatusReportUtil {
 			_CI_SYSTEM_STATUS_REPORT_DIR, new File(filePath));
 	}
 
+	public static void writeConfigJSFile(String filePath) throws IOException {
+		int maxNodeCount = Integer.parseInt(
+			JenkinsResultsParserUtil.getBuildProperty(
+				"report.ci.max.node.count"));
+
+		String content = String.format(
+			"window.MAX_Y_AXES = %d;%n", maxNodeCount);
+
+		File configFile = new File(filePath, "/js/config.js");
+
+		JenkinsResultsParserUtil.write(configFile, content);
+	}
+
 	public static void writeJenkinsDataJavaScriptFile(String filePath)
 		throws IOException {
 
@@ -623,10 +636,34 @@ public class CISystemStatusReportUtil {
 	private static void _mergeJSONArraysInJSONObjects(
 		JSONObject jsonObject1, JSONObject jsonObject2, String[] keys) {
 
-		for (String key : keys) {
-			JSONArray jsonArray = jsonObject1.getJSONArray(key);
+		JSONArray timestampsJSONArray1 = jsonObject1.optJSONArray(
+			"timestamps", new JSONArray());
 
-			jsonArray.putAll(jsonObject2.getJSONArray(key));
+		int count1 = timestampsJSONArray1.length();
+
+		JSONArray timestampsJSONArray2 = jsonObject2.optJSONArray(
+			"timestamps", new JSONArray());
+
+		int count2 = timestampsJSONArray2.length();
+
+		for (String key : keys) {
+			JSONArray jsonArray1 = jsonObject1.optJSONArray(
+				key, new JSONArray());
+
+			while (jsonArray1.length() < count1) {
+				jsonArray1.put(0);
+			}
+
+			JSONArray jsonArray2 = jsonObject2.optJSONArray(
+				key, new JSONArray());
+
+			while (jsonArray2.length() < count2) {
+				jsonArray2.put(0);
+			}
+
+			jsonArray1.putAll(jsonArray2);
+
+			jsonObject1.put(key, jsonArray1);
 		}
 	}
 
@@ -635,8 +672,9 @@ public class CISystemStatusReportUtil {
 	private static final int _DAYS_PER_WEEK = 7;
 
 	private static final String[] _NODE_METRIC_NAMES = {
-		"idle_nodes", "occupied_nodes", "offline_nodes", "online_nodes",
-		"queued_builds", "timestamps"
+		"downstream_started_builds", "idle_nodes", "occupied_nodes",
+		"offline_nodes", "online_nodes", "queued_builds", "timestamps",
+		"top_level_started_builds"
 	};
 
 	private static final File _TESTRAY_LOGS_DIR;

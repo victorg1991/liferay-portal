@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.model.UserNotificationEvent;
 import com.liferay.portal.kernel.scheduler.SchedulerJobConfiguration;
 import com.liferay.portal.kernel.scheduler.TimeUnit;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
 import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -91,7 +92,8 @@ public class CheckObjectEntrySchedulerJobConfigurationTest {
 						RandomTestUtil.randomString())
 				).name(
 					_OBJECT_FIELD_NAME
-				).build()));
+				).build()),
+			false);
 
 		_configurationProvider.saveCompanyConfiguration(
 			ObjectEntryVersionConfiguration.class,
@@ -106,6 +108,45 @@ public class CheckObjectEntrySchedulerJobConfigurationTest {
 		_configurationProvider.deleteCompanyConfiguration(
 			ObjectEntryVersionConfiguration.class,
 			TestPropsValues.getCompanyId());
+	}
+
+	@Test
+	public void testCheckObjectEntryDisplayDate() throws Exception {
+		Date date = new Date();
+
+		ObjectEntry objectEntry1 = ObjectEntryTestUtil.addObjectEntry(
+			0, _objectDefinition.getObjectDefinitionId(),
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME, RandomTestUtil.randomString()
+			).put(
+				"displayDate",
+				new Date(date.getTime() + TimeUnit.MILLISECOND.toMillis(1000))
+			).build());
+
+		Assert.assertTrue(objectEntry1.isScheduled());
+
+		ObjectEntry objectEntry2 = ObjectEntryTestUtil.addObjectEntry(
+			0, _objectDefinition.getObjectDefinitionId(),
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME, RandomTestUtil.randomString()
+			).put(
+				"displayDate",
+				new Date(date.getTime() + TimeUnit.DAY.toMillis(1))
+			).build());
+
+		Assert.assertTrue(objectEntry2.isScheduled());
+
+		Thread.sleep(1000);
+
+		_jobExecutorUnsafeRunnable.run();
+
+		objectEntry1 = _objectEntryLocalService.getObjectEntry(
+			objectEntry1.getObjectEntryId());
+		objectEntry2 = _objectEntryLocalService.getObjectEntry(
+			objectEntry2.getObjectEntryId());
+
+		Assert.assertTrue(objectEntry1.isApproved());
+		Assert.assertTrue(objectEntry2.isScheduled());
 	}
 
 	@Test
@@ -212,8 +253,9 @@ public class CheckObjectEntrySchedulerJobConfigurationTest {
 
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
-				TestPropsValues.getUserId(), 0, null, false, false, true, false,
-				true, false, true, "-", RandomTestUtil.randomLocaleStringMap(),
+				null, TestPropsValues.getUserId(), 0, null, false, true, false,
+				true, true, false, false, true, "_",
+				RandomTestUtil.randomLocaleStringMap(),
 				"A" + StringUtil.randomString(), null, null,
 				RandomTestUtil.randomLocaleStringMap(), true,
 				ObjectDefinitionConstants.SCOPE_COMPANY,
@@ -225,7 +267,8 @@ public class CheckObjectEntrySchedulerJobConfigurationTest {
 						RandomTestUtil.randomLocaleStringMap()
 					).name(
 						"textObjectFieldName"
-					).build()));
+					).build()),
+				Collections.emptyList(), new ServiceContext());
 
 		objectDefinition =
 			_objectDefinitionLocalService.publishCustomObjectDefinition(
@@ -250,6 +293,7 @@ public class CheckObjectEntrySchedulerJobConfigurationTest {
 
 		objectEntry = _objectEntryLocalService.updateObjectEntry(
 			TestPropsValues.getUserId(), objectEntry.getObjectEntryId(),
+			objectEntry.getObjectEntryFolderId(),
 			HashMapBuilder.<String, Serializable>put(
 				"textObjectFieldName", RandomTestUtil.randomString()
 			).build(),
@@ -259,6 +303,7 @@ public class CheckObjectEntrySchedulerJobConfigurationTest {
 
 		objectEntry = _objectEntryLocalService.updateObjectEntry(
 			TestPropsValues.getUserId(), objectEntry.getObjectEntryId(),
+			objectEntry.getObjectEntryFolderId(),
 			HashMapBuilder.<String, Serializable>put(
 				"textObjectFieldName", RandomTestUtil.randomString()
 			).build(),

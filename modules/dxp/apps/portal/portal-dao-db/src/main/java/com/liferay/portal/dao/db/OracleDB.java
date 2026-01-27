@@ -82,6 +82,7 @@ public class OracleDB extends BaseDB {
 				connection, tableName, tempColumnName, newColumnType);
 
 			runSQL(
+				connection,
 				StringBundler.concat(
 					"update ", tableName, " set ", tempColumnName, " = ",
 					columnName));
@@ -195,8 +196,7 @@ public class OracleDB extends BaseDB {
 
 	@Override
 	public String getPopulateSQL(String databaseName, String sqlContent) {
-		return StringBundler.concat(
-			"connect &1/&2;\n", "set define off;\n\n", sqlContent, "quit");
+		return "connect &1/&2;\nset define off;\n\n" + sqlContent + "quit";
 	}
 
 	@Override

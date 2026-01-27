@@ -11,6 +11,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import java.net.URLEncoder;
+
+import java.nio.charset.StandardCharsets;
 import java.nio.file.PathMatcher;
 
 import java.util.ArrayList;
@@ -985,9 +988,7 @@ public class GitWorkingDirectory {
 	}
 
 	public Set<File> findFiles(String fileName, String fileContentSnippet) {
-		if (JenkinsResultsParserUtil.isNullOrEmpty(fileName) ||
-			JenkinsResultsParserUtil.isNullOrEmpty(fileContentSnippet)) {
-
+		if (JenkinsResultsParserUtil.isNullOrEmpty(fileContentSnippet)) {
 			return null;
 		}
 
@@ -995,28 +996,38 @@ public class GitWorkingDirectory {
 
 		sb.append("git grep ");
 		sb.append(fileContentSnippet);
-		sb.append(" | grep ");
-		sb.append(fileName);
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(fileName)) {
+			sb.append(" | grep ");
+			sb.append(fileName);
+		}
 
 		GitUtil.ExecutionResult result = executeBashCommands(
-			5, 1000, 30 * 1000, sb.toString());
+			5, 1000, 60 * 1000, sb.toString());
 
 		if (result.getExitValue() != 0) {
 			throw new GitWorkingDirectoryRuntimeException(
 				this, "Unable to run: git grep");
 		}
 
-		Pattern pattern = Pattern.compile(
-			JenkinsResultsParserUtil.combine(
-				"(?<filePath>.+/", fileName, ")\\:.+"));
+		String regex = JenkinsResultsParserUtil.combine(
+			"(?<filePath>[^\\:]+)\\:.+");
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(fileName)) {
+			regex = JenkinsResultsParserUtil.combine(
+				"(?<filePath>[^\\:]+/", fileName, ")\\:.+");
+		}
+
+		Pattern pattern = Pattern.compile(regex);
 
 		Matcher matcher = pattern.matcher(result.getStandardOut());
 
 		Set<File> files = new HashSet<>();
 
 		while (matcher.find()) {
-			files.add(
-				new File(getWorkingDirectory(), matcher.group("filePath")));
+			String filePath = matcher.group("filePath");
+
+			files.add(new File(getWorkingDirectory(), filePath.trim()));
 		}
 
 		return files;
@@ -1120,6 +1131,25 @@ public class GitWorkingDirectory {
 		}
 
 		return branchNamesList;
+	}
+
+	public int getCommitCountBetweenBranches(
+		String baseBranchName, String branchName) {
+
+		GitUtil.ExecutionResult executionResult = executeBashCommands(
+			3, GitUtil.MILLIS_RETRY_DELAY, 1000 * 60 * 10,
+			JenkinsResultsParserUtil.combine(
+				"git rev-list --count ", baseBranchName, "..", branchName));
+
+		int exitValue = executionResult.getExitValue();
+
+		if (exitValue == 0) {
+			return Integer.parseInt(executionResult.getStandardOut());
+		}
+
+		System.out.println(executionResult.getStandardError());
+
+		return 0;
 	}
 
 	public String getCurrentBranchName() {
@@ -1889,6 +1919,35 @@ public class GitWorkingDirectory {
 				this, "Invalid remote url " + remoteURL);
 		}
 
+		if (JenkinsResultsParserUtil.isCINode() &&
+			!JenkinsResultsParserUtil.isCloudCINode() &&
+			remoteURL.startsWith("git@github.com:liferay/")) {
+
+			try {
+				String sha = JenkinsResultsParserUtil.toString(
+					JenkinsResultsParserUtil.combine(
+						"http://",
+						JenkinsResultsParserUtil.getBuildProperty(
+							"mirrors.hostname"),
+						"/github.com/liferay/sha/", getGitRepositoryName(), "(",
+						URLEncoder.encode(
+							remoteGitBranchName, StandardCharsets.UTF_8.name()),
+						").txt"),
+					false);
+
+				sha = sha.trim();
+
+				if (JenkinsResultsParserUtil.isValidGitSHA(sha)) {
+					return sha;
+				}
+			}
+			catch (Exception exception) {
+				System.out.println(
+					"Unable to retrieve cached SHA information: " +
+						exception.getMessage());
+			}
+		}
+
 		String command = JenkinsResultsParserUtil.combine(
 			"git ls-remote -h ", remoteURL, " ", remoteGitBranchName);
 
@@ -2488,7 +2547,7 @@ public class GitWorkingDirectory {
 		String command = String.join(" ", commands);
 
 		if (_cacheBashCommands && _executionResults.containsKey(command)) {
-			System.out.println("Using cached excecution for: " + command);
+			System.out.println("Using cached execution for: " + command);
 
 			return _executionResults.get(command);
 		}
@@ -2835,8 +2894,8 @@ public class GitWorkingDirectory {
 		commands.add(sb.toString());
 
 		GitUtil.ExecutionResult executionResult = executeBashCommands(
-			GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY,
-			GitUtil.MILLIS_TIMEOUT, commands.toArray(new String[0]));
+			GitUtil.RETRIES_SIZE_MAX, GitUtil.MILLIS_RETRY_DELAY, 240 * 1000,
+			commands.toArray(new String[0]));
 
 		if (executionResult.getExitValue() != 0) {
 			throw new GitWorkingDirectoryRuntimeException(

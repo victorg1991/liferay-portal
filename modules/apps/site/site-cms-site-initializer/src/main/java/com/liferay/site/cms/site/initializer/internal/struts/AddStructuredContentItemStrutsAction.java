@@ -8,6 +8,8 @@ package com.liferay.site.cms.site.initializer.internal.struts;
 import com.liferay.fragment.listener.FragmentEntryLinkListenerRegistry;
 import com.liferay.fragment.renderer.FragmentRendererRegistry;
 import com.liferay.fragment.service.FragmentEntryLinkService;
+import com.liferay.info.item.InfoItemServiceRegistry;
+import com.liferay.info.search.InfoSearchClassMapperRegistry;
 import com.liferay.layout.manager.FormManager;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.model.ObjectDefinition;
@@ -66,6 +68,7 @@ public class AddStructuredContentItemStrutsAction implements StrutsAction {
 
 		ObjectEntryManager objectEntryManager =
 			_objectEntryManagerRegistry.getObjectEntryManager(
+				objectDefinition.getCompanyId(),
 				objectDefinition.getStorageType());
 
 		ObjectEntry objectEntry = new ObjectEntry();
@@ -93,6 +96,7 @@ public class AddStructuredContentItemStrutsAction implements StrutsAction {
 				_formManager, _fragmentEntryLinkListenerRegistry,
 				_fragmentEntryLinkService, _fragmentRendererRegistry,
 				httpServletRequest, String.valueOf(objectEntry.getId()),
+				_infoItemServiceRegistry, _infoSearchClassMapperRegistry,
 				objectDefinition));
 
 		return null;
@@ -110,6 +114,12 @@ public class AddStructuredContentItemStrutsAction implements StrutsAction {
 
 	@Reference
 	private FragmentRendererRegistry _fragmentRendererRegistry;
+
+	@Reference
+	private InfoItemServiceRegistry _infoItemServiceRegistry;
+
+	@Reference
+	private InfoSearchClassMapperRegistry _infoSearchClassMapperRegistry;
 
 	@Reference
 	private ObjectDefinitionService _objectDefinitionService;

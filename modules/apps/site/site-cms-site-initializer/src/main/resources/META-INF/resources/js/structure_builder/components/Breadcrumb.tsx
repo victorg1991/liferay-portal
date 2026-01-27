@@ -6,11 +6,16 @@
 import ClayBreadcrumb from '@clayui/breadcrumb';
 import React, {useMemo} from 'react';
 
+import getLocalizedValue from '../../common/utils/getLocalizedValue';
 import {useSelector, useStateDispatch} from '../contexts/StateContext';
 import selectStructureChildren from '../selectors/selectStructureChildren';
 import selectStructureLocalizedLabel from '../selectors/selectStructureLocalizedLabel';
 import selectStructureUuid from '../selectors/selectStructureUuid';
-import {RepeatableGroup, Structure} from '../types/Structure';
+import {
+	ReferencedStructure,
+	RepeatableGroup,
+	Structure,
+} from '../types/Structure';
 import {Uuid} from '../types/Uuid';
 
 type Path = {label: string; uuid: Uuid}[];
@@ -37,6 +42,7 @@ export default function Breadcrumb({uuid}: {uuid: Uuid}) {
 				return {
 					active: true,
 					label: item.label,
+					onClick: () => {},
 				};
 			}
 
@@ -61,7 +67,7 @@ export default function Breadcrumb({uuid}: {uuid: Uuid}) {
 
 function getPath(
 	uuid: Uuid,
-	children: (Structure | RepeatableGroup)['children'],
+	children: (ReferencedStructure | RepeatableGroup | Structure)['children'],
 	path: Path = []
 ): Path | null {
 	for (const child of children.values()) {
@@ -69,9 +75,7 @@ function getPath(
 			return [
 				...path,
 				{
-					label: child!.label[
-						Liferay.ThemeDisplay.getDefaultLanguageId()
-					]!,
+					label: getLocalizedValue(child.label),
 					uuid: child.uuid,
 				},
 			];
@@ -83,9 +87,7 @@ function getPath(
 			const nextPath = getPath(uuid, child.children, [
 				...path,
 				{
-					label: child!.label[
-						Liferay.ThemeDisplay.getDefaultLanguageId()
-					]!,
+					label: getLocalizedValue(child.label),
 					uuid: child.uuid,
 				},
 			]);

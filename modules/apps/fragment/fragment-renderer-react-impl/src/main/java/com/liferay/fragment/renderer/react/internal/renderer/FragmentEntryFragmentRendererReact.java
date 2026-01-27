@@ -61,13 +61,13 @@ public class FragmentEntryFragmentRendererReact implements FragmentRenderer {
 	}
 
 	@Override
-	public String getConfiguration(
+	public JSONObject getConfigurationJSONObject(
 		FragmentRendererContext fragmentRendererContext) {
 
 		FragmentEntryLink fragmentEntryLink =
 			fragmentRendererContext.getFragmentEntryLink();
 
-		return fragmentEntryLink.getConfiguration();
+		return fragmentEntryLink.getConfigurationJSONObject(true);
 	}
 
 	@Override
@@ -103,8 +103,8 @@ public class FragmentEntryFragmentRendererReact implements FragmentRenderer {
 				configurationJSONObject =
 					_fragmentEntryConfigurationParser.
 						getConfigurationJSONObject(
-							fragmentEntryLink.getConfiguration(),
-							fragmentEntryLink.getEditableValues(),
+							fragmentEntryLink.getConfigurationJSONObject(),
+							fragmentEntryLink.getEditableValuesJSONObject(),
 							LocaleUtil.getMostRelevantLocale());
 			}
 
@@ -201,8 +201,9 @@ public class FragmentEntryFragmentRendererReact implements FragmentRenderer {
 				sb.append("</style>");
 			}
 			else {
-				String outputKey =
-					fragmentEntryLink.getFragmentEntryId() + "_CSS";
+				String outputKey = StringBundler.concat(
+					fragmentEntryLink.getFragmentEntryERC(), "_",
+					fragmentEntryLink.getFragmentEntryGroupId(), "_CSS");
 
 				OutputData outputData =
 					(OutputData)httpServletRequest.getAttribute(

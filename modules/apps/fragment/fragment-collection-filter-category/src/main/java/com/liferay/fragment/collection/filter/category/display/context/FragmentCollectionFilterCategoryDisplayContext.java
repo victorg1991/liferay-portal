@@ -22,6 +22,8 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Validator;
@@ -38,11 +40,11 @@ import java.util.Objects;
 public class FragmentCollectionFilterCategoryDisplayContext {
 
 	public FragmentCollectionFilterCategoryDisplayContext(
-		String configuration,
+		JSONObject configurationJSONObject,
 		FragmentEntryConfigurationParser fragmentEntryConfigurationParser,
 		FragmentRendererContext fragmentRendererContext) {
 
-		_configuration = configuration;
+		_configurationJSONObject = configurationJSONObject;
 		_fragmentEntryConfigurationParser = fragmentEntryConfigurationParser;
 		_fragmentRendererContext = fragmentRendererContext;
 
@@ -50,24 +52,23 @@ public class FragmentCollectionFilterCategoryDisplayContext {
 	}
 
 	public String getAssetCategoryTreeNodeTitle() throws PortalException {
-		long assetCategoryTreeNodeId = _getAssetCategoryTreeNodeId();
-
-		if (assetCategoryTreeNodeId == 0) {
-			return StringPool.BLANK;
-		}
-
 		String assetCategoryTreeNodeType = _getAssetCategoryTreeNodeType();
 
 		if (assetCategoryTreeNodeType.equals("Category")) {
-			AssetCategory assetCategory =
-				AssetCategoryServiceUtil.fetchCategory(assetCategoryTreeNodeId);
+			AssetCategory assetCategory = _fetchAssetCategory();
+
+			if (assetCategory == null) {
+				return StringPool.BLANK;
+			}
 
 			return assetCategory.getTitle(_fragmentRendererContext.getLocale());
 		}
 		else if (assetCategoryTreeNodeType.equals("Vocabulary")) {
-			AssetVocabulary assetVocabulary =
-				AssetVocabularyServiceUtil.fetchVocabulary(
-					assetCategoryTreeNodeId);
+			AssetVocabulary assetVocabulary = _fetchAssetVocabulary();
+
+			if (assetVocabulary == null) {
+				return StringPool.BLANK;
+			}
 
 			return assetVocabulary.getTitle(
 				_fragmentRendererContext.getLocale());
@@ -122,8 +123,8 @@ public class FragmentCollectionFilterCategoryDisplayContext {
 		).put(
 			"targetCollections",
 			_fragmentEntryConfigurationParser.getConfigurationFieldValue(
-				_fragmentEntryLink.getEditableValues(), "targetCollections",
-				FragmentConfigurationFieldDataType.ARRAY)
+				_fragmentEntryLink.getEditableValuesJSONObject(),
+				"targetCollections", FragmentConfigurationFieldDataType.ARRAY)
 		).build();
 
 		return _props;
@@ -133,50 +134,95 @@ public class FragmentCollectionFilterCategoryDisplayContext {
 		return GetterUtil.getBoolean(_getFieldValue("showLabel"));
 	}
 
+	private AssetCategory _fetchAssetCategory() throws PortalException {
+		if ((_assetCategory != null) ||
+			!Objects.equals(_getAssetCategoryTreeNodeType(), "Category")) {
+
+			return _assetCategory;
+		}
+
+		JSONObject sourceJSONObject = _getSourceJSONObject();
+
+		if (sourceJSONObject.has("categoryTreeNodeId")) {
+			long assetCategoryTreeNodeId = sourceJSONObject.getLong(
+				"categoryTreeNodeId");
+
+			_assetCategory = AssetCategoryServiceUtil.fetchCategory(
+				assetCategoryTreeNodeId);
+		}
+		else if (sourceJSONObject.has("externalReferenceCode")) {
+			_assetCategory =
+				AssetCategoryServiceUtil.fetchCategoryByExternalReferenceCode(
+					sourceJSONObject.getString("externalReferenceCode"),
+					_getScopeGroupId(
+						sourceJSONObject.getString(
+							"scopeExternalReferenceCode")));
+		}
+
+		return _assetCategory;
+	}
+
+	private AssetVocabulary _fetchAssetVocabulary() throws PortalException {
+		if ((_assetVocabulary != null) ||
+			!Objects.equals(_getAssetCategoryTreeNodeType(), "Vocabulary")) {
+
+			return _assetVocabulary;
+		}
+
+		JSONObject sourceJSONObject = _getSourceJSONObject();
+
+		if (sourceJSONObject.has("categoryTreeNodeId")) {
+			long assetCategoryTreeNodeId = sourceJSONObject.getLong(
+				"categoryTreeNodeId");
+
+			_assetVocabulary = AssetVocabularyServiceUtil.fetchVocabulary(
+				assetCategoryTreeNodeId);
+		}
+		else if (sourceJSONObject.has("externalReferenceCode")) {
+			_assetVocabulary =
+				AssetVocabularyServiceUtil.
+					fetchVocabularyByExternalReferenceCode(
+						sourceJSONObject.getString("externalReferenceCode"),
+						_getScopeGroupId(
+							sourceJSONObject.getString(
+								"scopeExternalReferenceCode")));
+		}
+
+		return _assetVocabulary;
+	}
+
 	private List<AssetCategory> _getAssetCategories() throws PortalException {
 		if (_assetCategories != null) {
 			return _assetCategories;
 		}
 
-		long assetCategoryTreeNodeId = _getAssetCategoryTreeNodeId();
-
-		_assetCategories = Collections.emptyList();
-
-		if (assetCategoryTreeNodeId == 0) {
-			return _assetCategories;
-		}
+		List<AssetCategory> assetCategories = Collections.emptyList();
 
 		if (Objects.equals(_getAssetCategoryTreeNodeType(), "Category")) {
-			_assetCategories = AssetCategoryServiceUtil.getChildCategories(
-				assetCategoryTreeNodeId);
+			AssetCategory assetCategory = _fetchAssetCategory();
+
+			if (assetCategory != null) {
+				assetCategories = AssetCategoryServiceUtil.getChildCategories(
+					assetCategory.getCategoryId());
+			}
 		}
 		else if (Objects.equals(
 					_getAssetCategoryTreeNodeType(), "Vocabulary")) {
 
-			AssetVocabulary assetVocabulary =
-				AssetVocabularyServiceUtil.fetchVocabulary(
-					assetCategoryTreeNodeId);
+			AssetVocabulary assetVocabulary = _fetchAssetVocabulary();
 
-			_assetCategories =
-				AssetCategoryServiceUtil.getVocabularyRootCategories(
-					assetVocabulary.getGroupId(), assetCategoryTreeNodeId,
-					QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+			if (assetVocabulary != null) {
+				assetCategories =
+					AssetCategoryServiceUtil.getVocabularyRootCategories(
+						assetVocabulary.getGroupId(),
+						assetVocabulary.getVocabularyId(), QueryUtil.ALL_POS,
+						QueryUtil.ALL_POS, null);
+			}
 		}
+
+		_assetCategories = assetCategories;
 
 		return _assetCategories;
-	}
-
-	private long _getAssetCategoryTreeNodeId() {
-		if (_assetCategoryTreeNodeId != null) {
-			return _assetCategoryTreeNodeId;
-		}
-
-		JSONObject sourceJSONObject = _getSourceJSONObject();
-
-		_assetCategoryTreeNodeId = sourceJSONObject.getLong(
-			"categoryTreeNodeId", 0);
-
-		return _assetCategoryTreeNodeId;
 	}
 
 	private String _getAssetCategoryTreeNodeType() {
@@ -198,8 +244,26 @@ public class FragmentCollectionFilterCategoryDisplayContext {
 
 	private Object _getFieldValue(String fieldName) {
 		return _fragmentEntryConfigurationParser.getFieldValue(
-			_configuration, _fragmentEntryLink.getEditableValues(),
+			_configurationJSONObject,
+			_fragmentEntryLink.getEditableValuesJSONObject(),
 			_fragmentRendererContext.getLocale(), fieldName);
+	}
+
+	private long _getScopeGroupId(String scopeExternalReferenceCode)
+		throws PortalException {
+
+		if (Validator.isNull(scopeExternalReferenceCode)) {
+			return _fragmentEntryLink.getGroupId();
+		}
+
+		Group group = GroupLocalServiceUtil.fetchGroupByExternalReferenceCode(
+			scopeExternalReferenceCode, _fragmentEntryLink.getCompanyId());
+
+		if (group != null) {
+			return group.getGroupId();
+		}
+
+		return _fragmentEntryLink.getGroupId();
 	}
 
 	private JSONObject _getSourceJSONObject() {
@@ -242,9 +306,10 @@ public class FragmentCollectionFilterCategoryDisplayContext {
 		FragmentCollectionFilterCategoryDisplayContext.class);
 
 	private List<AssetCategory> _assetCategories;
-	private Long _assetCategoryTreeNodeId;
+	private AssetCategory _assetCategory;
 	private String _assetCategoryTreeNodeType;
-	private final String _configuration;
+	private AssetVocabulary _assetVocabulary;
+	private final JSONObject _configurationJSONObject;
 	private final FragmentEntryConfigurationParser
 		_fragmentEntryConfigurationParser;
 	private final FragmentEntryLink _fragmentEntryLink;

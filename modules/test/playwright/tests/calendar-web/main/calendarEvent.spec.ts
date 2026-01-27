@@ -5,6 +5,7 @@
 
 import {expect, mergeTests} from '@playwright/test';
 
+import {accountSettingsPagesTest} from '../../../fixtures/accountSettingsPagesTest';
 import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
 import {calendarPagesTest} from '../../../fixtures/calendarPagesTest';
 import {collectionsPagesTest} from '../../../fixtures/collectionsPagesTest';
@@ -13,6 +14,7 @@ import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../../fixtures/pageEditorPagesTest';
+import {clickAndExpectToBeVisible} from '../../../utils/clickAndExpectToBeVisible';
 import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import performLogin, {
@@ -24,12 +26,16 @@ import getPageDefinition from '../../layout-content-page-editor-web/main/utils/g
 import getWidgetDefinition from '../../layout-content-page-editor-web/main/utils/getWidgetDefinition';
 import {toLocalDateTimeFormatted} from './utils/toLocalDateTimeFormatted';
 
+let calendarPageUrl: string;
+
 export const test = mergeTests(
+	accountSettingsPagesTest,
 	apiHelpersTest,
 	calendarPagesTest,
 	collectionsPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
+		'LPD-11235': {enabled: true},
 		'LPS-178052': {enabled: true},
 	}),
 	journalPagesTest,
@@ -41,7 +47,12 @@ export const test = mergeTests(
 const recurrence = {
 	frequency: 'WEEKLY',
 	ocurrences: '2',
-	repeatDays: ['Wednesday'],
+	repeatDays: [
+		new Date().toLocaleDateString('en-US', {
+			timeZone: 'UTC',
+			weekday: 'long',
+		}),
+	],
 } as Recurrence;
 
 test.beforeEach(
@@ -60,18 +71,84 @@ test.beforeEach(
 
 		await pageEditorPage.goto(layout, site.friendlyUrlPath);
 
-		await calendarWidgetPage.setCalendarWidgetConfiguration(
-			'Europe/Paris',
-			false
-		);
+		await calendarWidgetPage.setCalendarWidgetConfiguration('UTC', true);
 
 		await pageEditorPage.publishPage();
 
-		await page.goto(`/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`);
+		calendarPageUrl = `/web${site.friendlyUrlPath}${layout.friendlyUrlPath}`;
+
+		await page.goto(calendarPageUrl);
 	}
 );
 
-test('assert that past events have respective within the click more dropdown', async ({
+test(
+	'assert that month view event creation default time will change according to user timezone',
+	{
+		tag: ['@LPD-69545'],
+	},
+	async ({accountSettingsPage, calendarWidgetPage, page}) => {
+		let initialUTCTime = '';
+
+		await test.step('Set user timezone to UTC and record month view default start time', async () => {
+			await accountSettingsPage.goToDisplaySettings();
+
+			await accountSettingsPage.setTimeZone('UTC');
+
+			await page.goto(calendarPageUrl);
+
+			await calendarWidgetPage.monthViewTab.click();
+
+			await calendarWidgetPage.clickAddEventButton();
+
+			initialUTCTime = await calendarWidgetPage.startTime.inputValue();
+
+			expect(initialUTCTime).not.toBe('');
+
+			await calendarWidgetPage.closeConfigurationButton.click();
+		});
+
+		await test.step('Change user timezone to UTC + 9', async () => {
+			await accountSettingsPage.goToDisplaySettings();
+
+			await accountSettingsPage.setTimeZone(
+				'(UTC +09:00) Korean Standard Time'
+			);
+		});
+
+		await test.step('Open new event form and verify start time reflects timezone change', async () => {
+			await page.goto(calendarPageUrl);
+
+			await calendarWidgetPage.clickAddEventButton();
+
+			const initialKoreaTime =
+				await calendarWidgetPage.startTime.inputValue();
+
+			expect(initialKoreaTime).not.toBe('');
+
+			const [hoursUTC, minutesUTC] = initialUTCTime
+				.split(':')
+				.map(Number);
+
+			const expectedHour = (hoursUTC + 9) % 24;
+
+			const expectedTime = `${expectedHour.toString().padStart(2, '0')}:${minutesUTC
+				.toString()
+				.padStart(2, '0')}`;
+
+			await expect(initialKoreaTime).toEqual(expectedTime);
+
+			await calendarWidgetPage.closeConfigurationButton.click();
+		});
+
+		await test.step('Change user timezone back to UTC ', async () => {
+			await accountSettingsPage.goToDisplaySettings();
+
+			await accountSettingsPage.setTimeZone('UTC');
+		});
+	}
+);
+
+test('assert that past events have respective class within the click more dropdown', async ({
 	calendarWidgetPage,
 	page,
 }) => {
@@ -341,13 +418,88 @@ test('can create calendar event with invitation', async ({
 				.getByText('Pending (1)')
 		).toBeVisible();
 		await expect(
-			calendarWidgetPage.page.frameLocator('iframe').getByText(user1.name)
+			calendarWidgetPage.page
+				.frameLocator('iframe')
+				.locator('.calendar-portlet-calendar-list')
+				.getByText(user1.name)
 		).toBeVisible();
 	}
 	finally {
 		await apiHelpers.headlessAdminUser.deleteUserAccount(Number(user1.id));
 		await apiHelpers.headlessAdminUser.deleteUserAccount(Number(user2.id));
 	}
+});
+
+test('can create calendar event with description', async ({
+	calendarWidgetPage,
+}) => {
+	const title = getRandomInt().toString();
+	const description = 'English description';
+
+	await test.step('Check that description persists', async () => {
+		await calendarWidgetPage.addEvent({
+			allDay: false,
+			description,
+			publishEvent: true,
+			title,
+		});
+
+		await calendarWidgetPage.description.scrollIntoViewIfNeeded();
+
+		await expect(calendarWidgetPage.description).toContainText(description);
+	});
+
+	await test.step('Check that a description with multiple translations persists', async () => {
+		await test.step('Fill in a description for es-ES', async () => {
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: calendarWidgetPage.descriptionLocalesDropdownMenu.locator(
+					'#es_ES'
+				),
+				trigger: calendarWidgetPage.descriptionLocalesDropdownButton,
+			});
+
+			await calendarWidgetPage.description.scrollIntoViewIfNeeded();
+
+			await expect(async () => {
+				await expect(
+					calendarWidgetPage.descriptionLocalesDropdownButton
+				).toContainText('es-ES');
+			}).toPass();
+
+			await calendarWidgetPage.description.fill('Spanish description');
+		});
+
+		await test.step('Publish the event', async () => {
+			await calendarWidgetPage.publishEvent({waitForSuccessAlert: true});
+		});
+
+		await test.step('Check that "English description" and "Spanish description" are persisted', async () => {
+			await calendarWidgetPage.description.scrollIntoViewIfNeeded();
+
+			await expect(calendarWidgetPage.description).toContainText(
+				'English description'
+			);
+
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: calendarWidgetPage.descriptionLocalesDropdownMenu.locator(
+					'#es_ES'
+				),
+				trigger: calendarWidgetPage.descriptionLocalesDropdownButton,
+			});
+
+			await expect(async () => {
+				await expect(
+					calendarWidgetPage.descriptionLocalesDropdownButton
+				).toContainText('es-ES');
+			}).toPass();
+
+			await expect(calendarWidgetPage.description).toContainText(
+				'Spanish description'
+			);
+		});
+	});
 });
 
 test('can see calendar event inputs alerts', async ({
@@ -492,7 +644,7 @@ test('event ending at midnight does not render on the next day', async ({
 		})
 	);
 
-	const title = getRandomInt().toString();
+	const title = 'midnightEvent' + getRandomInt();
 
 	await calendarWidgetPage.addEvent({
 		allDay: false,
@@ -507,6 +659,39 @@ test('event ending at midnight does not render on the next day', async ({
 	await calendarWidgetPage.closeModalEvent();
 	await calendarWidgetPage.monthViewTab.click();
 
-	await expect(page.getByTitle(title)).toHaveCount(1);
+	await expect(page.getByTitle(title, {exact: true})).toHaveCount(1);
 	await expect(page.locator('.lfr-busy-day')).toHaveCount(1);
+});
+
+test('event with weekly recurrence has default value for repeat on field and has at least one value for repeat on options', async ({
+	calendarWidgetPage,
+	modalRecurrencePage,
+	page,
+}) => {
+	await calendarWidgetPage.clickAddEventButton();
+
+	await calendarWidgetPage.repeatCheckbox.setChecked(true);
+
+	await modalRecurrencePage.repeatSelect.selectOption('Weekly');
+
+	const today = new Date().toLocaleDateString('en-US', {
+		timeZone: 'UTC',
+		weekday: 'long',
+	});
+
+	const dayOfWeekCheckbox = page
+		.frameLocator('iframe')
+		.getByRole('checkbox', {name: today});
+
+	await expect(dayOfWeekCheckbox).toBeChecked();
+
+	await dayOfWeekCheckbox.click();
+
+	await expect(dayOfWeekCheckbox).toBeChecked();
+
+	await modalRecurrencePage.doneButton.click();
+
+	await calendarWidgetPage.publishEvent();
+
+	await expect(calendarWidgetPage.successAlert).toBeVisible();
 });

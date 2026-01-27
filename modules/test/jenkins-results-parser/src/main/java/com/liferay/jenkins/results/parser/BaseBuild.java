@@ -173,7 +173,7 @@ public abstract class BaseBuild implements Build {
 		List<String> badBuildURLs = new ArrayList<>();
 
 		for (Invocation invocation :
-				_invocations.subList(0, _invocations.size() - 2)) {
+				_invocations.subList(0, _invocations.size() - 1)) {
 
 			badBuildURLs.add(invocation.getBuildURL());
 		}
@@ -306,7 +306,16 @@ public abstract class BaseBuild implements Build {
 			sb.append("C:");
 		}
 
-		sb.append("/opt/dev/projects/github/.tmp/jenkins/");
+		Properties buildProperties = null;
+
+		try {
+			buildProperties = JenkinsResultsParserUtil.getBuildProperties();
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+
+		sb.append(buildProperties.getProperty("jenkins.tmp.dir"));
 
 		JenkinsMaster jenkinsMaster = getJenkinsMaster();
 
@@ -331,17 +340,31 @@ public abstract class BaseBuild implements Build {
 
 	@Override
 	public JSONObject getBuildJSONObject() {
+		if (_buildJSONObject != null) {
+			return _buildJSONObject;
+		}
+
 		String archiveFileContent = getArchiveFileContent("api/json");
 
 		if (!JenkinsResultsParserUtil.isNullOrEmpty(archiveFileContent)) {
-			return new JSONObject(archiveFileContent);
+			_buildJSONObject = new JSONObject(archiveFileContent);
+
+			return _buildJSONObject;
 		}
 
 		try {
-			return JenkinsResultsParserUtil.toJSONObject(
+			JSONObject buildJSONObject = JenkinsResultsParserUtil.toJSONObject(
 				JenkinsResultsParserUtil.getLocalURL(
 					getBuildURL() + "api/json"),
 				false);
+
+			if (!isCompleted()) {
+				return buildJSONObject;
+			}
+
+			_buildJSONObject = buildJSONObject;
+
+			return _buildJSONObject;
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(
@@ -415,6 +438,10 @@ public abstract class BaseBuild implements Build {
 		JSONObject buildReportJSONObject = new JSONObject();
 
 		buildReportJSONObject.put(
+			"buildCached", String.valueOf(isBuildCached())
+		).put(
+			"buildParameters", getParameters()
+		).put(
 			"buildURL", getBuildURL()
 		).put(
 			"duration", getDuration()
@@ -567,7 +594,7 @@ public abstract class BaseBuild implements Build {
 			return 0;
 		}
 
-		long duration = buildJSONObject.getLong("duration");
+		long duration = buildJSONObject.optLong("duration");
 
 		if (duration == 0) {
 			long timestamp = buildJSONObject.getLong("timestamp");
@@ -709,11 +736,6 @@ public abstract class BaseBuild implements Build {
 		_gitHubMessageElement = messageElement;
 
 		return _gitHubMessageElement;
-	}
-
-	@Override
-	public Element getGitHubMessageUpstreamJobFailureElement() {
-		return upstreamJobFailureMessageElement;
 	}
 
 	@Override
@@ -1282,7 +1304,7 @@ public abstract class BaseBuild implements Build {
 		String consoleText = getConsoleText();
 
 		for (String line : consoleText.split("\\n")) {
-			Matcher matcher = _testrayS3ObjectURLPattern.matcher(line);
+			Matcher matcher = _testrayCloudObjectURLPattern.matcher(line);
 
 			if (!matcher.find()) {
 				continue;
@@ -1310,6 +1332,10 @@ public abstract class BaseBuild implements Build {
 
 	@Override
 	public JSONObject getTestReportJSONObject(boolean checkCache) {
+		if (_testReportJSONObject != null) {
+			return _testReportJSONObject;
+		}
+
 		String result = getResult();
 
 		if (result == null) {
@@ -1321,17 +1347,23 @@ public abstract class BaseBuild implements Build {
 		String archiveFileContent = getArchiveFileContent(urlSuffix);
 
 		if (!JenkinsResultsParserUtil.isNullOrEmpty(archiveFileContent)) {
-			return new JSONObject(archiveFileContent);
+			_testReportJSONObject = new JSONObject(archiveFileContent);
+
+			return _testReportJSONObject;
 		}
 
 		try {
-			return JenkinsResultsParserUtil.toJSONObject(
+			_testReportJSONObject = JenkinsResultsParserUtil.toJSONObject(
 				JenkinsResultsParserUtil.getLocalURL(getBuildURL() + urlSuffix),
 				checkCache, 5000);
+
+			return _testReportJSONObject;
 		}
 		catch (Exception exception) {
-			return new JSONObject();
+			_testReportJSONObject = new JSONObject();
 		}
+
+		return _testReportJSONObject;
 	}
 
 	@Override
@@ -1503,6 +1535,22 @@ public abstract class BaseBuild implements Build {
 	}
 
 	@Override
+	public boolean isBuildCached() {
+		return _buildCached;
+	}
+
+	@Override
+	public boolean isBuildCachingEnabled() {
+		Job job = getJob();
+
+		if (job == null) {
+			return false;
+		}
+
+		return job.isBuildCachingEnabled();
+	}
+
+	@Override
 	public boolean isBuildModified() {
 		return _isDifferent(_status, _previousStatus);
 	}
@@ -1550,31 +1598,6 @@ public abstract class BaseBuild implements Build {
 
 	@Override
 	public boolean isUniqueFailure() {
-		if (!isFailing()) {
-			return false;
-		}
-
-		List<TestResult> testResults = new ArrayList<>();
-
-		testResults.addAll(getTestResults("FAILED"));
-		testResults.addAll(getTestResults("REGRESSION"));
-
-		List<TestResult> passedTestResults = getTestResults("PASSED");
-
-		if (passedTestResults.size() == 1) {
-			testResults.addAll(passedTestResults);
-		}
-
-		if (testResults.isEmpty()) {
-			return true;
-		}
-
-		for (TestResult testResult : testResults) {
-			if (testResult.isUniqueFailure()) {
-				return true;
-			}
-		}
-
 		return false;
 	}
 
@@ -1616,10 +1639,12 @@ public abstract class BaseBuild implements Build {
 
 		_jenkinsConsoleTextLoader = null;
 
+		_buildJSONObject = null;
 		_jenkinsMaster = null;
 		_jenkinsSlave = null;
 		_result = null;
 		_statusModifiedTime = JenkinsResultsParserUtil.getCurrentTimeMillis();
+		_testReportJSONObject = null;
 
 		if (_buildUpdater != null) {
 			_buildUpdater.reset();
@@ -1653,6 +1678,11 @@ public abstract class BaseBuild implements Build {
 		}
 
 		_archiveRootDir = archiveRootDir;
+	}
+
+	@Override
+	public void setBuildCached(boolean buildCached) {
+		_buildCached = buildCached;
 	}
 
 	@Override
@@ -2040,18 +2070,46 @@ public abstract class BaseBuild implements Build {
 		return false;
 	}
 
-	protected BaseBuild(String url) {
-		this(url, null);
+	protected BaseBuild(String buildURL) {
+		this(buildURL, null);
 	}
 
-	protected BaseBuild(String url, Build parentBuild) {
+	protected BaseBuild(String buildURL, Build parentBuild) {
+		this(buildURL, null, parentBuild);
+	}
+
+	protected BaseBuild(
+		String buildURL, DownstreamBuildReport cachedDownstreamBuildReport,
+		Build parentBuild) {
+
+		_cachedDownstreamBuildReport = cachedDownstreamBuildReport;
 		_parentBuild = parentBuild;
 
-		if (url.contains("buildWithParameters")) {
-			_setInvocationURL(url);
+		if (cachedDownstreamBuildReport != null) {
+			_buildCached = true;
+			_buildURL = cachedDownstreamBuildReport.getBuildURL() + "/";
+			_duration = cachedDownstreamBuildReport.getDuration();
+			_jobName = cachedDownstreamBuildReport.getJobName();
+			_parameters = cachedDownstreamBuildReport.getBuildParameters();
+			_result = cachedDownstreamBuildReport.getResult();
+			_status = "completed";
+			_stopWatchRecordsGroup =
+				cachedDownstreamBuildReport.getStopWatchRecordsGroup();
+			_testrayAttachmentURLs.addAll(
+				cachedDownstreamBuildReport.getTestrayAttachmentURLs());
+			_testrayAttachmentURLsFound = true;
+
+			_jenkinsMaster = cachedDownstreamBuildReport.getJenkinsMaster();
+
+			_jenkinsCohort = _jenkinsMaster.getJenkinsCohort();
 		}
 		else {
-			_setBuildURL(url);
+			if (buildURL.contains("buildWithParameters")) {
+				_setInvocationURL(buildURL);
+			}
+			else {
+				_setBuildURL(buildURL);
+			}
 		}
 
 		if (!fromArchive && JenkinsResultsParserUtil.isCINode()) {
@@ -2546,10 +2604,18 @@ public abstract class BaseBuild implements Build {
 		Element stopWatchRecordsExpanderAnchorElement =
 			getStopWatchRecordsExpanderAnchorElement();
 
+		Element cachedBuildElement = null;
+
+		if (isBuildCached()) {
+			cachedBuildElement = Dom4JUtil.getNewElement(
+				"span", null, "(cached build)");
+		}
+
 		Element nameCellElement = Dom4JUtil.getNewElement(
 			cellElementTagName, null, stopWatchRecordsExpanderAnchorElement,
 			Dom4JUtil.getNewAnchorElement(
-				getBuildURL(), null, getDisplayName()));
+				getBuildURL(), null, getDisplayName()),
+			cachedBuildElement);
 
 		int indent = getDepth() * PIXELS_WIDTH_INDENT;
 
@@ -3043,8 +3109,14 @@ public abstract class BaseBuild implements Build {
 			JenkinsResultsParserUtil.redact(replaceBuildURL(content)));
 	}
 
+	protected static final String BAD_BUILD_URLS_PROPERTIES_KEY =
+		"bad-build-urls.properties";
+
 	protected static final String BUILD_URLS_PROPERTIES_KEY =
 		"build-urls.properties";
+
+	protected static final String CACHED_BUILD_URLS_PROPERTIES_KEY =
+		"cached-build-urls.properties";
 
 	protected static final int PIXELS_WIDTH_INDENT = 35;
 
@@ -3052,13 +3124,13 @@ public abstract class BaseBuild implements Build {
 		"(?<baseJob>[^\\(]+)\\((?<branchName>[^\\)]+)\\)");
 	protected static final Pattern stopWatchPattern = Pattern.compile(
 		JenkinsResultsParserUtil.combine(
-			"\\s*(\\[beanshell\\])?\\s*\\[stopwatch\\]\\s*\\[(?<name>[^:]+): ",
-			"((?<minutes>\\d+):)?((?<seconds>\\d+))?\\.",
+			"\\s*(\\[(beanshell|exec)\\])?\\s*\\[stopwatch\\]\\s*",
+			"\\[(?<name>[^:]+): ((?<minutes>\\d+):)?((?<seconds>\\d+))?\\.",
 			"(?<milliseconds>\\d+) sec\\]"));
 	protected static final Pattern stopWatchStartTimestampPattern =
 		Pattern.compile(
 			JenkinsResultsParserUtil.combine(
-				"\\s*(\\[beanshell\\])?\\s*\\[echo\\] (?<name>.*)" +
+				"\\s*(\\[(beanshell|exec)\\])?\\s*\\[echo\\] (?<name>.*)" +
 					"\\.start\\.timestamp: (?<timestamp>.*)$"));
 	protected static final SimpleDateFormat stopWatchTimestampSimpleDateFormat =
 		new SimpleDateFormat("MM-dd-yyyy HH:mm:ss:SSS z");
@@ -3069,7 +3141,6 @@ public abstract class BaseBuild implements Build {
 	protected String gitRepositoryName;
 	protected Long invokedTime;
 	protected Long startTime;
-	protected Element upstreamJobFailureMessageElement;
 
 	private void _archive(String content, boolean required, String urlSuffix) {
 		boolean readyToArchive = true;
@@ -3267,8 +3338,7 @@ public abstract class BaseBuild implements Build {
 		else {
 			Dom4JUtil.getNewElement(
 				"td", buildInfoElement,
-				JenkinsResultsParserUtil.toDurationString(
-					stopWatchRecord.getDuration()));
+				JenkinsResultsParserUtil.toDurationString(duration));
 		}
 
 		Dom4JUtil.getNewElement("td", buildInfoElement, "&nbsp;");
@@ -3536,10 +3606,11 @@ public abstract class BaseBuild implements Build {
 			"\\w+://(?<cohortName>test-\\d+)(-(?<masterId>\\d+))?",
 			"(\\.liferay\\.com)?/+job\\/+(?<jobName>[^\\/]+).*\\/",
 			"buildWithParameters\\?(?<queryString>.*)"));
-	private static final Pattern _testrayS3ObjectURLPattern = Pattern.compile(
-		JenkinsResultsParserUtil.combine(
-			"\\[(beanshell|exec)\\] Created S3 Object (?<url>",
-			"https://storage.cloud.google.com/[^\\s?]+).*"));
+	private static final Pattern _testrayCloudObjectURLPattern =
+		Pattern.compile(
+			JenkinsResultsParserUtil.combine(
+				"\\[(beanshell|exec)\\] Created Cloud Object (?<url>",
+				"https://storage.cloud.google.com/[^\\s?]+).*"));
 
 	static {
 		Properties properties = null;
@@ -3563,11 +3634,14 @@ public abstract class BaseBuild implements Build {
 	private final Map<String, BranchInformation> _branchInformationMap =
 		new HashMap<>();
 	private String _branchName;
+	private boolean _buildCached;
 	private BuildDatabase _buildDatabase;
 	private String _buildDescription;
 	private Boolean _buildDurationsEnabled;
+	private JSONObject _buildJSONObject;
 	private final BuildUpdater _buildUpdater;
 	private String _buildURL;
+	private final DownstreamBuildReport _cachedDownstreamBuildReport;
 	private Long _duration;
 	private Element _gitHubMessageElement;
 	private final List<Invocation> _invocations = new ArrayList<>();
@@ -3591,5 +3665,6 @@ public abstract class BaseBuild implements Build {
 	private Map<String, TestClassResult> _testClassResults;
 	private final List<URL> _testrayAttachmentURLs = new ArrayList<>();
 	private boolean _testrayAttachmentURLsFound;
+	private JSONObject _testReportJSONObject;
 
 }

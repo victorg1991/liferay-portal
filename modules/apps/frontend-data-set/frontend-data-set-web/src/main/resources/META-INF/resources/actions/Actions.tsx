@@ -10,7 +10,7 @@ import FrontendDataSetContext, {
 } from '../FrontendDataSetContext';
 import filterItemActions from '../utils/actionItems/filterItemActions';
 import handleActionClick from '../utils/actionItems/handleActionClick';
-import {IItemsActions} from '../utils/types';
+import {EItemActionsType, IItemsActions} from '../utils/types';
 import ViewsContext from '../views/ViewsContext';
 import ActionsDropdown from './ActionsDropdown';
 import QuickActions from './QuickActions';
@@ -21,11 +21,13 @@ function Actions({
 	actions,
 	itemData,
 	itemId,
+	items,
 	onItemSelectionChange,
 }: {
 	actions: Array<IItemsActions>;
 	itemData: any;
 	itemId: string | number;
+	items: any[];
 	onItemSelectionChange?: Function;
 }) {
 	const {
@@ -39,6 +41,7 @@ function Actions({
 		onInfoPanelToggleButtonClick,
 		openModal,
 		openSidePanel,
+		selectable,
 		selectedItemsKey,
 		selectedItemsValue,
 		toggleItemInlineEdit,
@@ -53,7 +56,7 @@ function Actions({
 	const [loading, setLoading] = useState(false);
 	const [menuActive, setMenuActive] = useState(false);
 
-	const isRowSelected =
+	const isItemSelected =
 		allItemsSelectedActive ||
 		selectedItemsValue?.some(
 			(selectedItemValue) => String(selectedItemValue) === String(itemId)
@@ -69,6 +72,7 @@ function Actions({
 		actions,
 		infoPanelOpen,
 		itemData,
+		selectable,
 		selectedItemsKey,
 		selectedItemsValue,
 	});
@@ -98,8 +102,10 @@ function Actions({
 			executeAsyncItemAction,
 			highlightItems,
 			infoPanelOpen,
+			isItemSelected,
 			itemData,
 			itemId,
+			items,
 			loadData,
 			onActionDropdownItemClick,
 			onInfoPanelToggleButtonClick,
@@ -111,16 +117,20 @@ function Actions({
 		});
 	};
 
+	const quickActions = formattedActions.length
+		? formattedActions[0].type === EItemActionsType.GROUP
+			? formattedActions[0].items?.slice(0, QUICK_ACTIONS_MAX_NUMBER) ||
+				[]
+			: formattedActions.slice(0, QUICK_ACTIONS_MAX_NUMBER)
+		: [];
+
 	return (
 		<>
 			{quickActionsEnabled &&
-				formattedActions.length > 1 &&
-				!isRowSelected && (
+				quickActions.length > 1 &&
+				!isItemSelected && (
 					<QuickActions
-						actions={formattedActions.slice(
-							0,
-							QUICK_ACTIONS_MAX_NUMBER
-						)}
+						actions={quickActions}
 						itemData={itemData}
 						itemId={itemId}
 						onClick={handleClick}

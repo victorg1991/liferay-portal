@@ -57,6 +57,10 @@ export class UsersAndOrganizationsPage {
 	readonly assignOrganizationRolesTableRowLink: (
 		roleName: string
 	) => Promise<Locator>;
+	readonly assignOrganizationRolesTableStatus: (
+		roleName: string,
+		status: string
+	) => Promise<Locator>;
 	readonly assignOrganizationRolesUserCell: (
 		userName: string
 	) => Promise<Locator>;
@@ -149,6 +153,10 @@ export class UsersAndOrganizationsPage {
 	readonly saveUserButton: Locator;
 	readonly screenNameInput: Locator;
 	readonly selectAllUsersCheckBox: Locator;
+	readonly selectViewButton: Locator;
+	readonly selectViewCardButton: Locator;
+	readonly selectViewListButton: Locator;
+	readonly selectViewTableButton: Locator;
 	readonly statusText: (value: string) => Locator;
 	readonly tableFilterMenu: Locator;
 	readonly tableFilterMenuItem: (option: string) => Locator;
@@ -156,6 +164,7 @@ export class UsersAndOrganizationsPage {
 	readonly tableOrderMenuItem: (option: string) => Locator;
 	readonly userIdInput: Locator;
 	readonly usersCheckbox: (userName: string) => Promise<Locator>;
+	readonly usersDataTable: DataTablePage;
 	readonly usersSearchBar: Locator;
 	readonly usersSearchBarButton: Locator;
 	readonly usersTableRow: (
@@ -174,6 +183,7 @@ export class UsersAndOrganizationsPage {
 	readonly timeZoneSelect: Locator;
 	readonly saveTimeZoneButton: Locator;
 	readonly usersAndOrganizationsButton: Locator;
+	readonly viewStatus: (status: string) => Locator;
 
 	constructor(page: Page) {
 		this.activateButton = page.getByRole('button', {name: 'Activate'});
@@ -228,6 +238,20 @@ export class UsersAndOrganizationsPage {
 			}
 
 			throw new Error(`Cannot locate role row with name ${roleName}`);
+		};
+		this.assignOrganizationRolesTableStatus = async (
+			roleName: string,
+			status: string
+		) => {
+			const assignOrganizationRolesTableRow =
+				await this.assignOrganizationRolesTableRow(0, roleName);
+
+			if (
+				assignOrganizationRolesTableRow &&
+				assignOrganizationRolesTableRow.row
+			) {
+				return assignOrganizationRolesTableRow.row.getByText(status);
+			}
 		};
 		this.assignOrganizationRolesUserCell = async (userName: string) => {
 			return page.getByRole('cell', {
@@ -494,6 +518,12 @@ export class UsersAndOrganizationsPage {
 				return usersTableRow.row.getByRole('checkbox');
 			}
 		};
+		this.usersDataTable = new DataTablePage(
+			page,
+			page.locator(
+				'#_com_liferay_users_admin_web_portlet_UsersAdminPortlet_usersSearchContainer'
+			)
+		);
 		this.usersSearchBar = page.getByPlaceholder('Search for');
 		this.usersSearchBarButton = page.getByRole('button', {
 			name: 'Search for',
@@ -514,6 +544,14 @@ export class UsersAndOrganizationsPage {
 		this.selectAllUsersCheckBox = page
 			.locator('.management-bar')
 			.getByLabel('Select All Users on the Page');
+		this.selectViewButton = page.getByLabel('Select View');
+		this.selectViewCardButton = page.getByRole('menuitem', {
+			name: 'Cards',
+		});
+		this.selectViewListButton = page.getByRole('menuitem', {name: 'List'});
+		this.selectViewTableButton = page.getByRole('menuitem', {
+			name: 'Table',
+		});
 		this.tableFilterMenu = page
 			.locator('.management-bar')
 			.getByLabel('Filter');
@@ -581,6 +619,8 @@ export class UsersAndOrganizationsPage {
 		});
 		this.timeZoneSelect = page.getByLabel('Time Zone');
 		this.saveTimeZoneButton = page.getByRole('button', {name: 'Save'});
+		this.viewStatus = (status) =>
+			page.getByTitle(`Select View, Currently Selected: ${status}`);
 	}
 
 	async activateUsers(userNames: string[]) {
@@ -589,6 +629,32 @@ export class UsersAndOrganizationsPage {
 		}
 		await this.activateButton.click();
 		await waitForAlert(this.page);
+	}
+
+	async changeView(view: 'Cards' | 'List' | 'Table') {
+		let viewButton: Locator;
+
+		switch (view) {
+			case 'List':
+				viewButton = this.selectViewListButton;
+				break;
+			case 'Cards':
+				viewButton = this.selectViewCardButton;
+				break;
+			default:
+				viewButton = this.selectViewTableButton;
+		}
+
+		await expect(async () => {
+			await this.selectViewButton.click();
+
+			await expect(viewButton).toBeVisible({
+				timeout: 100,
+			});
+		}).toPass({timeout: 1000});
+
+		await viewButton.click();
+		await expect(this.viewStatus(view)).toBeVisible();
 	}
 
 	async createUser(
@@ -746,6 +812,8 @@ export class UsersAndOrganizationsPage {
 	}
 
 	async goToUser(userName: string) {
-		await this.page.getByRole('link', {name: userName}).click();
+		await this.page
+			.getByRole('link', {exact: true, name: userName})
+			.click();
 	}
 }

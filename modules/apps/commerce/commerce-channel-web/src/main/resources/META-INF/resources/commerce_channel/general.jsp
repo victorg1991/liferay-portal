@@ -161,7 +161,7 @@ Map<String, String> contextParams = HashMapBuilder.<String, String>put(
 					</div>
 
 					<div class="col-lg-6">
-						<aui:input checked="<%= commerceChannelDisplayContext.isGuestCheckoutEnabled() %>" helpMessage="configures-whether-a-guest-may-checkout-by-providing-an-email-address-or-if-they-must-sign-in" label="guest-checkout" labelOff="disabled" labelOn="enabled" name="settings--guestCheckoutEnabled--" type="toggle-switch" />
+						<aui:input checked="<%= commerceChannelDisplayContext.isGuestCheckoutEnabled() %>" helpMessage="configures-whether-a-guest-may-check-out-by-providing-an-email-address-or-if-they-must-sign-in" label="guest-checkout" labelOff="disabled" labelOn="enabled" name="settings--guestCheckoutEnabled--" type="toggle-switch" />
 					</div>
 
 					<c:if test='<%= FeatureFlagManagerUtil.isEnabled("LPD-58472") %>'>
@@ -179,6 +179,50 @@ Map<String, String> contextParams = HashMapBuilder.<String, String>put(
 							<aui:input checked="<%= commerceChannelDisplayContext.isQuickCheckoutEnabled() %>" helpMessage="allow-customers-to-complete-purchases-with-a-single-click-if-all-required-information-is-provided-in-the-order-streamlining-the-checkout-process" label="quick-checkout" labelOff="disabled" labelOn="enabled" name="settings--quickCheckoutEnabled--" type="toggle-switch" />
 						</div>
 					</c:if>
+
+					<div class="col-lg-6">
+						<aui:input checked="<%= commerceChannelDisplayContext.isSlowConnectionOrderFlowEnabled() %>" helpMessage="allow-an-overlay-to-be-displayed-when-adding-items-to-the-cart,-helping-manage-slow-connections" label="slow-connection-order-flow-enabled" labelOff="disabled" labelOn="enabled" name="settings--slowConnectionOrderFlowEnabled--" type="toggle-switch" />
+					</div>
+
+					<div class="col-lg-6">
+						<aui:input checked="<%= commerceChannelDisplayContext.isUndoCartItemDeletionDisabled() %>" helpMessage="configures-whether-a-buyer-can-undo-the-deletion-of-an-item-from-the-mini-cart" label="undo-cart-item-deletion-disabled" labelOff="disabled" labelOn="enabled" name="settings--undoCartItemDeletionDisabled--" type="toggle-switch" />
+					</div>
+
+					<div class="col-lg-6">
+						<aui:select label="open-orders-visibility-scope" name="settings--openOrdersVisibilityScope--">
+
+							<%
+							String openOrdersVisibilityScope = commerceChannelDisplayContext.getOpenOrdersVisibilityScope();
+
+							for (String orderVisibilityScope : CommerceOrderConstants.ORDER_VISIBILITY_SCOPES) {
+							%>
+
+								<aui:option label="<%= orderVisibilityScope %>" selected="<%= openOrdersVisibilityScope.equals(orderVisibilityScope) %>" value="<%= orderVisibilityScope %>" />
+
+							<%
+							}
+							%>
+
+						</aui:select>
+					</div>
+
+					<div class="col-lg-6">
+						<aui:select label="placed-orders-visibility-scope" name="settings--placedOrdersVisibilityScope--">
+
+							<%
+							String placedOrdersVisibilityScope = commerceChannelDisplayContext.getPlacedOrdersVisibilityScope();
+
+							for (String orderVisibilityScope : CommerceOrderConstants.ORDER_VISIBILITY_SCOPES) {
+							%>
+
+								<aui:option label="<%= orderVisibilityScope %>" selected="<%= placedOrdersVisibilityScope.equals(orderVisibilityScope) %>" value="<%= orderVisibilityScope %>" />
+
+							<%
+							}
+							%>
+
+						</aui:select>
+					</div>
 				</div>
 
 				<div class="row">

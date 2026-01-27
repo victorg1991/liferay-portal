@@ -5,9 +5,11 @@
 
 package com.liferay.portal.db.migration.schema.exporter.internal.exporter.test;
 
+import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.service.ObjectDefinitionLocalServiceUtil;
+import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalServiceUtil;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.object.test.util.ObjectRelationshipTestUtil;
@@ -16,6 +18,7 @@ import com.liferay.portal.db.migration.schema.exporter.internal.test.util.Config
 import com.liferay.portal.db.migration.schema.exporter.internal.test.util.DatabaseTestUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -25,7 +28,6 @@ import java.io.File;
 
 import java.nio.file.Files;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -47,14 +49,15 @@ public abstract class BaseDBMigrationSchemaExportTestCase {
 
 		folder = FileUtil.createTempFolder();
 
-		_objectDefinition1 = ObjectDefinitionTestUtil.addCustomObjectDefinition(
-			ObjectDefinitionTestUtil.getRandomName());
-		_objectDefinition2 = ObjectDefinitionTestUtil.addCustomObjectDefinition(
-			ObjectDefinitionTestUtil.getRandomName());
+		_objectDefinition1 = ObjectDefinitionTestUtil.publishObjectDefinition();
+		_objectDefinition2 = ObjectDefinitionTestUtil.publishObjectDefinition();
 
 		_objectRelationship = ObjectRelationshipTestUtil.addObjectRelationship(
-			ObjectRelationshipLocalServiceUtil.getService(), _objectDefinition1,
-			_objectDefinition2);
+			_objectRelationshipLocalService, _objectDefinition1,
+			_objectDefinition2,
+			ObjectRelationshipConstants.DELETION_TYPE_CASCADE,
+			StringUtil.randomId(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
 	}
 
 	protected static void tearDownClassBaseDBMigrationSchemaExportTestCase()
@@ -156,18 +159,14 @@ public abstract class BaseDBMigrationSchemaExportTestCase {
 
 			Assert.assertEquals(logEntries.toString(), 2, logEntries.size());
 
-			List<String> logMessages = new ArrayList<>();
-
-			for (LogEntry entry : logEntries) {
-				logMessages.add(entry.getMessage());
-			}
+			List<String> messages = logCapture.getMessages();
 
 			Assert.assertEquals(
-				"Start database schema definition export", logMessages.get(0));
+				"Start database schema definition export", messages.get(0));
 			Assert.assertEquals(
 				"Finished database schema definition export to " +
 					folder.getAbsolutePath(),
-				logMessages.get(1));
+				messages.get(1));
 		}
 	}
 
@@ -185,6 +184,10 @@ public abstract class BaseDBMigrationSchemaExportTestCase {
 	private static ObjectDefinition _objectDefinition1;
 	private static ObjectDefinition _objectDefinition2;
 	private static ObjectRelationship _objectRelationship;
+
+	@Inject
+	private static ObjectRelationshipLocalService
+		_objectRelationshipLocalService;
 
 	@Inject
 	private PersistenceManager _persistenceManager;

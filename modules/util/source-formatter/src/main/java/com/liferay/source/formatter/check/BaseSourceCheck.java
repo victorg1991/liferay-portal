@@ -727,17 +727,29 @@ public abstract class BaseSourceCheck implements SourceCheck {
 		String className, String content, String fileContent, String fileName,
 		String methodCall) {
 
-		String variable = getVariableName(methodCall);
+		String variableName = getVariableName(methodCall);
 
-		if (variable.isEmpty()) {
+		if (variableName.isEmpty()) {
 			return false;
 		}
 
 		String variableTypeName = getVariableTypeName(
-			content, null, fileContent, fileName, variable.trim(), true, false);
+			content, null, fileContent, fileName, variableName.trim(), true,
+			false);
 
-		if ((variableTypeName != null) &&
-			variableTypeName.startsWith(className)) {
+		if (variableTypeName == null) {
+			return false;
+		}
+
+		variableTypeName = StringUtil.trim(
+			variableTypeName.replaceAll("<[^>]+>", ""));
+
+		String defaultVariableName = StringUtil.lowerCaseFirstLetter(
+			variableTypeName);
+
+		if (StringUtil.equalsIgnoreCase(className, variableTypeName) ||
+			className.startsWith(defaultVariableName) ||
+			className.startsWith("_" + defaultVariableName)) {
 
 			return true;
 		}
@@ -762,6 +774,59 @@ public abstract class BaseSourceCheck implements SourceCheck {
 		}
 
 		return GetterUtil.getBoolean(attributeValue);
+	}
+
+	protected boolean isDerivedFrom(
+		String absolutePath, String content, String fullyQualifiedClassName) {
+
+		Pattern pattern = Pattern.compile(
+			" class " + JavaSourceUtil.getClassName(absolutePath) +
+				"\\s+extends\\s+([\\w.]+)\\b");
+
+		Matcher matcher = pattern.matcher(content);
+
+		if (!matcher.find()) {
+			return false;
+		}
+
+		String extendedClassName = matcher.group(1);
+
+		if (extendedClassName.equals(fullyQualifiedClassName)) {
+			return true;
+		}
+
+		pattern = Pattern.compile("\nimport (.*\\." + extendedClassName + ");");
+
+		matcher = pattern.matcher(content);
+
+		if (matcher.find()) {
+			extendedClassName = matcher.group(1);
+		}
+		else {
+			extendedClassName =
+				JavaSourceUtil.getPackageName(content) + StringPool.PERIOD +
+					extendedClassName;
+		}
+
+		if (extendedClassName.equals(fullyQualifiedClassName)) {
+			return true;
+		}
+
+		if (!extendedClassName.startsWith("com.liferay.")) {
+			return false;
+		}
+
+		File file = JavaSourceUtil.getJavaFile(
+			extendedClassName, SourceUtil.getRootDirName(absolutePath),
+			getBundleSymbolicNamesMap(absolutePath));
+
+		if (file == null) {
+			return false;
+		}
+
+		return isDerivedFrom(
+			file.getAbsolutePath(), FileUtil.read(file),
+			fullyQualifiedClassName);
 	}
 
 	protected boolean isExcludedPath(String key, String path) {
@@ -844,49 +909,9 @@ public abstract class BaseSourceCheck implements SourceCheck {
 	}
 
 	protected boolean isUpgradeProcess(String absolutePath, String content) {
-		Pattern pattern = Pattern.compile(
-			" class " + JavaSourceUtil.getClassName(absolutePath) +
-				"\\s+extends\\s+([\\w.]+) ");
-
-		Matcher matcher = pattern.matcher(content);
-
-		if (!matcher.find()) {
-			return false;
-		}
-
-		String extendedClassName = matcher.group(1);
-
-		if (extendedClassName.equals("UpgradeProcess")) {
-			return true;
-		}
-
-		pattern = Pattern.compile("\nimport (.*\\." + extendedClassName + ");");
-
-		matcher = pattern.matcher(content);
-
-		if (matcher.find()) {
-			extendedClassName = matcher.group(1);
-		}
-
-		if (!extendedClassName.contains(StringPool.PERIOD)) {
-			extendedClassName =
-				JavaSourceUtil.getPackageName(content) + StringPool.PERIOD +
-					extendedClassName;
-		}
-
-		if (!extendedClassName.startsWith("com.liferay.")) {
-			return false;
-		}
-
-		File file = JavaSourceUtil.getJavaFile(
-			extendedClassName, SourceUtil.getRootDirName(absolutePath),
-			getBundleSymbolicNamesMap(absolutePath));
-
-		if (file == null) {
-			return false;
-		}
-
-		return isUpgradeProcess(file.getAbsolutePath(), FileUtil.read(file));
+		return isDerivedFrom(
+			absolutePath, content,
+			"com.liferay.portal.kernel.upgrade.UpgradeProcess");
 	}
 
 	protected synchronized void populateModelInformations() throws IOException {

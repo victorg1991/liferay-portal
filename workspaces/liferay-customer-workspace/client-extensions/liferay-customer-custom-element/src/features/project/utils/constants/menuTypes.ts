@@ -4,12 +4,13 @@
  */
 
 export const MENU_TYPES = {
+	activation: 'Activation',
 	attachments: 'Attachments',
 	businessEvents: 'Business Events',
+	liferayCloud: 'Liferay Cloud',
 	liferayPaaS: 'Liferay PaaS',
 	liferaySaaS: 'Liferay SaaS',
 	overview: 'Overview',
-	productActivation: 'Product Activation',
 	projectUsage: 'Project Usage',
 	teamMembers: 'Team Members',
 };

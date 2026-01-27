@@ -436,14 +436,22 @@ public class DropZoneFragmentEntryProcessorTest {
 			LayoutStructure layoutStructure)
 		throws Exception {
 
+		Mockito.when(
+			fragmentEntryLink.getHtml()
+		).thenReturn(
+			html
+		);
+
 		Document document = _getDocument(html);
 
 		_dropZoneDocumentFragmentEntryProcessor.processFragmentEntryLinkHTML(
 			fragmentEntryLink, document,
 			new DefaultFragmentEntryProcessorContext(
+				fragmentEntryLink.getCompanyId(),
 				_getMockHttpServletRequest(layoutStructure), null,
+				LocaleUtil.getMostRelevantLocale(),
 				FragmentEntryLinkConstants.EDIT,
-				LocaleUtil.getMostRelevantLocale()));
+				fragmentEntryLink.getGroupId()));
 
 		Element bodyElement = document.body();
 

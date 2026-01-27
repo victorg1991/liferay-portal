@@ -48,7 +48,6 @@ function getQuantity(settings, skuUnitOfMeasure) {
 function AddToCart({
 	accountId: initialAccountId,
 	cartId: initialCartId,
-	cartUUID: initialCartUUID,
 	channel,
 	cpInstance: initialCpInstance,
 	disabled: initialDisabled,
@@ -58,10 +57,8 @@ function AddToCart({
 }) {
 	const account = useCommerceAccount({id: initialAccountId});
 	const cart = useCommerceCart({
-		channelGroupId: channel.groupId,
 		guestOrderEnabled,
 		initialCart: {
-			UUID: initialCartUUID,
 			id: initialCartId,
 		},
 	});
@@ -137,13 +134,17 @@ function AddToCart({
 
 	useEffect(() => {
 		function handleQuantityChanged({quantity, skuId}) {
-			setCpInstance((cpInstance) => ({
-				...cpInstance,
-				inCart:
-					skuId === cpInstance.skuId || skuId === ALL
-						? Boolean(quantity)
-						: cpInstance.inCart,
-			}));
+			setCpInstance((cpInstance) => {
+				const isModified =
+					skuId === cpInstance.skuId ||
+					skuId.toString() === cpInstance.skuId ||
+					skuId === ALL;
+
+				return {
+					...cpInstance,
+					inCart: isModified ? Boolean(quantity) : cpInstance.inCart,
+				};
+			});
 		}
 
 		function handleUOMChanged({unitOfMeasure}) {

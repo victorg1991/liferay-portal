@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.servlet.PortalSessionThreadLocal;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -129,6 +130,16 @@ public class DefaultCommerceMediaResolver implements CommerceMediaResolver {
 	}
 
 	@Override
+	public String getThumbnailURL(
+			long commerceAccountId, long cpAttachmentFileEntryId,
+			boolean secure)
+		throws PortalException {
+
+		return getURL(
+			commerceAccountId, cpAttachmentFileEntryId, false, false, secure);
+	}
+
+	@Override
 	public String getURL(long commerceAccountId, long cpAttachmentFileEntryId)
 		throws PortalException {
 
@@ -177,10 +188,10 @@ public class DefaultCommerceMediaResolver implements CommerceMediaResolver {
 			return getDefaultURL(company.getGroupId());
 		}
 
-		if (secure) {
-			DLFileEntry dlFileEntry = _dlFileEntryLocalService.fetchDLFileEntry(
-				cpAttachmentFileEntry.getFileEntryId());
+		DLFileEntry dlFileEntry = _dlFileEntryLocalService.fetchDLFileEntry(
+			cpAttachmentFileEntry.getFileEntryId());
 
+		if (secure) {
 			if ((dlFileEntry != null) &&
 				!cpAttachmentFileEntry.isCDNEnabled() &&
 				!_dlFileEntryModelResourcePermission.contains(
@@ -253,8 +264,15 @@ public class DefaultCommerceMediaResolver implements CommerceMediaResolver {
 		}
 
 		sb.append(cpAttachmentFileEntry.getCPAttachmentFileEntryId());
-		sb.append("?download=");
-		sb.append(download);
+
+		if ((dlFileEntry == null) ||
+			!ArrayUtil.contains(
+				CommerceMediaConstants.XML_MIME_TYPES,
+				dlFileEntry.getMimeType())) {
+
+			sb.append("?download=");
+			sb.append(download);
+		}
 
 		return sb.toString();
 	}

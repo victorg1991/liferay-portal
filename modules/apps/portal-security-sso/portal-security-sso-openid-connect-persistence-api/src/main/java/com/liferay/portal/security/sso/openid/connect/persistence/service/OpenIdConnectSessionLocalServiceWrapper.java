@@ -248,6 +248,14 @@ public class OpenIdConnectSessionLocalServiceWrapper
 
 	@Override
 	public com.liferay.portal.security.sso.openid.connect.persistence.model.
+		OpenIdConnectSession fetchCurrentOpenIdConnectSession() {
+
+		return _openIdConnectSessionLocalService.
+			fetchCurrentOpenIdConnectSession();
+	}
+
+	@Override
+	public com.liferay.portal.security.sso.openid.connect.persistence.model.
 		OpenIdConnectSession fetchOpenIdConnectSession(
 			long openIdConnectSessionId) {
 
@@ -307,6 +315,25 @@ public class OpenIdConnectSessionLocalServiceWrapper
 
 		return _openIdConnectSessionLocalService.getOpenIdConnectSession(
 			openIdConnectSessionId);
+	}
+
+	@Override
+	public com.liferay.portal.security.sso.openid.connect.persistence.model.
+		OpenIdConnectSession getOpenIdConnectSession(long userId, String issuer)
+			throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _openIdConnectSessionLocalService.getOpenIdConnectSession(
+			userId, issuer);
+	}
+
+	@Override
+	public com.liferay.portal.security.sso.openid.connect.persistence.model.
+		OpenIdConnectSession getOpenIdConnectSession(
+				String issuer, String sessionId)
+			throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _openIdConnectSessionLocalService.getOpenIdConnectSession(
+			issuer, sessionId);
 	}
 
 	/**

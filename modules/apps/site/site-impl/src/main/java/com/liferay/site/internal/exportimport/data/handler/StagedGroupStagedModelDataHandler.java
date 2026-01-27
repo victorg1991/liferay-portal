@@ -55,6 +55,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -491,6 +492,10 @@ public class StagedGroupStagedModelDataHandler
 
 		_permissionImporter.clearCache();
 
+		List<Element> nonbatchPortletElements = new ArrayList<>();
+		Map<Integer, List<Element>> rankedBatchPortletElements =
+			new TreeMap<>();
+
 		for (Element portletElement : sitePortletElements) {
 			String portletId = portletElement.attributeValue("portlet-id");
 
@@ -501,6 +506,30 @@ public class StagedGroupStagedModelDataHandler
 				continue;
 			}
 
+			PortletDataHandler portletDataHandler =
+				portlet.getPortletDataHandlerInstance();
+
+			if (portletDataHandler.isBatch()) {
+				rankedBatchPortletElements.computeIfAbsent(
+					portletDataHandler.getRank(), __ -> new ArrayList<>()
+				).add(
+					portletElement
+				);
+			}
+			else {
+				nonbatchPortletElements.add(portletElement);
+			}
+		}
+
+		List<Element> orderedPortletElements = new ArrayList<>();
+
+		for (List<Element> elements : rankedBatchPortletElements.values()) {
+			orderedPortletElements.addAll(elements);
+		}
+
+		orderedPortletElements.addAll(nonbatchPortletElements);
+
+		for (Element portletElement : orderedPortletElements) {
 			long layoutId = GetterUtil.getLong(
 				portletElement.attributeValue("layout-id"));
 
@@ -517,6 +546,8 @@ public class StagedGroupStagedModelDataHandler
 			}
 
 			portletDataContext.setPlid(plid);
+
+			String portletId = portletElement.attributeValue("portlet-id");
 
 			portletDataContext.setPortletId(portletId);
 

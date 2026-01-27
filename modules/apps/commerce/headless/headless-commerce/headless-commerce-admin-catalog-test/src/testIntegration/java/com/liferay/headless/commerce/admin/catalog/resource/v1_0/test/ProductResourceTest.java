@@ -59,6 +59,8 @@ import com.liferay.portal.test.rule.Inject;
 
 import java.math.BigDecimal;
 
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -234,6 +236,12 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 	@Ignore
 	@Override
 	@Test
+	public void testGraphQLDeleteProductByVersion() throws Exception {
+	}
+
+	@Ignore
+	@Override
+	@Test
 	public void testGraphQLGetProduct() throws Exception {
 	}
 
@@ -367,7 +375,7 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 	@Override
 	@Test
 	public void testPutProductByExternalReferenceCode() throws Exception {
-		testPatchProductByExternalReferenceCode();
+		_testPutProductByExternalReferenceCodeWithFutureDisplayDate();
 	}
 
 	@Ignore
@@ -608,6 +616,15 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 		assertValid(page, testGetProductsPage_getExpectedActions());
 
 		page = productResource.getProductsPage(
+			null, String.format("(productId eq %s)", product1.getProductId()),
+			Pagination.of(1, 10), null);
+
+		Assert.assertEquals(totalCount + 1, page.getTotalCount());
+
+		assertContains(product1, (List<Product>)page.getItems());
+		assertValid(page, testGetProductsPage_getExpectedActions());
+
+		page = productResource.getProductsPage(
 			null, "(specificationValues/any(x:contains(x, 'test')))",
 			Pagination.of(1, 10), null);
 
@@ -648,6 +665,12 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 				StringBundler.concat(string1, StringPool.SPACE, string2)));
 
 		Page<Product> page = productResource.getProductsPage(
+			String.valueOf(product1.getProductId()), null, Pagination.of(1, 10),
+			null);
+
+		Assert.assertEquals(1, page.getTotalCount());
+
+		page = productResource.getProductsPage(
 			string1, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(1, page.getTotalCount());
@@ -901,6 +924,41 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 
 		Assert.assertEquals(
 			cpInstance.getStatus(), WorkflowConstants.STATUS_APPROVED);
+	}
+
+	private void _testPutProductByExternalReferenceCodeWithFutureDisplayDate()
+		throws Exception {
+
+		Product randomProduct = _randomProductWithSku();
+
+		Calendar calendar = Calendar.getInstance();
+
+		calendar.add(Calendar.YEAR, 1);
+
+		randomProduct.setDisplayDate(calendar.getTime());
+
+		Product postProduct = productResource.postProduct(randomProduct);
+
+		Product putProduct = postProduct.clone();
+
+		putProduct.setName(
+			Collections.singletonMap(
+				"en_US", "_testPostProductWithFutureDisplayDate"));
+
+		putProduct = productResource.putProductByExternalReferenceCode(
+			postProduct.getExternalReferenceCode(), putProduct);
+
+		Product getProduct = productResource.getProduct(
+			putProduct.getProductId());
+
+		Assert.assertEquals(
+			String.valueOf(postProduct), postProduct.getId(),
+			putProduct.getId());
+		Assert.assertEquals(
+			String.valueOf(putProduct), putProduct.getId(), getProduct.getId());
+		Assert.assertEquals(
+			String.valueOf(putProduct), putProduct.getName(),
+			getProduct.getName());
 	}
 
 	@DeleteAfterTestRun

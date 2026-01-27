@@ -36,6 +36,7 @@ import {
 	useSelector,
 	useSelectorRef,
 } from '../../../../../app/contexts/StoreContext';
+import selectCanHideFragments from '../../../../../app/selectors/selectCanHideFragments';
 import selectCanUpdateEditables from '../../../../../app/selectors/selectCanUpdateEditables';
 import selectCanUpdateItemConfiguration from '../../../../../app/selectors/selectCanUpdateItemConfiguration';
 import selectCanUpdatePageStructure from '../../../../../app/selectors/selectCanUpdatePageStructure';
@@ -85,40 +86,47 @@ export default function StructureTreeContent({expandedKeys, setExpandedKeys}) {
 		setDragAndDropHoveredItemId(itemId);
 	}, []);
 
-	const initNodes = useMemo(
-		() =>
-			getTreeNodes(data.items[data.rootItems.main], data.items, {
-				canUpdateEditables,
-				canUpdateItemConfiguration,
-				fragmentEntryLinks,
-				isMasterPage,
-				layoutData,
-				layoutDataRef,
-				mappingFields,
-				masterLayoutData,
-				onHoverNode,
-				pageContents,
-				restrictedItemIds,
-				selectedViewportSize,
-			}).children,
+	const rootItem = data.items[data.rootItems.main];
 
-		[
+	if (!rootItem) {
+		if (process.env.NODE_ENV === 'development') {
+			console.error(
+				`Root item with id ${data.rootItems.main} not found in layout data.`
+			);
+		}
+	}
+
+	const initNodes = useMemo(() => {
+		return getTreeNodes(rootItem, data.items, {
 			canUpdateEditables,
 			canUpdateItemConfiguration,
-			data.items,
-			data.rootItems.main,
 			fragmentEntryLinks,
 			isMasterPage,
 			layoutData,
 			layoutDataRef,
 			mappingFields,
 			masterLayoutData,
+			onHoverNode,
 			pageContents,
 			restrictedItemIds,
-			onHoverNode,
 			selectedViewportSize,
-		]
-	);
+		}).children;
+	}, [
+		rootItem,
+		canUpdateEditables,
+		canUpdateItemConfiguration,
+		data.items,
+		fragmentEntryLinks,
+		isMasterPage,
+		layoutData,
+		layoutDataRef,
+		mappingFields,
+		masterLayoutData,
+		pageContents,
+		restrictedItemIds,
+		onHoverNode,
+		selectedViewportSize,
+	]);
 
 	const updateNodes = useCallback(({activeItemIds, hoveredItemId, nodes}) => {
 		return nodes.map((item) => ({
@@ -174,6 +182,8 @@ export default function StructureTreeContent({expandedKeys, setExpandedKeys}) {
 		const canUpdatePageStructure = useSelector(
 			selectCanUpdatePageStructure
 		);
+		const canHideFragments = useSelector(selectCanHideFragments);
+
 		const showOptions =
 			canUpdatePageStructure &&
 			item.itemType !== ITEM_TYPES.editable &&
@@ -195,7 +205,7 @@ export default function StructureTreeContent({expandedKeys, setExpandedKeys}) {
 				onFocus={(event) => event.stopPropagation()}
 				onKeyDown={handleButtonsKeyDown}
 			>
-				{(item.hideable || item.hidden) && (
+				{canHideFragments && (item.hideable || item.hidden) && (
 					<VisibilityButton
 						className="ml-0"
 						disabled={

@@ -5,11 +5,14 @@
 
 package com.liferay.object.service.impl;
 
+import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectLayoutBoxConstants;
 import com.liferay.object.exception.DefaultObjectLayoutException;
+import com.liferay.object.exception.NoSuchObjectFieldException;
 import com.liferay.object.exception.ObjectDefinitionModifiableException;
-import com.liferay.object.exception.ObjectLayoutBoxCategorizationTypeException;
+import com.liferay.object.exception.ObjectLayoutBoxTypeException;
 import com.liferay.object.exception.ObjectLayoutColumnSizeException;
+import com.liferay.object.exception.ObjectRelationshipEdgeException;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectLayout;
@@ -17,6 +20,7 @@ import com.liferay.object.model.ObjectLayoutBox;
 import com.liferay.object.model.ObjectLayoutColumn;
 import com.liferay.object.model.ObjectLayoutRow;
 import com.liferay.object.model.ObjectLayoutTab;
+import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.service.ObjectLayoutTabLocalService;
 import com.liferay.object.service.base.ObjectLayoutLocalServiceBaseImpl;
@@ -304,16 +308,28 @@ public class ObjectLayoutLocalServiceImpl
 			objectFieldId);
 
 		if (objectField.getObjectDefinitionId() != objectDefinitionId) {
-
-			// TODO
-
-			throw new PortalException();
+			throw new NoSuchObjectFieldException();
 		}
 
 		if ((size < 0) || (size > 12)) {
 			throw new ObjectLayoutColumnSizeException(
 				"Object layout column size must be more than 0 and less than " +
 					"12");
+		}
+
+		if (objectField.compareBusinessType(
+				ObjectFieldConstants.BUSINESS_TYPE_RELATIONSHIP)) {
+
+			ObjectRelationship objectRelationship =
+				objectField.getObjectRelationship();
+
+			if (objectRelationship.isEdge()) {
+				throw new ObjectRelationshipEdgeException(
+					"Edge object relationship object fields cannot be " +
+						"associated with object layouts",
+					"edge-object-relationship-object-fields-cannot-be-" +
+						"associated-with-object-layouts");
+			}
 		}
 
 		ObjectLayoutColumn objectLayoutColumn =
@@ -579,52 +595,67 @@ public class ObjectLayoutLocalServiceImpl
 			}
 		}
 
-		int countObjectLayoutBoxCategorizationType = 0;
 		ObjectDefinition objectDefinition =
 			_objectDefinitionPersistence.fetchByPrimaryKey(objectDefinitionId);
+		Set<String> objectLayoutBoxTypes = new HashSet<>();
 
 		for (ObjectLayoutTab objectLayoutTab : objectLayoutTabs) {
+			if (objectLayoutTab.getObjectRelationshipId() != 0) {
+				ObjectRelationship objectRelationship =
+					objectLayoutTab.getObjectRelationship();
+
+				if (objectRelationship.isEdge()) {
+					throw new ObjectRelationshipEdgeException(
+						"Edge object relationships cannot be associated with " +
+							"object layout tabs",
+						"edge-object-relationships-cannot-be-associated-with-" +
+							"object-layout-tabs");
+				}
+			}
+
 			List<ObjectLayoutBox> objectLayoutBoxes =
 				objectLayoutTab.getObjectLayoutBoxes();
 
 			for (ObjectLayoutBox objectLayoutBox : objectLayoutBoxes) {
-				if (Validator.isNull(objectLayoutBox.getType())) {
-					throw new ObjectLayoutBoxCategorizationTypeException(
+				String objectLayoutBoxType = objectLayoutBox.getType();
+
+				if (Validator.isNull(objectLayoutBoxType)) {
+					throw new ObjectLayoutBoxTypeException(
 						"Object layout box must have a type");
 				}
 
-				if (!StringUtil.equals(
-						objectLayoutBox.getType(),
-						ObjectLayoutBoxConstants.TYPE_CATEGORIZATION)) {
+				if (StringUtil.equals(
+						objectLayoutBoxType,
+						ObjectLayoutBoxConstants.TYPE_REGULAR)) {
 
 					continue;
 				}
 
-				if (!objectDefinition.isEnableCategorization()) {
-					throw new ObjectLayoutBoxCategorizationTypeException(
-						"Categorization layout box must be enabled to be used");
-				}
+				String objectLayoutBoxTypeLabel =
+					ObjectLayoutBoxConstants.getTypeLabel(objectLayoutBoxType);
 
 				if (!objectDefinition.isDefaultStorageType()) {
-					throw new ObjectLayoutBoxCategorizationTypeException(
-						"Categorization layout box can only be used in " +
-							"object definitions with a default storage type");
-				}
-
-				countObjectLayoutBoxCategorizationType++;
-
-				if (countObjectLayoutBoxCategorizationType > 1) {
-					throw new ObjectLayoutBoxCategorizationTypeException(
-						"There can only be one categorization layout box per " +
-							"layout");
+					throw new ObjectLayoutBoxTypeException(
+						objectLayoutBoxTypeLabel +
+							" layout box can only be used in object " +
+								"definitions with a default storage type");
 				}
 
 				if (ListUtil.isNotEmpty(
 						objectLayoutBox.getObjectLayoutRows())) {
 
-					throw new ObjectLayoutBoxCategorizationTypeException(
-						"Categorization layout box must not have layout rows");
+					throw new ObjectLayoutBoxTypeException(
+						objectLayoutBoxTypeLabel +
+							" layout box must not have layout rows");
 				}
+
+				if (objectLayoutBoxTypes.contains(objectLayoutBoxType)) {
+					throw new ObjectLayoutBoxTypeException(
+						"There can only be one " + objectLayoutBoxType +
+							" layout box per layout");
+				}
+
+				objectLayoutBoxTypes.add(objectLayoutBoxType);
 			}
 		}
 	}

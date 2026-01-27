@@ -20,6 +20,11 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testAnonymousInnerClass() throws Exception {
+		test("AnonymousInnerClass.testjava");
+	}
+
+	@Test
 	public void testAssertUsage() throws Exception {
 		test(
 			"AssertUsage.testjava",
@@ -362,6 +367,24 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testIncorrectMethodCallsInUpgradeSteps() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"IncorrectMethodCallsInUpgradeSteps.testjava"
+			).addExpectedMessage(
+				"Only \"Table.create*\" and \"UpgradeProcessFactory.*\" " +
+					"calls are allowed in \"getPostUpgradeSteps\" and \"" +
+						"getPreUpgradeSteps\", see LPD-44331",
+				35
+			).addExpectedMessage(
+				"Only \"Table.create*\" and \"UpgradeProcessFactory.*\" " +
+					"calls are allowed in \"getPostUpgradeSteps\" and \"" +
+						"getPreUpgradeSteps\", see LPD-44331",
+				38
+			));
+	}
+
+	@Test
 	public void testIncorrectOperatorOrder() throws Exception {
 		test(
 			SourceProcessorTestParameters.create(
@@ -664,6 +687,17 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testMissingEmptyLinesAfterReferencingVariable()
+		throws Exception {
+
+		test(
+			"MissingEmptyLinesAfterReferencingVariable.testjava",
+			"There should be an empty line before line \"47\", as we " +
+				"finished referencing variable \"group\"",
+			47);
+	}
+
+	@Test
 	public void testMissingEmptyLinesBeforeMethodCalls() throws Exception {
 		test(
 			"MissingEmptyLinesBeforeMethodCalls.testjava",
@@ -672,10 +706,37 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
+	public void testMissingEmptyLinesBetweenAssigningAndUsingVariable()
+		throws Exception {
+
+		test(
+			"MissingEmptyLinesBetweenAssigningAndUsingVariable.testjava",
+			"There should be an empty line between assigning and using " +
+				"variable \"jsonBeginPos\"",
+			16);
+	}
+
+	@Test
 	public void testMissingEmptyLinesInInstanceInit() throws Exception {
 		test(
 			"MissingEmptyLinesInInstanceInit.testjava",
 			"There should be an empty line after line \"18\"", 18);
+	}
+
+	@Test
+	public void testMissingParameterizedSQLStatement() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"MissingParameterizedSQLStatement.testjava"
+			).addExpectedMessage(
+				"Use \"PreparedStatement.set*\" to parameterize \"" +
+					"dlFileEntryClassNameId\"",
+				24
+			).addExpectedMessage(
+				"Use \"PreparedStatement.set*\" to parameterize \"" +
+					"fileEntryClassNameId\"",
+				24
+			));
 	}
 
 	@Test
@@ -790,8 +851,18 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
-	public void testRunSqlStyling() throws Exception {
-		test("RunSqlStyling.testjava");
+	public void testResultSetGetCall() throws Exception {
+		test(
+			"ResultSetGetCall.testjava",
+			"Do not use \"TableName.ColumnName\" as the parameter when " +
+				"calling method \"resultSet.get*\", use column index or " +
+					"column name instead",
+			43);
+	}
+
+	@Test
+	public void testRunSQLStyling() throws Exception {
+		test("RunSQLStyling.testjava");
 	}
 
 	@Test
@@ -871,6 +942,32 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	@Test
 	public void testSortMethodsWithAnnotatedParameters() throws Exception {
 		test("SortMethodsWithAnnotatedParameters.testjava");
+	}
+
+	@Test
+	public void testSQLBooleanValues() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"SQLBooleanValues.testjava"
+			).addExpectedMessage(
+				"Use \"[$TRUE$]\" instead of \"true\" in SQL statements", 21
+			).addExpectedMessage(
+				"Use \"[$TRUE$]\" instead of \"true\" in SQL statements", 28
+			).addExpectedMessage(
+				"Use \"[$TRUE$]\" instead of \"true\" in SQL statements", 42
+			).addExpectedMessage(
+				"Use \"[$FALSE$]\" instead of \"false\" in SQL statements", 53
+			).addExpectedMessage(
+				"Use \"SQLTransformer.transform\" to wrap SQL statement if " +
+					"it contains \"[$FALSE$]\" or \"[$TRUE$]\"",
+				63
+			).addExpectedMessage(
+				"Use \"[$FALSE$]\" instead of \"false\" in SQL statements", 72
+			).addExpectedMessage(
+				"Use \"SQLTransformer.transform\" to wrap SQL statement if " +
+					"it contains \"[$FALSE$]\" or \"[$TRUE$]\"",
+				83
+			));
 	}
 
 	@Test

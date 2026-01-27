@@ -15,6 +15,8 @@ import com.liferay.client.extension.type.CET;
 import com.liferay.client.extension.type.item.selector.CETItemSelectorCriterion;
 import com.liferay.client.extension.type.item.selector.CETItemSelectorReturnType;
 import com.liferay.client.extension.type.manager.CETManager;
+import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.document.library.kernel.service.DLFileEntryLocalServiceUtil;
 import com.liferay.exportimport.kernel.staging.LayoutStagingUtil;
 import com.liferay.frontend.taglib.clay.servlet.taglib.LinkTag;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
@@ -72,8 +74,8 @@ import com.liferay.portal.kernel.portlet.constants.FriendlyURLResolverConstants;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.portlet.url.builder.ResourceURLBuilder;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
-import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.LayoutServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetBranchLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
@@ -99,11 +101,11 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.RobotsUtil;
 import com.liferay.site.display.context.GroupDisplayContextHelper;
 import com.liferay.site.navigation.model.SiteNavigationMenu;
@@ -126,8 +128,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
-import java.util.TreeMap;
 
 /**
  * @author Eudaldo Alonso
@@ -136,14 +138,14 @@ public class LayoutsAdminDisplayContext {
 
 	public LayoutsAdminDisplayContext(
 		ItemSelector itemSelector, LayoutActionsHelper layoutActionsHelper,
-		LayoutLocalService layoutLocalService,
+		LayoutService layoutService,
 		LayoutSetPrototypeHelper layoutSetPrototypeHelper,
 		LiferayPortletRequest liferayPortletRequest,
 		LiferayPortletResponse liferayPortletResponse) {
 
 		_itemSelector = itemSelector;
 		_layoutActionsHelper = layoutActionsHelper;
-		_layoutLocalService = layoutLocalService;
+		_layoutService = layoutService;
 		_layoutSetPrototypeHelper = layoutSetPrototypeHelper;
 		_liferayPortletRequest = liferayPortletRequest;
 		_liferayPortletResponse = liferayPortletResponse;
@@ -289,6 +291,16 @@ public class LayoutsAdminDisplayContext {
 		).buildString();
 	}
 
+	public String getAddModalTitle() {
+		String title = "add-page";
+
+		if (ParamUtil.getBoolean(httpServletRequest, "emptyLayout")) {
+			title = "page-name";
+		}
+
+		return LanguageUtil.get(httpServletRequest, title);
+	}
+
 	public List<SiteNavigationMenu> getAutoSiteNavigationMenus() {
 		return SiteNavigationMenuLocalServiceUtil.getAutoSiteNavigationMenus(
 			themeDisplay.getScopeGroupId());
@@ -365,6 +377,31 @@ public class LayoutsAdminDisplayContext {
 		).buildString();
 	}
 
+	public String getConvertEmptyLayoutURL() {
+		return PortletURLBuilder.createActionURL(
+			_liferayPortletResponse
+		).setActionName(
+			"/layout_admin/convert_empty_layout"
+		).setParameter(
+			"layoutPageTemplateEntryId",
+			ParamUtil.getLong(httpServletRequest, "layoutPageTemplateEntryId")
+		).setParameter(
+			"masterLayoutPlid",
+			ParamUtil.getLong(httpServletRequest, "masterLayoutPlid")
+		).setParameter(
+			"type",
+			() -> {
+				String type = ParamUtil.getString(httpServletRequest, "type");
+
+				if (Validator.isNotNull(type)) {
+					return type;
+				}
+
+				return null;
+			}
+		).buildString();
+	}
+
 	public String getCopyLayoutActionURL(
 		boolean copyPermissions, long sourcePlid) {
 
@@ -428,10 +465,9 @@ public class LayoutsAdminDisplayContext {
 			layout.getDescriptionMap(), layout.getKeywordsMap(),
 			layout.getRobotsMap(), layout.getType(),
 			unicodeProperties.toString(), true, true, Collections.emptyMap(),
-			layout.getMasterLayoutPlid(), serviceContext);
+			layout.getMasterLayoutPageTemplateEntryERC(), serviceContext);
 
-		draftLayout = _layoutLocalService.copyLayoutContent(
-			layout, draftLayout);
+		draftLayout = _layoutService.copyLayoutContent(layout, draftLayout);
 
 		serviceContext.setAttribute(
 			LayoutTypeSettingsConstants.KEY_PUBLISHED, Boolean.TRUE);
@@ -478,17 +514,53 @@ public class LayoutsAdminDisplayContext {
 		).put(
 			"defaultTitle", _getDefaultFaviconTitle()
 		).put(
+			"faviconFileEntryERC",
+			() -> {
+				Layout selLayout = getSelLayout();
+
+				if (selLayout != null) {
+					return selLayout.getFaviconFileEntryERC();
+				}
+
+				return null;
+			}
+		).put(
 			"faviconFileEntryId",
 			() -> {
 				Layout selLayout = getSelLayout();
 
 				if (selLayout != null) {
-					return selLayout.getFaviconFileEntryId();
+					if (Validator.isNotNull(
+							selLayout.getFaviconFileEntryERC())) {
+
+						DLFileEntry dlFileEntry =
+							DLFileEntryLocalServiceUtil.
+								fetchDLFileEntryByExternalReferenceCode(
+									selLayout.getFaviconFileEntryERC(),
+									selLayout.getFaviconFileEntryGroupId());
+
+						if (dlFileEntry != null) {
+							return dlFileEntry.getFileEntryId();
+						}
+					}
+
+					return 0;
 				}
 
 				LayoutSet selLayoutSet = getSelLayoutSet();
 
 				return selLayoutSet.getFaviconFileEntryId();
+			}
+		).put(
+			"faviconFileEntryScopeERC",
+			() -> {
+				Layout selLayout = getSelLayout();
+
+				if (selLayout != null) {
+					return selLayout.getFaviconFileEntryScopeERC();
+				}
+
+				return null;
 			}
 		).put(
 			"imgURL", getFaviconURL()
@@ -594,7 +666,7 @@ public class LayoutsAdminDisplayContext {
 
 		LayoutSet layoutSet = selLayout.getLayoutSet();
 
-		TreeMap<String, String> virtualHostnames =
+		NavigableMap<String, String> virtualHostnames =
 			layoutSet.getVirtualHostnames();
 
 		if (virtualHostnames.isEmpty() ||
@@ -621,7 +693,8 @@ public class LayoutsAdminDisplayContext {
 		Group group = layout.getGroup();
 		LayoutSet layoutSet = layout.getLayoutSet();
 
-		if (!FeatureFlagManagerUtil.isEnabled("LPS-174417") ||
+		if (!FeatureFlagManagerUtil.isEnabled(
+				group.getCompanyId(), "LPS-174417") ||
 			(!group.isLayoutSetPrototype() &&
 			 !layoutSet.isLayoutSetPrototypeLinkActive())) {
 
@@ -737,6 +810,8 @@ public class LayoutsAdminDisplayContext {
 
 				return portletDisplay.getURLBackTitle();
 			}
+		).setParameter(
+			"privateLayout", isPrivateLayout()
 		).setParameter(
 			"selPlid", plid
 		).buildPortletURL();
@@ -1150,6 +1225,20 @@ public class LayoutsAdminDisplayContext {
 			).setParameter(
 				"selPlid", selPlid
 			).buildPortletURL();
+
+		if (selPlid != LayoutConstants.DEFAULT_PLID) {
+			Layout layout = LayoutLocalServiceUtil.fetchLayout(selPlid);
+
+			if ((layout != null) && layout.isTypeEmpty()) {
+				selectLayoutPageTemplateEntryURL.setParameter(
+					"emptyLayout",
+					String.valueOf(
+						ParamUtil.getBoolean(
+							httpServletRequest, "emptyLayout")));
+				selectLayoutPageTemplateEntryURL.setParameter(
+					"externalReferenceCode", layout.getExternalReferenceCode());
+			}
+		}
 
 		if (layoutPageTemplateCollectionId > 0) {
 			selectLayoutPageTemplateEntryURL.setParameter(
@@ -1570,7 +1659,7 @@ public class LayoutsAdminDisplayContext {
 
 		String virtualHostname = null;
 
-		TreeMap<String, String> virtualHostnames =
+		NavigableMap<String, String> virtualHostnames =
 			PortalUtil.getVirtualHostnames(layoutSet);
 
 		if (!virtualHostnames.isEmpty()) {
@@ -1671,7 +1760,7 @@ public class LayoutsAdminDisplayContext {
 		Layout selLayout = getSelLayout();
 
 		if (selLayout != null) {
-			if (selLayout.getFaviconFileEntryId() > 0) {
+			if (Validator.isNotNull(selLayout.getFaviconFileEntryERC())) {
 				return true;
 			}
 
@@ -1997,7 +2086,8 @@ public class LayoutsAdminDisplayContext {
 			availableActions.add("exportTranslation");
 		}
 
-		if (LayoutPermissionUtil.contains(
+		if (!layout.isTypeEmpty() &&
+			LayoutPermissionUtil.contains(
 				themeDisplay.getPermissionChecker(), layout,
 				ActionKeys.PERMISSIONS)) {
 
@@ -2067,7 +2157,8 @@ public class LayoutsAdminDisplayContext {
 								ClientExtensionEntryConstants.
 									TYPE_THEME_FAVICON);
 
-					if ((masterLayout.getFaviconFileEntryId() > 0) ||
+					if (Validator.isNotNull(
+							masterLayout.getFaviconFileEntryERC()) ||
 						(clientExtensionEntryRel != null)) {
 
 						return LanguageUtil.get(
@@ -2391,7 +2482,7 @@ public class LayoutsAdminDisplayContext {
 
 		_types = new String[] {
 			LayoutConstants.TYPE_CONTENT, LayoutConstants.TYPE_EMBEDDED,
-			LayoutConstants.TYPE_LINK_TO_LAYOUT,
+			LayoutConstants.TYPE_EMPTY, LayoutConstants.TYPE_LINK_TO_LAYOUT,
 			LayoutConstants.TYPE_FULL_PAGE_APPLICATION,
 			LayoutConstants.TYPE_NODE, LayoutConstants.TYPE_PANEL,
 			LayoutConstants.TYPE_PORTLET, LayoutConstants.TYPE_URL
@@ -2420,11 +2511,13 @@ public class LayoutsAdminDisplayContext {
 	}
 
 	private boolean _isShouldCheckFriendlyURL() {
-		if (!FeatureFlagManagerUtil.isEnabled("LPS-174417")) {
+		Group group = getGroup();
+
+		if (!FeatureFlagManagerUtil.isEnabled(
+				group.getCompanyId(), "LPS-174417")) {
+
 			return false;
 		}
-
-		Group group = getGroup();
 
 		if (group.isLayoutSetPrototype()) {
 			return true;
@@ -2437,7 +2530,7 @@ public class LayoutsAdminDisplayContext {
 
 	private boolean _matchesHostname(
 		StringBuilder friendlyURLBase,
-		TreeMap<String, String> virtualHostnames) {
+		NavigableMap<String, String> virtualHostnames) {
 
 		for (String virtualHostname : virtualHostnames.keySet()) {
 			if (friendlyURLBase.indexOf(virtualHostname) != -1) {
@@ -2462,7 +2555,7 @@ public class LayoutsAdminDisplayContext {
 	private final ItemSelector _itemSelector;
 	private String _keywords;
 	private final LayoutActionsHelper _layoutActionsHelper;
-	private final LayoutLocalService _layoutLocalService;
+	private final LayoutService _layoutService;
 	private final LayoutSetPrototypeHelper _layoutSetPrototypeHelper;
 	private SearchContainer<Layout> _layoutsSearchContainer;
 	private final LiferayPortletRequest _liferayPortletRequest;

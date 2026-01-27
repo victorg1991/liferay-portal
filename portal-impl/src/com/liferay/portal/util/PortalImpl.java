@@ -43,6 +43,7 @@ import com.liferay.portal.kernel.exception.RSSFeedException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.image.ImageBag;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
+import com.liferay.portal.kernel.io.BigEndianCodec;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.language.constants.LanguageConstants;
 import com.liferay.portal.kernel.log.Log;
@@ -109,6 +110,7 @@ import com.liferay.portal.kernel.portlet.RequestBackedPortletURLFactoryUtil;
 import com.liferay.portal.kernel.portlet.UserAttributes;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.redirect.RedirectURLSettingsUtil;
+import com.liferay.portal.kernel.security.ChecksumUtil;
 import com.liferay.portal.kernel.security.auth.AlwaysAllowDoAsUser;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.FullNameGenerator;
@@ -159,6 +161,7 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.DeterminateKeyGenerator;
+import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HtmlUtil;
@@ -180,6 +183,7 @@ import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.ServerDetector;
 import com.liferay.portal.kernel.util.StringComparator;
@@ -265,6 +269,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -832,26 +837,20 @@ public class PortalImpl implements Portal {
 			String[] values = renderParameters.get(
 				actionResponse.getNamespace() + actionParameterName);
 
-			if (values == null) {
-				values = actionRequest.getParameterValues(actionParameterName);
-
-				if (values == null) {
-					values = new String[0];
-				}
-				else {
-					values = ArrayUtil.filter(
-						values,
-						s -> {
-							if (s == null) {
-								return false;
-							}
-
-							return true;
-						});
-				}
-
-				actionResponse.setRenderParameter(actionParameterName, values);
+			if (values != null) {
+				continue;
 			}
+
+			values = actionRequest.getParameterValues(actionParameterName);
+
+			if (values == null) {
+				values = new String[0];
+			}
+			else {
+				values = ArrayUtil.filter(values, s -> s != null);
+			}
+
+			actionResponse.setRenderParameter(actionParameterName, values);
 		}
 	}
 
@@ -1094,38 +1093,42 @@ public class PortalImpl implements Portal {
 			Map<String, String[]> params, Map<String, Object> requestContext)
 		throws PortalException {
 
+		if (Validator.isNotNull(friendlyURL)) {
+			return getPortletFriendlyURLMapperLayoutQueryStringComposite(
+				groupId, privateLayout, friendlyURL, params, requestContext);
+		}
+
 		Layout layout = null;
 
-		if (Validator.isNull(friendlyURL)) {
-			if (AuthLoginGroupSettingsUtil.isPromptEnabled(groupId) &&
-				!_isSignedIn(
-					(HttpServletRequest)requestContext.get("request"))) {
+		HttpServletRequest httpServletRequest =
+			(HttpServletRequest)requestContext.get("request");
 
-				// Ensure that virtual layouts are merged. See LPS-42222.
+		if (AuthLoginGroupSettingsUtil.isPromptEnabled(groupId) &&
+			!_isSignedIn(httpServletRequest) &&
+			!GetterUtil.getBoolean(
+				httpServletRequest.getAttribute(
+					NoSuchLayoutException.class.getName()))) {
 
-				List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(
-					groupId, privateLayout,
-					LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, true, 0, 1);
+			// Ensure that virtual layouts are merged. See LPS-42222.
 
-				if (!layouts.isEmpty()) {
-					layout = layouts.get(0);
-				}
-			}
-			else {
-				layout = LayoutServiceUtil.fetchFirstLayout(
-					groupId, privateLayout, true);
-			}
+			List<Layout> layouts = LayoutLocalServiceUtil.getLayouts(
+				groupId, privateLayout,
+				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, true, 0, 1);
 
-			if (layout == null) {
-				throw new NoSuchLayoutException(
-					StringBundler.concat(
-						"{groupId=", groupId, ", privateLayout=", privateLayout,
-						"}"));
+			if (!layouts.isEmpty()) {
+				layout = layouts.get(0);
 			}
 		}
 		else {
-			return getPortletFriendlyURLMapperLayoutQueryStringComposite(
-				groupId, privateLayout, friendlyURL, params, requestContext);
+			layout = LayoutServiceUtil.fetchFirstLayout(
+				groupId, privateLayout, true);
+		}
+
+		if (layout == null) {
+			throw new NoSuchLayoutException(
+				StringBundler.concat(
+					"{groupId=", groupId, ", privateLayout=", privateLayout,
+					"}"));
 		}
 
 		return new LayoutQueryStringComposite(
@@ -1216,7 +1219,7 @@ public class PortalImpl implements Portal {
 			themeDisplay.getCompany());
 		String portalDomain = themeDisplay.getPortalDomain();
 
-		TreeMap<String, String> virtualHostnames = getVirtualHostnames(
+		NavigableMap<String, String> virtualHostnames = getVirtualHostnames(
 			themeDisplay.getLayoutSet());
 
 		String virtualHostname = _getVirtualHostname(
@@ -2812,7 +2815,7 @@ public class PortalImpl implements Portal {
 
 		LayoutSet layoutSet = layout.getLayoutSet();
 
-		TreeMap<String, String> virtualHostnames =
+		NavigableMap<String, String> virtualHostnames =
 			layoutSet.getVirtualHostnames();
 
 		if (!virtualHostnames.isEmpty()) {
@@ -2888,7 +2891,7 @@ public class PortalImpl implements Portal {
 		String portalURL = getPortalURL(
 			company.getVirtualHostname(), portalPort, secureConnection);
 
-		TreeMap<String, String> virtualHostnames = getVirtualHostnames(
+		NavigableMap<String, String> virtualHostnames = getVirtualHostnames(
 			layoutSet);
 
 		if (!virtualHostnames.isEmpty() &&
@@ -2947,7 +2950,7 @@ public class PortalImpl implements Portal {
 
 		String virtualHostname = null;
 
-		TreeMap<String, String> virtualHostnames = getVirtualHostnames(
+		NavigableMap<String, String> virtualHostnames = getVirtualHostnames(
 			layoutSet);
 
 		if (!virtualHostnames.isEmpty()) {
@@ -3434,40 +3437,6 @@ public class PortalImpl implements Portal {
 	}
 
 	@Override
-	public String getMailId(String mx, String popPortletPrefix, Object... ids) {
-		StringBundler sb = new StringBundler((ids.length * 2) + 7);
-
-		sb.append(StringPool.LESS_THAN);
-		sb.append(popPortletPrefix);
-
-		if (!popPortletPrefix.endsWith(StringPool.PERIOD)) {
-			sb.append(StringPool.PERIOD);
-		}
-
-		for (int i = 0; i < ids.length; i++) {
-			Object id = ids[i];
-
-			if (i != 0) {
-				sb.append(StringPool.PERIOD);
-			}
-
-			sb.append(id);
-		}
-
-		sb.append(StringPool.AT);
-
-		if (Validator.isNotNull(PropsValues.POP_SERVER_SUBDOMAIN)) {
-			sb.append(PropsValues.POP_SERVER_SUBDOMAIN);
-			sb.append(StringPool.PERIOD);
-		}
-
-		sb.append(mx);
-		sb.append(StringPool.GREATER_THAN);
-
-		return sb.toString();
-	}
-
-	@Override
 	public String getNetvibesURL(Portlet portlet, ThemeDisplay themeDisplay)
 		throws PortalException {
 
@@ -3840,7 +3809,7 @@ public class PortalImpl implements Portal {
 	public String getPortalURL(LayoutSet layoutSet, ThemeDisplay themeDisplay) {
 		String serverName = themeDisplay.getServerName();
 
-		TreeMap<String, String> virtualHostnames =
+		NavigableMap<String, String> virtualHostnames =
 			layoutSet.getVirtualHostnames();
 
 		if (!virtualHostnames.isEmpty()) {
@@ -3969,7 +3938,7 @@ public class PortalImpl implements Portal {
 				groupId, privateLayout,
 				layoutQueryStringComposite.getFriendlyURL());
 
-			if (Validator.isNotNull(layout.getSourcePrototypeLayoutUuid())) {
+			if (Validator.isNotNull(layout.getLayoutSetPrototypeLayoutERC())) {
 				layout = LayoutLocalServiceUtil.getLayout(layout.getPlid());
 			}
 		}
@@ -4754,11 +4723,8 @@ public class PortalImpl implements Portal {
 
 		Theme theme = themeDisplay.getTheme();
 
-		Map<String, String[]> parameterMap = null;
-
-		if (Validator.isNotNull(queryString)) {
-			parameterMap = HttpComponentsUtil.getParameterMap(queryString);
-		}
+		Set<String> parameterNames = HttpComponentsUtil.getParameterNames(
+			queryString);
 
 		StringBundler sb = new StringBundler(15);
 
@@ -4770,7 +4736,7 @@ public class PortalImpl implements Portal {
 
 		// Browser id
 
-		if ((parameterMap == null) || !parameterMap.containsKey("browserId")) {
+		if (!parameterNames.contains("browserId")) {
 			sb.append("?browserId=");
 			sb.append(BrowserSnifferUtil.getBrowserId(httpServletRequest));
 
@@ -4780,7 +4746,7 @@ public class PortalImpl implements Portal {
 		// Theme and color scheme
 
 		if ((uri.endsWith(".css") || uri.endsWith(".jsp")) &&
-			((parameterMap == null) || !parameterMap.containsKey("themeId"))) {
+			!parameterNames.contains("themeId")) {
 
 			if (firstParam) {
 				sb.append("?themeId=");
@@ -4794,10 +4760,7 @@ public class PortalImpl implements Portal {
 			sb.append(URLCodec.encodeURL(theme.getThemeId()));
 		}
 
-		if (uri.endsWith(".jsp") &&
-			((parameterMap == null) ||
-			 !parameterMap.containsKey("colorSchemeId"))) {
-
+		if (uri.endsWith(".jsp") && !parameterNames.contains("colorSchemeId")) {
 			if (firstParam) {
 				sb.append("?colorSchemeId=");
 
@@ -4814,9 +4777,7 @@ public class PortalImpl implements Portal {
 
 		// Minifier
 
-		if ((parameterMap == null) ||
-			!parameterMap.containsKey("minifierType")) {
-
+		if (!parameterNames.contains("minifierType")) {
 			String minifierType = StringPool.BLANK;
 
 			if (uri.endsWith(".css") || uri.endsWith("css.jsp") ||
@@ -4881,9 +4842,7 @@ public class PortalImpl implements Portal {
 
 		// Timestamp
 
-		if (((parameterMap == null) || !parameterMap.containsKey("t")) &&
-			!(timestamp < 0)) {
-
+		if (!parameterNames.contains("t") && !(timestamp < 0)) {
 			if (timestamp == 0) {
 				String portalURL = getPortalURL(httpServletRequest);
 
@@ -5244,7 +5203,10 @@ public class PortalImpl implements Portal {
 		String doAsUserIdString = ParamUtil.getString(
 			httpServletRequest, "doAsUserId", null);
 
-		if (doAsUserIdString != null) {
+		if (Validator.isHex(doAsUserIdString) &&
+			ChecksumUtil.isValid(
+				StringUtil.hexStringToBytes(doAsUserIdString))) {
+
 			String actionName = getPortletParam(
 				httpServletRequest, "actionName");
 			String mvcRenderCommandName = ParamUtil.getString(
@@ -5490,8 +5452,10 @@ public class PortalImpl implements Portal {
 	}
 
 	@Override
-	public TreeMap<String, String> getVirtualHostnames(LayoutSet layoutSet) {
-		TreeMap<String, String> virtualHostnames =
+	public NavigableMap<String, String> getVirtualHostnames(
+		LayoutSet layoutSet) {
+
+		NavigableMap<String, String> virtualHostnames =
 			layoutSet.getVirtualHostnames();
 
 		if (!virtualHostnames.isEmpty()) {
@@ -6823,7 +6787,7 @@ public class PortalImpl implements Portal {
 	}
 
 	protected String getCanonicalDomain(
-		TreeMap<String, String> virtualHostnames, String portalDomain,
+		NavigableMap<String, String> virtualHostnames, String portalDomain,
 		String defaultVirtualHostname) {
 
 		if (Validator.isBlank(portalDomain) ||
@@ -6927,15 +6891,25 @@ public class PortalImpl implements Portal {
 			return 0;
 		}
 
-		long doAsUserId = GetterUtil.getLong(doAsUserIdString);
+		long doAsUserId = 0;
 
-		if (doAsUserId == 0) {
+		if (Validator.isHex(doAsUserIdString)) {
 			try {
+				byte[] doAsUserIdBytes = StringUtil.hexStringToBytes(
+					doAsUserIdString);
+
+				if (!ChecksumUtil.isValid(doAsUserIdBytes)) {
+					return 0;
+				}
+
+				doAsUserIdBytes = ChecksumUtil.removeChecksum(doAsUserIdBytes);
+
 				Company company = getCompany(httpServletRequest);
 
-				doAsUserId = GetterUtil.getLong(
-					EncryptorUtil.decrypt(
-						company.getKeyObj(), doAsUserIdString));
+				doAsUserId = BigEndianCodec.getLong(
+					EncryptorUtil.decryptUnencodedAsBytes(
+						company.getKeyObj(), doAsUserIdBytes),
+					0);
 			}
 			catch (Exception exception) {
 				if (_log.isDebugEnabled()) {
@@ -7207,12 +7181,22 @@ public class PortalImpl implements Portal {
 			String doAsUserIdString = ParamUtil.getString(
 				httpServletRequest, "doAsUserId");
 
-			if (Validator.isNotNull(doAsUserIdString)) {
+			if (Validator.isHex(doAsUserIdString)) {
+				byte[] doAsUserIdBytes = StringUtil.hexStringToBytes(
+					doAsUserIdString);
+
+				if (!ChecksumUtil.isValid(doAsUserIdBytes)) {
+					return false;
+				}
+
+				doAsUserIdBytes = ChecksumUtil.removeChecksum(doAsUserIdBytes);
+
 				Company company = getCompany(httpServletRequest);
 
-				doAsUserId = GetterUtil.getLong(
-					EncryptorUtil.decrypt(
-						company.getKeyObj(), doAsUserIdString));
+				doAsUserId = BigEndianCodec.getLong(
+					EncryptorUtil.decryptUnencodedAsBytes(
+						company.getKeyObj(), doAsUserIdBytes),
+					0);
 			}
 		}
 		catch (Exception exception) {
@@ -7335,12 +7319,16 @@ public class PortalImpl implements Portal {
 	}
 
 	protected String removeRedirectParameter(String url) {
-		Map<String, String[]> parameterMap = HttpComponentsUtil.getParameterMap(
+		if (!url.contains("redirect")) {
+			return url;
+		}
+
+		Set<String> parameterNames = HttpComponentsUtil.getParameterNames(
 			HttpComponentsUtil.getQueryString(url));
 
-		for (String parameter : parameterMap.keySet()) {
-			if (parameter.endsWith("redirect")) {
-				url = HttpComponentsUtil.removeParameter(url, parameter);
+		for (String parameterName : parameterNames) {
+			if (parameterName.endsWith("redirect")) {
+				url = HttpComponentsUtil.removeParameter(url, parameterName);
 			}
 		}
 
@@ -7441,7 +7429,7 @@ public class PortalImpl implements Portal {
 	}
 
 	private boolean _containsHostname(
-		TreeMap<String, String> virtualHostnames, String portalDomain) {
+		NavigableMap<String, String> virtualHostnames, String portalDomain) {
 
 		int pos = portalDomain.indexOf(CharPool.COLON);
 
@@ -7526,7 +7514,7 @@ public class PortalImpl implements Portal {
 
 		String portalDomain = themeDisplay.getPortalDomain();
 
-		TreeMap<String, String> virtualHostnames = getVirtualHostnames(
+		NavigableMap<String, String> virtualHostnames = getVirtualHostnames(
 			layoutSet);
 
 		if (useGroupVirtualHostname) {
@@ -8001,7 +7989,8 @@ public class PortalImpl implements Portal {
 	}
 
 	private String _getVirtualHostname(
-		TreeMap<String, String> virtualHostnames, ThemeDisplay themeDisplay) {
+		NavigableMap<String, String> virtualHostnames,
+		ThemeDisplay themeDisplay) {
 
 		if (virtualHostnames.isEmpty()) {
 			Company company = themeDisplay.getCompany();
@@ -8056,6 +8045,9 @@ public class PortalImpl implements Portal {
 	private boolean _requiresLayoutFriendlyURL(
 		String siteGroupFriendlyURL, String layoutFriendlyURL,
 		String groupFriendlyURL) {
+
+		groupFriendlyURL = FriendlyURLNormalizerUtil.normalizeWithEncoding(
+			groupFriendlyURL);
 
 		if (groupFriendlyURL.contains(
 				_PUBLIC_GROUP_SERVLET_MAPPING + StringPool.SLASH)) {

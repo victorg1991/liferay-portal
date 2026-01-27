@@ -1,5 +1,8 @@
+const error = document.getElementById(
+	`${fragmentElementId}-friendly-url-input-error`
+);
 const inputElement = document.getElementById(
-	`${fragmentNamespace}-friendly-url-input`
+	`${fragmentElementId}-friendly-url-input`
 );
 
 function main() {
@@ -8,14 +11,18 @@ function main() {
 	}
 	else {
 		import('@liferay/fragment-impl/api').then(
-			({registerLocalizedInput}) => {
+			({focusInput, registerLocalizedInput}) => {
+				if (error) {
+					focusInput(inputElement);
+				}
+
 				const {onChange} = registerLocalizedInput({
 					defaultLanguageId: themeDisplay.getDefaultLanguageId(),
 					initialValues: input.valueI18n,
 					inputElement,
 					inputName: input.name,
 					localizationInputsContainer: inputElement.parentNode,
-					namespace: fragmentNamespace,
+					namespace: fragmentElementId,
 				});
 
 				inputElement.addEventListener('change', (event) => {

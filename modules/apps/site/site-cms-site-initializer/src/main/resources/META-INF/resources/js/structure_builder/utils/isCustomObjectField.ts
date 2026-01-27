@@ -3,8 +3,16 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {ObjectField} from '../types/ObjectDefinition';
+import {ObjectField} from '../../common/types/ObjectDefinition';
 
 export default function isCustomObjectField(objectField: ObjectField) {
-	return !objectField.system && objectField.businessType !== 'Relationship';
+	if (objectField.businessType === 'Relationship') {
+		return false;
+	}
+
+	if (objectField.system && !['title', 'file'].includes(objectField.name)) {
+		return false;
+	}
+
+	return true;
 }

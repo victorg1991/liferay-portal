@@ -13,7 +13,9 @@ import com.liferay.fragment.util.configuration.FragmentConfigurationField;
 import com.liferay.fragment.util.configuration.FragmentEntryConfigurationParser;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.StagedModel;
+import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -36,7 +38,7 @@ public abstract class
 		throws Exception {
 
 		List<FragmentConfigurationField> fragmentConfigurationFields =
-			_getFragmentConfigurationFields((FragmentEntryLink)stagedModel);
+			getFragmentConfigurationFields((FragmentEntryLink)stagedModel);
 
 		if (ListUtil.isEmpty(fragmentConfigurationFields)) {
 			return editableValuesJSONObject;
@@ -73,7 +75,7 @@ public abstract class
 		JSONObject editableValuesJSONObject) {
 
 		List<FragmentConfigurationField> fragmentConfigurationFields =
-			_getFragmentConfigurationFields((FragmentEntryLink)stagedModel);
+			getFragmentConfigurationFields((FragmentEntryLink)stagedModel);
 
 		if (ListUtil.isEmpty(fragmentConfigurationFields)) {
 			return editableValuesJSONObject;
@@ -116,8 +118,39 @@ public abstract class
 
 	protected abstract String getConfigurationType();
 
+	protected List<FragmentConfigurationField> getFragmentConfigurationFields(
+		FragmentEntryLink fragmentEntryLink) {
+
+		FragmentEntryConfigurationParser fragmentEntryConfigurationParser =
+			getFragmentEntryConfigurationParser();
+
+		return ListUtil.filter(
+			fragmentEntryConfigurationParser.getFragmentConfigurationFields(
+				fragmentEntryLink.getConfigurationJSONObject()),
+			fragmentConfigurationField -> Objects.equals(
+				fragmentConfigurationField.getType(), getConfigurationType()));
+	}
+
 	protected abstract FragmentEntryConfigurationParser
 		getFragmentEntryConfigurationParser();
+
+	protected long getScopeGroupId(
+		PortletDataContext portletDataContext,
+		String scopeExternalReferenceCode) {
+
+		if (Validator.isNull(scopeExternalReferenceCode)) {
+			return portletDataContext.getScopeGroupId();
+		}
+
+		Group group = GroupLocalServiceUtil.fetchGroupByExternalReferenceCode(
+			scopeExternalReferenceCode, portletDataContext.getCompanyId());
+
+		if (group != null) {
+			return group.getGroupId();
+		}
+
+		return portletDataContext.getScopeGroupId();
+	}
 
 	protected abstract void replaceExportContentReferences(
 			PortletDataContext portletDataContext, StagedModel stagedModel,
@@ -128,18 +161,5 @@ public abstract class
 	protected abstract void replaceImportContentReferences(
 		PortletDataContext portletDataContext,
 		JSONObject configurationValueJSONObject);
-
-	private List<FragmentConfigurationField> _getFragmentConfigurationFields(
-		FragmentEntryLink fragmentEntryLink) {
-
-		FragmentEntryConfigurationParser fragmentEntryConfigurationParser =
-			getFragmentEntryConfigurationParser();
-
-		return ListUtil.filter(
-			fragmentEntryConfigurationParser.getFragmentConfigurationFields(
-				fragmentEntryLink.getConfiguration()),
-			fragmentConfigurationField -> Objects.equals(
-				fragmentConfigurationField.getType(), getConfigurationType()));
-	}
 
 }

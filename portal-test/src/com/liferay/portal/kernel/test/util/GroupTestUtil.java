@@ -65,13 +65,13 @@ public class GroupTestUtil {
 		}
 
 		return GroupLocalServiceUtil.addGroup(
-			userId, parentGroupId, Layout.class.getName(), layout.getPlid(),
-			GroupConstants.DEFAULT_LIVE_GROUP_ID,
+			StringPool.BLANK, userId, parentGroupId, Layout.class.getName(),
+			layout.getPlid(), GroupConstants.DEFAULT_LIVE_GROUP_ID,
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), String.valueOf(layout.getPlid())
 			).build(),
-			null, 0, true, GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION, null,
-			false, true, null);
+			null, 0, null, true, GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION,
+			null, false, false, true, null);
 	}
 
 	public static Group addGroup(
@@ -102,13 +102,13 @@ public class GroupTestUtil {
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION;
 
 		return GroupLocalServiceUtil.addGroup(
-			userId, parentGroupId, null, 0,
+			StringPool.BLANK, userId, parentGroupId, null, 0,
 			GroupConstants.DEFAULT_LIVE_GROUP_ID, nameMap,
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()
 			).build(),
-			type, manualMembership, membershipRestriction, friendlyURL, site,
-			active,
+			type, null, manualMembership, membershipRestriction, friendlyURL,
+			site, false, active,
 			ServiceContextTestUtil.getServiceContext(
 				GroupLocalServiceUtil.getGroup(companyId, GroupConstants.GUEST),
 				userId));
@@ -138,13 +138,13 @@ public class GroupTestUtil {
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION;
 
 		return GroupLocalServiceUtil.addGroup(
-			userId, parentGroupId, null, 0,
+			StringPool.BLANK, userId, parentGroupId, null, 0,
 			GroupConstants.DEFAULT_LIVE_GROUP_ID, nameMap,
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()
 			).build(),
-			type, manualMembership, membershipRestriction, friendlyURL, site,
-			active,
+			type, null, manualMembership, membershipRestriction, friendlyURL,
+			site, false, active,
 			ServiceContextTestUtil.getServiceContext(
 				GroupLocalServiceUtil.getGroup(companyId, GroupConstants.GUEST),
 				userId));
@@ -190,12 +190,13 @@ public class GroupTestUtil {
 		}
 
 		return GroupServiceUtil.addGroup(
-			parentGroupId, GroupConstants.DEFAULT_LIVE_GROUP_ID, nameMap,
+			StringPool.BLANK, parentGroupId,
+			GroupConstants.DEFAULT_LIVE_GROUP_ID, nameMap,
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()
 			).build(),
-			type, manualMembership, membershipRestriction, friendlyURL, site,
-			active, serviceContext);
+			type, null, manualMembership, membershipRestriction, friendlyURL,
+			site, false, active, serviceContext);
 	}
 
 	public static Group addGroupToCompany(long companyId) throws Exception {
@@ -209,6 +210,56 @@ public class GroupTestUtil {
 		User user = UserTestUtil.getAdminUser(companyId);
 
 		return addGroup(companyId, user.getUserId(), parentGroupId);
+	}
+
+	public static Group addGroupWithType(int type) throws Exception {
+		return addGroupWithType(GroupConstants.DEFAULT_PARENT_GROUP_ID, type);
+	}
+
+	public static Group addGroupWithType(long parentGroupId, int type)
+		throws Exception {
+
+		return addGroupWithType(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			parentGroupId, type);
+	}
+
+	public static Group addGroupWithType(
+			long companyId, long userId, long parentGroupId, int type)
+		throws Exception {
+
+		String name = RandomTestUtil.randomString(
+			NumericStringRandomizerBumper.INSTANCE,
+			UniqueStringRandomizerBumper.INSTANCE);
+
+		Group group = GroupLocalServiceUtil.fetchGroup(companyId, name);
+
+		if (group != null) {
+			return group;
+		}
+
+		Map<Locale, String> nameMap = HashMapBuilder.put(
+			LocaleUtil.getDefault(), name
+		).build();
+		boolean manualMembership = true;
+		int membershipRestriction =
+			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION;
+		String friendlyURL =
+			StringPool.SLASH + FriendlyURLNormalizerUtil.normalize(name);
+		boolean site = true;
+		boolean active = true;
+
+		return GroupLocalServiceUtil.addGroup(
+			StringPool.BLANK, userId, parentGroupId, null, 0,
+			GroupConstants.DEFAULT_LIVE_GROUP_ID, nameMap,
+			HashMapBuilder.put(
+				LocaleUtil.getDefault(), RandomTestUtil.randomString()
+			).build(),
+			type, null, manualMembership, membershipRestriction, friendlyURL,
+			site, false, active,
+			ServiceContextTestUtil.getServiceContext(
+				GroupLocalServiceUtil.getGroup(companyId, GroupConstants.GUEST),
+				userId));
 	}
 
 	public static void addLayoutSetVirtualHost(

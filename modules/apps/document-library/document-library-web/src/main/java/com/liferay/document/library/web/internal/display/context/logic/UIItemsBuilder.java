@@ -44,6 +44,7 @@ import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.WorkflowInstanceLink;
 import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
@@ -57,6 +58,7 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileShortcut;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.GroupPermissionUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -69,11 +71,11 @@ import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.staging.StagingGroupHelper;
 import com.liferay.staging.StagingGroupHelperUtil;
 import com.liferay.taglib.security.PermissionsURLTag;
@@ -178,7 +180,22 @@ public class UIItemsBuilder {
 	}
 
 	public DropdownItem createCheckoutDropdownItem() {
-		return DropdownItemBuilder.setHref(
+		return DropdownItemBuilder.setDisabled(
+			() -> {
+				WorkflowInstanceLink workflowInstanceLink =
+					WorkflowInstanceLinkLocalServiceUtil.
+						fetchWorkflowInstanceLink(
+							_fileEntry.getCompanyId(), _fileEntry.getGroupId(),
+							DLFileEntry.class.getName(),
+							_fileVersion.getFileVersionId());
+
+				if (workflowInstanceLink != null) {
+					return true;
+				}
+
+				return false;
+			}
+		).setHref(
 			PortletURLBuilder.create(
 				_getActionURL(
 					"/document_library/edit_file_entry", Constants.CHECKOUT)
@@ -417,6 +434,8 @@ public class UIItemsBuilder {
 			"imageURL",
 			_dlURLHelper.getPreviewURL(
 				_fileEntry, _fileVersion, _themeDisplay, StringPool.BLANK)
+		).putData(
+			"mimeType", HtmlUtil.escapeAttribute(_fileEntry.getMimeType())
 		).setKey(
 			DLUIItemKeys.EDIT_IMAGE
 		).setLabel(
@@ -828,11 +847,11 @@ public class UIItemsBuilder {
 	}
 
 	public boolean isHistoryActionAvailable() throws PortalException {
-		if (_fileShortcut == null) {
-			return true;
+		if (_fileShortcut != null) {
+			return _fileShortcutDisplayContextHelper.isHistoryActionAvailable();
 		}
 
-		return false;
+		return _fileEntryDisplayContextHelper.isHistoryActionAvailable();
 	}
 
 	public boolean isMoveActionAvailable() throws PortalException {
@@ -936,6 +955,15 @@ public class UIItemsBuilder {
 		}
 
 		return false;
+	}
+
+	public boolean isViewUsagesActionAvailable() throws PortalException {
+		if (_fileShortcut != null) {
+			return _fileShortcutDisplayContextHelper.
+				isViewUsagesActionAvailable();
+		}
+
+		return _fileEntryDisplayContextHelper.isViewUsagesActionAvailable();
 	}
 
 	public boolean isViewVersionActionAvailable() {

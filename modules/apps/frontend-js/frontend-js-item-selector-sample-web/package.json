@@ -1,10 +1,16 @@
 {
 	"dependencies": {
-		"@clayui/form": "3.140.0",
-		"@clayui/list": "3.140.0",
-		"@clayui/sticker": "3.138.0",
-		"frontend-js-item-selector-web": "*",
-		"react": "18.2.0"
+		"@clayui/alert": "*",
+		"@clayui/button": "*",
+		"@clayui/form": "*",
+		"@clayui/list": "*",
+		"@clayui/modal": "*",
+		"@clayui/sticker": "*",
+		"@liferay/frontend-data-set-web": "*",
+		"@liferay/frontend-js-item-selector-web": "*",
+		"frontend-js-web": "*",
+		"react": "18.2.0",
+		"uuid": "9.0.0"
 	},
 	"main": "js/index.ts",
 	"name": "@liferay/frontend-js-item-selector-sample-web",

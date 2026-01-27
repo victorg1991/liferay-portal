@@ -63,6 +63,7 @@ export interface IDataSet {
 	description?: string;
 	externalReferenceCode: string;
 	filtersOrder?: string;
+	hideManagementBarInEmptyState?: boolean;
 	id: string;
 	itemActionsOrder?: string;
 	label: string;
@@ -70,6 +71,7 @@ export interface IDataSet {
 	restApplication: string;
 	restEndpoint: string;
 	restSchema: string;
+	snapshotsEnabled: boolean;
 	sortsOrder?: string;
 	tableSectionsOrder?: string;
 }
@@ -138,9 +140,7 @@ export interface IFilterTypeProps {
 	availableFieldsFilter: (field: IField) => boolean;
 	displayType: (filter?: IFilter) => string;
 	fdsViewRelationship: string;
-	fdsViewRelationshipId: string;
 	label: string;
-	url: string;
 }
 
 export interface IList extends IBaseVisualizationMode<'list'> {}

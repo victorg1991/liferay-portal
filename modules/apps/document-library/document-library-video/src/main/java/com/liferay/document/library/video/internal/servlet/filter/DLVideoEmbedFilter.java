@@ -32,6 +32,7 @@ import com.liferay.portal.kernel.portlet.constants.FriendlyURLResolverConstants;
 import com.liferay.portal.kernel.repository.friendly.url.resolver.FileEntryFriendlyURLResolver;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
@@ -42,10 +43,10 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.servlet.filters.BasePortalFilter;
-import com.liferay.portal.util.PropsValues;
 
 import jakarta.portlet.PortletURL;
 import jakarta.portlet.WindowStateException;
@@ -116,15 +117,24 @@ public class DLVideoEmbedFilter extends BasePortalFilter {
 				previewCTCollectionId = CTConstants.CT_COLLECTION_ID_PRODUCTION;
 			}
 
-			try (SafeCloseable safeCloseable =
-					CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
-						previewCTCollectionId)) {
+			if (previewCTCollectionId !=
+					CTConstants.CT_COLLECTION_ID_PRODUCTION) {
 
-				String embedVideoURL = HttpComponentsUtil.addParameter(
-					_getEmbedVideoURL(httpServletRequest),
-					"previewCTCollectionId", previewCTCollectionId);
+				try (SafeCloseable safeCloseable =
+						CTCollectionThreadLocal.
+							setCTCollectionIdWithSafeCloseable(
+								previewCTCollectionId)) {
 
-				httpServletResponse.sendRedirect(embedVideoURL);
+					String embedVideoURL = HttpComponentsUtil.addParameter(
+						_getEmbedVideoURL(httpServletRequest),
+						"previewCTCollectionId", previewCTCollectionId);
+
+					httpServletResponse.sendRedirect(embedVideoURL);
+				}
+			}
+			else {
+				httpServletResponse.sendRedirect(
+					_getEmbedVideoURL(httpServletRequest));
 			}
 		}
 		else {
@@ -268,7 +278,7 @@ public class DLVideoEmbedFilter extends BasePortalFilter {
 		}
 
 		Company company = _companyLocalService.getCompany(
-			_portal.getCompanyId(httpServletRequest));
+			CompanyThreadLocal.getCompanyId());
 
 		return company.getGuestUser();
 	}

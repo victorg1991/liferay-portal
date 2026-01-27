@@ -1,7 +1,6 @@
 import DynamicSegment from './edit/Dynamic';
 import omitDefinedProps from 'shared/util/omitDefinedProps';
 import React from 'react';
-import StaticSegment from './edit/Static';
 import {get} from 'lodash';
 import {optional} from 'shared/hoc';
 import {PropTypes} from 'prop-types';
@@ -9,19 +8,14 @@ import {Segment} from 'shared/util/records';
 import {SegmentTypes} from 'shared/util/constants';
 import {withSegment} from 'shared/hoc/WithSegment';
 
-const PAGE_MAP = {
-	[SegmentTypes.Dynamic]: DynamicSegment,
-	[SegmentTypes.Static]: StaticSegment
-};
-
 export class Edit extends React.Component {
 	static defaultProps = {
-		type: SegmentTypes.Dynamic
+		type: SegmentTypes.Batch
 	};
 
 	static propTypes = {
 		segment: PropTypes.instanceOf(Segment),
-		type: PropTypes.oneOf([SegmentTypes.Dynamic, SegmentTypes.Static])
+		type: PropTypes.oneOf([SegmentTypes.RealTime, SegmentTypes.Batch])
 	};
 
 	render() {
@@ -29,11 +23,9 @@ export class Edit extends React.Component {
 
 		const segmentType = get(segment, 'segmentType') || type;
 
-		const Page = PAGE_MAP[segmentType];
-
-		if (Page) {
+		if (segmentType) {
 			return (
-				<Page
+				<DynamicSegment
 					{...omitDefinedProps(otherProps, Edit.propTypes)}
 					segment={segment}
 					type={segmentType}

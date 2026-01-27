@@ -551,6 +551,22 @@ public class CommerceOrderItemLocalServiceUtil {
 		return getService().getOSGiServiceIdentifier();
 	}
 
+	public static List<CommerceOrderItem> getParentCommerceOrderItems(
+		long commerceOrderId, long parentCommerceOrderItemId, int start,
+		int end, OrderByComparator<CommerceOrderItem> orderByComparator) {
+
+		return getService().getParentCommerceOrderItems(
+			commerceOrderId, parentCommerceOrderItemId, start, end,
+			orderByComparator);
+	}
+
+	public static int getParentCommerceOrderItemsCount(
+		long commerceOrderId, long parentCommerceOrderItemId) {
+
+		return getService().getParentCommerceOrderItemsCount(
+			commerceOrderId, parentCommerceOrderItemId);
+	}
+
 	/**
 	 * @throws PortalException
 	 */
@@ -657,7 +673,7 @@ public class CommerceOrderItemLocalServiceUtil {
 
 	public static CommerceOrderItem updateCommerceOrderItem(
 			long commerceOrderItemId, long commerceInventoryBookedQuantityId)
-		throws com.liferay.commerce.exception.NoSuchOrderItemException {
+		throws PortalException {
 
 		return getService().updateCommerceOrderItem(
 			commerceOrderItemId, commerceInventoryBookedQuantityId);

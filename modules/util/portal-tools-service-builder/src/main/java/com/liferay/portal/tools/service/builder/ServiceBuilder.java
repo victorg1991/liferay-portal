@@ -6836,6 +6836,9 @@ public class ServiceBuilder {
 		}
 
 		for (Element finderElement : finderElements) {
+			boolean finderIndexOnly = GetterUtil.getBoolean(
+				finderElement.attributeValue(
+					"skip-db-index-optimization-and-finder-generation"));
 			String finderName = finderElement.attributeValue("name");
 			String finderPluralName = finderElement.attributeValue(
 				"plural-name");
@@ -6882,14 +6885,6 @@ public class ServiceBuilder {
 				}
 			}
 
-			String dbIndex = finderElement.attributeValue("db-index");
-
-			boolean finderDBIndex = GetterUtil.getBoolean(dbIndex, true);
-
-			if (Objects.equals(dbIndex, "only")) {
-				finderDBIndex = true;
-			}
-
 			List<EntityColumn> finderEntityColumns = new ArrayList<>();
 
 			List<Element> finderColumnElements = finderElement.elements(
@@ -6912,7 +6907,7 @@ public class ServiceBuilder {
 				EntityColumn entityColumn = Entity.getEntityColumn(
 					finderColumnName, entityColumns);
 
-				if (!entityColumn.isFinderPath()) {
+				if (!entityColumn.isFinderPath() && !finderIndexOnly) {
 					entityColumn.setFinderPath(true);
 				}
 
@@ -6940,12 +6935,20 @@ public class ServiceBuilder {
 						"company"));
 			}
 
+			boolean finderDBIndex = GetterUtil.getBoolean(
+				finderElement.attributeValue("db-index"), true);
+
 			EntityFinder entityFinder = new EntityFinder(
 				this, finderName, finderPluralName, finderPretouch,
 				finderReturn, finderUnique, finderWhere, finderDBWhere,
 				finderDBIndex, finderEntityColumns);
 
-			if (Objects.equals(dbIndex, "only")) {
+			if (GetterUtil.get(
+					finderElement.attributeValue(
+						"skip-db-index-optimization-and-finder-generation"),
+					false) &&
+				entityName.equals("ResourcePermission")) {
+
 				indexOnlyEntityFinders.add(entityFinder);
 			}
 			else {
@@ -7308,6 +7311,32 @@ public class ServiceBuilder {
 		newLocalizedColumnElement.addAttribute("name", "languageId");
 		newLocalizedColumnElement.addAttribute("type", "String");
 
+		// Manual columns
+
+		List<Element> columnElements = localizedEntityElement.elements(
+			"column");
+
+		for (Element columnElement : columnElements) {
+			String localized = columnElement.attributeValue("localized");
+
+			if (localized != null) {
+				throw new IllegalArgumentException(
+					"Unable to have localized columns in localized table for " +
+						"entity " + entity.getName());
+			}
+
+			Element newColumnElement = newLocalizedEntityElement.addElement(
+				"column", columnElement.getStringValue());
+
+			List<Attribute> columnAttributes = columnElement.attributes();
+
+			for (Attribute columnAttribute : columnAttributes) {
+				newColumnElement.addAttribute(
+					columnAttribute.getName(),
+					columnAttribute.getStringValue());
+			}
+		}
+
 		// Localized columns
 
 		List<Element> localizedColumnElements = localizedEntityElement.elements(
@@ -7390,32 +7419,6 @@ public class ServiceBuilder {
 			"finder-column");
 
 		newLocalizedFinderColumnElement.addAttribute("name", "languageId");
-
-		// Manual columns
-
-		List<Element> columnElements = localizedEntityElement.elements(
-			"column");
-
-		for (Element columnElement : columnElements) {
-			String localized = columnElement.attributeValue("localized");
-
-			if (localized != null) {
-				throw new IllegalArgumentException(
-					"Unable to have localized columns in localized table for " +
-						"entity " + entity.getName());
-			}
-
-			Element newColumnElement = newLocalizedEntityElement.addElement(
-				"column", columnElement.getStringValue());
-
-			List<Attribute> columnAttributes = columnElement.attributes();
-
-			for (Attribute columnAttribute : columnAttributes) {
-				newColumnElement.addAttribute(
-					columnAttribute.getName(),
-					columnAttribute.getStringValue());
-			}
-		}
 
 		// Manual Order
 

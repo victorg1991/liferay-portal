@@ -24,6 +24,7 @@ import CodeMirrorEditor from '../../shared/CodeMirrorEditor';
 import LearnMessage from '../../shared/LearnMessage';
 import ThemeContext from '../../shared/ThemeContext';
 import {DEFAULT_INDEX_CONFIGURATION} from '../../utils/constants';
+import isDefined from '../../utils/functions/is_defined';
 
 const CONFIGURATION_SCHEMAS = {
 	advancedConfig: advancedConfigurationSchema,
@@ -61,12 +62,34 @@ function ConfigurationTab({
 
 	/**
 	 * Called when the "Enable as Collection Provider" toggle selection is
-	 * changed. Currently behind feature flag LPS-129412.
+	 * changed.
 	 */
 	const _handleCollectionProviderChange = () => {
 		setFieldValue('frameworkConfig', {
 			...frameworkConfig,
 			collectionProvider: !frameworkConfig.collectionProvider,
+
+			// When disabling collection provider, also disable
+			// `legacyAssetCollectionProvider` if available.
+
+			...(isDefined(frameworkConfig.legacyAssetCollectionProvider) &&
+				frameworkConfig.collectionProvider && {
+					legacyAssetCollectionProvider: false,
+				}),
+		});
+	};
+
+	/**
+	 * Triggered by changes to the "Enable as Collection Provider with Return
+	 * Type Asset" toggle. This ensures backward compatibility (LPD-58958) for
+	 * older blueprints, allowing them to continue acting as collection providers
+	 * returning Assets. New blueprints will not utilize `legacyAssetCollectionProvider`.
+	 */
+	const _handleLegacyAssetCollectionProviderChange = () => {
+		setFieldValue('frameworkConfig', {
+			...frameworkConfig,
+			legacyAssetCollectionProvider:
+				!frameworkConfig.legacyAssetCollectionProvider,
 		});
 	};
 
@@ -151,29 +174,68 @@ function ConfigurationTab({
 						<LearnMessage resourceKey="search-blueprint-configuration" />
 					</div>
 
-					{Liferay.FeatureFlags['LPS-129412'] && (
+					<div className="align-items-center c-mb-4">
+						<ClayToggle
+							aria-label={Liferay.Language.get(
+								'enable-as-a-collection-provider'
+							)}
+							label={
+								<>
+									{Liferay.Language.get(
+										'enable-as-a-collection-provider'
+									)}
+
+									<ClayTooltipProvider>
+										<span
+											title={
+												!frameworkConfig.collectionProvider
+													? Liferay.Language.get(
+															'enable-as-a-collection-provider-help'
+														)
+													: Liferay.Language.get(
+															'disable-as-a-collection-provider-help'
+														)
+											}
+										>
+											<ClayIcon
+												className="c-ml-2 text-secondary"
+												symbol="question-circle-full"
+											/>
+										</span>
+									</ClayTooltipProvider>
+								</>
+							}
+							onToggle={_handleCollectionProviderChange}
+							toggled={
+								frameworkConfig.collectionProvider || false
+							}
+						/>
+
+						<span className="c-ml-2 sheet-text">
+							<LearnMessage resourceKey="collections-with-search-blueprints" />
+						</span>
+					</div>
+
+					{isDefined(
+						frameworkConfig.legacyAssetCollectionProvider
+					) && (
 						<div className="align-items-center c-mb-4">
 							<ClayToggle
 								aria-label={Liferay.Language.get(
-									'enable-as-a-collection-provider'
+									'enable-as-a-collection-provider-with-return-type-asset'
 								)}
+								disabled={!frameworkConfig.collectionProvider}
 								label={
 									<>
 										{Liferay.Language.get(
-											'enable-as-a-collection-provider'
+											'enable-as-a-collection-provider-with-return-type-asset'
 										)}
 
 										<ClayTooltipProvider>
 											<span
-												title={
-													!frameworkConfig.collectionProvider
-														? Liferay.Language.get(
-																'enable-as-a-collection-provider-help'
-															)
-														: Liferay.Language.get(
-																'disable-as-a-collection-provider-help'
-															)
-												}
+												title={Liferay.Language.get(
+													'enable-as-a-collection-provider-with-return-type-asset-help'
+												)}
 											>
 												<ClayIcon
 													className="c-ml-2 text-secondary"
@@ -183,15 +245,14 @@ function ConfigurationTab({
 										</ClayTooltipProvider>
 									</>
 								}
-								onToggle={_handleCollectionProviderChange}
+								onToggle={
+									_handleLegacyAssetCollectionProviderChange
+								}
 								toggled={
-									frameworkConfig.collectionProvider || false
+									frameworkConfig.legacyAssetCollectionProvider ??
+									false
 								}
 							/>
-
-							<span className="c-ml-2 sheet-text">
-								<LearnMessage resourceKey="collections-with-search-blueprints" />
-							</span>
 						</div>
 					)}
 

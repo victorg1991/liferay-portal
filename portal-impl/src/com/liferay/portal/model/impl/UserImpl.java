@@ -61,13 +61,13 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PrefsPropsUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TimeZoneUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.security.auth.EmailAddressGeneratorFactory;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.users.admin.kernel.util.UserInitialsGeneratorUtil;
 
 import java.util.Collections;
@@ -395,7 +395,7 @@ public class UserImpl extends UserBaseImpl {
 			if (_group != null) {
 				_groupId = _group.getGroupId();
 
-				groupIdUpdateEntityCacheConsumer.accept(_groupId);
+				groupIdUpdateEntityCacheBiConsumer.accept(this, _groupId);
 			}
 		}
 
@@ -765,7 +765,7 @@ public class UserImpl extends UserBaseImpl {
 				_log.error(portalException);
 			}
 
-			userGroupIdsUpdateEntityCacheConsumer.accept(_userGroupIds);
+			userGroupIdsUpdateEntityCacheBiConsumer.accept(this, _userGroupIds);
 		}
 
 		return _userGroupIds;
@@ -934,6 +934,11 @@ public class UserImpl extends UserBaseImpl {
 	}
 
 	@Override
+	public boolean isLayoutsUpdated() {
+		return _layoutsUpdated;
+	}
+
+	@Override
 	public boolean isMale() throws PortalException {
 		return getMale();
 	}
@@ -1052,14 +1057,16 @@ public class UserImpl extends UserBaseImpl {
 
 	@Override
 	public void setLanguageId(String languageId) {
-		if (isGuestUser()) {
-			_locale = LocaleUtil.fromLanguageId(languageId, false);
-		}
-		else {
-			_locale = LocaleUtil.fromLanguageId(languageId);
-		}
+		_locale = LocaleUtil.fromLanguageId(languageId, false);
 
-		super.setLanguageId(LocaleUtil.toLanguageId(_locale));
+		super.setLanguageId(languageId);
+	}
+
+	@Override
+	public void setLayoutsUpdated(boolean layoutsUpdated) {
+		_layoutsUpdated = layoutsUpdated;
+
+		layoutsUpdatedUpdateEntityCacheBiConsumer.accept(this, layoutsUpdated);
 	}
 
 	@Override
@@ -1180,6 +1187,10 @@ public class UserImpl extends UserBaseImpl {
 	private long _groupId = -1;
 
 	private long[] _groupIds;
+
+	@CacheField(permanent = true, propagateToInterface = true)
+	private boolean _layoutsUpdated;
+
 	private Locale _locale;
 	private long[] _organizationIds;
 	private boolean _passwordModified;
@@ -1189,7 +1200,7 @@ public class UserImpl extends UserBaseImpl {
 	private long[] _teamIds;
 	private TimeZone _timeZone;
 
-	@CacheField(propagateToInterface = true)
+	@CacheField(permanent = true, propagateToInterface = true)
 	private long[] _userGroupIds;
 
 	private List<UserGroup> _userGroups;

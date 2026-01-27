@@ -147,13 +147,6 @@ public class CommerceOrderEditDisplayContext {
 
 		_commerceOrderRequestHelper = new CommerceOrderRequestHelper(
 			renderRequest);
-
-		ThemeDisplay themeDisplay =
-			_commerceOrderRequestHelper.getThemeDisplay();
-
-		_commerceOrderDateTimeFormat = FastDateFormatFactoryUtil.getDateTime(
-			DateFormat.SHORT, DateFormat.SHORT, themeDisplay.getLocale(),
-			themeDisplay.getTimeZone());
 	}
 
 	public String getCommerceAccountThumbnailURL() throws PortalException {
@@ -266,7 +259,14 @@ public class CommerceOrderEditDisplayContext {
 			return StringPool.BLANK;
 		}
 
-		return _commerceOrderDateTimeFormat.format(date);
+		ThemeDisplay themeDisplay =
+			_commerceOrderRequestHelper.getThemeDisplay();
+
+		Format format = FastDateFormatFactoryUtil.getDate(
+			DateFormat.MEDIUM, themeDisplay.getLocale(),
+			themeDisplay.getTimeZone());
+
+		return format.format(date);
 	}
 
 	public long getCommerceOrderId() {
@@ -571,6 +571,10 @@ public class CommerceOrderEditDisplayContext {
 			if (commerceOrderStatus.getKey() ==
 					CommerceOrderConstants.ORDER_STATUS_PARTIALLY_SHIPPED) {
 
+				if (_commerceOrder.getShippingAddress() == null) {
+					return headerActionModels;
+				}
+
 				label = "create-shipment";
 			}
 			else if (commerceOrderStatus.getKey() ==
@@ -731,7 +735,6 @@ public class CommerceOrderEditDisplayContext {
 	private final CommerceNotificationQueueEntryLocalService
 		_commerceNotificationQueueEntryLocalService;
 	private final CommerceOrder _commerceOrder;
-	private final Format _commerceOrderDateTimeFormat;
 	private final CommerceOrderEngine _commerceOrderEngine;
 	private CommerceOrderItem _commerceOrderItem;
 	private final CommerceOrderItemDecimalQuantityConfiguration

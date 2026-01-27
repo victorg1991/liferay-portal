@@ -81,14 +81,22 @@ public class StylesFragmentEntryProcessorTest {
 
 		String html = "<div data-lfr-styles><span>Test</span>Fragment</div>";
 
+		Mockito.when(
+			fragmentEntryLink.getHtml()
+		).thenReturn(
+			html
+		);
+
 		Document document = _getDocument(html);
 
 		_stylesDocumentFragmentEntryProcessor.processFragmentEntryLinkHTML(
 			fragmentEntryLink, document,
 			new DefaultFragmentEntryProcessorContext(
+				fragmentEntryLink.getCompanyId(),
 				_getMockHttpServletRequest(layoutStructure), null,
+				LocaleUtil.getMostRelevantLocale(),
 				FragmentEntryLinkConstants.EDIT,
-				LocaleUtil.getMostRelevantLocale()));
+				fragmentEntryLink.getGroupId()));
 
 		String layoutStructureItemUniqueCssClass =
 			fragmentStyledLayoutStructureItem.getUniqueCssClass();

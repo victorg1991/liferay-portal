@@ -33,7 +33,7 @@ import ModalDXPCActivationStatus from '../../ModalDXPCActivationStatus';
 import AlreadySubmittedModal from '../AlreadySubmittedModal';
 import ActivationStatusLayout from '../Layout';
 import PopoverIcon from './components/PopoverIcon';
-import ActivationCardLink from '../ActivationCardLink'; 
+import ActivationCardLink from '../ActivationCardLink';
 
 const submittedModalTexts = {
 	paragraph: i18n.translate(
@@ -166,7 +166,8 @@ const ActivationStatusDXPCloud = ({
 					customDropDownButton={
 						<ButtonWithIcon
 							aria-label={i18n.translate('set-to-active')}
-							displayType="null"
+							className="text-secondary"
+    						displayType="unstyled"
 							small
 							spritemap={Liferay.Icons.spritemap}
 							symbol="caret-bottom"
@@ -226,11 +227,17 @@ const ActivationStatusDXPCloud = ({
 
 	useEffect(() => {
 		const fetchCommerceOrderItems = async () => {
-			const filterAccountSubscriptionERC = `customFields/accountSubscriptionGroupERC eq '${project.accountKey}_liferay-paas'`;
+			const PAAS_CLOUD_ERCS = [
+				`${project.accountKey}_liferay-paas`,
+                `${project.accountKey}_liferay-cloud`
+			];
+
+			const ercFilter = PAAS_CLOUD_ERCS.map(erc => `customFields/accountSubscriptionGroupERC eq '${erc}'`).join(' or ');
+
 			const {data} = await client.query({
 				query: getCommerceOrderItems,
 				variables: {
-					filter: filterAccountSubscriptionERC,
+					filter: ercFilter,
 				},
 			});
 

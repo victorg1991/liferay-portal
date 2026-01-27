@@ -15,23 +15,30 @@ export class CalendarWidgetPage {
 	readonly addEventButton: Locator;
 	readonly addEventMenuItem: Locator;
 	readonly allDayCheckbox: Locator;
-	readonly calendarWidget: Locator;
 	readonly calendarColumns: Locator;
+	readonly calendarSettingsNotificationTemplates: {
+		bodyEditor: Locator;
+	};
 	readonly calendarOptions: Locator;
+	readonly calendarWidget: Locator;
 	readonly closeConfigurationButton: Locator;
+	readonly closeEventModalButton: Locator;
 	readonly configurationMenuItem: Locator;
+	readonly description: Locator;
+	readonly descriptionLocalesDropdownButton: Locator;
+	readonly descriptionLocalesDropdownMenu: Locator;
 	readonly endDate: Locator;
 	readonly endTime: Locator;
 	readonly hideSidebarIcon: Locator;
 	readonly invitations: Locator;
 	readonly inviteResource: Locator;
 	readonly manageCalendarsMenuItem: Locator;
-	readonly modalRecurrencePage: ModalRecurrencePage;
 	readonly miniCalendarBase: Locator;
 	readonly miniCalendarGrid: Locator;
 	readonly miniCalendarHeaderLabel: Locator;
 	readonly miniCalendarNextMonthButton: Locator;
 	readonly miniCalendarPastMonthButton: Locator;
+	readonly modalRecurrencePage: ModalRecurrencePage;
 	readonly monthViewTab: Locator;
 	readonly page: Page;
 	readonly previousButton: Locator;
@@ -44,6 +51,7 @@ export class CalendarWidgetPage {
 	readonly successAlert: Locator;
 	readonly timeZoneDropdown: Locator;
 	readonly title: Locator;
+	readonly titleLocalesDropdown: Locator;
 	readonly unhideSidebarIcon: Locator;
 	readonly useGlobalTimeZoneCheckBox: Locator;
 
@@ -65,17 +73,42 @@ export class CalendarWidgetPage {
 		this.calendarOptions = page
 			.locator('#wrapper')
 			.getByRole('button', {name: 'Options'});
+
+		const bodyEditorContainer = page
+			.frameLocator('iframe')
+			.getByTestId('bodyEditorContainer');
+
+		this.calendarSettingsNotificationTemplates = {
+			bodyEditor: bodyEditorContainer.locator('.ck-editor__editable'),
+		};
+
 		this.calendarWidget = page.locator(
 			'.lfr-layout-structure-item-com-liferay-calendar-web-portlet-calendarportlet'
 		);
-		this.closeConfigurationButton = page.getByRole('button', {
-			exact: true,
-			name: 'close',
-		});
+		this.closeConfigurationButton = page
+			.locator('.modal-header')
+			.getByRole('button', {
+				exact: true,
+				name: 'Close',
+			});
+		this.closeEventModalButton = page
+			.locator('.modal-header')
+			.getByRole('button', {exact: true, name: 'Close'});
 		this.configurationMenuItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Configuration',
 		});
+
+		const descriptionContainer = page
+			.frameLocator('iframe')
+			.getByTestId('descriptionContainer');
+
+		this.description = descriptionContainer.locator('.ck-editor__editable');
+		this.descriptionLocalesDropdownButton =
+			descriptionContainer.getByTitle('Select a Language');
+		this.descriptionLocalesDropdownMenu = page
+			.frameLocator('iframe')
+			.locator('.dropdown-menu.show');
 		this.endDate = page
 			.frameLocator('iframe')
 			.getByLabel('Ends Required', {exact: true});
@@ -95,7 +128,6 @@ export class CalendarWidgetPage {
 		this.manageCalendarsMenuItem = page.getByRole('menuitem', {
 			name: 'Manage Calendars',
 		});
-		this.modalRecurrencePage = new ModalRecurrencePage(page);
 		this.miniCalendarBase = page.locator('.yui3-calendarbase');
 		this.miniCalendarGrid = page.locator('.yui3-calendar-grid');
 		this.miniCalendarHeaderLabel = page.locator(
@@ -107,6 +139,7 @@ export class CalendarWidgetPage {
 		this.miniCalendarPastMonthButton = page.locator(
 			'.yui3-calendarnav-prevmonth'
 		);
+		this.modalRecurrencePage = new ModalRecurrencePage(page);
 		this.monthViewTab = page.getByRole('tab', {name: 'Month View'});
 		this.page = page;
 		this.previousButton = page.getByLabel('Previous');
@@ -144,6 +177,9 @@ export class CalendarWidgetPage {
 		this.title = page
 			.frameLocator('iframe')
 			.getByLabel('Title', {exact: true});
+		this.titleLocalesDropdown = page
+			.frameLocator('iframe')
+			.locator('[id$="titleMenu"]');
 		this.unhideSidebarIcon = page.locator(
 			'.calendar-portlet-column-toggler .lexicon-icon-caret-right'
 		);
@@ -157,6 +193,7 @@ export class CalendarWidgetPage {
 
 	async addEvent({
 		allDay,
+		description,
 		endDate,
 		endTime,
 		publishEvent,
@@ -166,6 +203,7 @@ export class CalendarWidgetPage {
 		title,
 	}: {
 		allDay: boolean;
+		description?: string;
 		endDate?: string;
 		endTime?: string;
 		publishEvent?: boolean;
@@ -207,6 +245,10 @@ export class CalendarWidgetPage {
 			await this.endTime.pressSequentially(endTime, {delay: 100});
 		}
 
+		if (description) {
+			await this.description.fill(description);
+		}
+
 		if (publishEvent) {
 			await this.publishEvent({waitForSuccessAlert: true});
 		}
@@ -227,39 +269,28 @@ export class CalendarWidgetPage {
 			.click();
 	}
 
-	async hideSidebar() {
-		if (await this.hideSidebarIcon.isVisible()) {
-			await this.page.waitForLoadState('networkidle');
-			await this.hideSidebarIcon.click();
-		}
+	async clickAddEventButton() {
+		await this.addEventButton.click();
+
+		await this.page.waitForLoadState('networkidle');
 	}
 
-	async openInvitations() {
-		await this.invitations.click();
+	async clickAddEventMenuitem() {
+		await this.addEventMenuItem.click();
+
+		await this.page.waitForLoadState('networkidle');
 	}
 
-	async publishEvent({
-		recurrenceOption,
-		waitForSuccessAlert,
-	}: {
-		recurrenceOption?: RecurrenceOption;
-		waitForSuccessAlert?: boolean;
-	} = {}) {
-		await this.publishEventButton.click();
+	async clickCalendarColor(calendarColorHex: string) {
+		await this.page.getByRole('radio', {name: calendarColorHex}).click();
+	}
 
-		if (recurrenceOption) {
-			await this.page
-				.frameLocator('iframe')
-				.getByRole('button', {name: recurrenceOption})
-				.click();
-		}
+	async clickEvent(title: string) {
+		await this.page.getByText(title).click();
+	}
 
-		if (waitForSuccessAlert) {
-			await waitForAlert(
-				this.page.frameLocator('iframe'),
-				`Success:Your request completed successfully.`
-			);
-		}
+	async closeModalEvent() {
+		await this.closeEventModalButton.click();
 	}
 
 	async createAndSubmitEvent({
@@ -286,35 +317,7 @@ export class CalendarWidgetPage {
 			await this.publishEvent();
 		}
 
-		await this.closeNewEventModal();
-	}
-
-	async closeModalEvent() {
-		await this.page.getByRole('button', {name: 'Close'}).click();
-	}
-
-	async closeNewEventModal() {
-		await this.page.getByLabel('close', {exact: true}).click();
-	}
-
-	async clickAddEventButton() {
-		await this.addEventButton.click();
-
-		await this.page.waitForLoadState('networkidle');
-	}
-
-	async clickAddEventMenuitem() {
-		await this.addEventMenuItem.click();
-
-		await this.page.waitForLoadState('networkidle');
-	}
-
-	async clickCalendarColor(calendarColorHex: string) {
-		await this.page.getByRole('radio', {name: calendarColorHex}).click();
-	}
-
-	async clickEvent(title: string) {
-		await this.page.getByText(title).click();
+		await this.closeModalEvent();
 	}
 
 	async deleteApprovedEvents(eventTitles: string[]) {
@@ -360,6 +363,13 @@ export class CalendarWidgetPage {
 		await this.modalRecurrencePage.addRecurrenceUntilDate(daysFromNow);
 	}
 
+	async hideSidebar() {
+		if (await this.hideSidebarIcon.isVisible()) {
+			await this.page.waitForLoadState('networkidle');
+			await this.hideSidebarIcon.click();
+		}
+	}
+
 	async openCalendarActionsDropdownMenu(calendarName: string) {
 		await this.page
 			.getByLabel(`Show Actions for Calendar ${calendarName}`)
@@ -368,6 +378,34 @@ export class CalendarWidgetPage {
 
 	async openCalendarGroupActionsDropdownMenu(groupName: string) {
 		await this.page.getByLabel(`Manage Calendar ${groupName}`).click();
+	}
+
+	async openInvitations() {
+		await this.invitations.click();
+	}
+
+	async publishEvent({
+		recurrenceOption,
+		waitForSuccessAlert,
+	}: {
+		recurrenceOption?: RecurrenceOption;
+		waitForSuccessAlert?: boolean;
+	} = {}) {
+		await this.publishEventButton.click();
+
+		if (recurrenceOption) {
+			await this.page
+				.frameLocator('iframe')
+				.getByRole('button', {name: recurrenceOption})
+				.click();
+		}
+
+		if (waitForSuccessAlert) {
+			await waitForAlert(
+				this.page.frameLocator('iframe'),
+				`Success:Your request completed successfully.`
+			);
+		}
 	}
 
 	async setCalendarWidgetConfiguration(

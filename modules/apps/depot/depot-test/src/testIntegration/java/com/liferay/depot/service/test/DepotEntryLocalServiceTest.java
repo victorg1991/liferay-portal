@@ -6,6 +6,7 @@
 package com.liferay.depot.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.exception.DepotEntryNameException;
 import com.liferay.depot.model.DepotEntry;
@@ -19,16 +20,21 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.model.UserGroup;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserGroupLocalService;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
+import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserGroupTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -37,6 +43,7 @@ import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
+import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -47,6 +54,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.Set;
 
 import org.junit.Assert;
@@ -109,7 +117,7 @@ public class DepotEntryLocalServiceTest {
 
 	@Test(expected = DepotEntryNameException.class)
 	public void testAddDepotEntryWithNullName() throws Exception {
-		_addDepotEntry(null, null);
+		_addDepotEntry((String)null, (String)null);
 	}
 
 	@Test
@@ -125,7 +133,7 @@ public class DepotEntryLocalServiceTest {
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), "description"
 			).build(),
-			_getServiceContext(user));
+			DepotConstants.TYPE_ASSET_LIBRARY, _getServiceContext(user));
 
 		Assert.assertEquals(company.getCompanyId(), depotEntry.getCompanyId());
 
@@ -136,6 +144,7 @@ public class DepotEntryLocalServiceTest {
 				depotEntry.getDepotEntryId()));
 	}
 
+	@FeatureFlag("LPD-17564")
 	@Test(expected = NoSuchGroupException.class)
 	public void testDeleteDepotEntry() throws Exception {
 		DepotEntry depotEntry = _addDepotEntry("name", "description");
@@ -145,6 +154,86 @@ public class DepotEntryLocalServiceTest {
 		_depotEntries.remove(depotEntry);
 
 		_groupLocalService.getGroup(depotEntry.getGroupId());
+	}
+
+	@Test
+	public void testGetDepotEntryGroupIds() throws Exception {
+		List<Long> depotEntryGroupIds =
+			_depotEntryLocalService.getDepotEntryGroupIds(
+				TestPropsValues.getCompanyId(),
+				DepotConstants.TYPE_ASSET_LIBRARY);
+
+		int assetLibrariesCount = depotEntryGroupIds.size();
+
+		depotEntryGroupIds = _depotEntryLocalService.getDepotEntryGroupIds(
+			TestPropsValues.getCompanyId(), DepotConstants.TYPE_SPACE);
+
+		int spacesCount = depotEntryGroupIds.size();
+
+		depotEntryGroupIds = _depotEntryLocalService.getDepotEntryGroupIds(
+			TestPropsValues.getCompanyId(), DepotConstants.TYPE_ANY);
+
+		Assert.assertEquals(
+			depotEntryGroupIds.toString(), assetLibrariesCount + spacesCount,
+			depotEntryGroupIds.size());
+
+		_addDepotEntry(DepotConstants.TYPE_ASSET_LIBRARY);
+		_addDepotEntry(DepotConstants.TYPE_SPACE);
+
+		depotEntryGroupIds = _depotEntryLocalService.getDepotEntryGroupIds(
+			TestPropsValues.getCompanyId(), DepotConstants.TYPE_ASSET_LIBRARY);
+
+		Assert.assertEquals(
+			depotEntryGroupIds.toString(), assetLibrariesCount + 1,
+			depotEntryGroupIds.size());
+
+		depotEntryGroupIds = _depotEntryLocalService.getDepotEntryGroupIds(
+			TestPropsValues.getCompanyId(), DepotConstants.TYPE_SPACE);
+
+		Assert.assertEquals(
+			depotEntryGroupIds.toString(), spacesCount + 1,
+			depotEntryGroupIds.size());
+
+		depotEntryGroupIds = _depotEntryLocalService.getDepotEntryGroupIds(
+			TestPropsValues.getCompanyId(), DepotConstants.TYPE_ANY);
+
+		Assert.assertEquals(
+			depotEntryGroupIds.toString(),
+			assetLibrariesCount + spacesCount + 2, depotEntryGroupIds.size());
+	}
+
+	@Test
+	public void testGetDepotEntryGroupIdsByUser() throws Exception {
+		User irrelevantUser = UserTestUtil.addUser();
+		UserGroup irrelevantUserGroup = UserGroupTestUtil.addUserGroup();
+
+		_userGroupLocalService.addUserUserGroup(
+			irrelevantUser.getUserId(), irrelevantUserGroup);
+
+		_addDepotEntry(null, (UserGroup)null);
+		_addDepotEntry(null, irrelevantUserGroup);
+		_addDepotEntry(irrelevantUser, null);
+		_addDepotEntry(irrelevantUser, irrelevantUserGroup);
+
+		User user = UserTestUtil.addUser();
+		UserGroup userGroup = UserGroupTestUtil.addUserGroup();
+
+		_userGroupLocalService.addUserUserGroup(user.getUserId(), userGroup);
+
+		DepotEntry depotEntry1 = _addDepotEntry(null, userGroup);
+		DepotEntry depotEntry2 = _addDepotEntry(irrelevantUser, userGroup);
+
+		DepotEntry depotEntry3 = _addDepotEntry(user, null);
+		DepotEntry depotEntry4 = _addDepotEntry(user, irrelevantUserGroup);
+		DepotEntry depotEntry5 = _addDepotEntry(user, userGroup);
+
+		_testGetDepotEntryGroupIdsByUser(
+			List.of(
+				depotEntry1, depotEntry2, depotEntry3, depotEntry4,
+				depotEntry5),
+			user, false);
+		_testGetDepotEntryGroupIdsByUser(
+			List.of(depotEntry1, depotEntry2, depotEntry5), user, true);
 	}
 
 	@Test
@@ -334,7 +423,19 @@ public class DepotEntryLocalServiceTest {
 			ServiceContextTestUtil.getServiceContext());
 	}
 
+	private DepotEntry _addDepotEntry(int type) throws Exception {
+		return _addDepotEntry(
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(), type);
+	}
+
 	private DepotEntry _addDepotEntry(String name, String description)
+		throws Exception {
+
+		return _addDepotEntry(
+			name, description, DepotConstants.TYPE_ASSET_LIBRARY);
+	}
+
+	private DepotEntry _addDepotEntry(String name, String description, int type)
 		throws Exception {
 
 		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
@@ -344,9 +445,28 @@ public class DepotEntryLocalServiceTest {
 			HashMapBuilder.put(
 				LocaleUtil.getDefault(), description
 			).build(),
-			ServiceContextTestUtil.getServiceContext());
+			type, ServiceContextTestUtil.getServiceContext());
 
 		_depotEntries.add(depotEntry);
+
+		return depotEntry;
+	}
+
+	private DepotEntry _addDepotEntry(User user, UserGroup userGroup)
+		throws Exception {
+
+		DepotEntry depotEntry = _addDepotEntry(
+			_DEPOT_TYPES[_random.nextInt(_DEPOT_TYPES.length)]);
+
+		if (user != null) {
+			_groupLocalService.addUserGroup(
+				user.getUserId(), depotEntry.getGroupId());
+		}
+
+		if (userGroup != null) {
+			_userGroupLocalService.addGroupUserGroup(
+				depotEntry.getGroupId(), userGroup);
+		}
 
 		return depotEntry;
 	}
@@ -360,6 +480,49 @@ public class DepotEntryLocalServiceTest {
 
 		return serviceContext;
 	}
+
+	private void _testGetDepotEntryGroupIdsByUser(
+		List<DepotEntry> depotEntries, User user, boolean userGroupsOnly) {
+
+		List<Long> assetLibraryGroupIds = new ArrayList<>();
+		List<Long> depotEntryGroupIds = new ArrayList<>();
+		List<Long> spaceGroupIds = new ArrayList<>();
+
+		for (DepotEntry depotEntry : depotEntries) {
+			depotEntryGroupIds.add(depotEntry.getGroupId());
+
+			if (depotEntry.getType() == DepotConstants.TYPE_ASSET_LIBRARY) {
+				assetLibraryGroupIds.add(depotEntry.getGroupId());
+			}
+			else {
+				spaceGroupIds.add(depotEntry.getGroupId());
+			}
+		}
+
+		AssertUtils.assertEquals(
+			depotEntryGroupIds,
+			_depotEntryLocalService.getDepotEntryGroupIds(
+				user.getCompanyId(), user.getUserId(), DepotConstants.TYPE_ANY,
+				userGroupsOnly));
+
+		AssertUtils.assertEquals(
+			assetLibraryGroupIds,
+			_depotEntryLocalService.getDepotEntryGroupIds(
+				user.getCompanyId(), user.getUserId(),
+				DepotConstants.TYPE_ASSET_LIBRARY, userGroupsOnly));
+
+		AssertUtils.assertEquals(
+			spaceGroupIds,
+			_depotEntryLocalService.getDepotEntryGroupIds(
+				user.getCompanyId(), user.getUserId(),
+				DepotConstants.TYPE_SPACE, userGroupsOnly));
+	}
+
+	private static final int[] _DEPOT_TYPES = {
+		DepotConstants.TYPE_ASSET_LIBRARY, DepotConstants.TYPE_SPACE
+	};
+
+	private static final Random _random = new Random();
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
@@ -375,6 +538,9 @@ public class DepotEntryLocalServiceTest {
 
 	@Inject
 	private Language _language;
+
+	@Inject
+	private UserGroupLocalService _userGroupLocalService;
 
 	@Inject
 	private UserGroupRoleLocalService _userGroupRoleLocalService;

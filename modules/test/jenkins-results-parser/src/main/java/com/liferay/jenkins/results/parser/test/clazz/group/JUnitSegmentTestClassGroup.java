@@ -6,13 +6,11 @@
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
-
-import java.io.File;
+import com.liferay.jenkins.results.parser.test.clazz.JUnitTestClass;
+import com.liferay.jenkins.results.parser.test.clazz.TestClass;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 
@@ -32,32 +30,28 @@ public class JUnitSegmentTestClassGroup extends SegmentTestClassGroup {
 		for (int axisIndex = 0; axisIndex < getAxisCount(); axisIndex++) {
 			axisIndexes.add(String.valueOf(axisIndex));
 
-			AxisTestClassGroup axisTestClassGroup = getAxisTestClassGroup(
-				axisIndex);
-
-			List<File> testClassFiles = axisTestClassGroup.getTestClassFiles();
-
 			sb.append("TEST_CLASS_GROUP_");
 			sb.append(axisIndex);
 			sb.append("=");
 
-			for (File testClassFile : testClassFiles) {
-				Matcher matcher = _pattern.matcher(testClassFile.toString());
+			AxisTestClassGroup axisTestClassGroup = getAxisTestClassGroup(
+				axisIndex);
 
-				if (!matcher.find()) {
+			List<String> testClassFileMethodNames = new ArrayList<>();
+
+			for (TestClass testClass : axisTestClassGroup.getTestClasses()) {
+				if (!(testClass instanceof JUnitTestClass)) {
 					continue;
 				}
 
-				String classFileName = matcher.group("classFileName");
+				JUnitTestClass jUnitTestClass = (JUnitTestClass)testClass;
 
-				sb.append(classFileName.replace(".java", ".class"));
-
-				sb.append(",");
+				testClassFileMethodNames.addAll(
+					jUnitTestClass.getTestClassFileMethodNames());
 			}
 
-			if (!testClassFiles.isEmpty()) {
-				sb.setLength(sb.length() - 1);
-			}
+			sb.append(
+				JenkinsResultsParserUtil.join(",", testClassFileMethodNames));
 
 			sb.append("\n");
 		}
@@ -80,8 +74,5 @@ public class JUnitSegmentTestClassGroup extends SegmentTestClassGroup {
 
 		super(batchTestClassGroup, jsonObject);
 	}
-
-	private static final Pattern _pattern = Pattern.compile(
-		".*/(?<classFileName>com/.*)");
 
 }

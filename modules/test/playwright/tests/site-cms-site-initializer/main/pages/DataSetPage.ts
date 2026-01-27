@@ -3,19 +3,27 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, Page} from '@playwright/test';
+import {Locator, Page, expect} from '@playwright/test';
 
 export class DataSetPage {
 	readonly activeViewSelector: Locator;
+	readonly assetLink: (assetName: string) => Locator;
 	readonly page: Page;
 	readonly table: {
 		bodyRows: Locator;
 		container: Locator;
 		headRow: Locator;
 	};
+	readonly selectAllLink: Locator;
 
 	constructor(page: Page) {
-		this.activeViewSelector = page.getByLabel('Show View Options');
+		this.activeViewSelector = page.getByLabel(/View Selected/);
+		this.assetLink = (assetName) => {
+			return page.getByRole('link', {
+				exact: true,
+				name: assetName,
+			});
+		};
 
 		const tableContainer = page.locator('.fds table');
 		this.table = {
@@ -25,34 +33,66 @@ export class DataSetPage {
 		};
 
 		this.page = page;
+		this.selectAllLink = page.getByRole('button', {
+			exact: true,
+			name: 'Select All',
+		});
 	}
 
 	getRow(filter: string) {
 		return this.table.bodyRows.filter({hasText: filter});
 	}
 
-	async execItemAction({action, filter}: {action: string; filter: string}) {
+	async execBulkItemAction({action}) {
+		await this.page
+			.getByTestId('visualization-mode-table')
+			.getByLabel('Actions')
+			.click();
+
+		const dropdownMenuItemDelete = this.page.getByRole('menuitem', {
+			name: action,
+		});
+
+		await expect(dropdownMenuItemDelete).toBeVisible();
+
+		await dropdownMenuItemDelete.click();
+	}
+
+	async execItemAction({
+		action,
+		filter,
+		timeout,
+	}: {
+		action: string;
+		filter: string;
+		timeout?: number;
+	}) {
 		const item = this.getRow(filter);
 		const button = item.getByRole('button', {
 			exact: true,
 			name: 'Actions',
 		});
 		const dropdownId = await button.getAttribute('aria-controls');
-		await button.click();
+		await button.click({timeout});
 
 		const dropdownMenu = this.page
 			.locator(`#${dropdownId}`)
 			.filter({has: this.page.getByRole('menu')});
-		await dropdownMenu.waitFor();
+		await dropdownMenu.waitFor({timeout});
 
-		const dropdownMenuActionItem = dropdownMenu.getByRole('menuitem', {
-			name: action,
-		});
-		await dropdownMenuActionItem.waitFor();
-		await dropdownMenuActionItem.click();
+		const dropdownMenuActionItem = dropdownMenu
+			.getByRole('menuitem', {
+				name: action,
+			})
+			.first();
+
+		await dropdownMenuActionItem.waitFor({timeout});
+		await dropdownMenuActionItem.click({timeout});
 	}
 
-	async changeVisualizationMode(visualizationMode: 'Cards' | 'Table') {
+	async changeVisualizationMode(
+		visualizationMode: 'Cards' | 'Table' | 'Gallery'
+	) {
 		await this.activeViewSelector.waitFor({
 			state: 'visible',
 		});

@@ -88,8 +88,7 @@ public class SegmentsExperienceSelectorProductNavigationControlMenuEntryTest {
 	public void testIsShowWithContentLayoutUpdateable() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
 
-		layout.setLayoutPrototypeUuid(RandomTestUtil.randomString());
-		layout.setSourcePrototypeLayoutUuid(RandomTestUtil.randomString());
+		layout.setLayoutSetPrototypeLayoutERC(RandomTestUtil.randomString());
 
 		SegmentsTestUtil.addSegmentsExperience(
 			_group.getGroupId(), layout.getPlid());

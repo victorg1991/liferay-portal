@@ -12,6 +12,8 @@ public class ObjectFieldConstants {
 
 	public static final String BUSINESS_TYPE_AGGREGATION = "Aggregation";
 
+	public static final String BUSINESS_TYPE_ASSIGNEE = "Assignee";
+
 	public static final String BUSINESS_TYPE_ATTACHMENT = "Attachment";
 
 	public static final String BUSINESS_TYPE_AUTO_INCREMENT = "AutoIncrement";
@@ -49,6 +51,8 @@ public class ObjectFieldConstants {
 	public static final String BUSINESS_TYPE_RICH_TEXT = "RichText";
 
 	public static final String BUSINESS_TYPE_TEXT = "Text";
+
+	public static final int DB_COLUMN_NAME_MAX_LENGTH = 63;
 
 	public static final String DB_TYPE_BIG_DECIMAL = "BigDecimal";
 

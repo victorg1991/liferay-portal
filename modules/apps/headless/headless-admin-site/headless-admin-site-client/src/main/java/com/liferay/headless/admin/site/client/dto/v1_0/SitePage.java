@@ -69,60 +69,6 @@ public class SitePage implements Cloneable, Serializable {
 
 	protected Creator creator;
 
-	public String getCreatorExternalReferenceCode() {
-		return creatorExternalReferenceCode;
-	}
-
-	public void setCreatorExternalReferenceCode(
-		String creatorExternalReferenceCode) {
-
-		this.creatorExternalReferenceCode = creatorExternalReferenceCode;
-	}
-
-	public void setCreatorExternalReferenceCode(
-		UnsafeSupplier<String, Exception>
-			creatorExternalReferenceCodeUnsafeSupplier) {
-
-		try {
-			creatorExternalReferenceCode =
-				creatorExternalReferenceCodeUnsafeSupplier.get();
-		}
-		catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	protected String creatorExternalReferenceCode;
-
-	public com.liferay.headless.admin.site.client.custom.field.CustomField[]
-		getCustomFields() {
-
-		return customFields;
-	}
-
-	public void setCustomFields(
-		com.liferay.headless.admin.site.client.custom.field.CustomField[]
-			customFields) {
-
-		this.customFields = customFields;
-	}
-
-	public void setCustomFields(
-		UnsafeSupplier
-			<com.liferay.headless.admin.site.client.custom.field.CustomField[],
-			 Exception> customFieldsUnsafeSupplier) {
-
-		try {
-			customFields = customFieldsUnsafeSupplier.get();
-		}
-		catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	protected com.liferay.headless.admin.site.client.custom.field.CustomField[]
-		customFields;
-
 	public Date getDateCreated() {
 		return dateCreated;
 	}
@@ -365,6 +311,35 @@ public class SitePage implements Cloneable, Serializable {
 
 	protected String parentSitePageExternalReferenceCode;
 
+	public com.liferay.headless.admin.site.client.permission.Permission[]
+		getPermissions() {
+
+		return permissions;
+	}
+
+	public void setPermissions(
+		com.liferay.headless.admin.site.client.permission.Permission[]
+			permissions) {
+
+		this.permissions = permissions;
+	}
+
+	public void setPermissions(
+		UnsafeSupplier
+			<com.liferay.headless.admin.site.client.permission.Permission[],
+			 Exception> permissionsUnsafeSupplier) {
+
+		try {
+			permissions = permissionsUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected com.liferay.headless.admin.site.client.permission.Permission[]
+		permissions;
+
 	public ItemExternalReference[] getTaxonomyCategoryItemExternalReferences() {
 		return taxonomyCategoryItemExternalReferences;
 	}
@@ -499,7 +474,8 @@ public class SitePage implements Cloneable, Serializable {
 
 	public static enum Type {
 
-		CONTENT_PAGE("ContentPage"), WIDGET_PAGE("WidgetPage");
+		CONTENT_PAGE("ContentPage"), LINK_TO_URL_PAGE("LinkToURLPage"),
+		PAGE_SET_PAGE("PageSetPage"), WIDGET_PAGE("WidgetPage");
 
 		public static Type create(String value) {
 			for (Type type : values()) {

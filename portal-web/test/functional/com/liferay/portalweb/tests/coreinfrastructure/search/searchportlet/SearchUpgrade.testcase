@@ -1,6 +1,7 @@
 @component-name = "portal-search"
 definition {
 
+	property browser.chrome.version = "139.0";
 	property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver";
 	property portal.release = "true";
 	property portal.suite.search.engine = "elasticsearch7,opensearch2,solr";
@@ -238,15 +239,6 @@ definition {
 		property test.run.environment = "EE";
 
 		ValidateSearchUpgrade.viewClassicSearchPortletConfiguration();
-	}
-
-	@priority = 5
-	test ViewResultRankingsEntryArchive7310 {
-		property data.archive.type = "data-archive-search-result-rankings";
-		property portal.version = "7.3.10";
-		property test.run.environment = "EE";
-
-		ValidateSearchUpgrade.viewResultRankingsEntry();
 	}
 
 	@priority = 5
@@ -673,15 +665,6 @@ definition {
 				key_element = "Descrição em Português",
 				locator1 = "Blueprints#BLUEPRINTS_ADDED_ELEMENT");
 		}
-	}
-
-	@priority = 5
-	test ViewSynonymsEntryArchive7310 {
-		property data.archive.type = "data-archive-search-synonyms";
-		property portal.version = "7.3.10";
-		property test.run.environment = "EE";
-
-		ValidateSearchUpgrade.viewSynonymsEntry();
 	}
 
 	@priority = 5

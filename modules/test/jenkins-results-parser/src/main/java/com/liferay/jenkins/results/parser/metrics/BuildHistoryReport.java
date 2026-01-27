@@ -6,13 +6,21 @@
 package com.liferay.jenkins.results.parser.metrics;
 
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
+import com.liferay.jenkins.results.parser.testray.TestrayBuild;
+import com.liferay.jenkins.results.parser.testray.TestrayFactory;
+import com.liferay.jenkins.results.parser.testray.TestrayRun;
+import com.liferay.jenkins.results.parser.testray.TestrayRunComparison;
 
 import java.io.File;
 import java.io.IOException;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,20 +48,166 @@ public class BuildHistoryReport {
 		buildHistoryReport.addFilesFromResource(
 			"dependencies/metrics/aggregate-report", "/index.html");
 
-		long startTime = _getStartTime(startDateString);
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(_getWeeklyServerDurationJavaScriptVariable());
 
 		long duration = TimeUnit.DAYS.toMillis(durationDays);
+		long startTime = _getStartTime(startDateString);
 
 		Collection<BuildHistory> buildHistories =
 			BuildHistoryProcessor.newAggregateJobHistories(duration, startTime);
 
-		buildHistoryReport.addFile(
-			"js/table-data.js",
-			_getTableDataJSFileContent(
+		sb.append(
+			_getTableDataJavaScriptVariable(
 				buildHistories, "Job Category", 1, "[Total]"));
+
+		buildHistoryReport.addFile(sb.toString(), "js/table-data.js");
+
 		buildHistoryReport.addFile(
-			"js/timeline-data.js",
-			_getTimelineDataJSFileContent(buildHistories, duration, startTime));
+			_getTimelineDataJavaScriptVariable(
+				buildHistories, duration, startTime),
+			"js/timeline-data.js");
+
+		return buildHistoryReport;
+	}
+
+	public static BuildHistoryReport newAWSBuildComparisonReport(
+		long durationDays, File outputDir, String startDateString) {
+
+		BuildHistoryReport buildHistoryReport = new BuildHistoryReport(
+			outputDir);
+
+		buildHistoryReport.addFilesFromResource(
+			"dependencies/metrics/build-comparison-report", "/css/main.css",
+			"/index.html", "/js/main.js");
+
+		BuildHistory buildHistory = BuildHistoryProcessor.mergeBuildHistories(
+			BuildHistoryProcessor.newTopLevelBuildHistories(
+				TimeUnit.DAYS.toMillis(durationDays),
+				_getStartTime(startDateString)),
+			"");
+
+		File baseDir = BuildHistoryProcessor.getBaseDir();
+
+		BuildHistoryProcessor.setBaseDir(
+			new File(baseDir.getParentFile(), "aws/builds"));
+
+		BuildHistory awsBuildHistory =
+			BuildHistoryProcessor.mergeBuildHistories(
+				BuildHistoryProcessor.newTopLevelBuildHistories(
+					TimeUnit.DAYS.toMillis(durationDays),
+					_getStartTime(startDateString)),
+				"aws");
+
+		Map<String, BuildJSONObject> awsBuildJSONObjectsMap =
+			awsBuildHistory.getBuildJSONObjectsMap();
+
+		Map<String, BuildJSONObject> buildJSONObjectsMap =
+			buildHistory.getBuildJSONObjectsMap();
+
+		List<List<Object>> rows = new ArrayList<>();
+
+		rows.add(
+			new ArrayList<Object>() {
+				{
+					add("Build Identifier");
+					add("Testray Comparison URL");
+					add("Test Results in Common (%)");
+					add("Test Failure Differences");
+					add("Untested Test Differences");
+					add("Build URL (DB)");
+					add("Build URL (AWS)");
+					add("DB Build Testray URL");
+					add("AWS Build Testray URL");
+					add("Top Level Start Time (DB)");
+					add("Top Level Start Time (AWS)");
+					add("Top Level Duration (DB)");
+					add("Top Level Duration (AWS)");
+				}
+			});
+
+		for (Map.Entry<String, BuildJSONObject> entry :
+				buildJSONObjectsMap.entrySet()) {
+
+			String buildIdentifier = entry.getKey();
+
+			if (!awsBuildJSONObjectsMap.containsKey(buildIdentifier)) {
+				continue;
+			}
+
+			BuildJSONObject awsBuildJSONObject = awsBuildJSONObjectsMap.get(
+				buildIdentifier);
+			BuildJSONObject buildJSONObject = entry.getValue();
+
+			String awsTestrayBuildURL = awsBuildJSONObject.getTestrayBuildURL();
+			String testrayBuildURL = buildJSONObject.getTestrayBuildURL();
+
+			if (JenkinsResultsParserUtil.isNullOrEmpty(awsTestrayBuildURL) ||
+				JenkinsResultsParserUtil.isNullOrEmpty(testrayBuildURL)) {
+
+				continue;
+			}
+
+			TestrayBuild awsTestrayBuild = TestrayFactory.newTestrayBuild(
+				_getURL(awsTestrayBuildURL));
+
+			TestrayRun awsTestrayRun = awsTestrayBuild.getTestrayRun(
+				TestrayRun.getDefaultRunIDString());
+
+			TestrayBuild testrayBuild = TestrayFactory.newTestrayBuild(
+				_getURL(testrayBuildURL));
+
+			TestrayRun testrayRun = testrayBuild.getTestrayRun(
+				TestrayRun.getDefaultRunIDString());
+
+			if ((awsTestrayRun == null) || (testrayRun == null)) {
+				continue;
+			}
+
+			TestrayRunComparison testrayRunComparison =
+				TestrayFactory.newTestrayRunComparison(
+					testrayRun, awsTestrayRun);
+
+			rows.add(
+				new ArrayList<Object>() {
+					{
+						add(buildIdentifier);
+						add(testrayRunComparison.getComparisonURL());
+						add(
+							testrayRunComparison.
+								getCommonStatusTestCountPercentage());
+						add(testrayRunComparison.getNewFailureTestCount());
+						add(testrayRunComparison.getNewUntestedTestCount());
+						add(buildJSONObject.getURL());
+						add(awsBuildJSONObject.getURL());
+						add(testrayBuildURL);
+						add(awsTestrayBuildURL);
+						add(buildJSONObject.getStartTime());
+						add(awsBuildJSONObject.getStartTime());
+						add(buildJSONObject.getDuration());
+						add(awsBuildJSONObject.getDuration());
+					}
+				});
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("var dataGeneratedDate = new Date(");
+		sb.append(JenkinsResultsParserUtil.getCurrentTimeMillis());
+		sb.append(");\nvar reportName = \"AWS Build Comparison Report\";");
+		sb.append("var tableData = ");
+
+		JSONArray tableJSONArray = new JSONArray();
+
+		for (List<Object> row : rows) {
+			tableJSONArray.put(new JSONArray(row));
+		}
+
+		sb.append(tableJSONArray);
+		sb.append(";");
+
+		buildHistoryReport.addFile(sb.toString(), "js/table-data.js");
 
 		return buildHistoryReport;
 	}
@@ -100,12 +254,12 @@ public class BuildHistoryReport {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(
-			_getTableDataJSFileContent(
-				utilizationBuildHistories, "Category", 7, "All",
-				"categoryTableData", null));
+		sb.append(_getWeeklyServerDurationJavaScriptVariable());
 
-		sb.append("\n");
+		sb.append(
+			_getTableDataJavaScriptVariable(
+				utilizationBuildHistories, "Category", 7, "All", null,
+				"categoryTableData"));
 
 		Collection<BuildHistory> utilizationTestTypeBuildHistories =
 			BuildHistoryProcessor.newUtilizationTestTypeBuildHistories(
@@ -113,19 +267,20 @@ public class BuildHistoryReport {
 				_getStartTime(startDateString));
 
 		sb.append(
-			_getTableDataJSFileContent(
+			_getTableDataJavaScriptVariable(
 				utilizationTestTypeBuildHistories, "Test Batch Type", 7, "All",
-				"testTypeTableData",
 				Arrays.asList(
+					BuildHistory.TableMetric.AVERAGE_DOWNSTREAM_BUILD_DURATION.
+						toString(),
 					BuildHistory.TableMetric.INVOKED_BUILDS.toString(),
-					BuildHistory.TableMetric.TOTAL_SERVER_DURATION.
-						toString())));
+					BuildHistory.TableMetric.TOTAL_SERVER_DURATION.toString()),
+				"testTypeTableData"));
 
 		sb.append("\n");
 
 		sb.append("\nvar reportName = \"Utilization Report\";");
 
-		buildHistoryReport.addFile("js/table-data.js", sb.toString());
+		buildHistoryReport.addFile(sb.toString(), "js/table-data.js");
 
 		return buildHistoryReport;
 	}
@@ -134,7 +289,7 @@ public class BuildHistoryReport {
 		_outputDir = outputDir;
 	}
 
-	public void addFile(String fileName, String fileContent) {
+	public void addFile(String fileContent, String fileName) {
 		_fileMap.put(new File(_outputDir, fileName), fileContent);
 	}
 
@@ -144,9 +299,9 @@ public class BuildHistoryReport {
 		for (String fileName : fileNames) {
 			try {
 				addFile(
-					fileName,
 					JenkinsResultsParserUtil.getResourceFileContent(
-						resourceDirPath + fileName));
+						resourceDirPath + fileName),
+					fileName);
 			}
 			catch (IOException ioException) {
 				System.out.println(
@@ -183,19 +338,19 @@ public class BuildHistoryReport {
 			_getLocalDateTime(startDateString));
 	}
 
-	private static String _getTableDataJSFileContent(
+	private static String _getTableDataJavaScriptVariable(
 		Collection<BuildHistory> buildHistories, String groupIdentifierName,
 		int intervalDays, String mergedBuildHistoryName) {
 
-		return _getTableDataJSFileContent(
+		return _getTableDataJavaScriptVariable(
 			buildHistories, groupIdentifierName, intervalDays,
-			mergedBuildHistoryName, "tableData", null);
+			mergedBuildHistoryName, null, "tableData");
 	}
 
-	private static String _getTableDataJSFileContent(
+	private static String _getTableDataJavaScriptVariable(
 		Collection<BuildHistory> buildHistories, String groupIdentifierName,
-		int intervalDays, String mergedBuildHistoryName, String tableName,
-		List<String> metricNames) {
+		int intervalDays, String mergedBuildHistoryName,
+		List<String> metricNames, String tableName) {
 
 		JSONArray jsonArray = new JSONArray();
 
@@ -228,10 +383,10 @@ public class BuildHistoryReport {
 			jsonArray.putAll(tableJSONArray);
 		}
 
-		return "var " + tableName + " = " + jsonArray.toString();
+		return "var " + tableName + " = " + jsonArray.toString() + ";\n";
 	}
 
-	private static String _getTimelineDataJSFileContent(
+	private static String _getTimelineDataJavaScriptVariable(
 		Collection<BuildHistory> buildHistories, long duration,
 		long startTime) {
 
@@ -250,6 +405,41 @@ public class BuildHistoryReport {
 		);
 
 		return "var timelineData = " + jsonObject.toString();
+	}
+
+	private static URL _getURL(String url) {
+		if (!JenkinsResultsParserUtil.isURL(url)) {
+			return null;
+		}
+
+		try {
+			return new URL(url);
+		}
+		catch (MalformedURLException malformedURLException) {
+			return null;
+		}
+	}
+
+	private static String _getWeeklyServerDurationJavaScriptVariable() {
+		StringBuilder sb = new StringBuilder();
+
+		try {
+			long maxNodeCount = Long.parseLong(
+				JenkinsResultsParserUtil.getBuildProperty(
+					"report.ci.max.node.count"));
+
+			if (maxNodeCount != 0) {
+				sb.append("var maxWeeklyServerDurationMillis = ");
+				sb.append(maxNodeCount * 7 * 24 * 60 * 60 * 1000);
+				sb.append(";\n");
+			}
+		}
+		catch (IOException ioException) {
+			System.out.println(
+				"Unable to get build property \"report.ci.max.node.count\"");
+		}
+
+		return sb.toString();
 	}
 
 	private static BuildHistoryReport _newTestSuiteReport(
@@ -271,7 +461,7 @@ public class BuildHistoryReport {
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(
-			_getTableDataJSFileContent(
+			_getTableDataJavaScriptVariable(
 				buildHistories, "Test Suite Name", 1, "[Total]"));
 
 		sb.append("\nvar reportName = \"");
@@ -280,7 +470,7 @@ public class BuildHistoryReport {
 
 		sb.append("\";");
 
-		buildHistoryReport.addFile("js/table-data.js", sb.toString());
+		buildHistoryReport.addFile(sb.toString(), "js/table-data.js");
 
 		return buildHistoryReport;
 	}

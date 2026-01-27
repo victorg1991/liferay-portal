@@ -10,8 +10,11 @@ package com.liferay.jenkins.results.parser;
  */
 public class DefaultDownstreamBuild extends BaseDownstreamBuild {
 
-	protected DefaultDownstreamBuild(String url, TopLevelBuild topLevelBuild) {
-		super(url, topLevelBuild);
+	protected DefaultDownstreamBuild(
+		String buildURL, DownstreamBuildReport cachedDownstreamBuildReport,
+		TopLevelBuild topLevelBuild) {
+
+		super(buildURL, cachedDownstreamBuildReport, topLevelBuild);
 	}
 
 }

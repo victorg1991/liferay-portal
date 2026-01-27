@@ -30,8 +30,8 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.FriendlyURLNormalizerUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.product.navigation.personal.menu.configuration.PersonalMenuConfiguration;
 import com.liferay.product.navigation.personal.menu.configuration.PersonalMenuConfigurationRegistry;
 
@@ -171,7 +171,7 @@ public class PersonalApplicationURLUtil {
 			layoutTypePortlet.setLayoutTemplateId(
 				userId, "1_column_dynamic", false);
 
-			return LayoutLocalServiceUtil.updateLayout(
+			return LayoutLocalServiceUtil.updateTypeSettings(
 				layout.getGroupId(), layout.isPrivateLayout(),
 				layout.getLayoutId(), layout.getTypeSettings());
 		}

@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,6 +34,37 @@ import org.json.JSONObject;
  */
 public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 
+	public File archive(String fileName) {
+		File archiveFile = super.archive(fileName);
+
+		String upstreamBranchName = getUpstreamBranchName();
+
+		if (!JenkinsResultsParserUtil.isCloudCINode() ||
+			upstreamBranchName.startsWith("ee-")) {
+
+			return archiveFile;
+		}
+
+		setUpYarn();
+
+		GitUtil.ExecutionResult executionResult = executeBashCommands(
+			3, GitUtil.MILLIS_RETRY_DELAY, 1000 * 60 * 10,
+			JenkinsResultsParserUtil.combine(
+				"zip -r -y ", fileName,
+				" $(git ls-files --directory --no-empty-directory --others | ",
+				"grep -v \\\\.gradle/)"));
+
+		if (executionResult.getExitValue() != 0) {
+			throw new GitWorkingDirectoryRuntimeException(
+				this,
+				JenkinsResultsParserUtil.combine(
+					"Failed to add build/node to ", fileName, "\n",
+					executionResult.getStandardError()));
+		}
+
+		return archiveFile;
+	}
+
 	public Properties getAppServerProperties() {
 		if (_appServerProperties != null) {
 			return _appServerProperties;
@@ -40,6 +74,17 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 			new File(getWorkingDirectory(), "app.server.properties"));
 
 		return _appServerProperties;
+	}
+
+	public List<File> getJSUnitFiles() {
+		if (_jsUnitFiles != null) {
+			return _jsUnitFiles;
+		}
+
+		_jsUnitFiles = new ArrayList<>(
+			findFiles(null, "describe\\( -- '*.js' '*.jsx' '*.ts' '*.tsx'"));
+
+		return _jsUnitFiles;
 	}
 
 	public String getMajorPortalVersion() {
@@ -314,66 +359,75 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 		return _testProperties;
 	}
 
-	protected PortalGitWorkingDirectory(
-			String upstreamBranchName, String workingDirectoryPath)
-		throws IOException {
+	public void setUpYarn() {
+		File workingDirectory = getWorkingDirectory();
 
-		super(upstreamBranchName, workingDirectoryPath);
-	}
+		try {
+			Map<String, String> filteredEnv = new HashMap<>();
 
-	protected PortalGitWorkingDirectory(
-			String upstreamBranchName, String workingDirectoryPath,
-			String gitRepositoryName)
-		throws IOException {
+			Map<String, String> env = System.getenv();
 
-		super(upstreamBranchName, workingDirectoryPath, gitRepositoryName);
-	}
+			for (Map.Entry<String, String> entry : env.entrySet()) {
+				String key = entry.getKey();
 
-	private boolean _isNPMTestModuleDir(File moduleDir) {
-		List<File> packageJSONFiles = JenkinsResultsParserUtil.findFiles(
-			moduleDir, "package\\.json");
+				if (!key.startsWith("ANT_") && !key.startsWith("JAVA_")) {
+					continue;
+				}
 
-		for (File packageJSONFile : packageJSONFiles) {
-			JSONObject jsonObject = null;
-
-			try {
-				jsonObject = JenkinsResultsParserUtil.createJSONObject(
-					JenkinsResultsParserUtil.read(packageJSONFile));
-			}
-			catch (IOException ioException) {
-				System.out.println(
-					"Unable to read invalid JSON " + packageJSONFile.getPath());
-
-				continue;
-			}
-			catch (JSONException jsonException) {
-				System.out.println(
-					"Invalid JSON file " + packageJSONFile.getPath());
-
-				continue;
+				filteredEnv.put(key, entry.getValue());
 			}
 
-			if (!jsonObject.has("scripts")) {
-				continue;
+			AntUtil.callTarget(
+				workingDirectory, "build.xml", "setup-sdk setup-yarn", null,
+				filteredEnv);
+
+			File nodeModulesCacheDir = new File(
+				workingDirectory, "modules/node_modules_cache");
+
+			if (!nodeModulesCacheDir.exists()) {
+				return;
 			}
 
-			JSONObject scriptsJSONObject = jsonObject.getJSONObject("scripts");
+			for (File file :
+					nodeModulesCacheDir.listFiles(
+						JenkinsResultsParserUtil.newFilenameFilter(
+							"@esbuild-linux-.*(arm64|x64).*"))) {
 
-			if (!scriptsJSONObject.has("test")) {
-				continue;
+				Matcher matcher = _esBuildFileNamePattern.matcher(
+					file.getName());
+
+				if (matcher.find()) {
+					File esBuildDir = new File(
+						getWorkingDirectory(),
+						"modules/node_modules/@esbuild/" + matcher.group(1));
+
+					if (esBuildDir.exists()) {
+						continue;
+					}
+
+					File tmpDir = new File(getWorkingDirectory(), "tmp");
+
+					JenkinsResultsParserUtil.unTarGzip(file, tmpDir);
+
+					JenkinsResultsParserUtil.move(
+						new File(tmpDir, "package"), esBuildDir);
+
+					File esBuildBinFile = new File(esBuildDir, "bin/esbuild");
+
+					JenkinsResultsParserUtil.executeBashCommands(
+						"chmod +x " + esBuildBinFile);
+
+					JenkinsResultsParserUtil.delete(tmpDir);
+				}
 			}
-
-			return true;
 		}
-
-		return false;
+		catch (AntException | IOException | TimeoutException exception) {
+			throw new GitWorkingDirectoryRuntimeException(
+				this, "Failed to run setup-yarn in " + workingDirectory);
+		}
 	}
 
-	private Properties _appServerProperties;
-	private Properties _releaseProperties;
-	private Properties _testProperties;
-
-	private static class Module {
+	public static class Module {
 
 		public static Module getModule(Path path) {
 			File file = path.toFile();
@@ -430,5 +484,68 @@ public class PortalGitWorkingDirectory extends GitWorkingDirectory {
 		private final int _priority;
 
 	}
+
+	protected PortalGitWorkingDirectory(
+			String upstreamBranchName, String workingDirectoryPath)
+		throws IOException {
+
+		super(upstreamBranchName, workingDirectoryPath);
+	}
+
+	protected PortalGitWorkingDirectory(
+			String upstreamBranchName, String workingDirectoryPath,
+			String gitRepositoryName)
+		throws IOException {
+
+		super(upstreamBranchName, workingDirectoryPath, gitRepositoryName);
+	}
+
+	private boolean _isNPMTestModuleDir(File moduleDir) {
+		List<File> packageJSONFiles = JenkinsResultsParserUtil.findFiles(
+			moduleDir, "package\\.json");
+
+		for (File packageJSONFile : packageJSONFiles) {
+			JSONObject jsonObject = null;
+
+			try {
+				jsonObject = JenkinsResultsParserUtil.createJSONObject(
+					JenkinsResultsParserUtil.read(packageJSONFile));
+			}
+			catch (IOException ioException) {
+				System.out.println(
+					"Unable to read invalid JSON " + packageJSONFile.getPath());
+
+				continue;
+			}
+			catch (JSONException jsonException) {
+				System.out.println(
+					"Invalid JSON file " + packageJSONFile.getPath());
+
+				continue;
+			}
+
+			if (!jsonObject.has("scripts")) {
+				continue;
+			}
+
+			JSONObject scriptsJSONObject = jsonObject.getJSONObject("scripts");
+
+			if (!scriptsJSONObject.has("test")) {
+				continue;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private static final Pattern _esBuildFileNamePattern = Pattern.compile(
+		"@esbuild-(linux-.*?)-.*");
+
+	private Properties _appServerProperties;
+	private List<File> _jsUnitFiles;
+	private Properties _releaseProperties;
+	private Properties _testProperties;
 
 }

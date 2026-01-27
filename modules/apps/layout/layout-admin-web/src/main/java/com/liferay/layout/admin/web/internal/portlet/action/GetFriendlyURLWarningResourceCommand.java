@@ -53,7 +53,13 @@ public class GetFriendlyURLWarningResourceCommand
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
-		if (!FeatureFlagManagerUtil.isEnabled("LPS-174417")) {
+		long groupId = ParamUtil.getLong(resourceRequest, "groupId");
+
+		Group group = _groupLocalService.getGroup(groupId);
+
+		if (!FeatureFlagManagerUtil.isEnabled(
+				group.getCompanyId(), "LPS-174417")) {
+
 			JSONPortletResponseUtil.writeJSON(
 				resourceRequest, resourceResponse,
 				JSONUtil.put("hasWarnings", false));
@@ -79,7 +85,7 @@ public class GetFriendlyURLWarningResourceCommand
 			Layout layout = _layoutLocalService.getLayout(plid);
 
 			if (!_layoutSetPrototypeHelper.hasDuplicatedFriendlyURLs(
-					layout.getUuid(), layout.getGroupId(),
+					layout.getExternalReferenceCode(), layout.getGroupId(),
 					layout.isPrivateLayout(), friendlyURL)) {
 
 				JSONPortletResponseUtil.writeJSON(
@@ -108,7 +114,6 @@ public class GetFriendlyURLWarningResourceCommand
 			return;
 		}
 
-		long groupId = ParamUtil.getLong(resourceRequest, "groupId");
 		String name = ParamUtil.getString(resourceRequest, "name");
 
 		if ((groupId == 0) || Validator.isNull(name)) {

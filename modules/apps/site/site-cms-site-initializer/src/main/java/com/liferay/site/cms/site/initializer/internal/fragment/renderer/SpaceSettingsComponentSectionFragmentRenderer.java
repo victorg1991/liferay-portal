@@ -5,18 +5,28 @@
 
 package com.liferay.site.cms.site.initializer.internal.fragment.renderer;
 
-import com.liferay.depot.model.DepotEntry;
 import com.liferay.fragment.renderer.FragmentRenderer;
 import com.liferay.fragment.renderer.FragmentRendererContext;
-import com.liferay.info.constants.InfoDisplayWebKeys;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.site.cms.site.initializer.internal.util.InfoItemUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.Locale;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Verónica González
@@ -42,29 +52,48 @@ public class SpaceSettingsComponentSectionFragmentRenderer
 
 	@Override
 	protected Map<String, Object> getProps(
-		FragmentRendererContext fragmentRendererContext,
-		HttpServletRequest httpServletRequest) {
+			FragmentRendererContext fragmentRendererContext,
+			HttpServletRequest httpServletRequest)
+		throws PortalException {
 
-		Long depotEntryId = null;
-		Long groupId = null;
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
-		Object object = httpServletRequest.getAttribute(
-			InfoDisplayWebKeys.INFO_ITEM);
+		JSONArray jsonArray = _jsonFactory.createJSONArray();
 
-		if (object instanceof DepotEntry) {
-			DepotEntry depotEntry = (DepotEntry)object;
+		for (Locale availableLocale :
+				LanguageUtil.getAvailableLocales(
+					themeDisplay.getScopeGroupId())) {
 
-			depotEntryId = depotEntry.getDepotEntryId();
-			groupId = depotEntry.getGroupId();
+			jsonArray.put(
+				JSONUtil.put(
+					"label",
+					availableLocale.getDisplayName(themeDisplay.getLocale())
+				).put(
+					"value", LanguageUtil.getLanguageId(availableLocale)
+				));
 		}
+
+		long groupId = InfoItemUtil.getGroupId(httpServletRequest);
+
+		Group group = _groupLocalService.getGroup(groupId);
 
 		return HashMapBuilder.<String, Object>put(
 			"backURL", ParamUtil.getString(httpServletRequest, "redirect")
 		).put(
-			"depotEntryId", depotEntryId
+			"companyAvailableLanguages", jsonArray
+		).put(
+			"externalReferenceCode", group.getExternalReferenceCode()
 		).put(
 			"groupId", groupId
 		).build();
 	}
+
+	@Reference
+	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private JSONFactory _jsonFactory;
 
 }

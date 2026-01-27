@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
@@ -24,14 +24,6 @@ const renderComponent = (state?: Partial<PicklistContext.State>) => {
 };
 
 describe('PicklistOptions', () => {
-	beforeEach(() => {
-		(global as any).Liferay.Language.direction = {
-			en_US: 'rtl',
-		};
-
-		jest.clearAllMocks();
-	});
-
 	it('shows an empty state when there are no picklists', () => {
 		renderComponent({options: new Map()});
 
@@ -140,7 +132,7 @@ describe('PicklistOptions', () => {
 
 		await waitFor(() => {
 			expect(
-				screen.getByText('x-of-x-items-selected')
+				screen.getByText(`all-selected-x-of-x-items`)
 			).toBeInTheDocument();
 		});
 

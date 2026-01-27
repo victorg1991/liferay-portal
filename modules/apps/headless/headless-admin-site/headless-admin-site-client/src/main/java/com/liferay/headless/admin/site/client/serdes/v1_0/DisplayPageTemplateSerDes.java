@@ -74,21 +74,6 @@ public class DisplayPageTemplateSerDes {
 			sb.append(displayPageTemplate.getCreator());
 		}
 
-		if (displayPageTemplate.getCreatorExternalReferenceCode() != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"creatorExternalReferenceCode\": ");
-
-			sb.append("\"");
-
-			sb.append(
-				_escape(displayPageTemplate.getCreatorExternalReferenceCode()));
-
-			sb.append("\"");
-		}
-
 		if (displayPageTemplate.getDateCreated() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -258,14 +243,37 @@ public class DisplayPageTemplateSerDes {
 			sb.append(String.valueOf(displayPageTemplate.getParentFolder()));
 		}
 
-		if (displayPageTemplate.getThumbnail() != null) {
+		if (displayPageTemplate.getPermissions() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"thumbnail\": ");
+			sb.append("\"permissions\": ");
 
-			sb.append(String.valueOf(displayPageTemplate.getThumbnail()));
+			sb.append("[");
+
+			for (int i = 0; i < displayPageTemplate.getPermissions().length;
+				 i++) {
+
+				sb.append(displayPageTemplate.getPermissions()[i]);
+
+				if ((i + 1) < displayPageTemplate.getPermissions().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
+		if (displayPageTemplate.getThumbnailURLReference() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"thumbnailURLReference\": ");
+
+			sb.append(
+				String.valueOf(displayPageTemplate.getThumbnailURLReference()));
 		}
 
 		if (displayPageTemplate.getUuid() != null) {
@@ -321,16 +329,6 @@ public class DisplayPageTemplateSerDes {
 		else {
 			map.put(
 				"creator", String.valueOf(displayPageTemplate.getCreator()));
-		}
-
-		if (displayPageTemplate.getCreatorExternalReferenceCode() == null) {
-			map.put("creatorExternalReferenceCode", null);
-		}
-		else {
-			map.put(
-				"creatorExternalReferenceCode",
-				String.valueOf(
-					displayPageTemplate.getCreatorExternalReferenceCode()));
 		}
 
 		if (displayPageTemplate.getDateCreated() == null) {
@@ -441,13 +439,22 @@ public class DisplayPageTemplateSerDes {
 				String.valueOf(displayPageTemplate.getParentFolder()));
 		}
 
-		if (displayPageTemplate.getThumbnail() == null) {
-			map.put("thumbnail", null);
+		if (displayPageTemplate.getPermissions() == null) {
+			map.put("permissions", null);
 		}
 		else {
 			map.put(
-				"thumbnail",
-				String.valueOf(displayPageTemplate.getThumbnail()));
+				"permissions",
+				String.valueOf(displayPageTemplate.getPermissions()));
+		}
+
+		if (displayPageTemplate.getThumbnailURLReference() == null) {
+			map.put("thumbnailURLReference", null);
+		}
+		else {
+			map.put(
+				"thumbnailURLReference",
+				String.valueOf(displayPageTemplate.getThumbnailURLReference()));
 		}
 
 		if (displayPageTemplate.getUuid() == null) {
@@ -479,11 +486,6 @@ public class DisplayPageTemplateSerDes {
 				return false;
 			}
 			else if (Objects.equals(jsonParserFieldName, "creator")) {
-				return false;
-			}
-			else if (Objects.equals(
-						jsonParserFieldName, "creatorExternalReferenceCode")) {
-
 				return false;
 			}
 			else if (Objects.equals(jsonParserFieldName, "dateCreated")) {
@@ -532,7 +534,12 @@ public class DisplayPageTemplateSerDes {
 			else if (Objects.equals(jsonParserFieldName, "parentFolder")) {
 				return false;
 			}
-			else if (Objects.equals(jsonParserFieldName, "thumbnail")) {
+			else if (Objects.equals(jsonParserFieldName, "permissions")) {
+				return false;
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "thumbnailURLReference")) {
+
 				return false;
 			}
 			else if (Objects.equals(jsonParserFieldName, "uuid")) {
@@ -558,14 +565,6 @@ public class DisplayPageTemplateSerDes {
 				if (jsonParserFieldValue != null) {
 					displayPageTemplate.setCreator(
 						CreatorSerDes.toDTO((String)jsonParserFieldValue));
-				}
-			}
-			else if (Objects.equals(
-						jsonParserFieldName, "creatorExternalReferenceCode")) {
-
-				if (jsonParserFieldValue != null) {
-					displayPageTemplate.setCreatorExternalReferenceCode(
-						(String)jsonParserFieldValue);
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "dateCreated")) {
@@ -663,10 +662,32 @@ public class DisplayPageTemplateSerDes {
 							(String)jsonParserFieldValue));
 				}
 			}
-			else if (Objects.equals(jsonParserFieldName, "thumbnail")) {
+			else if (Objects.equals(jsonParserFieldName, "permissions")) {
 				if (jsonParserFieldValue != null) {
-					displayPageTemplate.setThumbnail(
-						ItemExternalReferenceSerDes.toDTO(
+					Object[] jsonParserFieldValues =
+						(Object[])jsonParserFieldValue;
+
+					com.liferay.headless.admin.site.client.permission.
+						Permission[] permissionsArray = new
+						com.liferay.headless.admin.site.client.permission.
+							Permission[jsonParserFieldValues.length];
+
+					for (int i = 0; i < permissionsArray.length; i++) {
+						permissionsArray[i] =
+							com.liferay.headless.admin.site.client.permission.
+								Permission.toDTO(
+									(String)jsonParserFieldValues[i]);
+					}
+
+					displayPageTemplate.setPermissions(permissionsArray);
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "thumbnailURLReference")) {
+
+				if (jsonParserFieldValue != null) {
+					displayPageTemplate.setThumbnailURLReference(
+						ThumbnailURLReferenceSerDes.toDTO(
 							(String)jsonParserFieldValue));
 				}
 			}

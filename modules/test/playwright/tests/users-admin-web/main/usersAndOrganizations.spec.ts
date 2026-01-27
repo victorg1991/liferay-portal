@@ -8,11 +8,13 @@ import {createReadStream} from 'fs';
 import path from 'path';
 
 import {accountSettingsPagesTest} from '../../../fixtures/accountSettingsPagesTest';
-import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
+import {accountsPagesTest} from '../../../fixtures/accountsPagesTest';
 import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
 import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {usersAndOrganizationsPagesTest} from '../../../fixtures/usersAndOrganizationsPagesTest';
+import {createCategories} from '../../../helpers/CreateCategories';
+import getGlobalSiteId from '../../../utils/getGlobalSiteId';
 import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import performLogin, {
@@ -21,13 +23,16 @@ import performLogin, {
 	userData,
 } from '../../../utils/performLogin';
 import {waitForAlert} from '../../../utils/waitForAlert';
+import {assetCategoriesPagesTest} from '../../asset-categories-admin-web/main/fixtures/assetCategoriesAdminPagesTest';
 
 export const test = mergeTests(
+	accountsPagesTest,
 	accountSettingsPagesTest,
-	apiHelpersTest,
+	assetCategoriesPagesTest,
 	dataApiHelpersTest,
 	featureFlagsTest({
-		'LPD-47858': {enabled: true},
+		'LPD-35443': {enabled: true},
+		'LPD-35914': {enabled: true},
 	}),
 	loginTest(),
 	usersAndOrganizationsPagesTest
@@ -65,40 +70,78 @@ test(
 
 test(
 	'Check escape of memberships account name',
-	{tag: '@LPD-15224'},
-	async ({apiHelpers, editUserPage, page, usersAndOrganizationsPage}) => {
+	{tag: ['@LPD-15224', '@LPD-71476']},
+	async ({
+		accountUsersAccountSelectorPage,
+		apiHelpers,
+		editUserPage,
+		page,
+		usersAndOrganizationsPage,
+	}) => {
 		await page.goto('/');
 
-		const account = await apiHelpers.headlessAdminUser.postAccount({
-			name: '<img src="x" onError="alert(document.location)">',
+		const account1 = await apiHelpers.headlessAdminUser.postAccount({
+			name: '"></option><img src=x onerror=alert(document.location)',
 		});
 
 		await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
-			account.id,
+			account1.id,
 			['test@liferay.com']
 		);
 
-		try {
-			await usersAndOrganizationsPage.goToUsers();
+		const account2 = await apiHelpers.headlessAdminUser.postAccount({
+			name: '<img src="x" onError="alert(document.location)">',
+		});
 
-			await (
-				await usersAndOrganizationsPage.usersTableRowLink('test')
-			).click();
-			await editUserPage.membershipsLink.click();
+		page.on('dialog', async (dialog) => {
+			if (dialog.type() === 'alert') {
+				throw new Error('XSS');
+			}
+		});
 
-			await expect(
-				(
-					await editUserPage.membershipsAccountsTableRow(
-						0,
-						account.name,
-						true
-					)
-				).row
-			).toBeVisible();
-		}
-		finally {
-			await apiHelpers.headlessAdminUser.deleteAccount(account.id);
-		}
+		await usersAndOrganizationsPage.goToUsers();
+
+		await (
+			await usersAndOrganizationsPage.usersTableRowLink('test')
+		).click();
+		await editUserPage.membershipsLink.click();
+
+		await expect(
+			(
+				await editUserPage.membershipsAccountsTableRow(
+					0,
+					account1.name,
+					true
+				)
+			).row
+		).toBeVisible();
+
+		await editUserPage.selectAccountsButton.click();
+
+		await expect(
+			accountUsersAccountSelectorPage.accountsTable.searchInput
+		).toBeEditable();
+
+		await expect(
+			accountUsersAccountSelectorPage.accountsTable.cell('Active')
+		).toBeVisible();
+
+		await (
+			await accountUsersAccountSelectorPage.accountsTable.rowCheckbox(
+				account2.name
+			)
+		).click();
+		await page.getByRole('button', {name: 'Add'}).click();
+
+		await expect(
+			(
+				await editUserPage.membershipsAccountsTableRow(
+					0,
+					account2.name,
+					true
+				)
+			).row
+		).toBeVisible();
 	}
 );
 
@@ -117,6 +160,88 @@ test(
 		await editUserPage.generateWebDAVPasswordButton.click();
 
 		await expect(editUserPage.webDAVPasswordLabel).toBeVisible();
+	}
+);
+
+test(
+	'WebDAV password generation should not be allowed for users without update permission',
+	{tag: '@LPD-69623'},
+	async ({apiHelpers, editUserPage, page, usersAndOrganizationsPage}) => {
+		const user = await apiHelpers.headlessAdminUser.postUserAccount();
+
+		userData[user.alternateName] = {
+			name: user.givenName,
+			password: 'test',
+			surname: user.familyName,
+		};
+
+		const companyId = await page.evaluate(() => {
+			return Liferay.ThemeDisplay.getCompanyId();
+		});
+
+		const role = await apiHelpers.headlessAdminUser.postRole({
+			name: 'Role' + getRandomInt(),
+			rolePermissions: [
+				{
+					actionIds: ['ACCESS_IN_CONTROL_PANEL'],
+					primaryKey: companyId,
+					resourceName:
+						'com_liferay_users_admin_web_portlet_UsersAdminPortlet',
+					scope: 1,
+				},
+				{
+					actionIds: ['VIEW'],
+					primaryKey: companyId,
+					resourceName: 'com.liferay.portal.kernel.model.User',
+					scope: 1,
+				},
+			],
+		});
+
+		await apiHelpers.headlessAdminUser.postRoleByExternalReferenceCodeUserAccountAssociation(
+			role.externalReferenceCode,
+			user.id
+		);
+
+		await performLogout(page);
+		await performLogin(page, user.alternateName);
+
+		await page.goto(
+			'/group/control_panel/manage?p_p_id=com_liferay_users_admin_web_portlet_UsersAdminPortlet'
+		);
+
+		await (
+			await usersAndOrganizationsPage.usersTableRowLink(
+				user.alternateName
+			)
+		).click();
+
+		await expect(editUserPage.passwordLink).toBeVisible();
+
+		await editUserPage.passwordLink.click();
+
+		await expect(editUserPage.generateWebDAVPasswordButton).toBeEnabled();
+
+		const adminUser =
+			await apiHelpers.headlessAdminUser.getUserAccountByEmailAddress(
+				'test@liferay.com'
+			);
+
+		let currentUrl = page.url();
+
+		currentUrl = currentUrl.replace(
+			user.id.toString(),
+			adminUser.id.toString()
+		);
+
+		await page.goto(currentUrl);
+
+		await editUserPage.passwordLink.click();
+
+		await expect(editUserPage.passwordInput).toBeVisible();
+		await expect(
+			editUserPage.generateWebDAVPasswordButton
+		).not.toBeVisible();
 	}
 );
 
@@ -191,6 +316,8 @@ test(
 		await editOrganizationPage.organizationSiteLink.click();
 		await editOrganizationPage.createSiteToggle.check();
 		await editOrganizationPage.organizationSiteSaveButton.click();
+
+		await waitForAlert(page);
 
 		await siteSettingsPage.goToSiteSetting(
 			'Site Configuration',
@@ -479,7 +606,7 @@ test(
 		await customFieldLabel.click();
 		await customFieldLabel.fill('fieldTest');
 
-		const customFieldValue = page.getByLabel('Values Required Enter one');
+		const customFieldValue = page.getByLabel('Values Required');
 
 		await customFieldValue.waitFor({state: 'visible'});
 		await customFieldValue.click();
@@ -896,13 +1023,11 @@ test(
 
 		await siteMembershipsPage.goto(site.friendlyUrlPath);
 		await siteMembershipsPage.userGroupsLink.click();
-		await siteMembershipsPage.newUserGroupButton.click();
 
-		await expect(
-			siteMembershipsPage.assignUserGroupIFrameTitle
-		).toBeVisible();
-
-		await siteMembershipsPage.assignUserGroupTable.changeView('Table');
+		await expect(async () => {
+			await siteMembershipsPage.newUserGroupButton.click();
+			await siteMembershipsPage.assignUserGroupTable.changeView('Table');
+		}).toPass();
 
 		await expect(
 			siteMembershipsPage.assignUserGroupTable.cell(userGroup.name)
@@ -1181,6 +1306,8 @@ test(
 		await editOrganizationPage.organizationSiteLink.click();
 		await editOrganizationPage.createSiteToggle.check();
 		await editOrganizationPage.organizationSiteSaveButton.click();
+
+		await waitForAlert(page);
 
 		const siteUrl = `/${organization.name}`;
 
@@ -1546,6 +1673,220 @@ test(
 		).toHaveCount(1);
 		await expect(
 			usersAndOrganizationsPage.statusText('Approved')
+		).toBeVisible();
+	}
+);
+
+test(
+	'Organization Administrator can remove member from organization from User menu as well',
+	{tag: ['@LPD-61092']},
+	async ({apiHelpers, editUserPage, page, usersAndOrganizationsPage}) => {
+		const organization =
+			await apiHelpers.headlessAdminUser.postOrganization();
+
+		const organizationAdministratorUser =
+			await apiHelpers.headlessAdminUser.postUserAccount();
+
+		userData[organizationAdministratorUser.alternateName] = {
+			name: organizationAdministratorUser.givenName,
+			password: 'test',
+			surname: organizationAdministratorUser.familyName,
+		};
+
+		await apiHelpers.headlessAdminUser.assignUserToOrganizationByEmailAddress(
+			organization.id,
+			organizationAdministratorUser.emailAddress
+		);
+
+		const orgRole = await apiHelpers.headlessAdminUser.getRoleByName(
+			'Organization Administrator'
+		);
+
+		await apiHelpers.headlessAdminUser.assignUserToOrganizationRole(
+			orgRole.id,
+			organizationAdministratorUser.id,
+			organization.id
+		);
+
+		const companyId = await page.evaluate(() => {
+			return Liferay.ThemeDisplay.getCompanyId();
+		});
+
+		const regularRole = await apiHelpers.headlessAdminUser.postRole({
+			name: getRandomString(),
+			rolePermissions: [
+				{
+					actionIds: ['ADD_USER'],
+					primaryKey: companyId,
+					resourceName: '90',
+					scope: 1,
+				},
+			],
+		});
+
+		await apiHelpers.headlessAdminUser.assignUserToRole(
+			regularRole.externalReferenceCode,
+			organizationAdministratorUser.id
+		);
+
+		const memberUser = await apiHelpers.headlessAdminUser.postUserAccount();
+
+		await apiHelpers.headlessAdminUser.assignUserToOrganizationByEmailAddress(
+			organization.id,
+			memberUser.emailAddress
+		);
+
+		await performLogout(page);
+		await performLoginViaApi({
+			page,
+			screenName: organizationAdministratorUser.alternateName,
+		});
+
+		await usersAndOrganizationsPage.goToUsersWithLimitedAccess();
+		await usersAndOrganizationsPage.goToUser(memberUser.alternateName);
+
+		await expect(editUserPage.changeImageButton).toBeVisible();
+
+		await editUserPage.organizationsLink.click();
+
+		await expect(
+			editUserPage.organizationsTable.getByText(organization.name)
+		).toHaveCount(1);
+
+		await Promise.all([
+			editUserPage
+				.organizationsTableRemoveButton(organization.name)
+				.click(),
+			page.waitForResponse((response: any) => response.status() === 200),
+		]);
+
+		await expect(usersAndOrganizationsPage.usersTable).toBeVisible();
+	}
+);
+
+test(
+	'Admin can assign memberships when a required vocabulary exists',
+	{tag: ['@LPD-63144']},
+	async ({
+		apiHelpers,
+		assetCategoriesAdminPage,
+		editUserPage,
+		page,
+		usersAndOrganizationsPage,
+		vocabulariesEditPage,
+	}) => {
+		const categoryName = getRandomString();
+		const vocabularyName = getRandomString();
+
+		const categories: Array<any> = await createCategories({
+			apiHelpers,
+			categoryNames: [{name: categoryName}],
+			siteId: await getGlobalSiteId(apiHelpers),
+			vocabularyName,
+		});
+
+		apiHelpers.data.push({
+			id: categories[0].vocabularyId,
+			type: 'taxonomyVocabulary',
+		});
+
+		const userAccount =
+			await apiHelpers.headlessAdminUser.postUserAccount();
+		const userGroup = await apiHelpers.headlessAdminUser.postUserGroup();
+
+		await assetCategoriesAdminPage.goto('/global');
+		await assetCategoriesAdminPage.gotoVocabulary(vocabularyName);
+
+		await vocabulariesEditPage.goto(vocabularyName);
+		await vocabulariesEditPage.toggleRequired();
+
+		await usersAndOrganizationsPage.goToUsers();
+		await usersAndOrganizationsPage.usersDataTable.changeView('table');
+		await (
+			await usersAndOrganizationsPage.usersTableRowLink(
+				userAccount.alternateName
+			)
+		).click();
+
+		await editUserPage.categoryInput(vocabularyName + 'Required').click();
+		await editUserPage.categoryOption(categoryName).click({timeout: 1000});
+		await editUserPage.saveButton.click();
+		await editUserPage.membershipsLink.click();
+
+		await expect(editUserPage.membershipsNoUserGroupsMessage).toBeVisible();
+
+		await expect(async () => {
+			await editUserPage.selectUserGroupsButton.click();
+			await editUserPage.selectUserGroupTable.changeView('table');
+		}).toPass();
+
+		await editUserPage.selectUserGroupTable.cell(userGroup.name).click();
+
+		await expect(
+			(
+				await editUserPage.membershipsUserGroupsTableRow(
+					0,
+					userGroup.name,
+					true
+				)
+			).row
+		).toBeVisible();
+
+		await editUserPage.saveButton.click();
+
+		await waitForAlert(page);
+	}
+);
+
+test(
+	'Test XSS vulnerability when adding user with malicious first name to an organization',
+	{tag: ['@LPD-72282']},
+	async ({
+		apiHelpers,
+		organizationUsersPage,
+		page,
+		usersAndOrganizationsPage,
+	}) => {
+		const userAccount = await apiHelpers.headlessAdminUser.postUserAccount({
+			alternateName: `xsstest${getRandomInt()}`,
+			emailAddress: `xsstest${getRandomInt()}@liferay.com`,
+			familyName: `TestUser${getRandomInt()}`,
+			givenName: `<img src=x onerror="alert('x')">`,
+		});
+
+		const organization =
+			await apiHelpers.headlessAdminUser.postOrganization();
+
+		await apiHelpers.headlessAdminUser.assignUserToOrganizationByEmailAddress(
+			organization.id,
+			userAccount.emailAddress
+		);
+
+		apiHelpers.data.push({
+			id: `${organization.id}_${userAccount.emailAddress}`,
+			type: 'organizationUserAccountAssociation',
+		});
+
+		await usersAndOrganizationsPage.goToOrganizations();
+
+		await usersAndOrganizationsPage.organizationsTable
+			.valueLink(organization.name)
+			.click();
+
+		await expect(organizationUsersPage.filterButton).toBeVisible();
+
+		page.on('dialog', async (dialog) => {
+			if (dialog.type() === 'alert') {
+				throw new Error('XSS');
+			}
+		});
+
+		await organizationUsersPage.organizationUsersTable.changeView('Cards');
+
+		await expect(
+			await organizationUsersPage.screenName(
+				userAccount.givenName + ' ' + userAccount.familyName
+			)
 		).toBeVisible();
 	}
 );

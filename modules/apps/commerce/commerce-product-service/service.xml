@@ -84,7 +84,7 @@
 		<finder name="AccountEntryId" return-type="Collection">
 			<finder-column name="accountEntryId" />
 		</finder>
-		<finder name="SiteGroupId" return-type="CommerceChannel">
+		<finder name="SiteGroupId" return-type="Collection">
 			<finder-column name="siteGroupId" />
 		</finder>
 	</entity>
@@ -346,7 +346,6 @@
 		<column name="shippingExtraPrice" type="double" />
 		<column name="shipSeparately" type="boolean" />
 		<column name="taxExempt" type="boolean" />
-		<column name="visible" type="boolean" />
 		<column name="weight" type="double" />
 		<column name="width" type="double" />
 
@@ -372,11 +371,6 @@
 			<finder-column name="classNameId" />
 			<finder-column name="classPK" />
 			<finder-column name="CPConfigurationListId" />
-		</finder>
-		<finder name="C_C_V" return-type="Collection">
-			<finder-column name="classNameId" />
-			<finder-column name="classPK" />
-			<finder-column name="visible" />
 		</finder>
 	</entity>
 	<entity local-service="true" name="CPConfigurationEntrySetting" uuid="true">
@@ -414,7 +408,7 @@
 		<finder name="CompanyId" return-type="Collection">
 			<finder-column name="companyId" />
 		</finder>
-		<finder name="C_T" return-type="CPConfigurationEntrySetting">
+		<finder name="C_T" return-type="CPConfigurationEntrySetting" unique="true">
 			<finder-column name="CPConfigurationEntryId" />
 			<finder-column name="type" />
 		</finder>
@@ -464,14 +458,14 @@
 		<finder name="CompanyId" return-type="Collection">
 			<finder-column name="companyId" />
 		</finder>
-		<finder name="ParentCPConfigurationListId" return-type="CPConfigurationList">
+		<finder name="ParentCPConfigurationListId" return-type="Collection">
 			<finder-column name="parentCPConfigurationListId" />
 		</finder>
 		<finder name="G_C" return-type="Collection">
 			<finder-column arrayable-operator="OR" name="groupId" />
 			<finder-column name="companyId" />
 		</finder>
-		<finder name="G_M" return-type="CPConfigurationList">
+		<finder name="G_M" return-type="Collection">
 			<finder-column name="groupId" />
 			<finder-column name="master" />
 		</finder>
@@ -592,6 +586,7 @@
 		<!-- Localized entity -->
 
 		<localized-entity>
+			<column name="CProductId" type="long" />
 			<localized-column name="name" />
 			<localized-column name="shortDescription" />
 			<localized-column name="description" />
@@ -629,7 +624,7 @@
 			<finder-column name="groupId" />
 			<finder-column name="status" />
 		</finder>
-		<finder name="C_V" return-type="CPDefinition">
+		<finder name="C_V" return-type="Collection">
 			<finder-column name="CProductId" />
 			<finder-column name="version" />
 		</finder>
@@ -1140,7 +1135,7 @@
 			<finder-column name="CPDefinitionOptionRelId" />
 			<finder-column name="CPInstanceId" />
 		</finder>
-		<finder name="CDOVRI_CII" return-type="CPInstanceOptionValueRel">
+		<finder name="CDOVRI_CII" return-type="CPInstanceOptionValueRel" unique="true">
 			<finder-column name="CPDefinitionOptionValueRelId" />
 			<finder-column name="CPInstanceId" />
 		</finder>
@@ -1482,7 +1477,7 @@
 		<finder name="ListTypeDefinitionId" return-type="Collection">
 			<finder-column name="listTypeDefinitionId" />
 		</finder>
-		<finder name="C_L" return-type="CPSpecificationOptionListTypeDefinitionRel">
+		<finder name="C_L" return-type="CPSpecificationOptionListTypeDefinitionRel" unique="true">
 			<finder-column name="CPSpecificationOptionId" />
 			<finder-column name="listTypeDefinitionId" />
 		</finder>
@@ -1522,6 +1517,7 @@
 		<exception>CommerceCatalogProducts</exception>
 		<exception>CommerceCatalogSystem</exception>
 		<exception>CommerceChannelAccountEntryRelType</exception>
+		<exception>CommerceChannelName</exception>
 		<exception>CommerceChannelType</exception>
 		<exception>CPAttachmentFileEntryCDNURL</exception>
 		<exception>CPAttachmentFileEntryDisplayDate</exception>
@@ -1529,6 +1525,7 @@
 		<exception>CPAttachmentFileEntryName</exception>
 		<exception>CPAttachmentFileEntryProtocol</exception>
 		<exception>CPAttachmentFileEntrySize</exception>
+		<exception>CPConfigurationEntryAllowedOrderQuantities</exception>
 		<exception>CPConfigurationEntryQuantity</exception>
 		<exception>CPConfigurationListMaster</exception>
 		<exception>CPConfigurationListParentCPConfigurationListGroupId</exception>

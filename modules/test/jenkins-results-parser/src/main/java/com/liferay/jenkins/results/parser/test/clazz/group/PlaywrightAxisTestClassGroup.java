@@ -5,10 +5,17 @@
 
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
+import com.liferay.jenkins.results.parser.DownstreamBuildReport;
+import com.liferay.jenkins.results.parser.TestReport;
 import com.liferay.jenkins.results.parser.test.clazz.PlaywrightJUnitTestClass;
+import com.liferay.jenkins.results.parser.test.clazz.PlaywrightTestClassMethod;
 import com.liferay.jenkins.results.parser.test.clazz.TestClass;
+import com.liferay.jenkins.results.parser.test.clazz.TestClassMethod;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.json.JSONObject;
 
@@ -16,6 +23,27 @@ import org.json.JSONObject;
  * @author Kenji Heigel
  */
 public class PlaywrightAxisTestClassGroup extends AxisTestClassGroup {
+
+	@Override
+	public List<DownstreamBuildReport> getCachedDownstreamBuildReports() {
+		if (!isBuildCachingEnabled() || !isResultsCached()) {
+			return null;
+		}
+
+		Set<DownstreamBuildReport> cachedDownstreamBuildReports =
+			new HashSet<>();
+
+		for (PlaywrightTestClassMethod playwrightTestClassMethod :
+				getPlaywrightTestClassMethods()) {
+
+			DownstreamBuildReport downstreamBuildReport =
+				playwrightTestClassMethod.getCachedDownstreamBuildReport();
+
+			cachedDownstreamBuildReports.add(downstreamBuildReport);
+		}
+
+		return new ArrayList<>(cachedDownstreamBuildReports);
+	}
 
 	@Override
 	public Integer getMinimumSlaveRAM() {
@@ -43,30 +71,63 @@ public class PlaywrightAxisTestClassGroup extends AxisTestClassGroup {
 		return minimumSlaveRAM;
 	}
 
-	@Override
-	public String getSlaveLabel() {
+	public List<PlaywrightTestClassMethod> getPlaywrightTestClassMethods() {
+		List<PlaywrightTestClassMethod> playwrightTestClassMethods =
+			new ArrayList<>();
+
+		for (TestClass testClass : getTestClasses()) {
+			for (TestClassMethod testClassMethod :
+					testClass.getTestClassMethods()) {
+
+				if (!(testClassMethod instanceof PlaywrightTestClassMethod)) {
+					continue;
+				}
+
+				playwrightTestClassMethods.add(
+					(PlaywrightTestClassMethod)testClassMethod);
+			}
+		}
+
+		return playwrightTestClassMethods;
+	}
+
+	public Boolean isAnalyticsCloudEnabled() {
 		List<TestClass> testClasses = getTestClasses();
 
 		if (testClasses.isEmpty()) {
-			return super.getSlaveLabel();
+			return false;
 		}
 
-		TestClass testClass = testClasses.get(0);
+		for (TestClass testClass : testClasses) {
+			PlaywrightJUnitTestClass playwrightJUnitTestClass =
+				(PlaywrightJUnitTestClass)testClass;
 
-		if (!(testClass instanceof PlaywrightJUnitTestClass)) {
-			return super.getSlaveLabel();
+			if (playwrightJUnitTestClass.isAnalyticsCloudEnabled()) {
+				return true;
+			}
 		}
 
-		PlaywrightJUnitTestClass playwrightJUnitTestClass =
-			(PlaywrightJUnitTestClass)testClass;
+		return false;
+	}
 
-		String slaveLabel = playwrightJUnitTestClass.getSlaveLabel();
-
-		if (slaveLabel == null) {
-			return super.getSlaveLabel();
+	@Override
+	public boolean isResultsCached() {
+		if (!isBuildCachingEnabled()) {
+			return false;
 		}
 
-		return slaveLabel;
+		for (PlaywrightTestClassMethod playwrightTestClassMethod :
+				getPlaywrightTestClassMethods()) {
+
+			TestReport cachedTestReport =
+				playwrightTestClassMethod.getCachedTestReport();
+
+			if (cachedTestReport == null) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	protected PlaywrightAxisTestClassGroup(
@@ -79,6 +140,32 @@ public class PlaywrightAxisTestClassGroup extends AxisTestClassGroup {
 		JSONObject jsonObject, SegmentTestClassGroup segmentTestClassGroup) {
 
 		super(jsonObject, segmentTestClassGroup);
+	}
+
+	@Override
+	protected String getBaseSlaveLabel() {
+		List<TestClass> testClasses = getTestClasses();
+
+		if (testClasses.isEmpty()) {
+			return super.getBaseSlaveLabel();
+		}
+
+		TestClass testClass = testClasses.get(0);
+
+		if (!(testClass instanceof PlaywrightJUnitTestClass)) {
+			return super.getBaseSlaveLabel();
+		}
+
+		PlaywrightJUnitTestClass playwrightJUnitTestClass =
+			(PlaywrightJUnitTestClass)testClass;
+
+		String slaveLabel = playwrightJUnitTestClass.getSlaveLabel();
+
+		if (slaveLabel == null) {
+			return super.getBaseSlaveLabel();
+		}
+
+		return slaveLabel;
 	}
 
 }

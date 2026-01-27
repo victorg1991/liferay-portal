@@ -130,11 +130,11 @@ public class FragmentEntryLinkUpgradeProcessTest
 		FragmentEntryLink publishedLayoutFragmentEntryLink1 =
 			_getPublishedLayoutFragmentEntryLink(
 				editableValuesJSONObject1,
-				draftLayoutFragmentEntryLink1.getFragmentEntryLinkId());
+				draftLayoutFragmentEntryLink1.getExternalReferenceCode());
 		FragmentEntryLink publishedLayoutFragmentEntryLink2 =
 			_getPublishedLayoutFragmentEntryLink(
 				editableValuesJSONObject2,
-				draftLayoutFragmentEntryLink2.getFragmentEntryLinkId());
+				draftLayoutFragmentEntryLink2.getExternalReferenceCode());
 
 		runUpgrade();
 
@@ -189,7 +189,8 @@ public class FragmentEntryLinkUpgradeProcessTest
 				JSONUtil.put(
 					RandomTestUtil.randomString(),
 					RandomTestUtil.randomString())
-			).toString());
+			).toString(),
+			true);
 	}
 
 	private FragmentEntryLink _addFragmentEntryLinkToDraftLayout(
@@ -217,18 +218,17 @@ public class FragmentEntryLinkUpgradeProcessTest
 				fragmentEntryLink.getEditableValues(),
 				JSONUtil.equals(
 					expectedJSONObject,
-					_jsonFactory.createJSONObject(
-						fragmentEntryLink.getEditableValues())));
+					fragmentEntryLink.getEditableValuesJSONObject()));
 		}
 	}
 
 	private FragmentEntryLink _getPublishedLayoutFragmentEntryLink(
-			JSONObject expectedJSONObject, long originalFragmentEntryLinkId)
+			JSONObject expectedJSONObject, String originalFragmentEntryLinkERC)
 		throws Exception {
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.getFragmentEntryLink(
-				_group.getGroupId(), originalFragmentEntryLinkId,
+				_group.getGroupId(), originalFragmentEntryLinkERC,
 				_layout.getPlid());
 
 		_assertFragmentEntryLinkEditableValues(

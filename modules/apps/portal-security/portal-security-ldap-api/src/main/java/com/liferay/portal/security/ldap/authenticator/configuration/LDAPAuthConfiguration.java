@@ -14,7 +14,8 @@ import com.liferay.portal.security.ldap.configuration.CompanyScopedConfiguration
  * @author Michael C. Han
  */
 @ExtendedObjectClassDefinition(
-	category = "ldap", scope = ExtendedObjectClassDefinition.Scope.COMPANY
+	category = "ldap", scope = ExtendedObjectClassDefinition.Scope.COMPANY,
+	visibilityControllerKey = "ldap-auth"
 )
 @Meta.OCD(
 	id = "com.liferay.portal.security.ldap.authenticator.configuration.LDAPAuthConfiguration",
@@ -28,15 +29,6 @@ public interface LDAPAuthConfiguration extends CompanyScopedConfiguration {
 
 	@Meta.AD(deflt = "false", name = "enabled", required = false)
 	public boolean enabled();
-
-	@Meta.AD(deflt = "false", name = "required", required = false)
-	public boolean required();
-
-	@Meta.AD(
-		deflt = "false", description = "password-policy-enabled-help",
-		name = "password-policy-enabled", required = false
-	)
-	public boolean passwordPolicyEnabled();
 
 	@Meta.AD(
 		deflt = "bind", description = "method-help", name = "method",
@@ -55,5 +47,14 @@ public interface LDAPAuthConfiguration extends CompanyScopedConfiguration {
 		required = false
 	)
 	public String passwordEncryptionAlgorithm();
+
+	@Meta.AD(
+		deflt = "false", description = "password-policy-enabled-help",
+		name = "password-policy-enabled", required = false
+	)
+	public boolean passwordPolicyEnabled();
+
+	@Meta.AD(deflt = "false", name = "required", required = false)
+	public boolean required();
 
 }

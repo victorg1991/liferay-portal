@@ -11,6 +11,7 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.tools.ToolsUtil;
 import com.liferay.source.formatter.parser.JavaClass;
 import com.liferay.source.formatter.parser.JavaSignature;
 import com.liferay.source.formatter.parser.JavaTerm;
@@ -52,7 +53,7 @@ public class JavaMapBuilderGenericsCheck extends BaseJavaTermCheck {
 		while (matcher.find()) {
 			String[] genericTypesArray = null;
 
-			String genericTypes = matcher.group(7);
+			String genericTypes = matcher.group(8);
 
 			if (genericTypes != null) {
 				genericTypesArray = _getGenericTypesArray(genericTypes);
@@ -90,12 +91,12 @@ public class JavaMapBuilderGenericsCheck extends BaseJavaTermCheck {
 
 			if (!requiresGenerics && (genericTypes != null)) {
 				return StringUtil.replaceFirst(
-					content, matcher.group(6), StringPool.BLANK,
+					content, matcher.group(7), StringPool.BLANK,
 					matcher.start());
 			}
 
 			if (requiresGenerics && (genericTypes == null)) {
-				String methodName = matcher.group(8);
+				String methodName = matcher.group(9);
 
 				return StringUtil.replaceFirst(
 					content, methodName + "(",
@@ -195,6 +196,10 @@ public class JavaMapBuilderGenericsCheck extends BaseJavaTermCheck {
 		String mapTypeName = null;
 
 		if (Objects.equals(matcher.group(2), "return")) {
+			if (_isInsideLambdaStatement(javaTerm.getContent(), matcher)) {
+				return null;
+			}
+
 			JavaSignature javaSignature = javaTerm.getSignature();
 
 			if (javaSignature == null) {
@@ -223,6 +228,46 @@ public class JavaMapBuilderGenericsCheck extends BaseJavaTermCheck {
 			mapTypeName.substring(x + 1, mapTypeName.length() - 1));
 	}
 
+	private boolean _isInsideLambdaStatement(String content, Matcher matcher) {
+		int x = -1;
+
+		while (true) {
+			x = content.indexOf(" -> {", x + 1);
+
+			if (x == -1) {
+				return false;
+			}
+
+			if (ToolsUtil.isInsideQuotes(content, x)) {
+				continue;
+			}
+
+			if (x > matcher.start()) {
+				return false;
+			}
+
+			int y = x + 5;
+
+			while (true) {
+				y = content.indexOf("}", y + 1);
+
+				if (y == -1) {
+					return false;
+				}
+
+				if (y < matcher.start()) {
+					continue;
+				}
+
+				if (!ToolsUtil.isInsideQuotes(content, y) &&
+					(getLevel(content.substring(x, y + 1), "{", "}") == 0)) {
+
+					return true;
+				}
+			}
+		}
+	}
+
 	private boolean _requiresGenerics(Class<?> clazz) {
 		if ((clazz == null) ||
 			(Modifier.isFinal(clazz.getModifiers()) &&
@@ -240,7 +285,7 @@ public class JavaMapBuilderGenericsCheck extends BaseJavaTermCheck {
 	private static final Pattern _mapBuilderPattern = Pattern.compile(
 		StringBundler.concat(
 			"((return|(\\w+) =)\\s*)?\\s(ConcurrentHash|Hash|LinkedHash|Tree)",
-			"Map(Dictionary)?Builder\\.\\s*(<([<>\\[\\],\\s\\.\\w\\?]+)>)?\\s*",
-			"(put(All)?)\\("));
+			"Map(Dictionary)?Builder\\.(create\\(\\s*\\w+\\s*\\)\\.)?\\s*(<([",
+			"<>\\[\\],\\s\\.\\w\\?]+)>)?\\s*(put(All)?)\\("));
 
 }

@@ -1,0 +1,33 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2025 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {readFileSync} from 'fs';
+
+export async function readCSVFile(path) {
+	return readFileSync(path)
+		.toString()
+		.split('\n')
+		.map((event) => event.trim());
+}
+
+export function sortCSVHeaderAndSingleRow(csvLines: string[]): string[] {
+	if (csvLines.length < 2) {
+		return csvLines;
+	}
+
+	const headers = csvLines[0].split(',');
+	const dataRow = csvLines[1].split(',');
+
+	const headerValuePairs = headers.map((header, index) => [
+		header,
+		dataRow[index],
+	]);
+	headerValuePairs.sort((a, b) => a[0].localeCompare(b[0]));
+
+	return [
+		headerValuePairs.map((pair) => pair[0]).join(','),
+		headerValuePairs.map((pair) => pair[1]).join(','),
+	];
+}

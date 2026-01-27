@@ -22,7 +22,7 @@ test(
 		});
 
 		await apiExplorer.goto();
-		await operationBlock.getByRole('button').click();
+		await operationBlock.getByRole('button').first().click();
 
 		await test.step('Opens the help popover', async () => {
 			await filterRow.getByRole('button').click();
@@ -40,6 +40,18 @@ test(
 					.filter({hasText: 'creatorId'})
 					.getByLabel('Copy to Clipboard')
 			).toBeVisible();
+		});
+	}
+);
+
+test(
+	'Error mensaje is shown if the endpoint parameter is wrong',
+	{tag: '@LPD-59421'},
+	async ({page}) => {
+		await page.goto('/o/api?endpoint=http://attacker.com/openapi.json');
+
+		await expect(page.getByText(`Forbidden access.`)).toBeVisible({
+			timeout: 3000,
 		});
 	}
 );

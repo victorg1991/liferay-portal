@@ -18,7 +18,8 @@ import {objectPagesTest} from '../../../fixtures/objectPagesTest';
 import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import {waitForAlert} from '../../../utils/waitForAlert';
-import {createObjectFields, mockObjectFields} from './utils/mockObjectFields';
+import {generateObjectEntryValues} from './utils/generateObjectEntry';
+import {generateObjectFields} from './utils/generateObjectFields';
 
 export const test = mergeTests(
 	apiHelpersTest,
@@ -53,12 +54,14 @@ test.afterEach(async ({apiHelpers}) => {
 });
 
 test.beforeEach(async ({apiHelpers}) => {
-	const objectFields = createObjectFields('text', [
-		{
-			label: 'Name',
-			name: 'name',
-		},
-	]);
+	const objectFields = generateObjectFields({
+		objectFieldBusinessTypes: [
+			{
+				businessType: 'Text',
+				name: 'name',
+			},
+		],
+	});
 
 	const objectDefinitionAPIClient =
 		await apiHelpers.buildRestClient(ObjectDefinitionAPI);
@@ -72,7 +75,6 @@ test.beforeEach(async ({apiHelpers}) => {
 			},
 			name: 'Employee',
 			objectFields,
-			objectFolderExternalReferenceCode: 'default',
 			panelCategoryKey: 'control_panel.object',
 			pluralLabel: {
 				en_US: 'Employees',
@@ -107,7 +109,6 @@ test('Can create, read, update, and delete object entries that use the client ex
 			},
 			name: 'Name' + getRandomInt(),
 			objectFields: [],
-			objectFolderExternalReferenceCode: 'default',
 			panelCategoryKey: 'control_panel.object',
 			pluralLabel: {
 				en_US: getRandomString(),
@@ -125,10 +126,8 @@ test('Can create, read, update, and delete object entries that use the client ex
 
 	await objectFieldsPage.goto(objectDefinition.label['en_US']);
 
-	const {objectEntry, objectFields} = await mockObjectFields({
-		apiHelpers,
-		objectEntryReturn: {format: 'UI'},
-		objectFieldBusinessTypes: ['text'],
+	const objectFields = generateObjectFields({
+		objectFieldBusinessTypes: ['Text'],
 	});
 
 	const [{businessType, label, name}] = objectFields;
@@ -151,6 +150,11 @@ test('Can create, read, update, and delete object entries that use the client ex
 	await viewObjectEntriesPage.clickAddObjectEntry(
 		objectDefinition.label['en_US']
 	);
+
+	const {objectEntry} = await generateObjectEntryValues({
+		objectEntryFormat: 'UI',
+		objectFields,
+	});
 
 	await viewObjectEntriesPage.fillObjectEntry({
 		objectFieldBusinessType: businessType,
@@ -234,10 +238,11 @@ test('Can trigger object action as a client extension', async ({
 
 	await viewObjectActionsPage.goto(objectDefinition.label['en_US']);
 
-	await editObjectActionPage.addNewAction(
-		'object-action-executor[function#liferay-sample-etc-spring-boot-object-action-1]',
-		'On After Add'
-	);
+	await editObjectActionPage.addNewAction({
+		thenOption:
+			'object-action-executor[function#liferay-sample-etc-spring-boot-object-action-1]',
+		whenOption: 'On After Add',
+	});
 
 	viewObjectEntriesPage.goto(objectDefinition.className);
 

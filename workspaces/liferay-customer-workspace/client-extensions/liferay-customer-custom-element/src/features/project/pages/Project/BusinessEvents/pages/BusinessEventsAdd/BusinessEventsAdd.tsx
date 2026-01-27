@@ -24,6 +24,7 @@ import Layout from '../../../../../../../components/FormLayout';
 import AssociatedTicketsContainer from '../../components/AssociatedTicketsContainer';
 import useAccountsSyncBusinessEvents from '../../hooks/useAccountsSyncBusinessEvents';
 import useAccountsTickets from '../../hooks/useAccountsTickets';
+import useCanViewTickets from '../../hooks/useCanViewTickets';
 import useGetBusinessEventTypesList from '../../hooks/useGetBusinessEventTypesList';
 import useGetLiferayVersions from '../../hooks/useGetLiferayVersions';
 import useGetUTCTimeZonesList from '../../hooks/useGetUTCTimeZonesList';
@@ -91,8 +92,15 @@ const BusinessEventsAddPage: React.FC<IProps> = ({
 	const {isSaasOnly} = useIsSaasOnly(subscriptionGroups);
 
 	const {loading: loadingTickets, tickets} = useAccountsTickets(
-		project?.accountKey || ''
+		undefined,
+		project?.accountKey || '',
+		hasImpactingEvents === 'no'
 	);
+
+	const {
+		canViewTickets: canViewTickets,
+		loading: loadingJiraAccountChecking,
+	} = useCanViewTickets(project?.accountKey || '');
 
 	const {loading: loadingUTCTimeZonesList, utcTimeZonesList} =
 		useGetUTCTimeZonesList();
@@ -219,14 +227,14 @@ const BusinessEventsAddPage: React.FC<IProps> = ({
 
 	const loading =
 		loadingBusinessEventTypesList ||
+		loadingJiraAccountChecking ||
 		loadingLiferayVersions ||
-		loadingTickets ||
 		loadingUTCTimeZonesList;
 
 	useEffect(() => {
 		if (hasImpactingEvents === 'yes') {
 			const selectedTicketsMap = selectedTickets.map(
-				(ticket) => ticket.ticketId
+				(ticket) => `"${ticket.ticketId}"`
 			);
 
 			setFieldValue(
@@ -362,20 +370,14 @@ const BusinessEventsAddPage: React.FC<IProps> = ({
 
 	useEffect(() => {
 		setTicketOptions([
-			...(tickets
-				?.filter((ticket) => {
-					return (
-						ticket.status !== 'closed' && ticket.status !== 'solved'
-					);
-				})
-				.map((ticket) => {
-					return {...ticket, selected: false};
-				}) || []),
+			...(tickets?.map((ticket) => {
+				return {...ticket, selected: false};
+			}) || []),
 		]);
 	}, [tickets]);
 
 	return !loading ? (
-		tickets ? (
+		canViewTickets ? (
 			hasAllEventsPermissions ? (
 				<Layout
 					footerProps={{
@@ -426,7 +428,7 @@ const BusinessEventsAddPage: React.FC<IProps> = ({
 								<Select
 									badgeClassName="mt-1 mx-3"
 									label={i18n.translate('event-type')}
-									link="https://help.liferay.com/hc/articles/36002102323597"
+									link="https://support.liferay.com/w/business-events"
 									name="businessEvent.eventType.key"
 									onChange={(value: string) =>
 										handleOptionChange(
@@ -604,7 +606,9 @@ const BusinessEventsAddPage: React.FC<IProps> = ({
 
 								{hasImpactingEvents === 'yes' && (
 									<div className="mx-3 pb-3">
-										{ticketOptions.length ? (
+										{loadingTickets ? (
+											<ClayLoadingIndicator size="sm" />
+										) : ticketOptions.length ? (
 											<>
 												<label>
 													{i18n.translate(
@@ -649,7 +653,10 @@ const BusinessEventsAddPage: React.FC<IProps> = ({
 				dangerouslySetInnerHTML={{
 					__html: i18n.sub(
 						'we-apologize-for-the-inconvenience-but-we-ve-detected-a-system-error-with-this-project',
-						['<a href="https://help.liferay.com">', '</a>']
+						[
+							'<a href="https://liferay.atlassian.net/servicedesk/customer/portals">',
+							'</a>',
+						]
 					),
 				}}
 			/>

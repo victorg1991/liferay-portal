@@ -9,6 +9,10 @@ import {isolatedLayoutTest} from '../../../fixtures/isolatedLayoutTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {systemSettingsPageTest} from '../../../fixtures/systemSettingsPageTest';
 import {waitForAlert} from '../../../utils/waitForAlert';
+import {
+	clearConsentCookies,
+	resetCookieManagerConfiguration,
+} from './utils/cookieManagerAfterEach';
 
 export const test = mergeTests(
 	isolatedLayoutTest(),
@@ -16,12 +20,19 @@ export const test = mergeTests(
 	systemSettingsPageTest
 );
 
+test.afterEach(async ({systemSettingsPage}) => {
+	await test.step('Reset Cookie Manager Configuration', async () => {
+		await resetCookieManagerConfiguration(systemSettingsPage);
+	});
+
+	await test.step('Clear Consent Cookies if present', async () => {
+		await clearConsentCookies(systemSettingsPage);
+	});
+});
+
 test('LPD-25440 Cookie Banner Cadmin', async ({page, systemSettingsPage}) => {
 	await test.step('Enable Third Party Cookies', async () => {
-		await systemSettingsPage.goToSystemSetting(
-			'Cookies',
-			'Preference Handling'
-		);
+		await systemSettingsPage.goToSystemSetting('Privacy', 'Cookie Manager');
 
 		const enabledButton = page.getByLabel('Enabled');
 
@@ -44,10 +55,10 @@ test('LPD-25440 Cookie Banner Cadmin', async ({page, systemSettingsPage}) => {
 		});
 
 		if (await saveButton.isVisible()) {
-			await saveButton.click();
+			await saveButton.dispatchEvent('click');
 		}
 		else if (await updateButton.isVisible()) {
-			await updateButton.click();
+			await updateButton.dispatchEvent('click');
 		}
 
 		await waitForAlert(page);

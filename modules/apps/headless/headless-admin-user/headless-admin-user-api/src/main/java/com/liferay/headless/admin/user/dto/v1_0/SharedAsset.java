@@ -441,6 +441,52 @@ public class SharedAsset implements Serializable {
 	private Supplier<String> _externalReferenceCodeSupplier;
 
 	@io.swagger.v3.oas.annotations.media.Schema(
+		description = "Optional field with the embedded file, can be embedded with nestedFields"
+	)
+	@Valid
+	public FileEntry getFile() {
+		if (_fileSupplier != null) {
+			file = _fileSupplier.get();
+
+			_fileSupplier = null;
+		}
+
+		return file;
+	}
+
+	public void setFile(FileEntry file) {
+		this.file = file;
+
+		_fileSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setFile(
+		UnsafeSupplier<FileEntry, Exception> fileUnsafeSupplier) {
+
+		_fileSupplier = () -> {
+			try {
+				return fileUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField(
+		description = "Optional field with the embedded file, can be embedded with nestedFields"
+	)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	protected FileEntry file;
+
+	@JsonIgnore
+	private Supplier<FileEntry> _fileSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema(
 		description = "The shared asset file type icon."
 	)
 	public String getFileTypeIcon() {
@@ -698,6 +744,49 @@ public class SharedAsset implements Serializable {
 	@JsonIgnore
 	private Supplier<String> _titleSupplier;
 
+	@io.swagger.v3.oas.annotations.media.Schema(
+		description = "If the shared asset is visible or not."
+	)
+	public Boolean getVisible() {
+		if (_visibleSupplier != null) {
+			visible = _visibleSupplier.get();
+
+			_visibleSupplier = null;
+		}
+
+		return visible;
+	}
+
+	public void setVisible(Boolean visible) {
+		this.visible = visible;
+
+		_visibleSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setVisible(
+		UnsafeSupplier<Boolean, Exception> visibleUnsafeSupplier) {
+
+		_visibleSupplier = () -> {
+			try {
+				return visibleUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField(description = "If the shared asset is visible or not.")
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean visible;
+
+	@JsonIgnore
+	private Supplier<Boolean> _visibleSupplier;
+
 	@Override
 	public boolean equals(Object object) {
 		if (this == object) {
@@ -870,6 +959,18 @@ public class SharedAsset implements Serializable {
 			sb.append("\"");
 		}
 
+		FileEntry file = getFile();
+
+		if (file != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"file\": ");
+
+			sb.append(String.valueOf(file));
+		}
+
 		String fileTypeIcon = getFileTypeIcon();
 
 		if (fileTypeIcon != null) {
@@ -956,6 +1057,18 @@ public class SharedAsset implements Serializable {
 			sb.append(_escape(title));
 
 			sb.append("\"");
+		}
+
+		Boolean visible = getVisible();
+
+		if (visible != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"visible\": ");
+
+			sb.append(visible);
 		}
 
 		sb.append("}");

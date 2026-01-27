@@ -151,6 +151,7 @@ function TreeViewLink({
 					>
 						{hasSubItems && (
 							<ClayButton
+								aria-label="Expand or collapse Vocabulary tree node"
 								className="component-expander"
 								disabled={disabled}
 								displayType={null}
@@ -401,7 +402,9 @@ function MoveCategoryTreeView({
 		<>
 			<div className="categorization-section">
 				<div className="category-selector-modal">
-					<ClayModal.Header>
+					<ClayModal.Header
+						closeButtonAriaLabel={Liferay.Language.get('close')}
+					>
 						{sub(Liferay.Language.get('move-x'), itemData?.name)}
 					</ClayModal.Header>
 

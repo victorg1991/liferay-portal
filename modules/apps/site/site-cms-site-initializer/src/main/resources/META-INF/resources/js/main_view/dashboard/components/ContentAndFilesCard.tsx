@@ -6,20 +6,21 @@
 import {Text} from '@clayui/core';
 import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
+import {
+	RangeSelector,
+	TrendClassification,
+	buildQueryString,
+	getPercentage,
+	getSafeRangeSelector,
+	getStatsColor,
+	getStatsIcon,
+	toThousands,
+} from '@liferay/analytics-reports-js-components-web';
 import {sub} from 'frontend-js-web';
 import React, {useContext, useEffect, useMemo, useState} from 'react';
 
 import ApiHelper from '../../../common/services/ApiHelper';
 import {ViewDashboardContext} from '../ViewDashboardContext';
-import {buildQueryString} from '../utils/buildQueryString';
-import {toThousands} from '../utils/number';
-import {RangeSelector, getSafeRangeSelector} from './RangeSelectorsDropdown';
-
-export enum TrendClassification {
-	Negative = 'NEGATIVE',
-	Neutral = 'NEUTRAL',
-	Positive = 'POSITIVE',
-}
 
 export interface IMetricsProps {
 	categoriesCount: number;
@@ -38,30 +39,6 @@ export interface IContentAndFilesCard {
 	title: (totalCount: number) => string;
 }
 
-function getStatsColor(
-	trendClassification: TrendClassification
-): 'danger' | 'success' | 'secondary' {
-	if (trendClassification === TrendClassification.Negative) {
-		return 'danger';
-	}
-	else if (trendClassification === TrendClassification.Positive) {
-		return 'success';
-	}
-
-	return 'secondary';
-}
-
-function getStatsIcon(trendPercentage: number) {
-	if (trendPercentage > 0) {
-		return 'caret-top';
-	}
-	else if (trendPercentage < 0) {
-		return 'caret-bottom';
-	}
-
-	return null;
-}
-
 const ContentAndFilesCard: React.FC<IContentAndFilesCard> = ({
 	endpointURL,
 	rangeSelector,
@@ -74,11 +51,16 @@ const ContentAndFilesCard: React.FC<IContentAndFilesCard> = ({
 	const [loading, setLoading] = useState(true);
 	const [metrics, setMetrics] = useState<IMetricsProps>();
 
-	const queryParams = buildQueryString({
-		languageId: language.value,
-		spaceId: space.value,
-		...getSafeRangeSelector(rangeSelector),
-	});
+	const queryParams = buildQueryString(
+		{
+			depotEntryId: space.value,
+			languageId: language.value,
+			...getSafeRangeSelector(rangeSelector),
+		},
+		{
+			shouldIgnoreParam: (value) => value === 'all',
+		}
+	);
 
 	useEffect(() => {
 		async function getMetrics() {
@@ -127,7 +109,7 @@ const ContentAndFilesCard: React.FC<IContentAndFilesCard> = ({
 					value: metrics?.tagsCount ?? 0,
 				},
 			],
-			percentage: Math.abs(metrics?.trend.percentage ?? 0),
+			percentage: getPercentage(metrics?.trend.percentage ?? 0),
 			statsColor: getStatsColor(
 				metrics?.trend.classification ?? TrendClassification.Neutral
 			),
@@ -163,7 +145,10 @@ const ContentAndFilesCard: React.FC<IContentAndFilesCard> = ({
 						<Text color={statsColor} size={3}>
 							{statsIcon && (
 								<span className="mr-1">
-									<ClayIcon symbol={statsIcon} />
+									<ClayIcon
+										aria-label={statsIcon}
+										symbol={statsIcon}
+									/>
 								</span>
 							)}
 

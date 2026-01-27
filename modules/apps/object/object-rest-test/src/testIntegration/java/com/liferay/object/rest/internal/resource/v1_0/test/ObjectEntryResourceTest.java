@@ -5,6 +5,7 @@
 
 package com.liferay.object.rest.internal.resource.v1_0.test;
 
+import com.liferay.account.constants.AccountRoleConstants;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.asset.kernel.model.AssetEntry;
@@ -13,10 +14,13 @@ import com.liferay.asset.kernel.model.AssetVocabulary;
 import com.liferay.asset.kernel.service.AssetCategoryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.asset.kernel.service.AssetTagLocalServiceUtil;
+import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalServiceUtil;
+import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.document.library.kernel.model.DLFileEntry;
+import com.liferay.document.library.kernel.model.DLFileVersion;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
@@ -24,8 +28,15 @@ import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
 import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.document.library.test.util.DLTestUtil;
 import com.liferay.document.library.util.DLURLHelper;
+import com.liferay.expando.kernel.model.ExpandoColumn;
+import com.liferay.expando.kernel.model.ExpandoColumnConstants;
+import com.liferay.expando.kernel.model.ExpandoTableConstants;
+import com.liferay.expando.test.util.ExpandoTestUtil;
+import com.liferay.headless.admin.taxonomy.client.dto.v1_0.ParentTaxonomyCategory;
+import com.liferay.headless.admin.taxonomy.client.dto.v1_0.ParentTaxonomyVocabulary;
 import com.liferay.headless.admin.taxonomy.client.dto.v1_0.TaxonomyCategory;
 import com.liferay.headless.admin.taxonomy.client.resource.v1_0.TaxonomyCategoryResource;
+import com.liferay.headless.delivery.dto.v1_0.Comment;
 import com.liferay.headless.delivery.dto.v1_0.Creator;
 import com.liferay.list.type.entry.util.ListTypeEntryUtil;
 import com.liferay.list.type.model.ListTypeDefinition;
@@ -44,6 +55,8 @@ import com.liferay.object.constants.ObjectFieldValidationConstants;
 import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.constants.ObjectValidationRuleConstants;
 import com.liferay.object.constants.ObjectValidationRuleSettingConstants;
+import com.liferay.object.exception.NoSuchObjectEntryException;
+import com.liferay.object.field.builder.AssigneeObjectFieldBuilder;
 import com.liferay.object.field.builder.AttachmentObjectFieldBuilder;
 import com.liferay.object.field.builder.LongTextObjectFieldBuilder;
 import com.liferay.object.field.builder.RichTextObjectFieldBuilder;
@@ -59,9 +72,10 @@ import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.model.ObjectValidationRule;
 import com.liferay.object.rest.dto.v1_0.Folder;
 import com.liferay.object.rest.dto.v1_0.Link;
-import com.liferay.object.rest.dto.v1_0.Scope;
+import com.liferay.object.rest.dto.v1_0.SystemProperties;
 import com.liferay.object.rest.dto.v1_0.ValidationRequest;
 import com.liferay.object.rest.dto.v1_0.ValidationResponse;
+import com.liferay.object.rest.dto.v1_0.Version;
 import com.liferay.object.rest.resource.v1_0.ObjectEntryResource;
 import com.liferay.object.rest.test.util.ObjectEntryTestUtil;
 import com.liferay.object.rest.test.util.ObjectFieldTestUtil;
@@ -93,20 +107,28 @@ import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.function.UnsafeTriConsumer;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
 import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
+import com.liferay.portal.kernel.comment.CommentManager;
+import com.liferay.portal.kernel.comment.WorkflowableComment;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.ModelListenerException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.lazy.referencing.LazyReferencingThreadLocal;
 import com.liferay.portal.kernel.model.BaseModelListener;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.ModelListener;
+import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.Repository;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
@@ -116,6 +138,7 @@ import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepository;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
+import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.security.auth.GuestOrUserUtil;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
@@ -123,11 +146,14 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.service.permission.ModelPermissionsFactory;
@@ -138,6 +164,7 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.HTTPTestUtil;
+import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -158,11 +185,15 @@ import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.ProxyUtil;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.util.URLCodec;
+import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -178,10 +209,13 @@ import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.fields.NestedFieldsContext;
 import com.liferay.portal.vulcan.fields.NestedFieldsContextThreadLocal;
+import com.liferay.portal.vulcan.pagination.Page;
+import com.liferay.portal.vulcan.pagination.Pagination;
+import com.liferay.portal.vulcan.resource.NestedFieldsContextResource;
+import com.liferay.portal.vulcan.scope.Scope;
 import com.liferay.portal.vulcan.util.GroupUtil;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 import com.liferay.portlet.documentlibrary.constants.DLConstants;
@@ -211,10 +245,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -224,6 +261,7 @@ import org.hibernate.SessionFactory;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -297,7 +335,7 @@ public class ObjectEntryResourceTest {
 				null, TestPropsValues.getUserId(),
 				Collections.singletonMap(
 					LocaleUtil.US, RandomTestUtil.randomString()),
-				false, Collections.emptyList());
+				false, Collections.emptyList(), new ServiceContext());
 
 		_listTypeEntry1 = _listTypeEntryLocalService.addListTypeEntry(
 			null, TestPropsValues.getUserId(),
@@ -513,6 +551,32 @@ public class ObjectEntryResourceTest {
 			ObjectDefinitionTestUtil.getRandomName(),
 			Arrays.asList(
 				ObjectFieldUtil.createObjectField(
+					ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT,
+					ObjectFieldConstants.DB_TYPE_LONG, true, false, null,
+					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+					Arrays.asList(
+						new ObjectFieldSettingBuilder(
+						).name(
+							ObjectFieldSettingConstants.
+								NAME_ACCEPTED_FILE_EXTENSIONS
+						).value(
+							"pdf"
+						).build(),
+						new ObjectFieldSettingBuilder(
+						).name(
+							ObjectFieldSettingConstants.NAME_FILE_SOURCE
+						).value(
+							ObjectFieldSettingConstants.VALUE_DOCS_AND_MEDIA
+						).build(),
+						new ObjectFieldSettingBuilder(
+						).name(
+							ObjectFieldSettingConstants.NAME_MAX_FILE_SIZE
+						).value(
+							String.valueOf(_MAX_FILE_SIZE_VALUE)
+						).build()),
+					false),
+				ObjectFieldUtil.createObjectField(
 					ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
 					ObjectFieldConstants.DB_TYPE_BOOLEAN, true, false, null,
 					RandomTestUtil.randomString(), _OBJECT_FIELD_NAME_BOOLEAN,
@@ -687,9 +751,11 @@ public class ObjectEntryResourceTest {
 			ObjectDefinitionConstants.SCOPE_COMPANY);
 
 		_objectDefinition4 = ObjectDefinitionTestUtil.publishObjectDefinition(
-			true, ObjectDefinitionTestUtil.getRandomName(),
+			ObjectDefinitionTestUtil.getRandomName(),
 			Arrays.asList(
 				new LongTextObjectFieldBuilder(
+				).indexed(
+					true
 				).labelMap(
 					LocalizedMapUtil.getLocalizedMap(
 						RandomTestUtil.randomString())
@@ -699,6 +765,8 @@ public class ObjectEntryResourceTest {
 					_OBJECT_FIELD_NAME_LOCALIZED_LONG_TEXT
 				).build(),
 				new RichTextObjectFieldBuilder(
+				).indexed(
+					true
 				).labelMap(
 					LocalizedMapUtil.getLocalizedMap(
 						RandomTestUtil.randomString())
@@ -708,6 +776,8 @@ public class ObjectEntryResourceTest {
 					_OBJECT_FIELD_NAME_LOCALIZED_RICH_TEXT
 				).build(),
 				new TextObjectFieldBuilder(
+				).indexed(
+					true
 				).labelMap(
 					LocalizedMapUtil.getLocalizedMap(
 						RandomTestUtil.randomString())
@@ -1034,6 +1104,123 @@ public class ObjectEntryResourceTest {
 			_listTypeDefinition);
 
 		_groupLocalService.deleteGroup(_group);
+	}
+
+	@Test
+	public void testCustomizeNestedFieldsContextWithoutRootModelHierarchy()
+		throws Exception {
+
+		String nestedField1 = RandomTestUtil.randomString();
+		String nestedField2 = RandomTestUtil.randomString();
+		String nestedField3 = RandomTestUtil.randomString();
+
+		NestedFieldsContextResource nestedFieldsContextResource =
+			(NestedFieldsContextResource)_getObjectEntryResource(
+				_objectDefinition1, TestPropsValues.getUser());
+
+		NestedFieldsContext nestedFieldsContext =
+			nestedFieldsContextResource.customizeNestedFieldsContext(
+				new NestedFieldsContext(
+					1,
+					Arrays.asList(nestedField1, nestedField2, nestedField3)));
+
+		Assert.assertEquals(
+			SetUtil.fromArray(nestedField1, nestedField2, nestedField3),
+			new HashSet<>(nestedFieldsContext.getNestedFields()));
+	}
+
+	@FeatureFlag("LPD-34594")
+	@Test
+	public void testCustomizeNestedFieldsContextWithRootModelHierarchy()
+		throws Exception {
+
+		Tree objectDefinitionTree = TreeTestUtil.createObjectDefinitionTree(
+			_objectDefinitionLocalService, _objectRelationshipLocalService,
+			true,
+			LinkedHashMapBuilder.put(
+				"A", new String[] {"AA", "AB"}
+			).put(
+				"AA", new String[] {"AAA", "AAB"}
+			).put(
+				"AB", new String[0]
+			).put(
+				"AAA", new String[0]
+			).put(
+				"AAB", new String[0]
+			).build());
+
+		Node objectDefinitionRootNode = objectDefinitionTree.getRootNode();
+
+		NestedFieldsContextResource nestedFieldsContextResource =
+			(NestedFieldsContextResource)_getObjectEntryResource(
+				_objectDefinitionLocalService.getObjectDefinition(
+					objectDefinitionRootNode.getPrimaryKey()),
+				TestPropsValues.getUser());
+
+		String nestedField1 = RandomTestUtil.randomString();
+		String nestedField2 = RandomTestUtil.randomString();
+		String nestedField3 = RandomTestUtil.randomString();
+
+		List<String> nestedFields = Arrays.asList(
+			nestedField1, nestedField2, nestedField3, "rootModelHierarchy");
+
+		NestedFieldsContext nestedFieldsContext =
+			nestedFieldsContextResource.customizeNestedFieldsContext(
+				new NestedFieldsContext(1, nestedFields));
+
+		Set<String> expectedNestedFields = new HashSet<>(nestedFields);
+
+		expectedNestedFields.addAll(
+			_getObjectRelationshipNames(objectDefinitionRootNode));
+
+		Assert.assertEquals(
+			expectedNestedFields,
+			new HashSet<>(nestedFieldsContext.getNestedFields()));
+
+		TreeTestUtil.deleteObjectDefinitionHierarchy(
+			_objectDefinitionLocalService,
+			new String[] {"C_A", "C_AA", "C_AB", "C_AAA", "C_AAB"},
+			_objectEntryLocalService, _objectRelationshipLocalService);
+	}
+
+	@Test
+	public void testCustomizeNestedFieldsContextWithRootModelHierarchyNoHierarchy()
+		throws Exception {
+
+		String nestedField1 = RandomTestUtil.randomString();
+		String nestedField2 = RandomTestUtil.randomString();
+		String nestedField3 = RandomTestUtil.randomString();
+
+		NestedFieldsContextResource nestedFieldsContextResource =
+			(NestedFieldsContextResource)_getObjectEntryResource(
+				_objectDefinition1, TestPropsValues.getUser());
+
+		NestedFieldsContext nestedFieldsContext =
+			nestedFieldsContextResource.customizeNestedFieldsContext(
+				new NestedFieldsContext(
+					1,
+					Arrays.asList(
+						nestedField1, nestedField2, nestedField3,
+						"rootModelHierarchy")));
+
+		Assert.assertEquals(
+			SetUtil.fromArray(
+				nestedField1, nestedField2, nestedField3, "rootModelHierarchy"),
+			new HashSet<>(nestedFieldsContext.getNestedFields()));
+	}
+
+	@FeatureFlag("LPD-43996")
+	@Test
+	public void testDeleteObjectEntryWithComments() throws Exception {
+
+		// Company scope
+
+		_testDeleteObjectEntryWithComments(0, _objectDefinition1);
+
+		// Site scope
+
+		_testDeleteObjectEntryWithComments(
+			_testGroupId, _siteScopedObjectDefinition1);
 	}
 
 	@Test
@@ -5029,61 +5216,37 @@ public class ObjectEntryResourceTest {
 				objectEntry1.getPrimaryKey(), objectEntry2.getPrimaryKey(),
 				ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
 
-		User user = GuestOrUserUtil.getGuestOrUser();
-
-		String languageId = user.getLanguageId();
-
 		try {
 
 			// Many to one relationship
-
-			user.setLanguageId("en_US");
-
-			user = _userLocalService.updateUser(user);
 
 			_testFilterObjectEntriesByRelatedLocalizedObjectEntries(
 				String.format(
 					"%s/%s eq '%s'", objectRelationship.getName(),
 					_OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1),
-				objectDefinition2, objectEntry2);
-
-			user.setLanguageId("es_ES");
-
-			user = _userLocalService.updateUser(user);
+				"en-US", objectDefinition2, objectEntry2);
 
 			_testFilterObjectEntriesByRelatedLocalizedObjectEntries(
 				String.format(
 					"%s/%s eq '%s'", objectRelationship.getName(),
 					_OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_2),
-				objectDefinition2, objectEntry2);
+				"es-ES", objectDefinition2, objectEntry2);
 
 			// One to many relationship
-
-			user.setLanguageId("en_US");
-
-			user = _userLocalService.updateUser(user);
 
 			_testFilterObjectEntriesByRelatedLocalizedObjectEntries(
 				String.format(
 					"%s/%s eq '%s'", objectRelationship.getName(),
 					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_3),
-				objectDefinition1, objectEntry1);
-
-			user.setLanguageId("es_ES");
-
-			user = _userLocalService.updateUser(user);
+				"en-US", objectDefinition1, objectEntry1);
 
 			_testFilterObjectEntriesByRelatedLocalizedObjectEntries(
 				String.format(
 					"%s/%s eq '%s'", objectRelationship.getName(),
 					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_4),
-				objectDefinition1, objectEntry1);
+				"es-ES", objectDefinition1, objectEntry1);
 		}
 		finally {
-			user.setLanguageId(languageId);
-
-			_userLocalService.updateUser(user);
-
 			_objectRelationshipLocalService.deleteObjectRelationship(
 				objectRelationship);
 
@@ -5127,8 +5290,8 @@ public class ObjectEntryResourceTest {
 		// One to many relationship
 
 		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
-			_objectDefinition1, _userSystemObjectDefinition,
-			_objectEntry1.getPrimaryKey(), _userAccountJSONObject.getLong("id"),
+			_userSystemObjectDefinition, _objectDefinition1,
+			_userAccountJSONObject.getLong("id"), _objectEntry1.getPrimaryKey(),
 			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
 
 		_testFilterObjectEntriesByRelatedSystemObjectEntriesFields(
@@ -5137,14 +5300,29 @@ public class ObjectEntryResourceTest {
 					"%s/%s eq '%s'", _objectRelationship1.getName(),
 					_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2)),
 			_objectDefinition1);
+
+		String objectRelationshipERCObjectFieldName =
+			ObjectFieldSettingUtil.getValue(
+				ObjectFieldSettingConstants.
+					NAME_OBJECT_RELATIONSHIP_ERC_OBJECT_FIELD_NAME,
+				_objectFieldLocalService.getObjectField(
+					_objectRelationship1.getObjectFieldId2()));
+
+		_assertFilterString(
+			_OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1,
+			_escape(
+				String.format(
+					"%s eq '%s'", objectRelationshipERCObjectFieldName,
+					_userAccountJSONObject.getString("externalReferenceCode"))),
+			_objectDefinition1);
 	}
 
 	@Test
 	public void testGetCreatorExternalReferenceCode() throws Exception {
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
-				TestPropsValues.getUserId(), 0, null, false, false, true, false,
-				false, false, false, null,
+				null, TestPropsValues.getUserId(), 0, null, false, true, false,
+				true, false, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
@@ -5155,7 +5333,8 @@ public class ObjectEntryResourceTest {
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
 						ObjectFieldConstants.DB_TYPE_BOOLEAN, true, false, null,
-						"Test Field", "testField", true)));
+						"Test Field", "testField", true)),
+				Collections.emptyList(), new ServiceContext());
 
 		_objectDefinitionLocalService.publishCustomObjectDefinition(
 			TestPropsValues.getUserId(),
@@ -5496,6 +5675,80 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	@TestInfo("LPD-71250")
+	public void testGetNestedFieldDetailsInRelationshipsWithoutPermission()
+		throws Exception {
+
+		// Many to many relationship, custom and system object definitions
+
+		_objectEntry1 = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition1, _OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1);
+		_userAccountJSONObject = UserAccountTestUtil.addUserAccountJSONObject(
+			_systemObjectDefinitionManager, Collections.emptyMap());
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_userSystemObjectDefinition, _objectDefinition1,
+			_userAccountJSONObject.getLong("id"), _objectEntry1.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// Many to many relationship, custom object definitions
+
+		_objectEntry2 = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition2, _OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2);
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_objectDefinition1, _objectDefinition2,
+			_objectEntry1.getPrimaryKey(), _objectEntry2.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// Many to one relationship, custom and system object definitions
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_userSystemObjectDefinition, _objectDefinition1,
+			_userAccountJSONObject.getLong("id"), _objectEntry1.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// Many to one relationship, custom object definitions
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_objectDefinition2, _objectDefinition1,
+			_objectEntry2.getPrimaryKey(), _objectEntry1.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// One to many relationship, custom and system object definitions
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_objectDefinition1, _userSystemObjectDefinition,
+			_objectEntry1.getPrimaryKey(), _userAccountJSONObject.getLong("id"),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+
+		// One to many relationship, custom object definitions
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE,
+			_objectDefinition1, _objectDefinition2,
+			_objectEntry1.getPrimaryKey(), _objectEntry2.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		_testGetNestedFieldDetailsInRelationshipsWithoutPermission();
+	}
+
+	@Test
 	public void testGetNestedFieldDetailsInRelationshipsWithSystemObjectDefinition()
 		throws Exception {
 
@@ -5759,6 +6012,391 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
+	@FeatureFlag("LPD-43996")
+	@Test
+	public void testGetObjectEntriesPageWithComments() throws Exception {
+
+		// Company scope
+
+		_testGetObjectEntriesPageWithComments(0, _objectDefinition1);
+
+		// Site scope
+
+		_testGetObjectEntriesPageWithComments(
+			_testGroupId, _siteScopedObjectDefinition1);
+	}
+
+	@Test
+	public void testGetObjectEntriesPageWithLocalizedObjectField()
+		throws Exception {
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null, _objectDefinition4.getRESTContextPath() + "/?search=textEng",
+			Http.Method.GET);
+
+		JSONArray itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(1, itemsJSONArray.length());
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null, _objectDefinition4.getRESTContextPath() + "/?search=textEng",
+			HashMapBuilder.put(
+				"Accept-Language", "es-ES"
+			).build(),
+			Http.Method.GET);
+
+		itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(0, itemsJSONArray.length());
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null, _objectDefinition4.getRESTContextPath() + "/?search=textEsp",
+			HashMapBuilder.put(
+				"Accept-Language", "es-ES"
+			).build(),
+			Http.Method.GET);
+
+		itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(1, itemsJSONArray.length());
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testGetObjectEntriesPageWithObjectActions() throws Exception {
+		JSONObject actionsJSONObject1 = _getActionsJSONObject(
+			_objectDefinition4);
+
+		Assert.assertFalse(actionsJSONObject1.isNull("create"));
+		Assert.assertFalse(actionsJSONObject1.isNull("createBatch"));
+		Assert.assertFalse(actionsJSONObject1.isNull("deleteBatch"));
+		Assert.assertFalse(actionsJSONObject1.isNull("get"));
+		Assert.assertFalse(actionsJSONObject1.isNull("updateBatch"));
+
+		HTTPTestUtil.customize(
+		).withGuest(
+		).apply(
+			() -> {
+				JSONObject actionsJSONObject2 = _getActionsJSONObject(
+					_objectDefinition4);
+
+				Assert.assertTrue(
+					actionsJSONObject2.keySet(
+					).isEmpty());
+			}
+		);
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		_addResourcePermission(
+			ObjectActionKeys.ADD_OBJECT_ENTRY,
+			_objectDefinition4.getResourceName(), role);
+		_addResourcePermission(
+			ActionKeys.VIEW, _objectDefinition4.getClassName(), role);
+
+		String userName = RandomTestUtil.randomString();
+
+		User user = _addUser(userName, "test1");
+
+		_roleLocalService.addUserRole(user.getUserId(), role.getRoleId());
+
+		HTTPTestUtil.customize(
+		).withCredentials(
+			userName + "@liferay.com", "test1"
+		).apply(
+			() -> {
+				JSONObject actionsJSONObject3 = _getActionsJSONObject(
+					_objectDefinition4);
+
+				Assert.assertFalse(actionsJSONObject3.isNull("create"));
+				Assert.assertFalse(actionsJSONObject3.isNull("createBatch"));
+				Assert.assertTrue(actionsJSONObject3.isNull("deleteBatch"));
+				Assert.assertFalse(actionsJSONObject3.isNull("get"));
+				Assert.assertTrue(actionsJSONObject3.isNull("updateBatch"));
+			}
+		);
+
+		_addResourcePermission(
+			ActionKeys.DELETE, _objectDefinition4.getClassName(), role);
+		_addResourcePermission(
+			ActionKeys.UPDATE, _objectDefinition4.getClassName(), role);
+
+		HTTPTestUtil.customize(
+		).withCredentials(
+			userName + "@liferay.com", "test1"
+		).apply(
+			() -> {
+				JSONObject actionsJSONObject4 = _getActionsJSONObject(
+					_objectDefinition4);
+
+				Assert.assertFalse(actionsJSONObject4.isNull("create"));
+				Assert.assertFalse(actionsJSONObject4.isNull("createBatch"));
+				Assert.assertFalse(actionsJSONObject4.isNull("deleteBatch"));
+				Assert.assertFalse(actionsJSONObject4.isNull("get"));
+				Assert.assertFalse(actionsJSONObject4.isNull("updateBatch"));
+			}
+		);
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testGetObjectEntriesSystemProperties() throws Exception {
+		ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition1, _OBJECT_FIELD_NAME_TEXT,
+			_NEW_OBJECT_FIELD_VALUE_1);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null, _objectDefinition1.getRESTContextPath(), Http.Method.GET);
+
+		JSONArray itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(
+			itemsJSONArray.toString(), 1, itemsJSONArray.length());
+
+		JSONObject objectEntryJSONObject = itemsJSONArray.getJSONObject(0);
+
+		Assert.assertNull(
+			objectEntryJSONObject.getJSONObject("systemProperties"));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			_objectDefinition1.getRESTContextPath() +
+				"?nestedFields=systemProperties.objectDefinitionBrief",
+			Http.Method.GET);
+
+		itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(
+			itemsJSONArray.toString(), 1, itemsJSONArray.length());
+
+		objectEntryJSONObject = itemsJSONArray.getJSONObject(0);
+
+		JSONObject systemPropertiesJSONObject =
+			objectEntryJSONObject.getJSONObject("systemProperties");
+
+		JSONObject objectDefinitionBriefJSONObject =
+			systemPropertiesJSONObject.getJSONObject("objectDefinitionBrief");
+
+		Assert.assertEquals(
+			_objectDefinition1.getExternalReferenceCode(),
+			objectDefinitionBriefJSONObject.getString("externalReferenceCode"));
+		Assert.assertEquals(
+			_objectDefinition1.getLabel(LocaleUtil.getDefault()),
+			objectDefinitionBriefJSONObject.getString("label"));
+		Assert.assertEquals(
+			_objectDefinition1.getObjectFolderExternalReferenceCode(),
+			objectDefinitionBriefJSONObject.getString(
+				"objectFolderExternalReferenceCode"));
+	}
+
+	@Test
+	public void testGetObjectEntriesVersionsPage() throws Exception {
+		_objectDefinition1.setEnableObjectEntryVersioning(true);
+
+		_objectDefinition1 =
+			_objectDefinitionLocalService.updateObjectDefinition(
+				_objectDefinition1);
+
+		_objectDefinition2.setEnableObjectEntryVersioning(true);
+
+		_objectDefinition2 =
+			_objectDefinitionLocalService.updateObjectDefinition(
+				_objectDefinition2);
+
+		ObjectEntry objectEntry = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition1, _OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE_1);
+
+		_objectEntryLocalService.updateObjectEntry(
+			TestPropsValues.getUserId(), objectEntry.getObjectEntryId(),
+			objectEntry.getObjectEntryFolderId(),
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).build(),
+			ServiceContextTestUtil.getServiceContext());
+
+		ObjectEntryResource objectEntryResource1 = _getObjectEntryResource(
+			_objectDefinition1, TestPropsValues.getUser());
+
+		Page<com.liferay.object.rest.dto.v1_0.ObjectEntry> objectEntryPage =
+			objectEntryResource1.getByExternalReferenceCodeVersionsPage(
+				objectEntry.getExternalReferenceCode(),
+				Pagination.of(QueryUtil.ALL_POS, QueryUtil.ALL_POS), null);
+
+		Assert.assertEquals(2, objectEntryPage.getTotalCount());
+
+		objectEntryPage =
+			objectEntryResource1.getByExternalReferenceCodeVersionsPage(
+				objectEntry.getExternalReferenceCode(),
+				Pagination.of(QueryUtil.ALL_POS, QueryUtil.ALL_POS),
+				new Sort[] {new Sort("version", Sort.INT_TYPE, true)});
+
+		List<com.liferay.object.rest.dto.v1_0.ObjectEntry> objectEntries =
+			new ArrayList<>(objectEntryPage.getItems());
+
+		_assertObjectEntryVersionNumber(objectEntries.get(0), 2);
+		_assertObjectEntryVersionNumber(objectEntries.get(1), 1);
+
+		ObjectEntryResource objectEntryResource2 = _getObjectEntryResource(
+			_objectDefinition2, TestPropsValues.getUser());
+
+		AssertUtils.assertFailure(
+			NoSuchObjectEntryException.class, null,
+			() -> objectEntryResource2.getByExternalReferenceCodeVersionsPage(
+				objectEntry.getExternalReferenceCode(),
+				Pagination.of(QueryUtil.ALL_POS, QueryUtil.ALL_POS), null));
+	}
+
+	@Test
+	public void testGetObjectEntriesWithAssigneeObjectField() throws Exception {
+		ObjectFieldUtil.addCustomObjectField(
+			new AssigneeObjectFieldBuilder(
+			).labelMap(
+				RandomTestUtil.randomLocaleStringMap()
+			).name(
+				"assignee"
+			).objectDefinitionId(
+				_objectDefinition1.getObjectDefinitionId()
+			).userId(
+				TestPropsValues.getUserId()
+			).build());
+
+		User user1 = UserTestUtil.addUser();
+
+		HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"assignee",
+				HashMapBuilder.put(
+					"externalReferenceCode",
+					() -> {
+						Role role = _roleLocalService.getRole(
+							TestPropsValues.getCompanyId(),
+							AccountRoleConstants.
+								REQUIRED_ROLE_NAME_ACCOUNT_MANAGER);
+
+						Organization organization =
+							OrganizationTestUtil.addOrganization();
+
+						_organizationLocalService.addUserOrganization(
+							user1.getUserId(),
+							organization.getOrganizationId());
+
+						Group group = _groupLocalService.getOrganizationGroup(
+							TestPropsValues.getCompanyId(),
+							organization.getOrganizationId());
+
+						_userGroupRoleLocalService.addUserGroupRole(
+							user1.getUserId(), group.getGroupId(),
+							role.getRoleId());
+
+						return role.getExternalReferenceCode();
+					}
+				).put(
+					"type", "Role"
+				).build()
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+		HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"assignee",
+				HashMapBuilder.put(
+					"externalReferenceCode", user1.getExternalReferenceCode()
+				).put(
+					"type", "User"
+				).build()
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		User user2 = UserTestUtil.addUser();
+
+		HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"assignee",
+				HashMapBuilder.put(
+					"externalReferenceCode",
+					() -> {
+						Role role = RoleTestUtil.addRole(
+							"Regular Role", RoleConstants.TYPE_REGULAR);
+
+						_userLocalService.addRoleUser(role.getRoleId(), user2);
+
+						return role.getExternalReferenceCode();
+					}
+				).put(
+					"type", "Role"
+				).build()
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+		HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"assignee",
+				HashMapBuilder.put(
+					"externalReferenceCode", user2.getExternalReferenceCode()
+				).put(
+					"type", "User"
+				).build()
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(),
+				"?assigneeUserExternalReferenceCode=",
+				user1.getExternalReferenceCode(), "&sort=",
+				URLCodec.encodeURL("id:asc")),
+			Http.Method.GET);
+
+		JSONArray itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(2, itemsJSONArray.length());
+
+		Assert.assertEquals(
+			AccountRoleConstants.REQUIRED_ROLE_NAME_ACCOUNT_MANAGER,
+			JSONUtil.getValue(
+				itemsJSONArray.getJSONObject(0), "JSONObject/assignee",
+				"Object/name"));
+		Assert.assertEquals(
+			user1.getFullName(),
+			JSONUtil.getValue(
+				itemsJSONArray.getJSONObject(1), "JSONObject/assignee",
+				"Object/name"));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(),
+				"?assigneeUserExternalReferenceCode=",
+				user2.getExternalReferenceCode(), "&sort=",
+				URLCodec.encodeURL("id:asc")),
+			Http.Method.GET);
+
+		itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(2, itemsJSONArray.length());
+
+		Assert.assertEquals(
+			"Regular Role",
+			JSONUtil.getValue(
+				itemsJSONArray.getJSONObject(0), "JSONObject/assignee",
+				"Object/name"));
+		Assert.assertEquals(
+			user2.getFullName(),
+			JSONUtil.getValue(
+				itemsJSONArray.getJSONObject(1), "JSONObject/assignee",
+				"Object/name"));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			_objectDefinition1.getRESTContextPath() +
+				"?assigneeUserExternalReferenceCode=" +
+					RandomTestUtil.randomString(),
+			Http.Method.GET);
+
+		itemsJSONArray = jsonObject.getJSONArray("items");
+
+		Assert.assertEquals(0, itemsJSONArray.length());
+	}
+
 	@Test
 	public void testGetObjectEntriesWithPagination() throws Exception {
 		ObjectEntryTestUtil.addObjectEntry(
@@ -5805,8 +6443,100 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	@TestInfo("LPD-62553")
+	public void testGetObjectEntryActions() throws Exception {
+		Assume.assumeFalse(
+			FeatureFlagManagerUtil.isEnabled(
+				_group.getCompanyId(), "LPD-17564"));
+
+		_testGetObjectEntryActions(false);
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	@TestInfo("LPD-62553")
+	public void testGetObjectEntryActionsWithCompanySharingDisabled()
+		throws Exception {
+
+		try (CompanyConfigurationTemporarySwapper
+				companyConfigurationTemporarySwapper =
+					new CompanyConfigurationTemporarySwapper(
+						_group.getCompanyId(),
+						"com.liferay.sharing.internal.configuration." +
+							"SharingCompanyConfiguration",
+						HashMapDictionaryBuilder.<String, Object>put(
+							"enabled", false
+						).build())) {
+
+			_testGetObjectEntryActions(false);
+		}
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	@TestInfo("LPD-62553")
+	public void testGetObjectEntryActionsWithGroupSharingDisabled()
+		throws Exception {
+
+		UnicodeProperties originalUnicodeProperties =
+			_group.getTypeSettingsProperties();
+
+		_groupLocalService.updateGroup(
+			_group.getGroupId(),
+			UnicodePropertiesBuilder.create(
+				originalUnicodeProperties, true
+			).put(
+				"sharingEnabled", false
+			).buildString());
+
+		try {
+			_testGetObjectEntryActions(false);
+		}
+		finally {
+			_groupLocalService.updateGroup(
+				_group.getGroupId(), originalUnicodeProperties.toString());
+		}
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	@TestInfo("LPD-62553")
+	public void testGetObjectEntryActionsWithSharingEnabled() throws Exception {
+		_testGetObjectEntryActions(true);
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	@TestInfo("LPD-62553")
+	public void testGetObjectEntryActionsWithSystemSharingDisabled()
+		throws Exception {
+
+		_addCMSGroup();
+
+		try (ConfigurationTemporarySwapper configurationTemporarySwapper =
+				new ConfigurationTemporarySwapper(
+					"com.liferay.sharing.internal.configuration." +
+						"SharingSystemConfiguration",
+					HashMapDictionaryBuilder.<String, Object>put(
+						"enabled", false
+					).build())) {
+
+			_testGetObjectEntryActions(false);
+		}
+	}
+
+	@Test
 	public void testGetObjectEntryByExternalReferenceCodeWithSlash()
 		throws Exception {
+
+		ObjectField textObjectField = _objectFieldLocalService.getObjectField(
+			_objectDefinition1.getObjectDefinitionId(), _OBJECT_FIELD_NAME_1);
+
+		_objectDefinition1.setTitleObjectFieldId(
+			textObjectField.getObjectFieldId());
+
+		_objectDefinitionLocalService.updateObjectDefinition(
+			_objectDefinition1);
 
 		HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
@@ -5867,21 +6597,21 @@ public class ObjectEntryResourceTest {
 			JSONUtil.put(
 				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
 			).put(
-				"externalReferenceCode", "a/b"
+				"externalReferenceCode", "a/b/c"
 			).toString(),
 			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
 
-		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+		try (LogCapture logCapture2 = LoggerTestUtil.configureLog4JLogger(
 				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
 					"WebApplicationExceptionMapper",
 				LoggerTestUtil.ERROR)) {
 
 			Assert.assertEquals(
-				405,
+				404,
 				HTTPTestUtil.invokeToHttpCode(
 					null,
 					_objectDefinition1.getRESTContextPath() +
-						"/by-external-reference-code/a/b",
+						"/by-external-reference-code/a/b/c",
 					Http.Method.GET));
 		}
 
@@ -5890,21 +6620,21 @@ public class ObjectEntryResourceTest {
 			HTTPTestUtil.invokeToHttpCode(
 				null,
 				_objectDefinition1.getRESTContextPath() +
-					"/by-external-reference-code/a%252Fb",
+					"/by-external-reference-code/a%252Fb%252Fc",
 				Http.Method.GET));
 		Assert.assertEquals(
 			200,
 			HTTPTestUtil.invokeToHttpCode(
 				null,
 				_objectDefinition1.getRESTContextPath() +
-					"/by-external-reference-code/a%252Fb/",
+					"/by-external-reference-code/a%252Fb%252Fc/",
 				Http.Method.GET));
 		Assert.assertEquals(
 			400,
 			HTTPTestUtil.invokeToHttpCode(
 				null,
 				_objectDefinition1.getRESTContextPath() +
-					"/by-external-reference-code/a%2Fb",
+					"/by-external-reference-code/a%2Fb%2Fc",
 				Http.Method.GET));
 
 		HTTPTestUtil.invokeToJSONObject(
@@ -6212,9 +6942,12 @@ public class ObjectEntryResourceTest {
 	public void testGetObjectEntryFilteredByTaxonomyCategories()
 		throws Exception {
 
-		TaxonomyCategory taxonomyCategory1 = _addTaxonomyCategory();
-		TaxonomyCategory taxonomyCategory2 = _addTaxonomyCategory();
-		TaxonomyCategory taxonomyCategory3 = _addTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory1 =
+			_postTaxonomyVocabularyTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory2 =
+			_postTaxonomyVocabularyTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory3 =
+			_postTaxonomyVocabularyTaxonomyCategory();
 
 		_postObjectEntryWithTaxonomyCategories();
 		_postObjectEntryWithTaxonomyCategories(taxonomyCategory1);
@@ -6720,6 +7453,61 @@ public class ObjectEntryResourceTest {
 			jsonObject.getJSONObject(
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE),
 			null);
+
+		FileEntry pdfFileEntry = _dlAppLocalService.addFileEntry(
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
+			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
+			StringUtil.randomString() + ".pdf", ContentTypes.APPLICATION_PDF,
+			StringUtil.randomString(), StringUtil.randomString(),
+			StringUtil.randomString(), StringUtil.randomString(),
+			FileUtil.getBytes(getClass(), "dependencies/document.pdf"), null,
+			null, null, ServiceContextTestUtil.getServiceContext());
+
+		DLFileEntry pdfDLFileEntry = _dlFileEntryLocalService.getFileEntry(
+			pdfFileEntry.getFileEntryId());
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, "value1"
+			).put(
+				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+				pdfDLFileEntry.getFileEntryId()
+			).toString(),
+			_objectDefinition2.getRESTContextPath(), Http.Method.POST);
+
+		_assertAttachmentJSONObject(
+			pdfDLFileEntry, null,
+			jsonObject.getJSONObject(
+				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE),
+			scopeJSONObject);
+
+		Assert.assertNull(
+			JSONUtil.getValueAsJSONObject(
+				jsonObject,
+				"JSONObject/" +
+					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+				"JSONObject/metadata"));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				_objectDefinition2.getRESTContextPath(),
+				"/by-external-reference-code/",
+				jsonObject.getString("externalReferenceCode"), "?nestedFields=",
+				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+				".metadata"),
+			Http.Method.GET);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"numberOfPages", 2
+			).toString(),
+			JSONUtil.getValueAsString(
+				jsonObject,
+				"JSONObject/" +
+					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+				"JSONObject/metadata"),
+			JSONCompareMode.LENIENT);
 	}
 
 	@Test
@@ -6738,12 +7526,13 @@ public class ObjectEntryResourceTest {
 					ListTypeEntryUtil.createListTypeEntry(
 						"listTypeEntryKey2",
 						Collections.singletonMap(
-							LocaleUtil.US, "List Type Entry Key 2"))));
+							LocaleUtil.US, "List Type Entry Key 2"))),
+				new ServiceContext());
 
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
-				TestPropsValues.getUserId(), 0, null, false, false, true, false,
-				false, false, false, null,
+				null, TestPropsValues.getUserId(), 0, null, false, true, false,
+				true, false, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
@@ -6793,7 +7582,8 @@ public class ObjectEntryResourceTest {
 							).value(
 								String.valueOf(_MAX_FILE_SIZE_VALUE)
 							).build()),
-						false)));
+						false)),
+				Collections.emptyList(), new ServiceContext());
 
 		objectDefinition.setEnableObjectEntryHistory(true);
 
@@ -6850,6 +7640,7 @@ public class ObjectEntryResourceTest {
 
 			_objectEntryLocalService.updateObjectEntry(
 				TestPropsValues.getUserId(), objectEntryId,
+				serviceBuilderObjectEntry.getObjectEntryFolderId(),
 				HashMapBuilder.<String, Serializable>put(
 					"authorOfGospel", false
 				).put(
@@ -7042,7 +7833,105 @@ public class ObjectEntryResourceTest {
 			listTypeDefinition);
 	}
 
-	@FeatureFlag("LPD-21926")
+	@Test
+	@TestInfo({"LPD-55420", "LPD-60419", "LPD-60423"})
+	public void testGetObjectEntryWithDifferentScopeAndNestedFields()
+		throws Exception {
+
+		// Company scope
+
+		ObjectEntry objectEntry1 = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition1, _OBJECT_FIELD_NAME_1,
+			RandomTestUtil.randomString());
+
+		Group siteGroup1 = GroupTestUtil.addGroup();
+
+		ObjectEntry objectEntry2 = ObjectEntryTestUtil.addObjectEntry(
+			siteGroup1.getGroupId(), _siteScopedObjectDefinition1,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).build());
+
+		_objectRelationship1 = _addObjectRelationshipAndRelateObjectEntries(
+			_objectDefinition1, _siteScopedObjectDefinition1,
+			objectEntry1.getPrimaryKey(), objectEntry2.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		Group siteGroup2 = GroupTestUtil.addGroup();
+
+		ObjectEntry objectEntry3 = ObjectEntryTestUtil.addObjectEntry(
+			siteGroup2.getGroupId(), _siteScopedObjectDefinition1,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).build());
+
+		ObjectRelationshipTestUtil.relateObjectEntries(
+			objectEntry1.getPrimaryKey(), objectEntry3.getPrimaryKey(),
+			_objectRelationship1, TestPropsValues.getUserId());
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"externalReferenceCode", objectEntry1.getExternalReferenceCode()
+			).put(
+				_objectRelationship1.getName(),
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"externalReferenceCode",
+						objectEntry2.getExternalReferenceCode()),
+					JSONUtil.put(
+						"externalReferenceCode",
+						objectEntry3.getExternalReferenceCode()))
+			).toString(),
+			HTTPTestUtil.invokeToJSONObject(
+				null,
+				_getEndpoint(
+					objectEntry1.getObjectEntryId(), _objectRelationship1,
+					_objectDefinition1),
+				Http.Method.GET
+			).toString(),
+			JSONCompareMode.LENIENT);
+
+		// Site scope
+
+		ObjectEntry objectEntry4 = ObjectEntryTestUtil.addObjectEntry(
+			_objectDefinition2, _OBJECT_FIELD_NAME_2,
+			RandomTestUtil.randomString());
+
+		_objectRelationship2 = _addObjectRelationshipAndRelateObjectEntries(
+			_objectDefinition1, _objectDefinition2,
+			objectEntry1.getPrimaryKey(), objectEntry4.getPrimaryKey(),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"externalReferenceCode", objectEntry2.getExternalReferenceCode()
+			).put(
+				_objectRelationship1.getName(),
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"externalReferenceCode",
+						objectEntry1.getExternalReferenceCode()
+					).put(
+						_objectRelationship2.getName(),
+						JSONUtil.putAll(
+							JSONUtil.put(
+								"externalReferenceCode",
+								objectEntry4.getExternalReferenceCode()))
+					))
+			).toString(),
+			HTTPTestUtil.invokeToJSONObject(
+				null,
+				StringBundler.concat(
+					_getEndpoint(
+						objectEntry2.getObjectEntryId(), _objectRelationship1,
+						_siteScopedObjectDefinition1),
+					",", _objectRelationship2.getName(),
+					"&nestedFieldsDepth=2"),
+				Http.Method.GET
+			).toString(),
+			JSONCompareMode.LENIENT);
+	}
+
 	@Test
 	public void testGetObjectEntryWithFriendlyURL() throws Exception {
 		_objectDefinition1.setEnableFriendlyURLCustomization(true);
@@ -7091,11 +7980,11 @@ public class ObjectEntryResourceTest {
 			).put(
 				"keywords", JSONUtil.putAll("tag1", "tag2")
 			).toString(),
-			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+			_objectDefinition2.getRESTContextPath(), Http.Method.POST);
 
 		jsonObject = HTTPTestUtil.invokeToJSONObject(
 			null,
-			_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
+			_objectDefinition2.getRESTContextPath() + StringPool.SLASH +
 				jsonObject.getString("id"),
 			Http.Method.GET);
 
@@ -7108,11 +7997,11 @@ public class ObjectEntryResourceTest {
 			JSONUtil.put(
 				"keywords", JSONUtil.putAll("tag1", "tag2", "tag3")
 			).toString(),
-			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+			_objectDefinition2.getRESTContextPath(), Http.Method.POST);
 
 		jsonObject = HTTPTestUtil.invokeToJSONObject(
 			null,
-			_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
+			_objectDefinition2.getRESTContextPath() + StringPool.SLASH +
 				jsonObject.getString("id"),
 			Http.Method.GET);
 
@@ -7377,59 +8266,158 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
-	public void testGetObjectEntryWithTaxonomyCategories() throws Exception {
-		TaxonomyCategory taxonomyCategory1 = _addTaxonomyCategory();
-		TaxonomyCategory taxonomyCategory2 = _addTaxonomyCategory();
+	@TestInfo("LPD-66174")
+	public void testGetObjectEntryWithSystemObjectCustomFieldsInOneToManyRelationship()
+		throws Exception {
 
-		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+		String expandoFieldName = RandomTestUtil.randomString();
+		String expandoFieldValue = RandomTestUtil.randomString();
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext();
+
+		serviceContext.setExpandoBridgeAttributes(
+			HashMapBuilder.<String, Serializable>put(
+				() -> {
+					ExpandoColumn expandoColumn = ExpandoTestUtil.addColumn(
+						ExpandoTestUtil.addTable(
+							PortalUtil.getClassNameId(User.class),
+							ExpandoTableConstants.DEFAULT_TABLE_NAME),
+						expandoFieldName, ExpandoColumnConstants.STRING);
+
+					return expandoColumn.getName();
+				},
+				expandoFieldValue
+			).build());
+
+		User user = UserTestUtil.addUser(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			RandomTestUtil.randomString(), LocaleUtil.getDefault(),
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			new long[0], serviceContext);
+
+		_objectRelationship1 = ObjectRelationshipTestUtil.addObjectRelationship(
+			_userSystemObjectDefinition, _objectDefinition1,
+			TestPropsValues.getUserId(),
+			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		JSONObject jsonObject1 = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
-				_OBJECT_FIELD_NAME_1, "value"
+				_OBJECT_FIELD_NAME_1, _NEW_OBJECT_FIELD_VALUE_1
 			).put(
-				"taxonomyCategoryIds",
-				JSONUtil.putAll(
-					taxonomyCategory1.getId(), taxonomyCategory2.getId())
+				StringBundler.concat(
+					"r_", _objectRelationship1.getName(), "_userERC"),
+				user.getExternalReferenceCode()
 			).toString(),
 			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
 
-		jsonObject = HTTPTestUtil.invokeToJSONObject(
+		JSONObject jsonObject2 = HTTPTestUtil.invokeToJSONObject(
 			null,
-			_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
-				jsonObject.getString("id"),
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(), StringPool.SLASH,
+				jsonObject1.getString("id"), "?nestedFields=",
+				_objectRelationship1.getName()),
 			Http.Method.GET);
 
+		JSONArray customFieldsJSONArray = JSONUtil.getValueAsJSONArray(
+			jsonObject2, "JSONObject/" + _objectRelationship1.getName(),
+			"JSONArray/customFields");
+
+		Assert.assertEquals(1, customFieldsJSONArray.length());
+
 		JSONAssert.assertEquals(
-			JSONUtil.putAll(
-				JSONUtil.put(
-					"taxonomyCategoryExternalReferenceCode",
-					taxonomyCategory1.getExternalReferenceCode()
-				).put(
-					"taxonomyCategoryId",
-					Long.valueOf(taxonomyCategory1.getId())
-				).put(
-					"taxonomyCategoryName", taxonomyCategory1.getName()
-				),
-				JSONUtil.put(
-					"taxonomyCategoryExternalReferenceCode",
-					taxonomyCategory2.getExternalReferenceCode()
-				).put(
-					"taxonomyCategoryId",
-					Long.valueOf(taxonomyCategory2.getId())
-				).put(
-					"taxonomyCategoryName", taxonomyCategory2.getName()
-				)
+			JSONUtil.put(
+				"customValue", JSONUtil.put("data", expandoFieldValue)
+			).put(
+				"dataType", "Text"
+			).put(
+				"name", expandoFieldName
 			).toString(),
-			jsonObject.getJSONArray(
-				"taxonomyCategoryBriefs"
-			).toString(),
-			JSONCompareMode.NON_EXTENSIBLE);
+			String.valueOf(customFieldsJSONArray.getJSONObject(0)),
+			JSONCompareMode.STRICT);
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testGetObjectEntryWithTaxonomyCategories() throws Exception {
+
+		// Company scope
+
+		_addCMSGroup();
+
+		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
+			RandomTestUtil.randomLocaleStringMap(),
+			RandomTestUtil.randomLocaleStringMap(),
+			DepotConstants.TYPE_ASSET_LIBRARY,
+			ServiceContextTestUtil.getServiceContext());
+
+		Group group1 = _groupLocalService.getGroup(depotEntry.getGroupId());
+
+		AssetVocabulary assetVocabulary1 =
+			AssetVocabularyLocalServiceUtil.addVocabulary(
+				UserLocalServiceUtil.getGuestUserId(
+					TestPropsValues.getCompanyId()),
+				group1.getGroupId(), RandomTestUtil.randomString(),
+				new ServiceContext());
+
+		TaxonomyCategory taxonomyCategory1 =
+			_postTaxonomyVocabularyTaxonomyCategory(
+				group1.getGroupId(), assetVocabulary1.getVocabularyId());
+
+		Group group2 = _groupLocalService.getGroup(
+			TestPropsValues.getCompanyId(), GroupConstants.CMS);
+
+		AssetVocabulary assetVocabulary2 =
+			AssetVocabularyLocalServiceUtil.addVocabulary(
+				UserLocalServiceUtil.getGuestUserId(
+					TestPropsValues.getCompanyId()),
+				group2.getGroupId(), RandomTestUtil.randomString(),
+				new ServiceContext());
+
+		TaxonomyCategory taxonomyCategory2 =
+			_postTaxonomyVocabularyTaxonomyCategory(
+				group2.getGroupId(), assetVocabulary2.getVocabularyId());
+
+		Group group3 = _groupLocalService.fetchGroup(_testGroupId);
+
+		TaxonomyCategory taxonomyCategory3 =
+			_postTaxonomyVocabularyTaxonomyCategory(
+				group3.getGroupId(), _assetVocabulary.getVocabularyId());
+
+		TaxonomyCategory taxonomyCategory4 =
+			_postTaxonomyCategoryTaxonomyCategory(
+				group3.getGroupId(), taxonomyCategory3.getId(),
+				taxonomyCategory3.getTaxonomyVocabularyId());
+
+		_testGetObjectEntryWithTaxonomyCategories(
+			0, _objectDefinition1, taxonomyCategory1, taxonomyCategory2,
+			taxonomyCategory3, taxonomyCategory4);
+
+		// Depot scope
+
+		ObjectDefinition depotScopedObjectDefinition =
+			_addDepotScopedObjectDefinition();
+
+		_testGetObjectEntryWithTaxonomyCategories(
+			depotEntry.getGroupId(), depotScopedObjectDefinition,
+			taxonomyCategory1, taxonomyCategory2, taxonomyCategory3,
+			taxonomyCategory4);
+
+		// Site scope
+
+		_testGetObjectEntryWithTaxonomyCategories(
+			_testGroupId, _siteScopedObjectDefinition1, taxonomyCategory1,
+			taxonomyCategory2, taxonomyCategory3, taxonomyCategory4);
 	}
 
 	@Test
 	public void testGetObjectEntryWithTaxonomyCategoriesAndEmbeddedTaxonomyCategory()
 		throws Exception {
 
-		TaxonomyCategory taxonomyCategory1 = _addTaxonomyCategory();
-		TaxonomyCategory taxonomyCategory2 = _addTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory1 =
+			_postTaxonomyVocabularyTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory2 =
+			_postTaxonomyVocabularyTaxonomyCategory();
 
 		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
@@ -7449,37 +8437,10 @@ public class ObjectEntryResourceTest {
 				"?nestedFields=embeddedTaxonomyCategory"),
 			Http.Method.GET);
 
-		JSONAssert.assertEquals(
-			JSONUtil.putAll(
-				JSONUtil.put(
-					"embeddedTaxonomyCategory",
-					_toEmbeddedTaxonomyCategoryJSONObject(taxonomyCategory1)
-				).put(
-					"taxonomyCategoryExternalReferenceCode",
-					taxonomyCategory1.getExternalReferenceCode()
-				).put(
-					"taxonomyCategoryId",
-					Long.valueOf(taxonomyCategory1.getId())
-				).put(
-					"taxonomyCategoryName", taxonomyCategory1.getName()
-				),
-				JSONUtil.put(
-					"embeddedTaxonomyCategory",
-					_toEmbeddedTaxonomyCategoryJSONObject(taxonomyCategory2)
-				).put(
-					"taxonomyCategoryExternalReferenceCode",
-					taxonomyCategory2.getExternalReferenceCode()
-				).put(
-					"taxonomyCategoryId",
-					Long.valueOf(taxonomyCategory2.getId())
-				).put(
-					"taxonomyCategoryName", taxonomyCategory2.getName()
-				)
-			).toString(),
-			jsonObject.getJSONArray(
-				"taxonomyCategoryBriefs"
-			).toString(),
-			JSONCompareMode.NON_EXTENSIBLE);
+		_assertTaxonomyCategories(
+			jsonObject.getLong("scopeId"),
+			jsonObject.getJSONArray("taxonomyCategoryBriefs"), true,
+			taxonomyCategory1, taxonomyCategory2);
 	}
 
 	@Test
@@ -7613,21 +8574,7 @@ public class ObjectEntryResourceTest {
 		// Depot scope group ID
 
 		ObjectDefinition depotScopedObjectDefinition =
-			ObjectDefinitionTestUtil.publishObjectDefinition(
-				Collections.singletonList(
-					new TextObjectFieldBuilder(
-					).labelMap(
-						RandomTestUtil.randomLocaleStringMap()
-					).name(
-						StringUtil.randomId()
-					).build()),
-				ObjectDefinitionConstants.SCOPE_DEPOT);
-
-		_objectDefinitionSettingLocalService.addObjectDefinitionSetting(
-			depotScopedObjectDefinition.getUserId(),
-			depotScopedObjectDefinition.getObjectDefinitionId(),
-			ObjectDefinitionSettingConstants.NAME_ACCEPT_ALL_GROUPS,
-			StringPool.TRUE);
+			_addDepotScopedObjectDefinition();
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
 				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
@@ -7646,6 +8593,7 @@ public class ObjectEntryResourceTest {
 		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
 			RandomTestUtil.randomLocaleStringMap(),
 			RandomTestUtil.randomLocaleStringMap(),
+			DepotConstants.TYPE_ASSET_LIBRARY,
 			ServiceContextTestUtil.getServiceContext());
 
 		ObjectEntry depotScopedObjectEntry = ObjectEntryTestUtil.addObjectEntry(
@@ -7850,7 +8798,6 @@ public class ObjectEntryResourceTest {
 			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
 	}
 
-	@FeatureFlag("LPD-21926")
 	@Test
 	public void testPatchObjectEntryWithFriendlyURL() throws Exception {
 		_objectDefinition1.setEnableFriendlyURLCustomization(true);
@@ -7957,8 +8904,10 @@ public class ObjectEntryResourceTest {
 
 	@Test
 	public void testPatchObjectEntryWithTaxonomyCategories() throws Exception {
-		TaxonomyCategory taxonomyCategory1 = _addTaxonomyCategory();
-		TaxonomyCategory taxonomyCategory2 = _addTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory1 =
+			_postTaxonomyVocabularyTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory2 =
+			_postTaxonomyVocabularyTaxonomyCategory();
 
 		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
@@ -7970,7 +8919,8 @@ public class ObjectEntryResourceTest {
 			).toString(),
 			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
 
-		TaxonomyCategory taxonomyCategory3 = _addTaxonomyCategory();
+		TaxonomyCategory taxonomyCategory3 =
+			_postTaxonomyVocabularyTaxonomyCategory();
 
 		jsonObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
@@ -7983,40 +8933,10 @@ public class ObjectEntryResourceTest {
 				jsonObject.getString("id"),
 			Http.Method.PATCH);
 
-		JSONAssert.assertEquals(
-			JSONUtil.putAll(
-				JSONUtil.put(
-					"taxonomyCategoryExternalReferenceCode",
-					taxonomyCategory1.getExternalReferenceCode()
-				).put(
-					"taxonomyCategoryId",
-					Long.valueOf(taxonomyCategory1.getId())
-				).put(
-					"taxonomyCategoryName", taxonomyCategory1.getName()
-				),
-				JSONUtil.put(
-					"taxonomyCategoryExternalReferenceCode",
-					taxonomyCategory2.getExternalReferenceCode()
-				).put(
-					"taxonomyCategoryId",
-					Long.valueOf(taxonomyCategory2.getId())
-				).put(
-					"taxonomyCategoryName", taxonomyCategory2.getName()
-				),
-				JSONUtil.put(
-					"taxonomyCategoryExternalReferenceCode",
-					taxonomyCategory3.getExternalReferenceCode()
-				).put(
-					"taxonomyCategoryId",
-					Long.valueOf(taxonomyCategory3.getId())
-				).put(
-					"taxonomyCategoryName", taxonomyCategory3.getName()
-				)
-			).toString(),
-			jsonObject.getJSONArray(
-				"taxonomyCategoryBriefs"
-			).toString(),
-			JSONCompareMode.NON_EXTENSIBLE);
+		_assertTaxonomyCategories(
+			jsonObject.getLong("scopeId"),
+			jsonObject.getJSONArray("taxonomyCategoryBriefs"), false,
+			taxonomyCategory1, taxonomyCategory2, taxonomyCategory3);
 	}
 
 	@Test
@@ -8226,7 +9146,20 @@ public class ObjectEntryResourceTest {
 		Assert.assertNull(objectEntryJSONObject.get("permissions"));
 	}
 
-	@FeatureFlag("LPD-39967")
+	@Test
+	public void testPatchPutCustomObjectEntryByExternalReferenceCodeWithAssigneeObjectField()
+		throws Exception {
+
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PATCH, _objectDefinition1, true);
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PUT, _objectDefinition1, true);
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PATCH, _siteScopedObjectDefinition1, true);
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PUT, _siteScopedObjectDefinition1, true);
+	}
+
 	@Test
 	public void testPatchPutCustomObjectEntryByExternalReferenceCodeWithAttachmentObjectField()
 		throws Exception {
@@ -8259,7 +9192,20 @@ public class ObjectEntryResourceTest {
 			Http.Method.PUT, jsonObject.getLong("id"));
 	}
 
-	@FeatureFlag("LPD-39967")
+	@Test
+	public void testPatchPutCustomObjectEntryWithAssigneeObjectField()
+		throws Exception {
+
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PATCH, _objectDefinition1, false);
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PUT, _objectDefinition1, false);
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PATCH, _siteScopedObjectDefinition1, false);
+		_testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method.PUT, _siteScopedObjectDefinition1, false);
+	}
+
 	@Test
 	public void testPatchPutCustomObjectEntryWithAttachmentObjectField()
 		throws Exception {
@@ -8339,6 +9285,42 @@ public class ObjectEntryResourceTest {
 		Assert.assertNull(jsonObject.get("reviewDate"));
 	}
 
+	@FeatureFlag("LPD-43996")
+	@Test
+	public void testPatchPutObjectEntryWithComments() throws Exception {
+
+		// Company scope
+
+		_enableComments(_objectDefinition1);
+
+		_testPatchPutObjectEntryWithComments(
+			0, Http.Method.PATCH, _objectDefinition1);
+		_testPatchPutObjectEntryWithComments(
+			0, Http.Method.PUT, _objectDefinition1);
+
+		// Site scope
+
+		_enableComments(_siteScopedObjectDefinition1);
+
+		_testPatchPutObjectEntryWithComments(
+			_testGroupId, Http.Method.PATCH, _siteScopedObjectDefinition1);
+		_testPatchPutObjectEntryWithComments(
+			_testGroupId, Http.Method.PUT, _siteScopedObjectDefinition1);
+	}
+
+	@FeatureFlag("LPD-43996")
+	@Test
+	public void testPatchPutObjectEntryWithMissingParentCommentReference()
+		throws Exception {
+
+		_enableComments(_objectDefinition1);
+
+		_testPatchPutObjectEntryWithMissingParentCommentReference(
+			Http.Method.PATCH);
+		_testPatchPutObjectEntryWithMissingParentCommentReference(
+			Http.Method.PUT);
+	}
+
 	@Test
 	@TestInfo("LPD-53245")
 	public void testPatchScopeScopeKeyByExternalReferenceCode()
@@ -8383,7 +9365,85 @@ public class ObjectEntryResourceTest {
 			group.getGroupKey());
 	}
 
-	@FeatureFlag("LPD-39967")
+	@Test
+	public void testPostByExternalReferenceCodeExpire() throws Exception {
+
+		// Company scope
+
+		ObjectEntry companyObjectEntry =
+			_objectEntryLocalService.addObjectEntry(
+				0, TestPropsValues.getUserId(),
+				_objectDefinition1.getObjectDefinitionId(),
+				ObjectEntryFolderConstants.
+					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+				null,
+				HashMapBuilder.<String, Serializable>put(
+					_OBJECT_FIELD_NAME_TEXT, RandomTestUtil.randomString()
+				).build(),
+				ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_APPROVED, companyObjectEntry.getStatus());
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				_getEndpoint(_objectDefinition1, 0),
+				"/by-external-reference-code/",
+				companyObjectEntry.getExternalReferenceCode(), "/expire"),
+			Http.Method.POST);
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_EXPIRED,
+			jsonObject.getJSONObject(
+				"status"
+			).get(
+				"code"
+			));
+
+		// Site scope
+
+		Group group = _groupLocalService.fetchGroup(_testGroupId);
+
+		ObjectEntry siteObjectEntry = _objectEntryLocalService.addObjectEntry(
+			group.getGroupId(), TestPropsValues.getUserId(),
+			_siteScopedObjectDefinition1.getObjectDefinitionId(),
+			ObjectEntryFolderConstants.PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+			null,
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_TEXT, RandomTestUtil.randomString()
+			).build(),
+			ServiceContextTestUtil.getServiceContext());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_APPROVED, siteObjectEntry.getStatus());
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				_getEndpoint(_siteScopedObjectDefinition1, group.getGroupId()),
+				"/by-external-reference-code/",
+				siteObjectEntry.getExternalReferenceCode(), "/expire"),
+			Http.Method.POST);
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_EXPIRED,
+			jsonObject.getJSONObject(
+				"status"
+			).get(
+				"code"
+			));
+	}
+
+	@Test
+	public void testPostCustomObjectEntryWithAssigneeObjectField()
+		throws Exception {
+
+		_testPostCustomObjectEntryWithAssigneeObjectField(_objectDefinition1);
+		_testPostCustomObjectEntryWithAssigneeObjectField(
+			_siteScopedObjectDefinition1);
+	}
+
 	@Test
 	public void testPostCustomObjectEntryWithAttachmentObjectField()
 		throws Exception {
@@ -8393,33 +9453,43 @@ public class ObjectEntryResourceTest {
 			_siteScopedObjectDefinition1);
 	}
 
-	@FeatureFlag("LPD-39967")
 	@Test
+	@TestInfo("LPD-64453")
 	public void testPostCustomObjectEntryWithAttachmentObjectFieldInDifferentCompany()
 		throws Exception {
-
-		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry = _toFileEntry(
-			Base64::encode, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
 
 		JSONObject objectEntryJSONObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
-				JSONFactoryUtil.createJSONObject(fileEntry.toString())
+				JSONFactoryUtil.createJSONObject(
+					String.valueOf(
+						_toFileEntry(
+							Base64::encode, RandomTestUtil.randomString(),
+							RandomTestUtil.randomString() + ".txt", null, null,
+							ContentTypes.TEXT_PLAIN)))
 			).toString(),
 			StringBundler.concat(
 				_objectDefinition1.getRESTContextPath(), "?nestedFields=",
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE, ".folder"),
 			Http.Method.POST);
 
+		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry =
+			com.liferay.object.rest.dto.v1_0.FileEntry.toDTO(
+				JSONUtil.getValueAsString(
+					objectEntryJSONObject,
+					"JSONObject/" +
+						_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE));
+
 		JSONObject portalInstanceJSONObject = _addPortalInstanceJSONObject();
 
 		User adminUser = UserTestUtil.getAdminUser(
 			portalInstanceJSONObject.getLong("companyId"));
 
+		String objectDefinitionName = ObjectDefinitionTestUtil.getRandomName();
+
 		ObjectDefinition objectDefinition =
 			ObjectDefinitionTestUtil.publishObjectDefinition(
-				_objectDefinition1.getShortName(),
+				objectDefinitionName,
 				Arrays.asList(
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT,
@@ -8510,8 +9580,7 @@ public class ObjectEntryResourceTest {
 								ObjectFieldSettingConstants.
 									NAME_STORAGE_DL_FOLDER_PATH
 							).value(
-								StringPool.SLASH +
-									_objectDefinition1.getShortName()
+								StringPool.SLASH + objectDefinitionName
 							).build()),
 						false)),
 				ObjectDefinitionConstants.SCOPE_COMPANY, adminUser.getUserId());
@@ -8527,14 +9596,54 @@ public class ObjectEntryResourceTest {
 					JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 						JSONUtil.put(
 							_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
-							objectEntryJSONObject.getJSONObject(
-								_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE)
+							JSONFactoryUtil.createJSONObject(
+								fileEntry.toString())
 						).toString(),
 						objectDefinition.getRESTContextPath(),
 						Http.Method.POST);
 
 					Assert.assertEquals(
 						"NOT_FOUND", jsonObject.getString("status"));
+				}
+			);
+
+			HTTPTestUtil.customize(
+			).withBaseURL(
+				"http://www.able.com:8080"
+			).withCredentials(
+				"test@able.com", PropsValues.DEFAULT_ADMIN_PASSWORD
+			).apply(
+				() -> {
+					JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+						JSONUtil.put(
+							_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+							JSONUtil.put("id", RandomTestUtil.randomLong())
+						).toString(),
+						objectDefinition.getRESTContextPath(),
+						Http.Method.POST);
+
+					Assert.assertEquals(
+						"BAD_REQUEST", jsonObject.getString("status"));
+				}
+			);
+
+			HTTPTestUtil.customize(
+			).withBaseURL(
+				"http://www.able.com:8080"
+			).withCredentials(
+				"test@able.com", PropsValues.DEFAULT_ADMIN_PASSWORD
+			).apply(
+				() -> {
+					JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+						JSONUtil.put(
+							_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
+							JSONUtil.put("id", fileEntry.getId())
+						).toString(),
+						objectDefinition.getRESTContextPath(),
+						Http.Method.POST);
+
+					Assert.assertEquals(
+						"BAD_REQUEST", jsonObject.getString("status"));
 				}
 			);
 		}
@@ -8566,7 +9675,8 @@ public class ObjectEntryResourceTest {
 								ObjectFieldSettingConstants.NAME_SUFFIX
 							).value(
 								"-private"
-							).build()))));
+							).build()))),
+				false);
 
 		String endpoint = _getEndpoint(objectDefinition, _testGroupId);
 
@@ -8954,6 +10064,76 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	public void testPostCustomObjectEntryWithLargeAttachmentObjectField()
+		throws Exception {
+
+		String attachmentFieldName = "x" + RandomTestUtil.randomString();
+
+		ObjectField objectField = ObjectFieldUtil.createObjectField(
+			ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT,
+			ObjectFieldConstants.DB_TYPE_LONG, true, false, null,
+			attachmentFieldName, attachmentFieldName,
+			Arrays.asList(
+				new ObjectFieldSettingBuilder(
+				).name(
+					ObjectFieldSettingConstants.NAME_ACCEPTED_FILE_EXTENSIONS
+				).value(
+					"txt"
+				).build(),
+				new ObjectFieldSettingBuilder(
+				).name(
+					ObjectFieldSettingConstants.NAME_FILE_SOURCE
+				).value(
+					ObjectFieldSettingConstants.VALUE_USER_COMPUTER
+				).build(),
+				new ObjectFieldSettingBuilder(
+				).name(
+					ObjectFieldSettingConstants.NAME_MAX_FILE_SIZE
+				).value(
+					String.valueOf(100)
+				).build()),
+			false);
+
+		objectField.setObjectDefinitionId(
+			_objectDefinition1.getObjectDefinitionId());
+
+		ObjectFieldTestUtil.addCustomObjectField(
+			TestPropsValues.getUserId(), objectField);
+
+		byte[] data = new byte[60_000_000];
+
+		Random random = new Random();
+
+		random.nextBytes(data);
+
+		String base64 = Base64.encode(data);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				attachmentFieldName,
+				JSONUtil.put(
+					"fileBase64", base64
+				).put(
+					"name", StringUtil.randomString() + ".txt"
+				)
+			).toString(),
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(), "?nestedFields=",
+				attachmentFieldName, ".fileBase64"),
+			Http.Method.POST);
+
+		_assertAttachmentJSONObject(
+			_dlFileEntryLocalService.getDLFileEntry(
+				_testDLFileEntryModelListener.getLastFileEntryId()),
+			base64, jsonObject.getJSONObject(attachmentFieldName),
+			JSONUtil.put(
+				"externalReferenceCode", "L_GLOBAL"
+			).put(
+				"type", Scope.Type.SITE.getValue()
+			));
+	}
+
+	@Test
 	public void testPostCustomObjectEntryWithManyToOneRelationshipPriorities()
 		throws Exception {
 
@@ -9013,6 +10193,7 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	@TestInfo("LPD-55622")
 	public void testPostCustomObjectEntryWithNestedCustomObjectEntriesInManyToManyRelationship()
 		throws Exception {
 
@@ -9066,15 +10247,144 @@ public class ObjectEntryResourceTest {
 
 		_assertEquals(nestedObjectEntriesJSONArray);
 
+		// Company-Site scope: with 'scopeKey'
+
+		_objectRelationship2 = ObjectRelationshipTestUtil.addObjectRelationship(
+			_objectDefinition1, _siteScopedObjectDefinition2,
+			TestPropsValues.getUserId(),
+			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
+
+		objectEntryJSONObject = JSONUtil.put(
+			_objectRelationship2.getName(),
+			_withScopeKey(
+				_createObjectEntriesJSONArray(
+					new String[] {_ERC_VALUE_1, _ERC_VALUE_2},
+					_OBJECT_FIELD_NAME_2,
+					new String[] {
+						_NEW_OBJECT_FIELD_VALUE_1, _NEW_OBJECT_FIELD_VALUE_2
+					}),
+				"Guest"));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			objectEntryJSONObject.toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		Assert.assertEquals(
+			0,
+			jsonObject.getJSONObject(
+				"status"
+			).get(
+				"code"
+			));
+
+		nestedObjectEntriesJSONArray = jsonObject.getJSONArray(
+			_objectRelationship2.getName());
+
+		Assert.assertEquals(2, nestedObjectEntriesJSONArray.length());
+
+		_assertEquals(nestedObjectEntriesJSONArray);
+
+		objectEntryId = jsonObject.getString("id");
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(), StringPool.SLASH,
+				objectEntryId, "?nestedFields=",
+				_objectRelationship2.getName()),
+			Http.Method.GET);
+
+		nestedObjectEntriesJSONArray = jsonObject.getJSONArray(
+			_objectRelationship2.getName());
+
+		Assert.assertEquals(2, nestedObjectEntriesJSONArray.length());
+
+		_assertEquals(nestedObjectEntriesJSONArray);
+
+		// Company-Site scope: with empty 'scopeKey'
+
+		objectEntryJSONObject = JSONUtil.put(
+			_objectRelationship2.getName(),
+			_withScopeKey(
+				_createObjectEntriesJSONArray(
+					new String[] {_ERC_VALUE_1, _ERC_VALUE_2},
+					_OBJECT_FIELD_NAME_2,
+					new String[] {
+						_NEW_OBJECT_FIELD_VALUE_1, _NEW_OBJECT_FIELD_VALUE_2
+					}),
+				StringPool.BLANK));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			objectEntryJSONObject.toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"status", "BAD_REQUEST"
+			).put(
+				"title", "Group ID 0 is not valid for scope \"site\""
+			).toString(),
+			jsonObject.toString(), JSONCompareMode.LENIENT);
+
+		// Company-Site scope: with nonexistent 'scopeKey'
+
+		objectEntryJSONObject = JSONUtil.put(
+			_objectRelationship2.getName(),
+			_withScopeKey(
+				_createObjectEntriesJSONArray(
+					new String[] {_ERC_VALUE_1, _ERC_VALUE_2},
+					_OBJECT_FIELD_NAME_2,
+					new String[] {
+						_NEW_OBJECT_FIELD_VALUE_1, _NEW_OBJECT_FIELD_VALUE_2
+					}),
+				RandomTestUtil.randomString()));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			objectEntryJSONObject.toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"status", "BAD_REQUEST"
+			).put(
+				"title", "Group ID 0 is not valid for scope \"site\""
+			).toString(),
+			jsonObject.toString(), JSONCompareMode.LENIENT);
+
+		// Company-Site scope: without 'scopeKey'
+
+		objectEntryJSONObject = JSONUtil.put(
+			_objectRelationship2.getName(),
+			_createObjectEntriesJSONArray(
+				new String[] {_ERC_VALUE_1, _ERC_VALUE_2}, _OBJECT_FIELD_NAME_2,
+				new String[] {
+					_NEW_OBJECT_FIELD_VALUE_1, _NEW_OBJECT_FIELD_VALUE_2
+				}));
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			objectEntryJSONObject.toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"status", "BAD_REQUEST"
+			).put(
+				"title",
+				StringBundler.concat(
+					"No scope key was provided for the \"",
+					_siteScopedObjectDefinition2.getName(), "\" entry.")
+			).toString(),
+			jsonObject.toString(), JSONCompareMode.LENIENT);
+
 		// Site scope
 
-		_objectRelationship6 = ObjectRelationshipTestUtil.addObjectRelationship(
+		_objectRelationship3 = ObjectRelationshipTestUtil.addObjectRelationship(
 			_siteScopedObjectDefinition1, _siteScopedObjectDefinition2,
 			TestPropsValues.getUserId(),
 			ObjectRelationshipConstants.TYPE_MANY_TO_MANY);
 
 		objectEntryJSONObject = JSONUtil.put(
-			_objectRelationship6.getName(),
+			_objectRelationship3.getName(),
 			_createObjectEntriesJSONArray(
 				new String[] {_ERC_VALUE_1, _ERC_VALUE_2}, _OBJECT_FIELD_NAME_2,
 				new String[] {
@@ -9095,7 +10405,7 @@ public class ObjectEntryResourceTest {
 			));
 
 		nestedObjectEntriesJSONArray = jsonObject.getJSONArray(
-			_objectRelationship6.getName());
+			_objectRelationship3.getName());
 
 		Assert.assertEquals(2, nestedObjectEntriesJSONArray.length());
 
@@ -9108,11 +10418,11 @@ public class ObjectEntryResourceTest {
 			StringBundler.concat(
 				_siteScopedObjectDefinition1.getRESTContextPath(),
 				StringPool.SLASH, objectEntryId, "?nestedFields=",
-				_objectRelationship6.getName()),
+				_objectRelationship3.getName()),
 			Http.Method.GET);
 
 		nestedObjectEntriesJSONArray = jsonObject.getJSONArray(
-			_objectRelationship6.getName());
+			_objectRelationship3.getName());
 
 		Assert.assertEquals(2, nestedObjectEntriesJSONArray.length());
 
@@ -9356,6 +10666,9 @@ public class ObjectEntryResourceTest {
 			_objectDefinition1, _objectDefinition2, TestPropsValues.getUserId(),
 			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
 
+		ObjectField objectField = _objectFieldLocalService.fetchObjectField(
+			_objectRelationship1.getObjectFieldId2());
+
 		JSONObject objectEntryJSONObject = JSONUtil.put(
 			_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
 		).put(
@@ -9391,6 +10704,10 @@ public class ObjectEntryResourceTest {
 		JSONAssert.assertEquals(
 			JSONUtil.put(
 				"status", "NOT_FOUND"
+			).put(
+				"title",
+				String.format(
+					"The value for %s does not exist.", objectField.getName())
 			).toString(),
 			HTTPTestUtil.invokeToJSONObject(
 				objectEntryJSONObject.toString(),
@@ -9404,6 +10721,9 @@ public class ObjectEntryResourceTest {
 				TestPropsValues.getUserId(),
 				ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
 
+		objectField = _objectFieldLocalService.fetchObjectField(
+			objectRelationship.getObjectFieldId2());
+
 		objectEntryJSONObject = JSONUtil.put(
 			_OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2
 		).put(
@@ -9416,6 +10736,10 @@ public class ObjectEntryResourceTest {
 		JSONAssert.assertEquals(
 			JSONUtil.put(
 				"status", "NOT_FOUND"
+			).put(
+				"title",
+				String.format(
+					"The value for %s does not exist.", objectField.getName())
 			).toString(),
 			HTTPTestUtil.invokeToJSONObject(
 				objectEntryJSONObject.toString(),
@@ -9462,6 +10786,77 @@ public class ObjectEntryResourceTest {
 				_objectDefinition1.getRESTContextPath(), Http.Method.POST));
 	}
 
+	@FeatureFlag("LPD-43996")
+	@Test
+	public void testPostObjectEntriesWithComments() throws Exception {
+
+		// Company scope
+
+		_testPostObjectEntriesWithComments(0, _objectDefinition1);
+
+		// Site scope
+
+		_testPostObjectEntriesWithComments(
+			_testGroupId, _siteScopedObjectDefinition1);
+	}
+
+	@FeatureFlag("LPD-43996")
+	@Test
+	public void testPostObjectEntriesWithMissingParentCommentReference()
+		throws Exception {
+
+		_enableComments(_objectDefinition1);
+
+		String parentExternalReferenceCode = RandomTestUtil.randomString();
+
+		com.liferay.object.rest.dto.v1_0.ObjectEntry objectEntry =
+			new com.liferay.object.rest.dto.v1_0.ObjectEntry() {
+				{
+					comments = new Comment[] {
+						new Comment() {
+							{
+								externalReferenceCode =
+									RandomTestUtil.randomString();
+								parentCommentExternalReferenceCode =
+									parentExternalReferenceCode;
+								text = RandomTestUtil.randomString();
+							}
+						}
+					};
+				}
+			};
+
+		Company company = _companyLocalService.getCompany(
+			TestPropsValues.getCompanyId());
+
+		Assert.assertNull(
+			_commentManager.fetchComment(
+				company.getGroupId(), parentExternalReferenceCode));
+
+		ObjectEntryResource objectEntryResource = _getObjectEntryResource(
+			_objectDefinition1, TestPropsValues.getUser());
+
+		try (SafeCloseable safeCloseable =
+				LazyReferencingThreadLocal.setEnabledWithSafeCloseable(true)) {
+
+			objectEntryResource.postObjectEntry(objectEntry);
+		}
+
+		com.liferay.portal.kernel.comment.Comment serviceBuilderComment =
+			_commentManager.getComment(
+				company.getGroupId(), parentExternalReferenceCode);
+
+		Assert.assertTrue(serviceBuilderComment instanceof WorkflowableComment);
+
+		WorkflowableComment workflowableComment =
+			(WorkflowableComment)serviceBuilderComment;
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_EMPTY, workflowableComment.getStatus());
+
+		_commentManager.deleteComment(serviceBuilderComment.getCommentId());
+	}
+
 	@Test
 	public void testPostObjectEntryWithKeywordsAndTaxonomyCategoryIdsWhenCategorizationDisabled()
 		throws Exception {
@@ -9475,7 +10870,8 @@ public class ObjectEntryResourceTest {
 				_objectDefinition1);
 
 		try {
-			TaxonomyCategory taxonomyCategory = _addTaxonomyCategory();
+			TaxonomyCategory taxonomyCategory =
+				_postTaxonomyVocabularyTaxonomyCategory();
 
 			JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 				JSONUtil.put(
@@ -9515,6 +10911,94 @@ public class ObjectEntryResourceTest {
 				_objectDefinitionLocalService.updateObjectDefinition(
 					_objectDefinition1);
 		}
+	}
+
+	@Test
+	public void testPostObjectEntryWithTaxonomyCategories() throws Exception {
+		Company company = _companyLocalService.getCompany(
+			TestPropsValues.getCompanyId());
+
+		AssetVocabulary assetVocabulary =
+			_assetVocabularyLocalService.addVocabulary(
+				TestPropsValues.getUserId(), company.getGroupId(),
+				RandomTestUtil.randomString(), new ServiceContext());
+
+		long classNameId = _classNameLocalService.getClassNameId(
+			_objectDefinition1.getClassName());
+
+		assetVocabulary.setSettings(
+			StringBundler.concat(
+				"multiValued=false\nrequiredClassNameIds=", classNameId,
+				":0\nselectedClassNameIds=", classNameId, ":0"));
+
+		assetVocabulary = _assetVocabularyLocalService.updateAssetVocabulary(
+			assetVocabulary);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"status", "BAD_REQUEST"
+			).put(
+				"title",
+				String.format(
+					"Please select at least one category for <em>%s</em>.",
+					assetVocabulary.getName())
+			).put(
+				"type", "AssetCategoryException"
+			).toString(),
+			HTTPTestUtil.invokeToJSONObject(
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+				).toString(),
+				_objectDefinition1.getRESTContextPath(), Http.Method.POST
+			).toString(),
+			JSONCompareMode.STRICT);
+
+		TaxonomyCategory taxonomyCategory1 =
+			_postTaxonomyVocabularyTaxonomyCategory(
+				assetVocabulary.getGroupId(),
+				assetVocabulary.getVocabularyId());
+		TaxonomyCategory taxonomyCategory2 =
+			_postTaxonomyVocabularyTaxonomyCategory(
+				assetVocabulary.getGroupId(),
+				assetVocabulary.getVocabularyId());
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"status", "BAD_REQUEST"
+			).put(
+				"title",
+				String.format(
+					"You cannot select more than one category for <em>%s</em>.",
+					assetVocabulary.getName())
+			).put(
+				"type", "AssetCategoryException"
+			).toString(),
+			HTTPTestUtil.invokeToJSONObject(
+				JSONUtil.put(
+					_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+				).put(
+					"taxonomyCategoryIds",
+					JSONUtil.putAll(
+						taxonomyCategory1.getId(), taxonomyCategory2.getId())
+				).toString(),
+				_objectDefinition1.getRESTContextPath(), Http.Method.POST
+			).toString(),
+			JSONCompareMode.STRICT);
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).put(
+				"taxonomyCategoryIds",
+				JSONUtil.putAll(taxonomyCategory1.getId())
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		Assert.assertNotNull(
+			_objectEntryLocalService.fetchObjectEntry(
+				jsonObject.getLong("id")));
+
+		_assetVocabularyLocalService.deleteVocabulary(assetVocabulary);
 	}
 
 	@Test
@@ -10503,7 +11987,6 @@ public class ObjectEntryResourceTest {
 			ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
 	}
 
-	@FeatureFlag("LPD-32050")
 	@Test
 	public void testPutCustomObjectEntryWithLocalizedAttachmentObjectField()
 		throws Exception {
@@ -10514,7 +11997,7 @@ public class ObjectEntryResourceTest {
 
 		ObjectDefinition objectDefinition =
 			ObjectDefinitionTestUtil.publishObjectDefinition(
-				true, objectDefinitionName,
+				objectDefinitionName,
 				Collections.singletonList(
 					new AttachmentObjectFieldBuilder(
 					).labelMap(
@@ -10570,14 +12053,12 @@ public class ObjectEntryResourceTest {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry1 = _toFileEntry(
 			Base64::encode, fileContent1,
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			ContentTypes.TEXT_PLAIN);
 
 		fileEntry1.setExternalReferenceCode(RandomTestUtil.randomString());
 
-		Scope scope = new Scope();
-
-		scope.setExternalReferenceCode(_group.getExternalReferenceCode());
-		scope.setType(Scope.Type.SITE);
+		Scope scope = Scope.of(_group, LocaleUtil.getDefault());
 
 		fileEntry1.setScope(scope);
 
@@ -10585,7 +12066,8 @@ public class ObjectEntryResourceTest {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry2 = _toFileEntry(
 			Base64::encode, fileContent2,
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			ContentTypes.TEXT_PLAIN);
 
 		fileEntry2.setExternalReferenceCode(RandomTestUtil.randomString());
 		fileEntry2.setScope(scope);
@@ -10634,7 +12116,8 @@ public class ObjectEntryResourceTest {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry3 = _toFileEntry(
 			content -> null, StringPool.BLANK,
-			existingDLFileEntry.getFileName(), null, _testGroupId);
+			existingDLFileEntry.getFileName(), null, _testGroupId,
+			existingDLFileEntry.getMimeType());
 
 		fileEntry3.setExternalReferenceCode(
 			existingDLFileEntry.getExternalReferenceCode());
@@ -13815,6 +15298,59 @@ public class ObjectEntryResourceTest {
 			"siteId");
 	}
 
+	private void _addCMSGroup() throws Exception {
+
+		// These tests require the instance to be created with the feature
+		// flag LPD-17564 enabled. On CI, feature flags are enabled on
+		// demand for each test, but not during instance initialization.
+		// Until the feature flag LPD-17564 is removed, we need an explicit CMS
+		// group creation.
+
+		Group group = _groupLocalService.fetchGroup(
+			TestPropsValues.getCompanyId(), GroupConstants.CMS);
+
+		if (group != null) {
+			return;
+		}
+
+		Role role = _roleLocalService.fetchRole(
+			TestPropsValues.getCompanyId(), RoleConstants.SITE_MEMBER);
+
+		if (role == null) {
+			_roleLocalService.addRole(
+				null, TestPropsValues.getUserId(), null, 0,
+				RoleConstants.SITE_MEMBER, null, null,
+				RoleConstants.TYPE_REGULAR, null, null);
+		}
+
+		GroupTestUtil.addGroup(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			GroupConstants.DEFAULT_PARENT_GROUP_ID, GroupConstants.CMS);
+	}
+
+	private ObjectDefinition _addDepotScopedObjectDefinition()
+		throws Exception {
+
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				Collections.singletonList(
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						StringUtil.randomId()
+					).build()),
+				ObjectDefinitionConstants.SCOPE_DEPOT);
+
+		_objectDefinitionSettingLocalService.addObjectDefinitionSetting(
+			objectDefinition.getUserId(),
+			objectDefinition.getObjectDefinitionId(),
+			ObjectDefinitionSettingConstants.NAME_ACCEPT_ALL_GROUPS,
+			StringPool.TRUE);
+
+		return objectDefinition;
+	}
+
 	private DLFileEntry _addDLFileEntry(String content, long folderId)
 		throws Exception {
 
@@ -13922,16 +15458,10 @@ public class ObjectEntryResourceTest {
 			long primaryKey2, String type)
 		throws Exception {
 
-		ObjectRelationship objectRelationship =
-			ObjectRelationshipTestUtil.addObjectRelationship(
-				objectDefinition1, objectDefinition2,
-				TestPropsValues.getUserId(), type);
-
-		ObjectRelationshipTestUtil.relateObjectEntries(
-			primaryKey1, primaryKey2, objectRelationship,
-			TestPropsValues.getUserId());
-
-		return objectRelationship;
+		return _addObjectRelationshipAndRelateObjectEntries(
+			ObjectRelationshipConstants.DELETION_TYPE_PREVENT,
+			objectDefinition1, objectDefinition2, primaryKey1, primaryKey2,
+			type);
 	}
 
 	private ObjectRelationship _addObjectRelationshipAndRelateObjectEntries(
@@ -13941,6 +15471,24 @@ public class ObjectEntryResourceTest {
 		return _addObjectRelationshipAndRelateObjectEntries(
 			_objectDefinition1, _objectDefinition2,
 			_objectEntry1.getPrimaryKey(), _objectEntry2.getPrimaryKey(), type);
+	}
+
+	private ObjectRelationship _addObjectRelationshipAndRelateObjectEntries(
+			String deletionType, ObjectDefinition objectDefinition1,
+			ObjectDefinition objectDefinition2, long primaryKey1,
+			long primaryKey2, String type)
+		throws Exception {
+
+		ObjectRelationship objectRelationship =
+			ObjectRelationshipTestUtil.addObjectRelationship(
+				deletionType, objectDefinition1, objectDefinition2,
+				TestPropsValues.getUserId(), type);
+
+		ObjectRelationshipTestUtil.relateObjectEntries(
+			primaryKey1, primaryKey2, objectRelationship,
+			TestPropsValues.getUserId());
+
+		return objectRelationship;
 	}
 
 	private JSONObject _addPortalInstanceJSONObject() throws Exception {
@@ -13972,28 +15520,6 @@ public class ObjectEntryResourceTest {
 			ResourceConstants.SCOPE_COMPANY,
 			String.valueOf(TestPropsValues.getCompanyId()), role.getRoleId(),
 			actionId);
-	}
-
-	private TaxonomyCategory _addTaxonomyCategory() throws Exception {
-		return _taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
-			_assetVocabulary.getVocabularyId(),
-			new TaxonomyCategory() {
-				{
-					dateCreated = RandomTestUtil.nextDate();
-					dateModified = RandomTestUtil.nextDate();
-					description = StringUtil.toLowerCase(
-						RandomTestUtil.randomString());
-					externalReferenceCode = StringUtil.toLowerCase(
-						RandomTestUtil.randomString());
-					id = StringUtil.toLowerCase(RandomTestUtil.randomString());
-					name = StringUtil.toLowerCase(
-						RandomTestUtil.randomString());
-					numberOfTaxonomyCategories = RandomTestUtil.randomInt();
-					siteId = _testGroupId;
-					taxonomyCategoryUsageCount = RandomTestUtil.randomInt();
-					taxonomyVocabularyId = RandomTestUtil.randomLong();
-				}
-			});
 	}
 
 	private FileEntry _addTempFileEntry(
@@ -14032,11 +15558,19 @@ public class ObjectEntryResourceTest {
 		throws Exception {
 
 		if (dlFileEntry != null) {
+			DLFileVersion dlFileVersion = dlFileEntry.getFileVersion();
+
+			Assert.assertEquals(
+				dlFileVersion.getDescription(),
+				jsonObject.getString("alternativeText"));
+
 			Assert.assertEquals(
 				dlFileEntry.getExternalReferenceCode(),
 				jsonObject.getString("externalReferenceCode"));
 			Assert.assertEquals(
 				dlFileEntry.getFileEntryId(), jsonObject.getLong("id"));
+			Assert.assertEquals(
+				dlFileEntry.getMimeType(), jsonObject.getString("mimeType"));
 			Assert.assertEquals(
 				dlFileEntry.getFileName(), jsonObject.getString("name"));
 		}
@@ -14293,6 +15827,17 @@ public class ObjectEntryResourceTest {
 			objectFieldValue);
 	}
 
+	private void _assertObjectEntryVersionNumber(
+		com.liferay.object.rest.dto.v1_0.ObjectEntry objectEntry,
+		int versionNumber) {
+
+		SystemProperties systemProperties = objectEntry.getSystemProperties();
+
+		Version version = systemProperties.getVersion();
+
+		Assert.assertEquals(versionNumber, (int)version.getNumber());
+	}
+
 	private void _assertPagination(
 			int expectedSize, ObjectDefinition objectDefinition)
 		throws Exception {
@@ -14337,6 +15882,25 @@ public class ObjectEntryResourceTest {
 			relatedJSONObject.getString("externalReferenceCode"));
 	}
 
+	private void _assertTaxonomyCategories(
+			long groupId, JSONArray jsonArray1,
+			boolean withEmbeddedTaxonomyCategory,
+			TaxonomyCategory... taxonomyCategories)
+		throws Exception {
+
+		JSONArray jsonArray2 = _jsonFactory.createJSONArray();
+
+		for (TaxonomyCategory taxonomyCategory : taxonomyCategories) {
+			jsonArray2.put(
+				_toTaxonomyCategoryJSONObject(
+					groupId, taxonomyCategory, withEmbeddedTaxonomyCategory));
+		}
+
+		JSONAssert.assertEquals(
+			jsonArray2.toString(), jsonArray1.toString(),
+			JSONCompareMode.NON_EXTENSIBLE);
+	}
+
 	private JSONObject _cloneJSONObject(
 			JSONObject jsonObject, String objectFieldName,
 			Object objectFieldValue)
@@ -14369,8 +15933,37 @@ public class ObjectEntryResourceTest {
 		return jsonArray;
 	}
 
+	private void _enableComments(ObjectDefinition objectDefinition) {
+		objectDefinition.setEnableComments(true);
+
+		_objectDefinitionLocalService.updateObjectDefinition(objectDefinition);
+	}
+
 	private String _escape(String string) {
 		return URLCodec.encodeURL(string);
+	}
+
+	private JSONObject _getActionsJSONObject(ObjectDefinition objectDefinition)
+		throws Exception {
+
+		JSONObject responseJSONObject = HTTPTestUtil.invokeToJSONObject(
+			null, objectDefinition.getRESTContextPath(), Http.Method.GET);
+
+		if ((responseJSONObject == null) ||
+			!responseJSONObject.has("actions")) {
+
+			return JSONFactoryUtil.createJSONObject();
+		}
+
+		return responseJSONObject.getJSONObject("actions");
+	}
+
+	private Map<String, String> _getActionValue(String href, String method) {
+		return HashMapBuilder.put(
+			"href", href
+		).put(
+			"method", method
+		).build();
 	}
 
 	private Node _getChildNode(int index, Node node) {
@@ -14383,6 +15976,42 @@ public class ObjectEntryResourceTest {
 		Node childNode = _getChildNode(index, node);
 
 		return childNode.getEdge();
+	}
+
+	private JSONArray _getCommentsJSONArray(
+			long groupId, ObjectDefinition objectDefinition)
+		throws Exception {
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			_getEndpoint(objectDefinition, groupId) + "?nestedFields=comments",
+			Http.Method.GET);
+
+		JSONArray jsonArray = jsonObject.getJSONArray("items");
+
+		jsonObject = jsonArray.getJSONObject(0);
+
+		return jsonObject.getJSONArray("comments");
+	}
+
+	private String _getDeletePatchPutEndpoint(
+		long groupId, ObjectDefinition objectDefinition,
+		JSONObject objectEntryJSONObject) {
+
+		String endpoint = _getEndpoint(objectDefinition, groupId);
+
+		ObjectScopeProvider objectScopeProvider =
+			_objectScopeProviderRegistry.getObjectScopeProvider(
+				objectDefinition.getScope());
+
+		if (objectScopeProvider.isGroupAware() && (groupId != 0)) {
+			return StringBundler.concat(
+				endpoint, "/by-external-reference-code/",
+				objectEntryJSONObject.getString("externalReferenceCode"));
+		}
+
+		return StringBundler.concat(
+			endpoint, StringPool.SLASH, objectEntryJSONObject.getLong("id"));
 	}
 
 	private DLFolder _getDLFolder(
@@ -14420,6 +16049,15 @@ public class ObjectEntryResourceTest {
 	}
 
 	private String _getEndpoint(
+		long objectEntryId, ObjectRelationship objectRelationship,
+		ObjectDefinition objectDefinition) {
+
+		return StringBundler.concat(
+			objectDefinition.getRESTContextPath(), StringPool.SLASH,
+			objectEntryId, "?nestedFields=", objectRelationship.getName());
+	}
+
+	private String _getEndpoint(
 		ObjectDefinition objectDefinition, Object scopeKey) {
 
 		ObjectScopeProvider objectScopeProvider =
@@ -14434,6 +16072,139 @@ public class ObjectEntryResourceTest {
 		return objectDefinition.getRESTContextPath();
 	}
 
+	private Map<String, Map<String, String>> _getExpectedActions(
+		String externalReferenceCode, ObjectDefinition objectDefinition,
+		String objectEntryId, boolean sharingEnabled) {
+
+		String href = StringBundler.concat(
+			"http://localhost:8080/o", objectDefinition.getRESTContextPath(),
+			StringPool.SLASH, objectEntryId);
+		String scopedEndpoint = StringBundler.concat(
+			"http://localhost:8080/o", objectDefinition.getRESTContextPath(),
+			"/scopes/", _group.getGroupId());
+
+		return HashMapBuilder.<String, Map<String, String>>put(
+			"copy",
+			() -> {
+				if (FeatureFlagManagerUtil.isEnabled(
+						_group.getCompanyId(), "LPD-17564")) {
+
+					return _getActionValue(
+						StringBundler.concat(
+							href,
+							"/by-object-entry-folder-id/{objectEntryFolderId}",
+							"/copy"),
+						"POST");
+				}
+
+				return null;
+			}
+		).put(
+			"copy-replace",
+			() -> {
+				if (FeatureFlagManagerUtil.isEnabled(
+						_group.getCompanyId(), "LPD-17564")) {
+
+					return _getActionValue(
+						StringBundler.concat(
+							href,
+							"/by-object-entry-folder-id/{objectEntryFolderId}",
+							"/copy-replace"),
+						"POST");
+				}
+
+				return null;
+			}
+		).put(
+			"delete", _getActionValue(href, "DELETE")
+		).put(
+			"expire",
+			() -> {
+				if (FeatureFlagManagerUtil.isEnabled(
+						_group.getCompanyId(), "LPD-17564")) {
+
+					return _getActionValue(
+						StringBundler.concat(
+							scopedEndpoint, "/by-external-reference-code/",
+							externalReferenceCode, "/expire"),
+						"POST");
+				}
+
+				return null;
+			}
+		).put(
+			"get", _getActionValue(href, "GET")
+		).put(
+			"get-by-scope",
+			() -> {
+				if (FeatureFlagManagerUtil.isEnabled(
+						_group.getCompanyId(), "LPD-17564")) {
+
+					return _getActionValue(scopedEndpoint, "GET");
+				}
+
+				return null;
+			}
+		).put(
+			"move",
+			() -> {
+				if (FeatureFlagManagerUtil.isEnabled(
+						_group.getCompanyId(), "LPD-17564")) {
+
+					return _getActionValue(
+						StringBundler.concat(
+							href,
+							"/by-object-entry-folder-id/{objectEntryFolderId}",
+							"/move"),
+						"POST");
+				}
+
+				return null;
+			}
+		).put(
+			"move-replace",
+			() -> {
+				if (FeatureFlagManagerUtil.isEnabled(
+						_group.getCompanyId(), "LPD-17564")) {
+
+					return _getActionValue(
+						StringBundler.concat(
+							href,
+							"/by-object-entry-folder-id/{objectEntryFolderId}",
+							"/move-replace"),
+						"POST");
+				}
+
+				return null;
+			}
+		).put(
+			"permissions", _getActionValue(href + "/permissions", "GET")
+		).put(
+			"replace", _getActionValue(href, "PUT")
+		).put(
+			"share",
+			() -> {
+				if (FeatureFlagManagerUtil.isEnabled(
+						_group.getCompanyId(), "LPD-17564") &&
+					sharingEnabled) {
+
+					return _getActionValue(href, "GET");
+				}
+
+				return null;
+			}
+		).put(
+			"update", _getActionValue(href, "PATCH")
+		).put(
+			"versions",
+			_getActionValue(
+				StringBundler.concat(
+					scopedEndpoint, "/by-external-reference-code/",
+					externalReferenceCode, "/versions"),
+				"GET")
+		).build();
+	}
+
 	private JSONObject _getFileEntryJSONObject(
 			DLFolder dlFolder,
 			com.liferay.object.rest.dto.v1_0.FileEntry fileEntry,
@@ -14443,10 +16214,14 @@ public class ObjectEntryResourceTest {
 		DLFileEntry dlFileEntry = _dlFileEntryLocalService.getDLFileEntry(
 			_testDLFileEntryModelListener.getLastFileEntryId());
 
+		DLFileVersion dlFileVersion = dlFileEntry.getFileVersion();
+
 		ObjectEntry objectEntry = _objectEntryLocalService.getObjectEntry(
 			_testObjectEntryModelListener.getLastObjectEntryId());
 
 		return JSONUtil.put(
+			"alternativeText", dlFileVersion.getDescription()
+		).put(
 			"externalReferenceCode", dlFileEntry::getExternalReferenceCode
 		).put(
 			"id", _testDLFileEntryModelListener.getLastFileEntryId()
@@ -14512,13 +16287,28 @@ public class ObjectEntryResourceTest {
 
 				Date modifiedDate = fileVersion.getModifiedDate();
 
+				String groupExternalReferenceCode = StringPool.BLANK;
+
+				if (!StringUtil.equals(
+						objectDefinition.getScope(),
+						ObjectDefinitionConstants.SCOPE_COMPANY)) {
+
+					Group group = _groupLocalService.fetchGroup(
+						objectEntry.getGroupId());
+
+					groupExternalReferenceCode =
+						group.getExternalReferenceCode();
+				}
+
 				link.setHref(
 					StringBundler.concat(
 						"/documents/", repositoryId, "/", folderId, "/",
 						URLCodec.encodeURL(fileEntry.getName()), "/",
 						serviceBuilderFileEntry.getUuid(), "?version=",
 						fileVersion.getVersion(), "&t=", modifiedDate.getTime(),
-						"&download=true&objectDefinitionExternalReferenceCode=",
+						"&download=true&groupExternalReferenceCode=",
+						groupExternalReferenceCode,
+						"&objectDefinitionExternalReferenceCode=",
 						objectDefinition.getExternalReferenceCode(),
 						"&objectEntryExternalReferenceCode=",
 						objectEntry.getExternalReferenceCode()));
@@ -14527,6 +16317,8 @@ public class ObjectEntryResourceTest {
 
 				return JSONFactoryUtil.createJSONObject(link.toString());
 			}
+		).put(
+			"mimeType", fileEntry.getMimeType()
 		).put(
 			"name", fileEntry.getName()
 		).put(
@@ -14540,20 +16332,15 @@ public class ObjectEntryResourceTest {
 					return null;
 				}
 
-				Scope scope = new Scope();
-
 				Group group = _groupLocalService.getGroup(
 					dlFileEntry.getGroupId());
 
-				scope.setExternalReferenceCode(group::getExternalReferenceCode);
-				scope.setType(
-					() -> {
-						if (group.getType() == GroupConstants.TYPE_DEPOT) {
-							return Scope.Type.ASSET_LIBRARY;
-						}
+				Scope.Type type =
+					(group.getType() == GroupConstants.TYPE_DEPOT) ?
+						Scope.Type.ASSET_LIBRARY : Scope.Type.SITE;
 
-						return Scope.Type.SITE;
-					});
+				Scope scope = Scope.ofReference(
+					group.getExternalReferenceCode(), type);
 
 				return JSONFactoryUtil.createJSONObject(scope.toString());
 			}
@@ -14599,6 +16386,17 @@ public class ObjectEntryResourceTest {
 		Assert.assertEquals(1, itemsJSONArray.length());
 
 		return itemsJSONArray.getJSONObject(0);
+	}
+
+	private JSONObject _getObjectEntryJSONObject(
+			ObjectDefinition objectDefinition, String objectEntryId)
+		throws Exception {
+
+		return HTTPTestUtil.invokeToJSONObject(
+			null,
+			objectDefinition.getRESTContextPath() + StringPool.SLASH +
+				objectEntryId,
+			Http.Method.GET);
 	}
 
 	private ObjectEntryResource _getObjectEntryResource(
@@ -14662,6 +16460,29 @@ public class ObjectEntryResourceTest {
 				edge.getObjectRelationshipId());
 
 		return objectRelationship.getName();
+	}
+
+	private Set<String> _getObjectRelationshipNames(Node node)
+		throws Exception {
+
+		Set<String> objectRelationshipNames = new HashSet<>();
+
+		Edge edge = node.getEdge();
+
+		if (edge != null) {
+			ObjectRelationship objectRelationship =
+				_objectRelationshipLocalService.getObjectRelationship(
+					edge.getObjectRelationshipId());
+
+			objectRelationshipNames.add(objectRelationship.getName());
+		}
+
+		for (Node childNode : node.getChildNodes()) {
+			objectRelationshipNames.addAll(
+				_getObjectRelationshipNames(childNode));
+		}
+
+		return objectRelationshipNames;
 	}
 
 	private JSONObject _getOwnerPermissionsJSONObject() {
@@ -14790,6 +16611,62 @@ public class ObjectEntryResourceTest {
 			endpoint, httpMethod);
 	}
 
+	private JSONArray _patchPutObjectEntryWithComments(
+			JSONArray commentsJSONArray, long groupId, Http.Method httpMethod,
+			ObjectDefinition objectDefinition, JSONObject objectEntryJSONObject)
+		throws Exception {
+
+		String endpoint = _getDeletePatchPutEndpoint(
+			groupId, objectDefinition, objectEntryJSONObject);
+
+		endpoint = endpoint + "?nestedFields=comments";
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).put(
+				"comments", commentsJSONArray
+			).toString(),
+			endpoint, httpMethod);
+
+		return jsonObject.getJSONArray("comments");
+	}
+
+	private JSONObject _postCustomObjectEntryWithAssigneeObjectField(
+			ObjectDefinition objectDefinition, User user)
+		throws Exception {
+
+		ObjectField objectField = _objectFieldLocalService.fetchObjectField(
+			objectDefinition.getObjectDefinitionId(), "assignee");
+
+		if (objectField == null) {
+			ObjectFieldUtil.addCustomObjectField(
+				new AssigneeObjectFieldBuilder(
+				).labelMap(
+					RandomTestUtil.randomLocaleStringMap()
+				).name(
+					"assignee"
+				).objectDefinitionId(
+					objectDefinition.getObjectDefinitionId()
+				).userId(
+					TestPropsValues.getUserId()
+				).build());
+		}
+
+		return HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).put(
+				"assignee",
+				HashMapBuilder.put(
+					"externalReferenceCode", user.getExternalReferenceCode()
+				).put(
+					"type", "User"
+				).build()
+			).toString(),
+			_getEndpoint(objectDefinition, _testGroupId), Http.Method.POST);
+	}
+
 	private JSONObject _postCustomObjectEntryWithPermissions(
 			boolean nestedFields, JSONArray permissionsJSONArray)
 		throws Exception {
@@ -14807,6 +16684,45 @@ public class ObjectEntryResourceTest {
 				"permissions", permissionsJSONArray
 			).toString(),
 			endpoint, Http.Method.POST);
+	}
+
+	private JSONObject _postObjectEntry(
+			long groupId, ObjectDefinition objectDefinition)
+		throws Exception {
+
+		return HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).toString(),
+			_getEndpoint(objectDefinition, groupId), Http.Method.POST);
+	}
+
+	private JSONArray _postObjectEntryWithComments(
+			JSONArray commentsJSONArray, long groupId, boolean nestedFields,
+			ObjectDefinition objectDefinition)
+		throws Exception {
+
+		String endpoint = _getEndpoint(objectDefinition, groupId);
+
+		if (nestedFields) {
+			endpoint = endpoint + "?nestedFields=comments";
+		}
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).put(
+				"comments", commentsJSONArray
+			).toString(),
+			endpoint, Http.Method.POST);
+
+		JSONArray jsonArray = jsonObject.getJSONArray("comments");
+
+		if (jsonArray == null) {
+			return JSONFactoryUtil.createJSONArray();
+		}
+
+		return jsonArray;
 	}
 
 	private void _postObjectEntryWithKeywords(String... keywords)
@@ -14836,12 +16752,37 @@ public class ObjectEntryResourceTest {
 			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
 	}
 
+	private TaxonomyCategory _postTaxonomyCategoryTaxonomyCategory(
+			long groupId, String taxonomyCategoryId, long taxonomyVocabularyId)
+		throws Exception {
+
+		return _taxonomyCategoryResource.postTaxonomyCategoryTaxonomyCategory(
+			taxonomyCategoryId,
+			_randomTaxonomyCategory(groupId, taxonomyVocabularyId));
+	}
+
+	private TaxonomyCategory _postTaxonomyVocabularyTaxonomyCategory()
+		throws Exception {
+
+		return _postTaxonomyVocabularyTaxonomyCategory(
+			_testGroupId, _assetVocabulary.getVocabularyId());
+	}
+
+	private TaxonomyCategory _postTaxonomyVocabularyTaxonomyCategory(
+			long groupId, long taxonomyVocabularyId)
+		throws Exception {
+
+		return _taxonomyCategoryResource.postTaxonomyVocabularyTaxonomyCategory(
+			taxonomyVocabularyId,
+			_randomTaxonomyCategory(groupId, taxonomyVocabularyId));
+	}
+
 	private ObjectDefinition _publishLocalizedObjectDefinition(
 			String objectFieldName)
 		throws Exception {
 
 		return ObjectDefinitionTestUtil.publishObjectDefinition(
-			true, ObjectDefinitionTestUtil.getRandomName(),
+			ObjectDefinitionTestUtil.getRandomName(),
 			Collections.singletonList(
 				new TextObjectFieldBuilder(
 				).labelMap(
@@ -14866,6 +16807,28 @@ public class ObjectEntryResourceTest {
 				_getEndpoint(_objectDefinition1, _testGroupId),
 				StringPool.SLASH, id, "/permissions"),
 			Http.Method.PUT);
+	}
+
+	private TaxonomyCategory _randomTaxonomyCategory(
+		long groupId, long parentTaxonomyVocabularyId) {
+
+		return new TaxonomyCategory() {
+			{
+				dateCreated = RandomTestUtil.nextDate();
+				dateModified = RandomTestUtil.nextDate();
+				description = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				externalReferenceCode = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				id = StringUtil.toLowerCase(RandomTestUtil.randomString());
+				name = StringUtil.toLowerCase(RandomTestUtil.randomString());
+				numberOfTaxonomyCategories = RandomTestUtil.randomInt();
+				siteId = groupId;
+				taxonomyCategoryUsageCount = RandomTestUtil.randomInt();
+
+				setTaxonomyVocabularyId(parentTaxonomyVocabularyId);
+			}
+		};
 	}
 
 	private void _registerUnsafeSupplierInvocations(
@@ -14911,15 +16874,76 @@ public class ObjectEntryResourceTest {
 			PermissionCheckerFactoryUtil.create(user));
 	}
 
+	private void _testDeleteObjectEntryWithComments(
+			long groupId, ObjectDefinition objectDefinition)
+		throws Exception {
+
+		_enableComments(objectDefinition);
+
+		String externalReferenceCode = RandomTestUtil.randomString();
+
+		JSONArray commentsJSONArray = JSONUtil.putAll(
+			JSONUtil.put(
+				"externalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			),
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"parentCommentExternalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			));
+
+		String endpoint = _getEndpoint(objectDefinition, groupId);
+
+		JSONObject objectEntryJSONObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).put(
+				"comments", commentsJSONArray
+			).toString(),
+			endpoint + "?nestedFields=comments", Http.Method.POST);
+
+		long objectEntryId = objectEntryJSONObject.getLong("id");
+
+		List<com.liferay.portal.kernel.comment.Comment> serviceBuilderComment =
+			_commentManager.getComments(
+				objectDefinition.getClassName(), objectEntryId,
+				WorkflowConstants.STATUS_ANY, QueryUtil.ALL_POS,
+				QueryUtil.ALL_POS);
+
+		Assert.assertFalse(serviceBuilderComment.isEmpty());
+
+		endpoint = _getDeletePatchPutEndpoint(
+			groupId, objectDefinition, objectEntryJSONObject);
+
+		HTTPTestUtil.invokeToJSONObject(null, endpoint, Http.Method.DELETE);
+
+		serviceBuilderComment = _commentManager.getComments(
+			objectDefinition.getClassName(), objectEntryId,
+			WorkflowConstants.STATUS_ANY, QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+
+		Assert.assertTrue(serviceBuilderComment.isEmpty());
+	}
+
 	private void _testFilterObjectEntriesByRelatedLocalizedObjectEntries(
-			String filterString, ObjectDefinition objectDefinition,
-			ObjectEntry objectEntry)
+			String filterString, String languageId,
+			ObjectDefinition objectDefinition, ObjectEntry objectEntry)
 		throws Exception {
 
 		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 			null,
 			objectDefinition.getRESTContextPath() + "?filter=" +
 				_escape(filterString),
+			HashMapBuilder.put(
+				"Accept-Language", languageId
+			).build(),
 			Http.Method.GET);
 
 		JSONArray itemsJSONArray = jsonObject.getJSONArray("items");
@@ -14975,6 +16999,47 @@ public class ObjectEntryResourceTest {
 				nestedFieldDepth, nestedFieldName, objectDefinition),
 			expectedFieldName, objectFieldNamesAndObjectFieldValues, null,
 			type);
+	}
+
+	private void _testGetNestedFieldDetailsInRelationshipsWithoutPermission()
+		throws Exception {
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		_resourcePermissionLocalService.setResourcePermissions(
+			TestPropsValues.getCompanyId(), _objectDefinition1.getClassName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(_objectEntry1.getPrimaryKey()), role.getRoleId(),
+			new String[] {ActionKeys.VIEW});
+
+		String password = RandomTestUtil.randomString();
+
+		User user = _addUser(RandomTestUtil.randomString(), password);
+
+		_userLocalService.addRoleUser(role.getRoleId(), user.getUserId());
+
+		HTTPTestUtil.customize(
+		).withCredentials(
+			user.getEmailAddress(), password
+		).apply(
+			() -> {
+				JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+					null,
+					_getEndpoint(
+						_objectEntry1.getObjectEntryId(), _objectRelationship1,
+						_objectDefinition1),
+					Http.Method.GET);
+
+				Assert.assertTrue(
+					JSONUtil.isEmpty(
+						jsonObject.getJSONArray(
+							_objectRelationship1.getName())));
+				Assert.assertTrue(
+					JSONUtil.isEmpty(
+						jsonObject.getJSONObject(
+							_objectRelationship1.getName())));
+			}
+		);
 	}
 
 	private void _testGetObjectEntriesFilteredBySystemDate(String fieldName)
@@ -15062,6 +17127,69 @@ public class ObjectEntryResourceTest {
 		_assertFilteredObjectEntries(2, fieldName + " ne null");
 	}
 
+	private void _testGetObjectEntriesPageWithComments(
+			long groupId, ObjectDefinition objectDefinition)
+		throws Exception {
+
+		_enableComments(objectDefinition);
+
+		String externalReferenceCode = RandomTestUtil.randomString();
+
+		JSONArray commentsJSONArray = JSONUtil.putAll(
+			JSONUtil.put(
+				"externalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			),
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"parentCommentExternalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			),
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			));
+
+		_postObjectEntryWithComments(
+			commentsJSONArray, groupId, false, objectDefinition);
+
+		JSONAssert.assertEquals(
+			commentsJSONArray.toString(),
+			_getCommentsJSONArray(
+				groupId, objectDefinition
+			).toString(),
+			JSONCompareMode.LENIENT);
+	}
+
+	private void _testGetObjectEntryActions(boolean sharingEnabled)
+		throws Exception {
+
+		JSONObject jsonObject = _postObjectEntry(
+			_group.getGroupId(), _siteScopedObjectDefinition1);
+
+		jsonObject = _getObjectEntryJSONObject(
+			_siteScopedObjectDefinition1, jsonObject.getString("id"));
+
+		JSONObject actionsJSONObject = jsonObject.getJSONObject("actions");
+
+		Assert.assertEquals(
+			_getExpectedActions(
+				jsonObject.getString("externalReferenceCode"),
+				_siteScopedObjectDefinition1, jsonObject.getString("id"),
+				sharingEnabled),
+			actionsJSONObject.toMap());
+	}
+
 	private void _testGetObjectEntryWithObjectActions(
 			ObjectAction objectAction, ObjectDefinition objectDefinition,
 			UnsafeTriConsumer<JSONObject, JSONObject, ObjectAction, Exception>
@@ -15084,11 +17212,47 @@ public class ObjectEntryResourceTest {
 		unsafeTriConsumer.accept(actionJSONObject, jsonObject, objectAction);
 	}
 
+	private void _testGetObjectEntryWithTaxonomyCategories(
+			long groupId, ObjectDefinition objectDefinition,
+			TaxonomyCategory... taxonomyCategories)
+		throws Exception {
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, "value"
+			).put(
+				"taxonomyCategoryIds",
+				JSONUtil.toJSONArray(
+					taxonomyCategories, TaxonomyCategory::getId)
+			).toString(),
+			_getEndpoint(objectDefinition, groupId), Http.Method.POST);
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			objectDefinition.getRESTContextPath() + StringPool.SLASH +
+				jsonObject.getString("id"),
+			Http.Method.GET);
+
+		_assertTaxonomyCategories(
+			jsonObject.getLong("scopeId"),
+			jsonObject.getJSONArray("taxonomyCategoryBriefs"), false,
+			taxonomyCategories);
+	}
+
 	private void _testPatchCustomObjectEntry(
 			Function<JSONObject, String> endpointFunction,
 			ObjectDefinition objectDefinition1,
 			ObjectDefinition objectDefinition2, Object scopeKey)
 		throws Exception {
+
+		objectDefinition1 = _objectDefinitionLocalService.getObjectDefinition(
+			objectDefinition1.getObjectDefinitionId());
+
+		objectDefinition1.setEnableObjectEntryDraft(true);
+
+		objectDefinition1 =
+			_objectDefinitionLocalService.updateObjectDefinition(
+				objectDefinition1);
 
 		_objectEntry2 = ObjectEntryTestUtil.addObjectEntry(
 			objectDefinition2, _OBJECT_FIELD_NAME_2, _OBJECT_FIELD_VALUE_2);
@@ -15177,6 +17341,8 @@ public class ObjectEntryResourceTest {
 				_objectEntry2.getObjectEntryId()
 			).put(
 				"externalReferenceCode", randomExternalReferenceCode
+			).put(
+				"status", JSONUtil.put("code", WorkflowConstants.STATUS_DRAFT)
 			).toString(),
 			_getEndpoint(objectDefinition1, scopeKey), Http.Method.POST);
 
@@ -15235,6 +17401,8 @@ public class ObjectEntryResourceTest {
 			"externalReferenceCode", randomExternalReferenceCode
 		).put(
 			"id", (Object)jsonObject.getLong("id")
+		).put(
+			"status", JSONUtil.put("code", WorkflowConstants.STATUS_DRAFT)
 		);
 
 		String endpoint = endpointFunction.apply(jsonObject);
@@ -15776,6 +17944,57 @@ public class ObjectEntryResourceTest {
 		}
 	}
 
+	private void _testPatchPutCustomObjectEntryWithAssigneeObjectField(
+			Http.Method httpMethod, ObjectDefinition objectDefinition,
+			boolean useExternalReferenceCode)
+		throws Exception {
+
+		JSONObject jsonObject = _postCustomObjectEntryWithAssigneeObjectField(
+			objectDefinition, UserTestUtil.addUser());
+
+		String endpoint =
+			objectDefinition.getRESTContextPath() + "/" +
+				jsonObject.getLong("id");
+
+		if (useExternalReferenceCode) {
+			endpoint =
+				_getEndpoint(objectDefinition, _testGroupId) +
+					"/by-external-reference-code/" +
+						jsonObject.getString("externalReferenceCode");
+		}
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).put(
+				"assignee",
+				HashMapBuilder.put(
+					"externalReferenceCode", role.getExternalReferenceCode()
+				).put(
+					"type", "Role"
+				).build()
+			).put(
+				"externalReferenceCode",
+				jsonObject.getString("externalReferenceCode")
+			).put(
+				"id", jsonObject.getLong("id")
+			).toString(),
+			endpoint, httpMethod);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"externalReferenceCode", role.getExternalReferenceCode()
+			).put(
+				"name", role.getName()
+			).put(
+				"type", "Role"
+			).toString(),
+			String.valueOf(jsonObject.get("assignee")),
+			JSONCompareMode.LENIENT);
+	}
+
 	private void _testPatchPutCustomObjectEntryWithAttachmentField(
 			Http.Method httpMethod, ObjectDefinition objectDefinition,
 			boolean useExternalReferenceCode)
@@ -15805,7 +18024,7 @@ public class ObjectEntryResourceTest {
 					_dlURLHelper.getPreviewURL(
 						customFileEntry1, customFileEntry1.getFileVersion(),
 						null, "", false, true)),
-				null, null),
+				null, null, customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15827,7 +18046,8 @@ public class ObjectEntryResourceTest {
 					"title", "Unable to download file from " + url
 				),
 				_toFileEntry(
-					RandomTestUtil.randomString() + ".txt", url, null, null),
+					RandomTestUtil.randomString() + ".txt", url, null, null,
+					customFileEntry1.getMimeType()),
 				httpMethod, null, objectDefinition,
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 				useExternalReferenceCode);
@@ -15851,7 +18071,8 @@ public class ObjectEntryResourceTest {
 					"title", "Unable to download file from " + url
 				),
 				_toFileEntry(
-					RandomTestUtil.randomString() + ".txt", url, null, null),
+					RandomTestUtil.randomString() + ".txt", url, null, null,
+					customFileEntry1.getMimeType()),
 				httpMethod, null, objectDefinition,
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 				useExternalReferenceCode);
@@ -15873,7 +18094,7 @@ public class ObjectEntryResourceTest {
 			),
 			_toFileEntry(
 				RandomTestUtil.randomString() + ".txt", httpCode404URL, null,
-				null),
+				null, customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15893,7 +18114,8 @@ public class ObjectEntryResourceTest {
 			),
 			_toFileEntry(
 				RandomTestUtil.randomString() + ".txt",
-				unsupportedProtocolFileURL, null, null),
+				unsupportedProtocolFileURL, null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15910,7 +18132,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId()),
+				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId(),
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15925,7 +18148,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				dlFolder2.getExternalReferenceCode(), dlFolder2.getGroupId()),
+				dlFolder2.getExternalReferenceCode(), dlFolder2.getGroupId(),
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15936,7 +18160,8 @@ public class ObjectEntryResourceTest {
 				_getFileEntryJSONObject(null, fileEntry, objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, _testGroupId),
+				RandomTestUtil.randomString() + ".txt", null, _testGroupId,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15947,7 +18172,7 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt", null,
-				_group.getGroupId()),
+				_group.getGroupId(), customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15957,7 +18182,8 @@ public class ObjectEntryResourceTest {
 				_getFileEntryJSONObject(null, fileEntry, objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -15972,7 +18198,8 @@ public class ObjectEntryResourceTest {
 					objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1,
 			useExternalReferenceCode);
@@ -15985,7 +18212,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				RandomTestUtil.randomString(), RandomTestUtil.randomLong()),
+				RandomTestUtil.randomString(), RandomTestUtil.randomLong(),
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1,
 			useExternalReferenceCode);
@@ -15997,7 +18225,8 @@ public class ObjectEntryResourceTest {
 					objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_2,
 			useExternalReferenceCode);
@@ -16010,7 +18239,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				RandomTestUtil.randomString(), RandomTestUtil.randomLong()),
+				RandomTestUtil.randomString(), RandomTestUtil.randomLong(),
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_2,
 			useExternalReferenceCode);
@@ -16031,7 +18261,8 @@ public class ObjectEntryResourceTest {
 				Base64::encode,
 				RandomTestUtil.randomString(
 					(_MAX_FILE_SIZE_VALUE * 1024 * 1024) + 1),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1,
 			useExternalReferenceCode);
@@ -16042,8 +18273,8 @@ public class ObjectEntryResourceTest {
 				"title", "File name is null"
 			),
 			_toFileEntry(
-				Base64::encode, RandomTestUtil.randomString(), null, null,
-				null),
+				Base64::encode, RandomTestUtil.randomString(), null, null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1,
 			useExternalReferenceCode);
@@ -16055,7 +18286,8 @@ public class ObjectEntryResourceTest {
 			),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".err", null, null),
+				RandomTestUtil.randomString() + ".err", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1,
 			useExternalReferenceCode);
@@ -16066,8 +18298,9 @@ public class ObjectEntryResourceTest {
 				"title", "Unable to decode Base64 file"
 			),
 			_toFileEntry(
-				String::new, RandomTestUtil.randomString(7),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				String::new, "$" + RandomTestUtil.randomString(7),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1,
 			useExternalReferenceCode);
@@ -16103,18 +18336,13 @@ public class ObjectEntryResourceTest {
 						Base64::encode, RandomTestUtil.randomString(),
 						RandomTestUtil.randomString() + ".txt",
 						dlFolder.getExternalReferenceCode(),
-						dlFolder.getGroupId());
+						dlFolder.getGroupId(), customFileEntry1.getMimeType());
 
 				_testPatchPutCustomObjectEntryWithAttachmentField(
 					fileEntry -> JSONUtil.put(
 						"status", "FORBIDDEN"
 					).put(
-						"title",
-						StringBundler.concat(
-							"User ", user.getUserId(),
-							" must have ADD_DOCUMENT permission for com.",
-							"liferay.portal.kernel.repository.model.Folder ",
-							dlFolder.getFolderId())
+						"title", "Forbidden"
 					),
 					testFileEntry, httpMethod, null, objectDefinition,
 					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
@@ -16145,7 +18373,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				randomExternalReferenceCode, _testGroupId),
+				randomExternalReferenceCode, _testGroupId,
+				customFileEntry1.getMimeType()),
 			httpMethod, null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -16154,7 +18383,8 @@ public class ObjectEntryResourceTest {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry testFileEntry = _toFileEntry(
 			Base64::encode, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			customFileEntry1.getMimeType());
 
 		_testPatchPutCustomObjectEntryWithAttachmentField(
 			fileEntry -> JSONUtil.put(
@@ -16183,7 +18413,8 @@ public class ObjectEntryResourceTest {
 
 		testFileEntry = _toFileEntry(
 			Base64::encode, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			customFileEntry1.getMimeType());
 
 		_testPatchPutCustomObjectEntryWithAttachmentField(
 			fileEntry -> JSONUtil.put(
@@ -16232,12 +18463,15 @@ public class ObjectEntryResourceTest {
 					).put(
 						"folder",
 						JSONFactoryUtil.createJSONObject(folder.toString())
+					).put(
+						"mimeType", customFileEntry1.getMimeType()
 					));
 			},
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId()),
+				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId(),
+				customFileEntry1.getMimeType()),
 			httpMethod, "fileBase64,folder", objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 			useExternalReferenceCode);
@@ -16254,7 +18488,8 @@ public class ObjectEntryResourceTest {
 				}),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, "fileBase64,folder", objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1,
 			useExternalReferenceCode);
@@ -16271,7 +18506,8 @@ public class ObjectEntryResourceTest {
 				}),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			httpMethod, "fileBase64,folder", objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_2,
 			useExternalReferenceCode);
@@ -16294,7 +18530,8 @@ public class ObjectEntryResourceTest {
 				objectFieldName,
 				_toFileEntryJSONObject(
 					RandomTestUtil.randomString(),
-					RandomTestUtil.randomString() + ".txt", objectFieldName)
+					RandomTestUtil.randomString() + ".txt",
+					ContentTypes.TEXT_PLAIN, objectFieldName)
 			).toString(),
 			_getEndpoint(objectDefinition, _testGroupId), Http.Method.POST);
 
@@ -16392,6 +18629,173 @@ public class ObjectEntryResourceTest {
 				endpoint2 + externalReferenceCode1, httpMethod));
 	}
 
+	private void _testPatchPutObjectEntryWithComments(
+			long groupId, Http.Method httpMethod,
+			ObjectDefinition objectDefinition)
+		throws Exception {
+
+		JSONObject objectEntryJSONObject = _postObjectEntry(
+			groupId, objectDefinition);
+
+		String externalReferenceCode = RandomTestUtil.randomString();
+
+		JSONArray commentsJSONArray = JSONUtil.putAll(
+			JSONUtil.put(
+				"externalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			),
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"parentCommentExternalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			));
+
+		JSONAssert.assertEquals(
+			commentsJSONArray.toString(),
+			_patchPutObjectEntryWithComments(
+				commentsJSONArray, groupId, httpMethod, objectDefinition,
+				objectEntryJSONObject
+			).toString(),
+			JSONCompareMode.LENIENT);
+
+		commentsJSONArray = JSONUtil.putAll(
+			JSONUtil.put(
+				"externalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			),
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"parentCommentExternalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			),
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			));
+
+		JSONAssert.assertEquals(
+			commentsJSONArray.toString(),
+			_patchPutObjectEntryWithComments(
+				commentsJSONArray, groupId, httpMethod, objectDefinition,
+				objectEntryJSONObject
+			).toString(),
+			JSONCompareMode.LENIENT);
+	}
+
+	private void _testPatchPutObjectEntryWithMissingParentCommentReference(
+			Http.Method httpMethod)
+		throws Exception {
+
+		ObjectEntry serviceBuilderObjectEntry =
+			_objectEntryLocalService.addObjectEntry(
+				0, TestPropsValues.getUserId(),
+				_objectDefinition1.getObjectDefinitionId(),
+				ObjectEntryFolderConstants.
+					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+				null,
+				HashMapBuilder.<String, Serializable>put(
+					_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+				).build(),
+				ServiceContextTestUtil.getServiceContext());
+
+		String parentExternalReferenceCode = RandomTestUtil.randomString();
+
+		com.liferay.object.rest.dto.v1_0.ObjectEntry objectEntry =
+			new com.liferay.object.rest.dto.v1_0.ObjectEntry() {
+				{
+					comments = new Comment[] {
+						new Comment() {
+							{
+								externalReferenceCode =
+									RandomTestUtil.randomString();
+								parentCommentExternalReferenceCode =
+									parentExternalReferenceCode;
+								text = RandomTestUtil.randomString();
+							}
+						}
+					};
+					properties = HashMapBuilder.<String, Object>put(
+						_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+					).build();
+				}
+			};
+
+		Company company = _companyLocalService.getCompany(
+			TestPropsValues.getCompanyId());
+
+		Assert.assertNull(
+			_commentManager.fetchComment(
+				company.getGroupId(), parentExternalReferenceCode));
+
+		ObjectEntryResource objectEntryResource = _getObjectEntryResource(
+			_objectDefinition1, TestPropsValues.getUser());
+
+		try (SafeCloseable safeCloseable =
+				LazyReferencingThreadLocal.setEnabledWithSafeCloseable(true)) {
+
+			if (httpMethod == Http.Method.PATCH) {
+				objectEntryResource.patchObjectEntry(
+					serviceBuilderObjectEntry.getObjectEntryId(), objectEntry);
+			}
+			else if (httpMethod == Http.Method.PUT) {
+				objectEntryResource.putObjectEntry(
+					serviceBuilderObjectEntry.getObjectEntryId(), objectEntry);
+			}
+		}
+
+		com.liferay.portal.kernel.comment.Comment serviceBuilderComment =
+			_commentManager.getComment(
+				company.getGroupId(), parentExternalReferenceCode);
+
+		Assert.assertTrue(serviceBuilderComment instanceof WorkflowableComment);
+
+		WorkflowableComment workflowableComment =
+			(WorkflowableComment)serviceBuilderComment;
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_EMPTY, workflowableComment.getStatus());
+
+		_commentManager.deleteComment(serviceBuilderComment.getCommentId());
+	}
+
+	private void _testPostCustomObjectEntryWithAssigneeObjectField(
+			ObjectDefinition objectDefinition)
+		throws Exception {
+
+		User user = UserTestUtil.addUser();
+
+		JSONObject jsonObject = _postCustomObjectEntryWithAssigneeObjectField(
+			objectDefinition, user);
+
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				"externalReferenceCode", user.getExternalReferenceCode()
+			).put(
+				"name", user.getFullName()
+			).put(
+				"type", "User"
+			).toString(),
+			String.valueOf(jsonObject.get("assignee")),
+			JSONCompareMode.LENIENT);
+	}
+
 	private void _testPostCustomObjectEntryWithAttachmentObjectField(
 			ObjectDefinition objectDefinition)
 		throws Exception {
@@ -16420,7 +18824,7 @@ public class ObjectEntryResourceTest {
 					_dlURLHelper.getPreviewURL(
 						customFileEntry1, customFileEntry1.getFileVersion(),
 						null, "", false, true)),
-				null, _group.getGroupId()),
+				null, _group.getGroupId(), customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16442,7 +18846,7 @@ public class ObjectEntryResourceTest {
 				),
 				_toFileEntry(
 					RandomTestUtil.randomString() + ".txt", hostDownFileURL,
-					null, null),
+					null, null, customFileEntry1.getMimeType()),
 				null, objectDefinition,
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 		}
@@ -16466,7 +18870,7 @@ public class ObjectEntryResourceTest {
 				),
 				_toFileEntry(
 					RandomTestUtil.randomString() + ".txt", malformedFileURL,
-					null, _group.getGroupId()),
+					null, _group.getGroupId(), customFileEntry1.getMimeType()),
 				null, objectDefinition,
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 		}
@@ -16487,7 +18891,7 @@ public class ObjectEntryResourceTest {
 			),
 			_toFileEntry(
 				RandomTestUtil.randomString() + ".txt", resourceNotFoundFileURL,
-				null, _group.getGroupId()),
+				null, _group.getGroupId(), customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16506,7 +18910,7 @@ public class ObjectEntryResourceTest {
 			),
 			_toFileEntry(
 				RandomTestUtil.randomString() + ".txt", unsupportedProtocolURL,
-				null, _group.getGroupId()),
+				null, _group.getGroupId(), customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16522,7 +18926,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId()),
+				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId(),
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16536,7 +18941,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				dlFolder2.getExternalReferenceCode(), dlFolder2.getGroupId()),
+				dlFolder2.getExternalReferenceCode(), dlFolder2.getGroupId(),
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16546,7 +18952,8 @@ public class ObjectEntryResourceTest {
 				_getFileEntryJSONObject(null, fileEntry, objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, _testGroupId),
+				RandomTestUtil.randomString() + ".txt", null, _testGroupId,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16556,7 +18963,7 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt", null,
-				_group.getGroupId()),
+				_group.getGroupId(), customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16565,7 +18972,8 @@ public class ObjectEntryResourceTest {
 				_getFileEntryJSONObject(null, fileEntry, objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16592,7 +19000,8 @@ public class ObjectEntryResourceTest {
 					dlFolder3, fileEntry, objectDefinition, thumbnailSrc)),
 			_toFileEntry(
 				customFileEntry2.getFileName(),
-				customFileEntry2.getFileEntryId()),
+				customFileEntry2.getFileEntryId(),
+				customFileEntry2.getMimeType()),
 			"thumbnailURL", objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16606,7 +19015,8 @@ public class ObjectEntryResourceTest {
 					objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16618,7 +19028,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				RandomTestUtil.randomString(), RandomTestUtil.randomLong()),
+				RandomTestUtil.randomString(), RandomTestUtil.randomLong(),
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16629,7 +19040,8 @@ public class ObjectEntryResourceTest {
 					objectDefinition)),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_2);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16641,7 +19053,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				RandomTestUtil.randomString(), RandomTestUtil.randomLong()),
+				RandomTestUtil.randomString(), RandomTestUtil.randomLong(),
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_2);
 
@@ -16661,7 +19074,8 @@ public class ObjectEntryResourceTest {
 				Base64::encode,
 				RandomTestUtil.randomString(
 					(_MAX_FILE_SIZE_VALUE * 1024 * 1024) + 1),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16671,8 +19085,8 @@ public class ObjectEntryResourceTest {
 				"title", "File name is null"
 			),
 			_toFileEntry(
-				Base64::encode, RandomTestUtil.randomString(), null, null,
-				null),
+				Base64::encode, RandomTestUtil.randomString(), null, null, null,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16683,7 +19097,8 @@ public class ObjectEntryResourceTest {
 			),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".err", null, null),
+				RandomTestUtil.randomString() + ".err", null, null,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -16693,8 +19108,9 @@ public class ObjectEntryResourceTest {
 				"title", "Unable to decode Base64 file"
 			),
 			_toFileEntry(
-				String::new, RandomTestUtil.randomString(7),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				String::new, "$" + RandomTestUtil.randomString(7),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1);
 
@@ -16723,18 +19139,13 @@ public class ObjectEntryResourceTest {
 					fileEntry -> JSONUtil.put(
 						"status", "FORBIDDEN"
 					).put(
-						"title",
-						StringBundler.concat(
-							"User ", user.getUserId(),
-							" must have ADD_DOCUMENT permission for com.",
-							"liferay.portal.kernel.repository.model.Folder ",
-							dlFolder.getFolderId())
+						"title", "Forbidden"
 					),
 					_toFileEntry(
 						Base64::encode, RandomTestUtil.randomString(),
 						RandomTestUtil.randomString() + ".txt",
 						dlFolder.getExternalReferenceCode(),
-						dlFolder.getGroupId()),
+						dlFolder.getGroupId(), customFileEntry1.getMimeType()),
 					null, objectDefinition,
 					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16754,7 +19165,7 @@ public class ObjectEntryResourceTest {
 						Base64::encode, RandomTestUtil.randomString(),
 						RandomTestUtil.randomString() + ".txt",
 						dlFolder.getExternalReferenceCode(),
-						dlFolder.getGroupId()),
+						dlFolder.getGroupId(), customFileEntry1.getMimeType()),
 					null, objectDefinition,
 					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 			}
@@ -16767,7 +19178,8 @@ public class ObjectEntryResourceTest {
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				randomExternalReferenceCode, _testGroupId),
+				randomExternalReferenceCode, _testGroupId,
+				customFileEntry1.getMimeType()),
 			null, objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 
@@ -16775,7 +19187,8 @@ public class ObjectEntryResourceTest {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry testFileEntry = _toFileEntry(
 			Base64::encode, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			customFileEntry1.getMimeType());
 
 		_testPostCustomObjectEntryWithAttachmentObjectField(
 			fileEntry -> JSONUtil.put(
@@ -16802,7 +19215,8 @@ public class ObjectEntryResourceTest {
 
 		testFileEntry = _toFileEntry(
 			Base64::encode, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			customFileEntry1.getMimeType());
 
 		_testPostCustomObjectEntryWithAttachmentObjectField(
 			fileEntry -> JSONUtil.put(
@@ -16843,7 +19257,7 @@ public class ObjectEntryResourceTest {
 
 		testFileEntry = _toFileEntry(
 			Base64::encode, fileContent, existingDLFileEntry.getFileName(),
-			null, _testGroupId);
+			null, _testGroupId, customFileEntry1.getMimeType());
 
 		testFileEntry.setExternalReferenceCode(
 			existingDLFileEntry.getExternalReferenceCode());
@@ -16873,7 +19287,7 @@ public class ObjectEntryResourceTest {
 
 		testFileEntry = _toFileEntry(
 			Base64::encode, fileContent, existingDLFileEntry.getFileName(),
-			null, _testGroupId);
+			null, _testGroupId, customFileEntry1.getMimeType());
 
 		testFileEntry.setExternalReferenceCode(
 			existingDLFileEntry.getExternalReferenceCode());
@@ -16901,18 +19315,14 @@ public class ObjectEntryResourceTest {
 
 		testFileEntry = _toFileEntry(
 			content -> null, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			customFileEntry1.getMimeType());
 
 		testFileEntry.setExternalReferenceCode(RandomTestUtil.randomString());
 
 		Group group = GroupTestUtil.addGroup();
 
-		Scope scope = new Scope();
-
-		scope.setExternalReferenceCode(group.getExternalReferenceCode());
-		scope.setType(Scope.Type.SITE);
-
-		testFileEntry.setScope(scope);
+		testFileEntry.setScope(Scope.of(group, LocaleUtil.getDefault()));
 
 		String externalReferenceCode3 =
 			testFileEntry.getExternalReferenceCode();
@@ -16947,7 +19357,8 @@ public class ObjectEntryResourceTest {
 
 		testFileEntry = _toFileEntry(
 			content -> null, RandomTestUtil.randomString(),
-			RandomTestUtil.randomString() + ".txt", null, null);
+			RandomTestUtil.randomString() + ".txt", null, null,
+			customFileEntry1.getMimeType());
 
 		testFileEntry.setExternalReferenceCode(RandomTestUtil.randomString());
 
@@ -17003,12 +19414,15 @@ public class ObjectEntryResourceTest {
 					).put(
 						"folder",
 						JSONFactoryUtil.createJSONObject(folder.toString())
+					).put(
+						"mimeType", fileEntry.getMimeType()
 					));
 			},
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
 				RandomTestUtil.randomString() + ".txt",
-				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId()),
+				dlFolder1.getExternalReferenceCode(), dlFolder1.getGroupId(),
+				customFileEntry1.getMimeType()),
 			"fileBase64,folder", objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -17024,7 +19438,8 @@ public class ObjectEntryResourceTest {
 				}),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			"fileBase64,folder", objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_1);
 		_testPostCustomObjectEntryWithAttachmentObjectField(
@@ -17040,7 +19455,8 @@ public class ObjectEntryResourceTest {
 				}),
 			_toFileEntry(
 				Base64::encode, RandomTestUtil.randomString(),
-				RandomTestUtil.randomString() + ".txt", null, null),
+				RandomTestUtil.randomString() + ".txt", null, null,
+				customFileEntry1.getMimeType()),
 			"fileBase64,folder", objectDefinition,
 			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_SOURCE_2);
 	}
@@ -17306,6 +19722,62 @@ public class ObjectEntryResourceTest {
 				).toString(),
 				JSONCompareMode.LENIENT);
 		}
+	}
+
+	private void _testPostObjectEntriesWithComments(
+			long groupId, ObjectDefinition objectDefinition)
+		throws Exception {
+
+		JSONArray commentsJSONArray = JSONUtil.put(
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			));
+
+		Assert.assertEquals(
+			0,
+			_postObjectEntryWithComments(
+				commentsJSONArray, groupId, true, objectDefinition
+			).length());
+
+		_enableComments(objectDefinition);
+
+		JSONAssert.assertEquals(
+			commentsJSONArray.toString(),
+			_postObjectEntryWithComments(
+				commentsJSONArray, groupId, true, objectDefinition
+			).toString(),
+			JSONCompareMode.LENIENT);
+
+		String externalReferenceCode = RandomTestUtil.randomString();
+
+		commentsJSONArray = JSONUtil.putAll(
+			JSONUtil.put(
+				"externalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			),
+			JSONUtil.put(
+				"externalReferenceCode", RandomTestUtil.randomString()
+			).put(
+				"parentCommentExternalReferenceCode", externalReferenceCode
+			).put(
+				"text",
+				StringBundler.concat(
+					"<p>", RandomTestUtil.randomString(), "</p>")
+			));
+
+		JSONAssert.assertEquals(
+			commentsJSONArray.toString(),
+			_postObjectEntryWithComments(
+				commentsJSONArray, groupId, true, objectDefinition
+			).toString(),
+			JSONCompareMode.LENIENT);
 	}
 
 	private void _testPostValidate(
@@ -18329,14 +20801,15 @@ public class ObjectEntryResourceTest {
 
 	private com.liferay.object.rest.dto.v1_0.FileEntry _toFileEntry(
 		Function<byte[], String> encodeFunction, String fileContent,
-		String fileName, String folderExternalReferenceCode,
-		Long folderSiteId) {
+		String fileName, String folderExternalReferenceCode, Long folderSiteId,
+		String mimeType) {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry =
 			new com.liferay.object.rest.dto.v1_0.FileEntry();
 
 		fileEntry.setFileBase64(encodeFunction.apply(fileContent.getBytes()));
 		fileEntry.setName(fileName);
+		fileEntry.setMimeType(mimeType);
 
 		if ((folderExternalReferenceCode != null) || (folderSiteId != null)) {
 			Folder folder = new Folder();
@@ -18351,26 +20824,28 @@ public class ObjectEntryResourceTest {
 	}
 
 	private com.liferay.object.rest.dto.v1_0.FileEntry _toFileEntry(
-		String fileName, Long id) {
+		String fileName, Long id, String mimeType) {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry =
 			new com.liferay.object.rest.dto.v1_0.FileEntry();
 
 		fileEntry.setName(fileName);
 		fileEntry.setId(id);
+		fileEntry.setMimeType(mimeType);
 
 		return fileEntry;
 	}
 
 	private com.liferay.object.rest.dto.v1_0.FileEntry _toFileEntry(
 		String fileName, String fileURL, String folderExternalReferenceCode,
-		Long folderSiteId) {
+		Long folderSiteId, String mimeType) {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry =
 			new com.liferay.object.rest.dto.v1_0.FileEntry();
 
 		fileEntry.setFileURL(fileURL);
 		fileEntry.setName(fileName);
+		fileEntry.setMimeType(mimeType);
 
 		if ((folderExternalReferenceCode != null) || (folderSiteId != null)) {
 			Folder folder = new Folder();
@@ -18385,13 +20860,15 @@ public class ObjectEntryResourceTest {
 	}
 
 	private JSONObject _toFileEntryJSONObject(
-			String fileContent, String fileName, String objectFieldName)
+			String fileContent, String fileName, String mimeType,
+			String objectFieldName)
 		throws Exception {
 
 		com.liferay.object.rest.dto.v1_0.FileEntry fileEntry =
 			new com.liferay.object.rest.dto.v1_0.FileEntry();
 
 		fileEntry.setFileBase64(Base64.encode(fileContent.getBytes()));
+		fileEntry.setMimeType(mimeType);
 
 		if (StringUtil.equals(
 				objectFieldName,
@@ -18409,6 +20886,69 @@ public class ObjectEntryResourceTest {
 		return JSONFactoryUtil.createJSONObject(fileEntry.toString());
 	}
 
+	private JSONObject _toTaxonomyCategoryJSONObject(
+			long groupId, TaxonomyCategory taxonomyCategory,
+			boolean withEmbeddedTaxonomyCategory)
+		throws Exception {
+
+		JSONObject jsonObject = JSONUtil.put(
+			"parentTaxonomyCategory",
+			() -> {
+				ParentTaxonomyCategory parentTaxonomyCategory =
+					taxonomyCategory.getParentTaxonomyCategory();
+
+				if (parentTaxonomyCategory == null) {
+					return null;
+				}
+
+				return JSONUtil.put(
+					"externalReferenceCode",
+					parentTaxonomyCategory.getExternalReferenceCode());
+			}
+		).put(
+			"parentTaxonomyVocabulary",
+			() -> {
+				ParentTaxonomyVocabulary parentTaxonomyVocabulary =
+					taxonomyCategory.getParentTaxonomyVocabulary();
+
+				return JSONUtil.put(
+					"externalReferenceCode",
+					parentTaxonomyVocabulary.getExternalReferenceCode());
+			}
+		).put(
+			"scope",
+			() -> {
+				if (groupId == taxonomyCategory.getSiteId()) {
+					return null;
+				}
+
+				Scope scope = Scope.of(
+					taxonomyCategory.getSiteId(), LocaleUtil.getDefault());
+
+				return JSONUtil.put(
+					"externalReferenceCode", scope.getExternalReferenceCode()
+				).put(
+					"type", scope.getTypeAsString()
+				);
+			}
+		).put(
+			"taxonomyCategoryExternalReferenceCode",
+			taxonomyCategory.getExternalReferenceCode()
+		).put(
+			"taxonomyCategoryId", Long.valueOf(taxonomyCategory.getId())
+		).put(
+			"taxonomyCategoryName", taxonomyCategory.getName()
+		);
+
+		if (!withEmbeddedTaxonomyCategory) {
+			return jsonObject;
+		}
+
+		return jsonObject.put(
+			"embeddedTaxonomyCategory",
+			_toEmbeddedTaxonomyCategoryJSONObject(taxonomyCategory));
+	}
+
 	private ValidationResponse _validate(
 			String scopeKey, ObjectEntryResource objectEntryResource,
 			ValidationRequest validationRequest)
@@ -18420,6 +20960,16 @@ public class ObjectEntryResourceTest {
 		}
 
 		return objectEntryResource.postValidate(validationRequest);
+	}
+
+	private JSONArray _withScopeKey(JSONArray jsonArray, String scopeKey) {
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			jsonObject.put("scopeKey", scopeKey);
+		}
+
+		return jsonArray;
 	}
 
 	private static final String _ERC_VALUE_1 =
@@ -18553,6 +21103,15 @@ public class ObjectEntryResourceTest {
 		_testObjectEntryModelListener = new TestObjectEntryModelListener();
 
 	@Inject
+	private AssetVocabularyLocalService _assetVocabularyLocalService;
+
+	@Inject
+	private ClassNameLocalService _classNameLocalService;
+
+	@Inject
+	private CommentManager _commentManager;
+
+	@Inject
 	private CompanyLocalService _companyLocalService;
 
 	@Inject
@@ -18644,6 +21203,9 @@ public class ObjectEntryResourceTest {
 	private ObjectValidationRuleLocalService _objectValidationRuleLocalService;
 
 	@Inject
+	private OrganizationLocalService _organizationLocalService;
+
+	@Inject
 	private PortletFileRepository _portletFileRepository;
 
 	@Inject
@@ -18662,6 +21224,9 @@ public class ObjectEntryResourceTest {
 		_systemObjectDefinitionManagerRegistry;
 
 	private JSONObject _userAccountJSONObject;
+
+	@Inject
+	private UserGroupRoleLocalService _userGroupRoleLocalService;
 
 	@Inject
 	private UserLocalService _userLocalService;

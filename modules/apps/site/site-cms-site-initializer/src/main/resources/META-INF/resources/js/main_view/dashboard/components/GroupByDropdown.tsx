@@ -22,7 +22,7 @@ const defaultStructureTypes: Item[] = [
 		value: 'tag',
 	},
 	{
-		label: Liferay.Language.get('structure-label'),
+		label: Liferay.Language.get('content-structure-label'),
 		value: 'structure',
 	},
 ];
@@ -41,7 +41,7 @@ const GroupByDropdown: React.FC<IAllFiltersDropdown> = ({
 			filterByValue="structureTypes"
 			items={defaultStructureTypes}
 			loading={false}
-			onActiveChange={() => setDropdownActive(!dropdownActive)}
+			onActiveChange={() => setDropdownActive((prevState) => !prevState)}
 			onSelectItem={(item) => {
 				onSelectItem(item);
 				setDropdownActive(false);

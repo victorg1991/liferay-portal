@@ -6,6 +6,7 @@
 package com.liferay.learn;
 
 import com.liferay.client.extension.util.spring.boot3.BaseRestController;
+import com.liferay.petra.string.StringBundler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -13,7 +14,6 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -39,15 +39,19 @@ public class ObjectActionCourseRestController extends BaseRestController {
 			get(
 				"Bearer " + jwt.getTokenValue(),
 				UriComponentsBuilder.fromPath(
-					"/o/c/courses/scopes/" + _siteGroupId
+					"/o/c/p2s3courses"
 				).queryParam(
 					"fields",
-					"id,module.lessonDurationMinutes,module.lessons," +
-						"module.quizDurationMinutes,module.quizzes"
+					StringBundler.concat(
+						"id,p2s3CourseToP2S3Modules.lessonDurationMinutes,",
+						"p2s3CourseToP2S3Modules.lessons,",
+						"p2s3CourseToP2S3Modules.quizDurationMinutes,",
+						"p2s3CourseToP2S3Modules.quizzes")
 				).queryParam(
-					"filter", "module/id eq '" + _getModuleId(json) + "'"
+					"filter",
+					"p2s3CourseToP2S3Modules/id eq '" + _getModuleId(json) + "'"
 				).queryParam(
-					"nestedFields", "module"
+					"nestedFields", "p2s3CourseToP2S3Modules"
 				).build(
 				).toUri()));
 
@@ -58,10 +62,10 @@ public class ObjectActionCourseRestController extends BaseRestController {
 		patch(
 			"Bearer " + jwt.getTokenValue(),
 			_getPayloadJSONObject(
-				itemJSONObject.getJSONArray("module")
+				itemJSONObject.getJSONArray("p2s3CourseToP2S3Modules")
 			).toString(),
 			UriComponentsBuilder.fromPath(
-				"/o/c/courses/" + itemJSONObject.getLong("id")
+				"/o/c/p2s3courses/" + itemJSONObject.getLong("id")
 			).build(
 			).toUri());
 
@@ -81,11 +85,13 @@ public class ObjectActionCourseRestController extends BaseRestController {
 		JSONObject valuesJSONObject = objectEntryJSONObject.getJSONObject(
 			"values");
 
-		if (valuesJSONObject.has("r_lesson_c_moduleId")) {
-			return valuesJSONObject.getLong("r_lesson_c_moduleId");
+		if (valuesJSONObject.has("r_p2s3ModuleToP2S3Lessons_c_p2s3ModuleId")) {
+			return valuesJSONObject.getLong(
+				"r_p2s3ModuleToP2S3Lessons_c_p2s3ModuleId");
 		}
 
-		return valuesJSONObject.getLong("r_quiz_c_moduleId");
+		return valuesJSONObject.getLong(
+			"r_p2s3ModuleToP2S3Quizzes_c_p2s3ModuleId");
 	}
 
 	private JSONObject _getPayloadJSONObject(JSONArray moduleJSONArray) {
@@ -118,8 +124,5 @@ public class ObjectActionCourseRestController extends BaseRestController {
 
 	private static final Log _log = LogFactory.getLog(
 		ObjectActionCourseRestController.class);
-
-	@Value("${liferay.learn.dxp.site.group.id}")
-	private long _siteGroupId;
 
 }

@@ -5,13 +5,17 @@
 
 package com.liferay.configuration.admin.web.internal.util;
 
+import com.liferay.configuration.admin.util.ConfigurationFilterStringUtil;
 import com.liferay.configuration.admin.web.internal.display.context.ConfigurationScopeDisplayContext;
 import com.liferay.configuration.admin.web.internal.model.ConfigurationModel;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.configuration.metatype.definitions.ExtendedMetaTypeInformation;
 import com.liferay.portal.configuration.metatype.definitions.ExtendedMetaTypeService;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -19,19 +23,18 @@ import com.liferay.portal.kernel.util.Validator;
 import java.io.IOException;
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
@@ -84,11 +87,54 @@ public class ConfigurationModelRetrieverImpl
 		String pid, ExtendedObjectClassDefinition.Scope scope,
 		Serializable scopePK) {
 
+		return getConfiguration(pid, scope, scopePK, true);
+	}
+
+	@Override
+	public Configuration getConfiguration(
+		String pid, ExtendedObjectClassDefinition.Scope scope,
+		Serializable scopePK, boolean strictScope) {
+
 		Configuration[] configurations = _getConfigurations(
 			pid, scope, String.valueOf(scopePK));
 
 		if (ArrayUtil.isNotEmpty(configurations)) {
-			return configurations[0];
+			for (Configuration configuration : configurations) {
+				if (scope.equals(ExtendedObjectClassDefinition.Scope.SYSTEM)) {
+					return configuration;
+				}
+
+				Dictionary<String, Object> properties =
+					configuration.getProcessedProperties(null);
+
+				if (Objects.equals(
+						properties.get(scope.getPropertyKey()), scopePK)) {
+
+					return configuration;
+				}
+			}
+		}
+
+		if (!strictScope &&
+			scope.equals(ExtendedObjectClassDefinition.Scope.COMPANY)) {
+
+			return getConfiguration(
+				pid, ExtendedObjectClassDefinition.Scope.SYSTEM, null, false);
+		}
+		else if (!strictScope &&
+				 scope.equals(ExtendedObjectClassDefinition.Scope.GROUP)) {
+
+			long companyId = 0;
+
+			Group group = _groupLocalService.fetchGroup((Long)scopePK);
+
+			if (group != null) {
+				companyId = group.getCompanyId();
+			}
+
+			return getConfiguration(
+				pid, ExtendedObjectClassDefinition.Scope.COMPANY, companyId,
+				false);
 		}
 
 		return null;
@@ -162,28 +208,19 @@ public class ConfigurationModelRetrieverImpl
 			ExtendedObjectClassDefinition.Scope scope, Serializable scopePK)
 		throws IOException {
 
-		List<ConfigurationModel> factoryInstancesConfigurationModels =
-			new ArrayList<>();
-
 		ConfigurationScopeDisplayContext configurationScopeDisplayContext =
 			new ConfigurationScopeDisplayContext(scope, scopePK);
 
-		for (Configuration configuration :
-				_getConfigurations(
-					factoryConfigurationModel.getFactoryPid(), scope,
-					String.valueOf(scopePK))) {
-
-			ConfigurationModel curConfigurationModel = new ConfigurationModel(
+		return TransformUtil.transformToList(
+			_getConfigurations(
+				factoryConfigurationModel.getFactoryPid(), scope,
+				String.valueOf(scopePK)),
+			configuration -> new ConfigurationModel(
 				configuration.getBundleLocation(),
 				factoryConfigurationModel.getBundleSymbolicName(),
 				factoryConfigurationModel.getClassLoader(), configuration,
 				configurationScopeDisplayContext, factoryConfigurationModel,
-				false);
-
-			factoryInstancesConfigurationModels.add(curConfigurationModel);
-		}
-
-		return factoryInstancesConfigurationModels;
+				false));
 	}
 
 	@Activate
@@ -194,63 +231,12 @@ public class ConfigurationModelRetrieverImpl
 	protected String getPidFilterString(
 		String pid, ExtendedObjectClassDefinition.Scope scope) {
 
-		String key = Constants.SERVICE_PID;
-
-		if (!scope.equals(ExtendedObjectClassDefinition.Scope.SYSTEM) ||
-			pid.contains("~")) {
-
-			key = ConfigurationAdmin.SERVICE_FACTORYPID;
-			pid = _getUnscopedPid(pid);
-		}
-
 		if (scope.equals(ExtendedObjectClassDefinition.Scope.SYSTEM)) {
-			return StringBundler.concat(
-				StringPool.OPEN_PARENTHESIS, StringPool.AMPERSAND,
-				_getPropertyFilterString(key, pid), "(!(",
-				ExtendedObjectClassDefinition.Scope.COMPANY.getPropertyKey(),
-				"=*))(!(dxp.lxc.liferay.com.virtualInstanceId=*))(!(",
-				ExtendedObjectClassDefinition.Scope.GROUP.getPropertyKey(),
-				"=*))(!(siteExternalReferenceCode=*)))");
+			return ConfigurationFilterStringUtil.getSystemScopedFilterString(
+				pid);
 		}
 
-		String scopedFilterString = StringBundler.concat(
-			StringPool.OPEN_PARENTHESIS, StringPool.PIPE,
-			_getPropertyFilterString(key, pid),
-			_getPropertyFilterString(key, pid + ".scoped"),
-			StringPool.CLOSE_PARENTHESIS);
-
-		if (scope.equals(ExtendedObjectClassDefinition.Scope.COMPANY)) {
-			return StringBundler.concat(
-				StringPool.OPEN_PARENTHESIS, StringPool.AMPERSAND,
-				scopedFilterString, "(|(",
-				ExtendedObjectClassDefinition.Scope.COMPANY.getPropertyKey(),
-				"=*)(dxp.lxc.liferay.com.virtualInstanceId=*))(!(",
-				ExtendedObjectClassDefinition.Scope.GROUP.getPropertyKey(),
-				"=*))(!(siteExternalReferenceCode=*))(!(",
-				ExtendedObjectClassDefinition.Scope.PORTLET_INSTANCE.
-					getPropertyKey(),
-				"=*)))");
-		}
-
-		if (scope.equals(ExtendedObjectClassDefinition.Scope.GROUP)) {
-			return StringBundler.concat(
-				StringPool.OPEN_PARENTHESIS, StringPool.AMPERSAND,
-				scopedFilterString, "(|(",
-				ExtendedObjectClassDefinition.Scope.GROUP.getPropertyKey(),
-				"=*)(siteExternalReferenceCode=*))(!(",
-				ExtendedObjectClassDefinition.Scope.PORTLET_INSTANCE.
-					getPropertyKey(),
-				"=*)))");
-		}
-
-		return StringBundler.concat(
-			StringPool.OPEN_PARENTHESIS, StringPool.AMPERSAND,
-			scopedFilterString, "(|(",
-			ExtendedObjectClassDefinition.Scope.GROUP.getPropertyKey(),
-			"=*)(siteExternalReferenceCode=*))(",
-			ExtendedObjectClassDefinition.Scope.PORTLET_INSTANCE.
-				getPropertyKey(),
-			"=*))");
+		return _getScopedPidFilterString(pid, scope);
 	}
 
 	private void _collectConfigurationModels(
@@ -338,31 +324,32 @@ public class ConfigurationModelRetrieverImpl
 				return new Configuration[0];
 			}
 
-			Filter filter = null;
-
 			String propertyFilterString = _getPropertyFilterString(
 				scope.getPropertyKey(), value);
 
-			if (Validator.isNotNull(propertyFilterString)) {
-				filter = FrameworkUtil.createFilter(propertyFilterString);
+			if (Validator.isNull(propertyFilterString)) {
+				return configurations;
 			}
+
+			Filter filter = FrameworkUtil.createFilter(propertyFilterString);
 
 			if (filter == null) {
 				return configurations;
 			}
 
-			List<Configuration> configurationsList = new ArrayList<>();
+			return TransformUtil.transform(
+				configurations,
+				configuration -> {
+					Dictionary<String, Object> properties =
+						configuration.getProcessedProperties(null);
 
-			for (Configuration configuration : configurations) {
-				Dictionary<String, Object> properties =
-					configuration.getProcessedProperties(null);
+					if (filter.match(properties)) {
+						return configuration;
+					}
 
-				if (filter.match(properties)) {
-					configurationsList.add(configuration);
-				}
-			}
-
-			return configurationsList.toArray(new Configuration[0]);
+					return null;
+				},
+				Configuration.class);
 		}
 		catch (InvalidSyntaxException | IOException exception) {
 			throw new RuntimeException(exception);
@@ -379,8 +366,21 @@ public class ConfigurationModelRetrieverImpl
 			StringPool.CLOSE_PARENTHESIS);
 	}
 
-	private String _getUnscopedPid(String pid) {
-		return pid.replaceFirst("\\.scoped.*", StringPool.BLANK);
+	private String _getScopedPidFilterString(
+		String pid, ExtendedObjectClassDefinition.Scope scope) {
+
+		if (scope.equals(ExtendedObjectClassDefinition.Scope.COMPANY)) {
+			return ConfigurationFilterStringUtil.getCompanyScopedFilterString(
+				null, pid, null);
+		}
+
+		if (scope.equals(ExtendedObjectClassDefinition.Scope.GROUP)) {
+			return ConfigurationFilterStringUtil.getGroupScopedFilterString(
+				null, pid, null);
+		}
+
+		return ConfigurationFilterStringUtil.getPortletScopedFilterString(
+			null, pid, null, null);
 	}
 
 	private BundleContext _bundleContext;
@@ -390,6 +390,9 @@ public class ConfigurationModelRetrieverImpl
 
 	@Reference
 	private ExtendedMetaTypeService _extendedMetaTypeService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 	private static class ConfigurationModelComparator
 		implements Comparator<ConfigurationModel> {

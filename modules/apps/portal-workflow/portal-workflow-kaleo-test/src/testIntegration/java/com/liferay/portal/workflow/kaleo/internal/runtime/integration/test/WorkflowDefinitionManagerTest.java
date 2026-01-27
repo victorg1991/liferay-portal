@@ -7,23 +7,33 @@ package com.liferay.portal.workflow.kaleo.internal.runtime.integration.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DataGuard;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.workflow.DefaultWorkflowNodeSetting;
+import com.liferay.portal.kernel.workflow.NoSuchWorkflowDefinitionException;
 import com.liferay.portal.kernel.workflow.WorkflowDefinition;
 import com.liferay.portal.kernel.workflow.WorkflowException;
+import com.liferay.portal.kernel.workflow.WorkflowNode;
+import com.liferay.portal.kernel.workflow.WorkflowNodeSetting;
 import com.liferay.portal.security.script.management.test.util.ScriptManagementConfigurationTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+import com.liferay.portal.workflow.constants.WorkflowDefinitionConstants;
 import com.liferay.portal.workflow.kaleo.definition.exception.KaleoDefinitionValidationException;
 import com.liferay.portal.workflow.kaleo.definition.util.WorkflowDefinitionContentUtil;
 import com.liferay.portal.workflow.manager.WorkflowDefinitionManager;
 
 import java.io.Closeable;
 import java.io.InputStream;
+
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -41,9 +51,11 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
-		new LiferayIntegrationTestRule();
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
-	@Test(expected = WorkflowException.class)
+	@Test(expected = NoSuchWorkflowDefinitionException.class)
 	public void testDeleteSaveWorkflowDefinition() throws Exception {
 		WorkflowDefinition workflowDefinition = _saveWorkflowDefinition();
 
@@ -73,8 +85,96 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 				() -> _workflowDefinitionManager.deployWorkflowDefinition(
 					null, TestPropsValues.getCompanyId(),
 					TestPropsValues.getUserId(), StringPool.BLANK,
-					"Single Approver", content.getBytes()));
+					WorkflowDefinitionConstants.NAME_SINGLE_APPROVER,
+					content.getBytes()));
 		}
+	}
+
+	@Test
+	public void testDeployWorkflowDefinitionWithAIDecisionNode()
+		throws Exception {
+
+		AssertUtils.assertFailure(
+			KaleoDefinitionValidationException.MustSetIncomingTransition.class,
+			"The AI Decision node must have an incoming transition",
+			() -> {
+				InputStream inputStream = getResourceInputStream(
+					"ai-decision-node-with-no-incoming-transitions-workflow-" +
+						"definition.json");
+
+				_workflowDefinitionManager.deployWorkflowDefinition(
+					RandomTestUtil.randomString(),
+					TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+					RandomTestUtil.randomString(),
+					"AI Decision Node With No Incoming Transitions Workflow " +
+						"Definition",
+					FileUtil.getBytes(inputStream));
+			});
+		AssertUtils.assertFailure(
+			KaleoDefinitionValidationException.
+				MustSetMultipleOutgoingTransition.class,
+			"The AI Decision node must have at least 2 outgoing transitions",
+			() -> {
+				InputStream inputStream = getResourceInputStream(
+					"ai-decision-node-with-less-than-two-outgoing-transition-" +
+						"workflow-definition.json");
+
+				_workflowDefinitionManager.deployWorkflowDefinition(
+					RandomTestUtil.randomString(),
+					TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+					RandomTestUtil.randomString(),
+					"AI Decision Node With Less Than Two Outgoing Transition " +
+						"Workflow Definition",
+					FileUtil.getBytes(inputStream));
+			});
+
+		InputStream inputStream = getResourceInputStream(
+			"ai-decision-node-workflow-definition.json");
+
+		WorkflowDefinition workflowDefinition =
+			_workflowDefinitionManager.deployWorkflowDefinition(
+				RandomTestUtil.randomString(), TestPropsValues.getCompanyId(),
+				TestPropsValues.getUserId(), RandomTestUtil.randomString(),
+				"AI Decision Node Workflow Definition",
+				FileUtil.getBytes(inputStream));
+
+		List<WorkflowNode> workflowNodes =
+			workflowDefinition.getWorkflowNodes();
+
+		WorkflowNode workflowNode = workflowNodes.get(1);
+
+		Assert.assertEquals(
+			WorkflowNode.Type.AI_DECISION, workflowNode.getType());
+
+		_assertEquals(
+			List.of(
+				_createWorkflowNodeSetting(
+					"inputVariables",
+					JSONUtil.put(
+						JSONUtil.put(
+							"name", "inputVariable"
+						).put(
+							"type", "string"
+						)
+					).toString()),
+				_createWorkflowNodeSetting(
+					"outputVariables",
+					JSONUtil.put(
+						JSONUtil.put(
+							"name", "outputVariable"
+						).put(
+							"type", "string"
+						)
+					).toString()),
+				_createWorkflowNodeSetting("prompt", "Prompt"),
+				_createWorkflowNodeSetting(
+					"tools",
+					JSONUtil.put(
+						JSONUtil.put(
+							"externalReferenceCode", "L_LIFERAY_MCP_SERVER")
+					).toString()),
+				_createWorkflowNodeSetting("userMessage", "User Message")),
+			workflowNode.getWorkflowNodeSettings());
 	}
 
 	@Test
@@ -90,7 +190,8 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 			_workflowDefinitionManager.deployWorkflowDefinition(
 				null, TestPropsValues.getCompanyId(),
 				TestPropsValues.getUserId(), StringPool.BLANK,
-				"Single Approver", content.getBytes());
+				WorkflowDefinitionConstants.NAME_SINGLE_APPROVER,
+				content.getBytes());
 
 		Assert.assertEquals(
 			workflowDefinition.getName(), workflowDefinition.getName());
@@ -106,13 +207,83 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 
 		WorkflowDefinition workflowDefinition =
 			_workflowDefinitionManager.deployWorkflowDefinition(
-				null, TestPropsValues.getCompanyId(),
-				TestPropsValues.getUserId(), StringPool.BLANK,
-				"Single Approver", content.getBytes());
+				WorkflowDefinitionConstants.
+					EXTERNAL_REFERENCE_CODE_SINGLE_APPROVER,
+				TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+				StringPool.BLANK,
+				WorkflowDefinitionConstants.NAME_SINGLE_APPROVER,
+				content.getBytes());
 
 		Assert.assertEquals(
 			workflowDefinition.getName(), workflowDefinition.getName());
 		Assert.assertTrue(workflowDefinition.isActive());
+	}
+
+	@Test
+	public void testDeployWorkflowDefinitionWithLLMNode() throws Exception {
+		AssertUtils.assertFailure(
+			KaleoDefinitionValidationException.
+				MustNotSetMultipleOutgoingTransitions.class,
+			"The LLM node cannot have multiple outgoing transitions",
+			() -> {
+				InputStream inputStream = getResourceInputStream(
+					"llm-node-with-multiple-outgoing-transitions-workflow-" +
+						"definition.json");
+
+				_workflowDefinitionManager.deployWorkflowDefinition(
+					RandomTestUtil.randomString(),
+					TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+					RandomTestUtil.randomString(),
+					"LLM Node With Multiple Outgoing Transition Workflow " +
+						"Definition",
+					FileUtil.getBytes(inputStream));
+			});
+
+		InputStream inputStream = getResourceInputStream(
+			"llm-node-workflow-definition.json");
+
+		WorkflowDefinition workflowDefinition =
+			_workflowDefinitionManager.deployWorkflowDefinition(
+				RandomTestUtil.randomString(), TestPropsValues.getCompanyId(),
+				TestPropsValues.getUserId(), RandomTestUtil.randomString(),
+				"LLM Node Workflow Definition", FileUtil.getBytes(inputStream));
+
+		List<WorkflowNode> workflowNodes =
+			workflowDefinition.getWorkflowNodes();
+
+		WorkflowNode workflowNode = workflowNodes.get(2);
+
+		Assert.assertEquals(WorkflowNode.Type.LLM, workflowNode.getType());
+
+		_assertEquals(
+			List.of(
+				_createWorkflowNodeSetting(
+					"inputVariables",
+					JSONUtil.put(
+						JSONUtil.put(
+							"name", "inputVariable"
+						).put(
+							"type", "string"
+						)
+					).toString()),
+				_createWorkflowNodeSetting(
+					"outputVariables",
+					JSONUtil.put(
+						JSONUtil.put(
+							"name", "outputVariable"
+						).put(
+							"type", "string"
+						)
+					).toString()),
+				_createWorkflowNodeSetting("prompt", "Prompt"),
+				_createWorkflowNodeSetting(
+					"tools",
+					JSONUtil.put(
+						JSONUtil.put(
+							"externalReferenceCode", "L_LIFERAY_MCP_SERVER")
+					).toString()),
+				_createWorkflowNodeSetting("userMessage", "User Message")),
+			workflowNode.getWorkflowNodeSettings());
 	}
 
 	@Test
@@ -131,6 +302,12 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 
 		Assert.assertEquals(
 			workflowDefinition.getName(), deployedWorkflowDefinition.getName());
+	}
+
+	@Test
+	public void testGetWorkflowDefinition() throws Exception {
+		_testGetWorkflowDefinition("L_MESSAGE_BOARDS_USER_STATS_MODERATION");
+		_testGetWorkflowDefinition("L_SINGLE_APPROVER");
 	}
 
 	@Test
@@ -506,6 +683,30 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 		_assertValid(inputStream);
 	}
 
+	private void _assertEquals(
+		List<WorkflowNodeSetting> expectedWorkflowNodeSettings,
+		List<WorkflowNodeSetting> actualWorkflowNodeSettings) {
+
+		Assert.assertEquals(
+			actualWorkflowNodeSettings.toString(),
+			expectedWorkflowNodeSettings.size(),
+			actualWorkflowNodeSettings.size());
+
+		for (int i = 0; i < actualWorkflowNodeSettings.size(); i++) {
+			WorkflowNodeSetting expectedWorkflowNodeSetting =
+				expectedWorkflowNodeSettings.get(i);
+			WorkflowNodeSetting actualWorkflowNodeSetting =
+				expectedWorkflowNodeSettings.get(i);
+
+			Assert.assertEquals(
+				expectedWorkflowNodeSetting.getName(),
+				actualWorkflowNodeSetting.getName());
+			Assert.assertEquals(
+				expectedWorkflowNodeSetting.getValue(),
+				actualWorkflowNodeSetting.getValue());
+		}
+	}
+
 	private void _assertEquals(String expectedMessage, String actualMessage) {
 		Assert.assertEquals(expectedMessage, actualMessage);
 	}
@@ -530,6 +731,18 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 			FileUtil.getBytes(inputStream));
 	}
 
+	private WorkflowNodeSetting _createWorkflowNodeSetting(
+		String name, String value) {
+
+		DefaultWorkflowNodeSetting defaultWorkflowNodeSetting =
+			new DefaultWorkflowNodeSetting();
+
+		defaultWorkflowNodeSetting.setName(name);
+		defaultWorkflowNodeSetting.setName(value);
+
+		return defaultWorkflowNodeSetting;
+	}
+
 	private WorkflowDefinition _saveWorkflowDefinition() throws Exception {
 		InputStream inputStream = getResourceInputStream(
 			"single-approver-workflow-definition.xml");
@@ -546,6 +759,19 @@ public class WorkflowDefinitionManagerTest extends BaseWorkflowManagerTestCase {
 		return _workflowDefinitionManager.saveWorkflowDefinition(
 			null, TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
 			title, StringUtil.randomId(), bytes);
+	}
+
+	private void _testGetWorkflowDefinition(String externalReferenceCode)
+		throws Exception {
+
+		WorkflowDefinition workflowDefinition =
+			_workflowDefinitionManager.getWorkflowDefinition(
+				externalReferenceCode, TestPropsValues.getCompanyId());
+
+		Assert.assertEquals(
+			externalReferenceCode,
+			workflowDefinition.getExternalReferenceCode());
+		Assert.assertTrue(workflowDefinition.isActive());
 	}
 
 	@Inject

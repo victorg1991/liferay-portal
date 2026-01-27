@@ -38,7 +38,10 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.PermissionService;
+import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -457,9 +460,12 @@ public class ObjectFolderResourceImpl extends BaseObjectFolderResourceImpl {
 							_objectValidationRuleDTOConverter,
 							_objectValidationRuleLocalService,
 							_objectViewDTOConverter, _objectViewLocalService,
-							_portal, serviceBuilderObjectDefinition,
-							_systemObjectDefinitionManagerRegistry,
-							_userLocalService);
+							_permissionService, _portal,
+							_resourceActionLocalService,
+							serviceBuilderObjectDefinition,
+							_systemObjectDefinitionManagerRegistry, contextUser,
+							_userLocalService,
+							_workflowDefinitionLinkLocalService);
 					});
 				setObjectDefinitionExternalReferenceCode(
 					serviceBuilderObjectDefinition::getExternalReferenceCode);
@@ -535,7 +541,13 @@ public class ObjectFolderResourceImpl extends BaseObjectFolderResourceImpl {
 	private ObjectViewLocalService _objectViewLocalService;
 
 	@Reference
+	private PermissionService _permissionService;
+
+	@Reference
 	private Portal _portal;
+
+	@Reference
+	private ResourceActionLocalService _resourceActionLocalService;
 
 	@Reference
 	private SystemObjectDefinitionManagerRegistry
@@ -543,5 +555,9 @@ public class ObjectFolderResourceImpl extends BaseObjectFolderResourceImpl {
 
 	@Reference
 	private UserLocalService _userLocalService;
+
+	@Reference
+	private WorkflowDefinitionLinkLocalService
+		_workflowDefinitionLinkLocalService;
 
 }

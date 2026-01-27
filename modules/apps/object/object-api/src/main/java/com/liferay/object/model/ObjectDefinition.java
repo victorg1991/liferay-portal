@@ -59,6 +59,10 @@ public interface ObjectDefinition
 	public java.util.List<ObjectDefinitionSetting>
 		getObjectDefinitionSettings();
 
+	public com.liferay.object.model.bag.ObjectFieldBag getObjectFieldBag();
+
+	public ObjectFolder getObjectFolder();
+
 	public String getObjectFolderExternalReferenceCode();
 
 	public String getOSGiJaxRsName();
@@ -66,8 +70,6 @@ public interface ObjectDefinition
 	public String getOSGiJaxRsName(String className);
 
 	public String getPortletId();
-
-	public String getPreviousRESTContextPath();
 
 	public String getResourceName();
 
@@ -77,9 +79,13 @@ public interface ObjectDefinition
 
 	public long getRootObjectDefinitionId();
 
+	public long[] getRootObjectDefinitionIds();
+
 	public String getShortName();
 
 	public boolean isApproved();
+
+	public boolean isCMS();
 
 	public boolean isDefaultStorageType();
 
@@ -89,15 +95,20 @@ public interface ObjectDefinition
 
 	public boolean isRootDescendantNode();
 
+	public boolean isRootDescendantNode(long rootObjectDefinitionId);
+
 	public boolean isRootNode();
 
 	public boolean isUnmodifiableSystemObject();
 
+	public boolean isVisible();
+
 	public void setObjectDefinitionSettings(
 		java.util.List<ObjectDefinitionSetting> objectDefinitionSettings);
 
-	public void setPreviousRESTContextPath(String previousRESTContextPath);
+	public void setObjectFieldBag(
+		com.liferay.object.model.bag.ObjectFieldBag objectFieldBag);
 
-	public void setRootObjectDefinitionId(long rootObjectDefinitionId);
+	public void setObjectFolder(ObjectFolder objectFolder);
 
 }

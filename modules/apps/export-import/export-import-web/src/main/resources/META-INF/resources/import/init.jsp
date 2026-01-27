@@ -6,3 +6,7 @@
 --%>
 
 <%@ include file="/init.jsp" %>
+
+<%
+ImportReportEntriesDisplayContext importReportEntriesDisplayContext = new ImportReportEntriesDisplayContext(request, renderResponse);
+%>

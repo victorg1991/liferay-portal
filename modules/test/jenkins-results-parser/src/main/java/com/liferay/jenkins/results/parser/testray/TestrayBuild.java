@@ -19,14 +19,17 @@ import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -38,6 +41,17 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 		"dateCreated", "dateModified", "description", "dueDate",
 		"dueStatus {key name}", "githubCompareURLs", "gitHash", "id", "name",
 		"productVersionToBuilds", "projectToBuilds", "routineToBuilds"
+	};
+
+	public static final String[] FIELD_NAMES_CASE_RESULT = {
+		"attachments", "caseToCaseResult", "componentToCaseResult",
+		"dateCreated", "dateModified", "dueStatus { key name }", "errors", "id",
+		"startDate"
+	};
+
+	public static final String[] FIELD_NAMES_CASE_RESULT_TESTRAY_REPORT = {
+		"caseToCaseResult", "componentToCaseResult", "dateCreated",
+		"dateModified", "dueStatus { key name }", "errors", "id", "startDate"
 	};
 
 	public int compareTo(TestrayBuild testrayBuild) {
@@ -73,6 +87,10 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 		catch (ParseException parseException) {
 			return null;
 		}
+	}
+
+	public List<TestrayCaseResult> getFailedTestrayCaseResults() {
+		return getTestrayCaseResults(null, null, true);
 	}
 
 	public long getID() {
@@ -164,16 +182,18 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 		sb.append("'");
 
 		try {
-			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
-				"caseResults", TestrayCaseResult.FIELD_NAMES, sb.toString(),
-				null, 1, 1);
+			Set<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				"caseResults", TestrayBuild.FIELD_NAMES_CASE_RESULT,
+				sb.toString(), null, 1, 1);
 
 			if (entityJSONObjects.isEmpty()) {
 				return null;
 			}
 
+			Iterator<JSONObject> iterator = entityJSONObjects.iterator();
+
 			return TestrayFactory.newJSONObjectTestrayCaseResult(
-				this, entityJSONObjects.get(0));
+				this, iterator.next());
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
@@ -181,13 +201,17 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 	}
 
 	public List<TestrayCaseResult> getTestrayCaseResults() {
-		return getTestrayCaseResults(null, null);
+		return getTestrayCaseResults(null, null, false);
 	}
 
 	public List<TestrayCaseResult> getTestrayCaseResults(
-		TestrayCaseType testrayCaseType, TestrayRun testrayRun) {
+		TestrayCaseType testrayCaseType, TestrayRun testrayRun,
+		boolean filterbyFailures) {
 
 		List<TestrayCaseResult> testrayCaseResults = new ArrayList<>();
+
+		String[] fieldNames = TestrayBuild.FIELD_NAMES_CASE_RESULT;
+		int pageSize = 500;
 
 		StringBuilder sb = new StringBuilder();
 
@@ -201,10 +225,20 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 		sb.append(getID());
 		sb.append("'");
 
+		if (filterbyFailures) {
+			fieldNames = TestrayBuild.FIELD_NAMES_CASE_RESULT_TESTRAY_REPORT;
+			pageSize = 50;
+
+			sb.append(" ");
+			sb.append("and (dueStatus eq 'FAILED'");
+			sb.append(" ");
+			sb.append("or dueStatus eq 'UNTESTED')");
+		}
+
 		try {
-			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
-				true, "caseResults", TestrayCaseResult.FIELD_NAMES,
-				sb.toString(), null, 0, 1000);
+			Set<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+				true, "caseResults", fieldNames, sb.toString(), null, 0,
+				pageSize);
 
 			for (JSONObject entityJSONObject : entityJSONObjects) {
 				TestrayCaseResult testrayCaseResult =
@@ -255,6 +289,18 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 
 	public TestrayRoutine getTestrayRoutine() {
 		return _testrayRoutine;
+	}
+
+	public synchronized TestrayRun getTestrayRun(String name) {
+		for (TestrayRun testrayRun : getTestrayRuns()) {
+			String testrayRunIDString = testrayRun.getRunIDString();
+
+			if (testrayRunIDString.equals(name)) {
+				return testrayRun;
+			}
+		}
+
+		return null;
 	}
 
 	public synchronized List<TestrayRun> getTestrayRuns() {
@@ -417,45 +463,20 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 			"id eq '", matcher.group("buildID"), "'");
 
 		try {
-			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
+			Set<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
 				"builds", FIELD_NAMES, filter, null, 1, 1);
 
 			if (entityJSONObjects.isEmpty()) {
 				throw new RuntimeException("Unable to find entity JSON object");
 			}
 
-			_jsonObject = entityJSONObjects.get(0);
+			Iterator<JSONObject> iterator = entityJSONObjects.iterator();
+
+			_jsonObject = iterator.next();
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
 		}
-	}
-
-	protected List<TestrayCaseResult> getTestrayCaseResults(int maxCount) {
-		List<TestrayCaseResult> testrayCaseResults = new ArrayList<>();
-
-		StringBuilder sb = new StringBuilder();
-
-		sb.append("r_buildToCaseResult_c_buildId eq '");
-		sb.append(getID());
-		sb.append("'");
-
-		try {
-			List<JSONObject> entityJSONObjects = _testrayServer.requestGraphQL(
-				"caseResults", TestrayCaseResult.FIELD_NAMES, sb.toString(),
-				null, maxCount, 0);
-
-			for (JSONObject entityJSONObject : entityJSONObjects) {
-				testrayCaseResults.add(
-					TestrayFactory.newJSONObjectTestrayCaseResult(
-						this, entityJSONObject));
-			}
-		}
-		catch (IOException ioException) {
-			throw new RuntimeException(ioException);
-		}
-
-		return testrayCaseResults;
 	}
 
 	private Matcher _getTestrayAttachmentURLMatcher() {
@@ -463,21 +484,51 @@ public class TestrayBuild implements Comparable<TestrayBuild> {
 			return _testrayAttachmentURLMatcher;
 		}
 
-		for (TestrayCaseResult testrayCaseResult : getTestrayCaseResults(5)) {
-			if (testrayCaseResult != null) {
-				for (TestrayAttachment testrayAttachment :
-						testrayCaseResult.getTestrayAttachments()) {
+		StringBuilder sb = new StringBuilder();
 
-					Matcher testrayAttachmentURLMatcher =
-						_testrayAttachmentURLPattern.matcher(
-							String.valueOf(testrayAttachment.getURL()));
+		sb.append("r_buildToCaseResult_c_buildId eq '");
+		sb.append(getID());
+		sb.append("'");
 
-					if (testrayAttachmentURLMatcher.find()) {
-						_testrayAttachmentURLMatcher =
-							testrayAttachmentURLMatcher;
+		Set<JSONObject> entityJSONObjects;
 
-						return _testrayAttachmentURLMatcher;
-					}
+		try {
+			entityJSONObjects = _testrayServer.requestGraphQL(
+				"caseResults", new String[] {"attachments"}, sb.toString(),
+				null, 5, 0);
+		}
+		catch (IOException ioException) {
+			throw new RuntimeException(ioException);
+		}
+
+		for (JSONObject entityJSONObject : entityJSONObjects) {
+			String attachments = entityJSONObject.getString("attachments");
+
+			if (JenkinsResultsParserUtil.isNullOrEmpty(attachments)) {
+				continue;
+			}
+
+			JSONArray attachmentsJSONArray = null;
+
+			try {
+				attachmentsJSONArray = new JSONArray(attachments);
+			}
+			catch (JSONException jsonException) {
+				continue;
+			}
+
+			for (int i = 0; i < attachmentsJSONArray.length(); i++) {
+				JSONObject attachmentJSONObject =
+					attachmentsJSONArray.getJSONObject(i);
+
+				Matcher testrayAttachmentURLMatcher =
+					_testrayAttachmentURLPattern.matcher(
+						attachmentJSONObject.getString("url"));
+
+				if (testrayAttachmentURLMatcher.find()) {
+					_testrayAttachmentURLMatcher = testrayAttachmentURLMatcher;
+
+					return _testrayAttachmentURLMatcher;
 				}
 			}
 		}

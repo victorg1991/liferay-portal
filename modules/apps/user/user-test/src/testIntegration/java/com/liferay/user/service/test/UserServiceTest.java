@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserService;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
@@ -43,6 +44,7 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManagerUtil;
@@ -118,10 +120,10 @@ public class UserServiceTest {
 
 	@Test
 	public void testAddUserWithInvalidName() {
-		int firstNameMaxLength = ModelHintsUtil.getMaxLength(
-			User.class.getName(), "firstName");
-
 		try {
+			ServiceContext serviceContext =
+				ServiceContextTestUtil.getServiceContext();
+
 			UserTestUtil.addUser(
 				TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
 				RandomTestUtil.randomString(
@@ -129,10 +131,42 @@ public class UserServiceTest {
 					UniqueStringRandomizerBumper.INSTANCE),
 				LocaleUtil.getDefault(), RandomTestUtil.randomString(76),
 				RandomTestUtil.randomString(),
-				new long[] {
-					ServiceContextTestUtil.getServiceContext(
-					).getScopeGroupId()
-				},
+				new long[] {serviceContext.getScopeGroupId()},
+				ServiceContextTestUtil.getServiceContext());
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+			int firstNameMaxLength = ModelHintsUtil.getMaxLength(
+				User.class.getName(), "firstName");
+			String message = exception.getMessage();
+
+			Assert.assertTrue(
+				message.contains(
+					StringBundler.concat(
+						"Contact first name must have fewer than ",
+						firstNameMaxLength, " characters")));
+		}
+	}
+
+	@Test
+	public void testAddUserWithInvalidScreenName() {
+		int screenNameMaxLength = ModelHintsUtil.getMaxLength(
+			User.class.getName(), "screenName");
+
+		String screenName = RandomTestUtil.randomString(
+			screenNameMaxLength + 1, NumericStringRandomizerBumper.INSTANCE,
+			UniqueStringRandomizerBumper.INSTANCE);
+
+		try {
+			ServiceContext serviceContext =
+				ServiceContextTestUtil.getServiceContext();
+
+			UserTestUtil.addUser(
+				TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+				screenName, LocaleUtil.getDefault(),
+				RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+				new long[] {serviceContext.getScopeGroupId()},
 				ServiceContextTestUtil.getServiceContext());
 
 			Assert.fail();
@@ -143,8 +177,9 @@ public class UserServiceTest {
 			Assert.assertTrue(
 				message.contains(
 					StringBundler.concat(
-						"Contact first name must have fewer than ",
-						firstNameMaxLength, " characters")));
+						"Screen name ", StringUtil.toLowerCase(screenName),
+						" must have fewer than ", screenNameMaxLength,
+						" characters")));
 		}
 	}
 

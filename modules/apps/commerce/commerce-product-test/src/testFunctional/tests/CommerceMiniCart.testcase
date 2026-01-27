@@ -1,6 +1,7 @@
 @component-name = "portal-commerce"
 definition {
 
+	property browser.chrome.version = "139.0";
 	property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
@@ -1957,7 +1958,7 @@ definition {
 
 		Type(
 			key_title = "Entries",
-			locator1 = "CommerceEntry#ADD_RELATION_FIELD",
+			locator1 = "CommerceEntry#ADD_RELATION_FIELD_SEARCH",
 			value1 = "ABS Sensor");
 
 		Button.clickSubmitButton();
@@ -1978,7 +1979,7 @@ definition {
 
 		Type(
 			key_title = "Entries",
-			locator1 = "CommerceEntry#ADD_RELATION_FIELD",
+			locator1 = "CommerceEntry#ADD_RELATION_FIELD_SEARCH",
 			value1 = "ABS Sensor");
 
 		Button.clickSubmitButton();

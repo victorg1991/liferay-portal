@@ -12,10 +12,9 @@ import com.liferay.object.constants.ObjectEntryFolderConstants;
 import com.liferay.object.constants.ObjectFolderConstants;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.Sync;
-import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -53,47 +52,100 @@ public class ViewContentsSectionDisplayContextTest
 	@Test
 	public void testGetFDSActionDropdownItems() throws Exception {
 		List<FDSActionDropdownItem> fdsActionDropdownItems =
-			_getFDSActionDropdownItems();
+			getFDSActionDropdownItems();
 
 		Assert.assertEquals(
-			fdsActionDropdownItems.toString(), 7,
+			fdsActionDropdownItems.toString(), 16,
 			fdsActionDropdownItems.size());
 
-		_assertFDSActionDropdownItem(
+		assertFDSActionDropdownItem(
 			fdsActionDropdownItems.get(0), "view", "actionLinkFolder",
 			"view-folder", "get", "item");
-		_assertFDSActionDropdownItem(
+		assertFDSActionDropdownItem(
 			fdsActionDropdownItems.get(1), "info-circle-open", "show-details",
 			"show-details", null, "item");
-		_assertFDSActionDropdownItem(
+		assertFDSActionDropdownItem(
 			fdsActionDropdownItems.get(2), "pencil", "editFolder", "edit",
 			"get", "item");
-		_assertFDSActionDropdownItem(
+		assertFDSActionDropdownItem(
 			fdsActionDropdownItems.get(3), "pencil", "actionLink", "edit",
 			"get", "item");
-		_assertFDSActionDropdownItem(
-			fdsActionDropdownItems.get(4), null, "version-history",
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(4), "share", "share", "share", "get",
+			"item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(5), "automatic-translate", "translate",
+			"translate", "get", "item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(6), "time", "expire", "expire", "post",
+			"item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(7), "view", "view-content", "view", null,
+			"item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(8), "view", "view-file", "view", null,
+			"item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(9), "date-time", "version-history",
 			"view-history", "get", "item");
-		_assertFDSActionDropdownItem(
-			fdsActionDropdownItems.get(5), "password-policies", "permissions",
-			"permissions", "get", "item");
-		_assertFDSActionDropdownItem(
-			fdsActionDropdownItems.get(6), "trash", "delete", "delete",
-			"delete", "item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(10), "upload", "export-for-translation",
+			"export-for-translation", null, "item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(11), "download", "import-translation",
+			"import-translation", null, "item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(12), "copy", "copy", "copy-to", null,
+			"item");
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(13), "move-folder", "move", "move", null,
+			"item");
+
+		FDSActionDropdownItem permissionsFDSActionDropdownItem =
+			fdsActionDropdownItems.get(14);
+
+		assertFDSActionDropdownItem(
+			permissionsFDSActionDropdownItem, "password-policies",
+			"permissions-menu", "permissions", null, "contextual");
+
+		List<FDSActionDropdownItem> permissionsFDSActionDropdownItems =
+			(List<FDSActionDropdownItem>)permissionsFDSActionDropdownItem.get(
+				"items");
+
+		Assert.assertEquals(
+			permissionsFDSActionDropdownItems.toString(), 4,
+			permissionsFDSActionDropdownItems.size());
+
+		assertFDSActionDropdownItem(
+			permissionsFDSActionDropdownItems.get(0), "password-policies",
+			"permissions", "permissions", "get", "item");
+		assertFDSActionDropdownItem(
+			permissionsFDSActionDropdownItems.get(1), "password-policies",
+			"default-permissions", "default-permissions", null, "item");
+		assertFDSActionDropdownItem(
+			permissionsFDSActionDropdownItems.get(2), "password-policies",
+			"edit-and-propagate-default-permissions",
+			"edit-and-propagate-default-permissions", null, "item");
+		assertFDSActionDropdownItem(
+			permissionsFDSActionDropdownItems.get(3), "password-policies",
+			"reset-to-default-permissions", "reset-to-default-permissions",
+			null, "item");
+
+		assertFDSActionDropdownItem(
+			fdsActionDropdownItems.get(15), "trash", "delete", "delete", null,
+			"item");
 	}
 
 	@Override
 	protected Map<String, String> getExpectedCreationMenuItems()
 		throws PortalException {
 
-		return HashMapBuilder.put(
-			"Basic Web Content", getRedirect("L_BASIC_WEB_CONTENT")
-		).put(
-			"Blog", getRedirect("L_BLOG")
-		).put(
+		return LinkedHashMapBuilder.put(
 			"folder", StringPool.BLANK
 		).put(
-			"Knowledge Base", getRedirect("L_KNOWLEDGE_BASE")
+			"basic-web-content", getRedirect("L_CMS_BASIC_WEB_CONTENT")
+		).put(
+			"blog", getRedirect("L_CMS_BLOG")
 		).build();
 	}
 
@@ -122,31 +174,6 @@ public class ViewContentsSectionDisplayContextTest
 		Assert.assertNotNull(contentsSectionDisplayContext);
 
 		return contentsSectionDisplayContext;
-	}
-
-	private void _assertFDSActionDropdownItem(
-		FDSActionDropdownItem fdsActionDropdownItem, String icon, String id,
-		String label, String method, String type) {
-
-		Assert.assertNotNull(fdsActionDropdownItem);
-
-		Map<String, String> data =
-			(Map<String, String>)fdsActionDropdownItem.get("data");
-
-		Assert.assertEquals(id, data.get("id"));
-		Assert.assertEquals(method, data.get("method"));
-
-		Assert.assertEquals(icon, fdsActionDropdownItem.get("icon"));
-		Assert.assertEquals(label, fdsActionDropdownItem.get("label"));
-		Assert.assertEquals(type, fdsActionDropdownItem.get("type"));
-	}
-
-	private List<FDSActionDropdownItem> _getFDSActionDropdownItems()
-		throws Exception {
-
-		return ReflectionTestUtil.invoke(
-			getSectionDisplayContext(getMockHttpServletRequest()),
-			"getFDSActionDropdownItems", new Class<?>[0]);
 	}
 
 	@Inject(

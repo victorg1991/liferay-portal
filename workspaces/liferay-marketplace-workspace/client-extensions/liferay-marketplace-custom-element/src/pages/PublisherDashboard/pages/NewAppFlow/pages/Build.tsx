@@ -19,11 +19,13 @@ import {
 	ProductWorkflowStatusCode,
 } from '../../../../../enums/Product';
 import i18n from '../../../../../i18n';
-import {ProductTypeOptions} from '../../Apps/AppCreationFlow/ProvideAppBuildPage/constants/productTypes';
 import CloudResourceRequirements from '../components/CloudResourceRequirements';
-import {NewAppPackageVersionModal} from '../components/NewAppPackagesModal';
+import {NewAppPackageVersionModal} from '../components/NewAppPackagesModal/NewAppPackagesModal';
 import NewAppUploadAppPackagesComponent from '../components/NewAppUploadPackage';
 import {BUILD_UPLOAD_OPTIONS} from '../constants';
+import {ProductTypeOptions} from '../constants/productTypes';
+
+import '../ProvideAppBuildPage.scss';
 
 type ProductTypeOption = {
 	description: string;
@@ -45,6 +47,14 @@ const BuildContent = () => {
 
 	const [visibleSelectVersionModal, setVisibleSelectVersionModal] =
 		useState(false);
+
+	const selectedVersions = [
+		...new Set(
+			liferayPackages
+				.map((liferayPackage) => liferayPackage.versions)
+				.flat()
+		),
+	];
 
 	return (
 		<>
@@ -81,7 +91,7 @@ const BuildContent = () => {
 			<Section
 				description={i18n.translate(
 					appType === ProductType.DXP
-						? 'if-the-app-is-compatible-with-different-updates-of-74-please-upload-multiple-packages-for-each-update-or-update-compatibility-range'
+						? 'if-the-app-is-compatible-with-different-updates-of-74-please-upload-multiple-packages-for-each-update-or-update-the-compatibility-range'
 						: 'select-a-local-file-to-upload'
 				)}
 				label={i18n.translate(
@@ -180,7 +190,7 @@ const BuildContent = () => {
 
 				{visibleSelectVersionModal && (
 					<NewAppPackageVersionModal
-						currentVersions={[]}
+						currentVersions={selectedVersions}
 						handleClose={() => setVisibleSelectVersionModal(false)}
 					/>
 				)}

@@ -15,6 +15,7 @@ import React, {PropsWithChildren} from 'react';
 
 export interface NewSpaceFormSectionProps {
 	description: string;
+	learnResourceKey: string;
 	learnResources: ILearnResourceContext;
 	onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
 	step: 1 | 2;
@@ -25,6 +26,7 @@ export interface NewSpaceFormSectionProps {
 export function NewSpaceFormSection({
 	children,
 	description,
+	learnResourceKey,
 	learnResources,
 	onSubmit,
 	step,
@@ -33,8 +35,8 @@ export function NewSpaceFormSection({
 }: PropsWithChildren<NewSpaceFormSectionProps>) {
 	const pageContent = (
 		<>
-			<ClayLayout.Container className="mb-5 p-0">
-				<p className="mb-2 mt-6 text-secondary">
+			<ClayLayout.ContainerFluid className="mb-5 p-0">
+				<p className="mb-2 mt-3 mt-lg-6 text-secondary">
 					{sub(Liferay.Language.get('step-x-of-x'), [step, 2])}
 				</p>
 
@@ -44,11 +46,12 @@ export function NewSpaceFormSection({
 
 				<LearnResourcesContext.Provider value={learnResources}>
 					<LearnMessage
+						className="font-weight-semi-bold text-decoration-underline"
 						resource="site-cms-site-initializer"
-						resourceKey="new-space"
+						resourceKey={learnResourceKey}
 					/>
 				</LearnResourcesContext.Provider>
-			</ClayLayout.Container>
+			</ClayLayout.ContainerFluid>
 
 			{children}
 		</>
@@ -57,6 +60,6 @@ export function NewSpaceFormSection({
 	return withForm ? (
 		<ClayForm onSubmit={onSubmit}>{pageContent}</ClayForm>
 	) : (
-		<ClayLayout.Container>{pageContent}</ClayLayout.Container>
+		<div>{pageContent}</div>
 	);
 }

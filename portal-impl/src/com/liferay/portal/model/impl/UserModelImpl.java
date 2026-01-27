@@ -42,7 +42,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -1551,6 +1550,13 @@ public class UserModelImpl extends BaseModelImpl<User> implements UserModel {
 	public void setGroupId(long groupId) {
 	}
 
+	public boolean getLayoutsUpdated() {
+		return false;
+	}
+
+	public void setLayoutsUpdated(boolean layoutsUpdated) {
+	}
+
 	public long[] getUserGroupIds() {
 		return null;
 	}
@@ -1811,8 +1817,6 @@ public class UserModelImpl extends BaseModelImpl<User> implements UserModel {
 		_columnOriginalValues = Collections.emptyMap();
 
 		_setModifiedDate = false;
-
-		setUserGroupIds(null);
 
 		_columnBitmask = 0;
 	}
@@ -2089,7 +2093,9 @@ public class UserModelImpl extends BaseModelImpl<User> implements UserModel {
 			userCacheModel.groupId = (long)_groupIdMethodHandle.invokeExact(
 				(UserImpl)this);
 
-			setUserGroupIds(null);
+			userCacheModel.layoutsUpdated =
+				(boolean)_layoutsUpdatedMethodHandle.invokeExact(
+					(UserImpl)this);
 
 			userCacheModel.userGroupIds =
 				(long[])_userGroupIdsMethodHandle.invokeExact((UserImpl)this);
@@ -2401,13 +2407,13 @@ public class UserModelImpl extends BaseModelImpl<User> implements UserModel {
 
 	private long _columnBitmask;
 
-	protected final transient Consumer<Long> groupIdUpdateEntityCacheConsumer =
-		groupId -> {
+	protected static final BiConsumer<User, Long>
+		groupIdUpdateEntityCacheBiConsumer = (user, groupId) -> {
 			UserCacheModel userCacheModel = EntityCacheUtil.fetchCacheModel(
-				UserImpl.class, _userId, UserCacheModel.class);
+				UserImpl.class, user.getPrimaryKey(), UserCacheModel.class);
 
 			if ((userCacheModel != null) &&
-				(userCacheModel.getMvccVersion() == getMvccVersion())) {
+				(userCacheModel.getMvccVersion() == user.getMvccVersion())) {
 
 				userCacheModel.groupId = groupId;
 			}
@@ -2415,13 +2421,27 @@ public class UserModelImpl extends BaseModelImpl<User> implements UserModel {
 
 	private static final MethodHandle _groupIdMethodHandle;
 
-	protected final transient Consumer<long[]>
-		userGroupIdsUpdateEntityCacheConsumer = userGroupIds -> {
+	protected static final BiConsumer<User, Boolean>
+		layoutsUpdatedUpdateEntityCacheBiConsumer = (user, layoutsUpdated) -> {
 			UserCacheModel userCacheModel = EntityCacheUtil.fetchCacheModel(
-				UserImpl.class, _userId, UserCacheModel.class);
+				UserImpl.class, user.getPrimaryKey(), UserCacheModel.class);
 
 			if ((userCacheModel != null) &&
-				(userCacheModel.getMvccVersion() == getMvccVersion())) {
+				(userCacheModel.getMvccVersion() == user.getMvccVersion())) {
+
+				userCacheModel.layoutsUpdated = layoutsUpdated;
+			}
+		};
+
+	private static final MethodHandle _layoutsUpdatedMethodHandle;
+
+	protected static final BiConsumer<User, long[]>
+		userGroupIdsUpdateEntityCacheBiConsumer = (user, userGroupIds) -> {
+			UserCacheModel userCacheModel = EntityCacheUtil.fetchCacheModel(
+				UserImpl.class, user.getPrimaryKey(), UserCacheModel.class);
+
+			if ((userCacheModel != null) &&
+				(userCacheModel.getMvccVersion() == user.getMvccVersion())) {
 
 				userCacheModel.userGroupIds = userGroupIds;
 			}
@@ -2435,6 +2455,9 @@ public class UserModelImpl extends BaseModelImpl<User> implements UserModel {
 		try {
 			_groupIdMethodHandle = lookup.findGetter(
 				UserImpl.class, "_groupId", long.class);
+
+			_layoutsUpdatedMethodHandle = lookup.findGetter(
+				UserImpl.class, "_layoutsUpdated", boolean.class);
 
 			_userGroupIdsMethodHandle = lookup.findGetter(
 				UserImpl.class, "_userGroupIds", long[].class);

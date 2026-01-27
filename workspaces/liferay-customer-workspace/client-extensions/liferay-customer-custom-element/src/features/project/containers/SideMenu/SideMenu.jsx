@@ -20,6 +20,22 @@ import './SideMenu.css';
 
 const ACTIVATION_PATH = 'activation';
 
+const expandGroupForSideMenu = (group) => {
+	if (group.name === 'Liferay Cloud' && group.activationProductName) {
+		const productNames = group.activationProductName.split(',')
+			.map(name => name.trim())
+			.filter(name => name.length > 0);
+
+		return productNames.map((productName) => ({
+			...group,
+			name: productName,
+			displayName: productName
+		}));
+	}
+	
+	return [group];
+};
+
 const SideMenu = () => {
 	const [{project, subscriptionGroups}] = useAppContext();
 	const [isOpenedProductsMenu, setIsOpenedProductsMenu] = useState(false);
@@ -38,15 +54,13 @@ const SideMenu = () => {
 		);
 	const loggedUserAccount = myUserAccountData?.myUserAccount;
 
-	const productActivationMenuRef = useRef();
+	const activationMenuRef = useRef();
 
 	const activationSubscriptionGroups = useMemo(
 		() =>
 			subscriptionGroups?.filter((subscriptionGroup) => {
 				return (
-					subscriptionGroup.hasActivation &&
-					subscriptionGroup.name !== MENU_TYPES.liferayPaaS &&
-					subscriptionGroup.name !== MENU_TYPES.liferaySaaS
+					subscriptionGroup.hasActivation
 				);
 			}),
 		[subscriptionGroups]
@@ -58,13 +72,21 @@ const SideMenu = () => {
 	);
 
 	const hasSaasSubscription = useMemo(
+        () =>
+            subscriptionGroups?.some(
+                (subscription) =>
+                    subscription.externalReferenceCode ===
+                    `${project?.externalReferenceCode}_liferay-saas`
+            ),
+        [subscriptionGroups, project?.externalReferenceCode]
+    );
+
+	const hasSLASubscription = useMemo(
 		() =>
-			subscriptionGroups?.some(
-				(subscription) =>
-					subscription.externalReferenceCode ===
-					`${project?.externalReferenceCode}_liferay-saas`
-			),
-		[subscriptionGroups]
+			koroneikiAccount?.slaCurrent ||
+			koroneikiAccount?.slaExpired ||
+			koroneikiAccount?.slaFuture,
+		[koroneikiAccount]
 	);
 
 	useEffect(() => {
@@ -72,8 +94,8 @@ const SideMenu = () => {
 			? activationSubscriptionGroups?.length * 48
 			: 0;
 
-		if (productActivationMenuRef?.current) {
-			productActivationMenuRef.current.style.maxHeight = `${expandedHeightProducts}px`;
+		if (activationMenuRef?.current) {
+			activationMenuRef.current.style.maxHeight = `${expandedHeightProducts}px`;
 		}
 	}, [
 		activationSubscriptionGroups?.length,
@@ -81,21 +103,30 @@ const SideMenu = () => {
 		isOpenedProductsMenu,
 	]);
 
-	const hasProductSubscription = useMemo(
-		() => (productType) =>
-			subscriptionGroups?.some(({name}) => name === productType),
-		[subscriptionGroups]
-	);
-
 	const accountSubscriptionGroupsMenuItem = useMemo(
-		() =>
-			activationSubscriptionGroups?.map(
-				({activationProductName, name}, index) => {
-					const displayName = activationProductName
-						? activationProductName
-						: name;
+		() => {
+			const expandedGroups = activationSubscriptionGroups?.flatMap(expandGroupForSideMenu);
 
-					const redirectPage = getKebabCase(displayName);
+			return expandedGroups?.sort(
+				(a, b) => {
+					const aDisplayName = a.displayName || a.activationProductName || a.name;
+					const bDisplayName = b.displayName || b.activationProductName || b.name;
+
+					return aDisplayName.localeCompare(bDisplayName);
+				}
+			).map(
+				({ displayName, activationProductName, name}, index) => {
+					const itemDisplayName = displayName || activationProductName || name;
+
+					const redirectPage = getKebabCase(itemDisplayName);
+
+					const iconKey = activationProductName.split(',')
+						.includes(PRODUCT_TYPES.dxpCloud)
+							? 'lxc'
+							: activationProductName.split(',')
+								.includes(PRODUCT_TYPES.liferayExperienceCloud)
+									? 'experienceCloud'
+									: redirectPage.split('-')[0];
 
 					const menuUpdateStatus = (isActive) =>
 						setMenuItemActiveStatus(
@@ -115,17 +146,17 @@ const SideMenu = () => {
 
 					return (
 						<MenuItem
-							iconKey={redirectPage.split('-')[0]}
-							key={`${displayName}-${index}`}
+							iconKey={iconKey}
+							key={`${itemDisplayName}-${index}`}
 							setActive={menuUpdateStatus}
 							to={`${ACTIVATION_PATH}/${redirectPage}`}
 						>
-							{displayName}
+							{itemDisplayName}
 						</MenuItem>
 					);
 				}
-			),
-		[activationSubscriptionGroups]
+			);
+		}, [activationSubscriptionGroups]
 	);
 
 	if (!activationSubscriptionGroups) {
@@ -141,33 +172,6 @@ const SideMenu = () => {
 					</MenuItem>
 				</div>
 
-				{featureFlags.includes('LPS-153478') &&
-					hasProductSubscription(
-						PRODUCT_TYPES.liferayExperienceCloud
-					) && (
-						<div className="d-flex">
-							<MenuItem
-								iconKey="experienceCloud"
-								to={getKebabCase(
-									PRODUCT_TYPES.liferayExperienceCloud
-								)}
-							>
-								{MENU_TYPES.liferaySaaS}
-							</MenuItem>
-						</div>
-					)}
-
-				{hasProductSubscription(PRODUCT_TYPES.dxpCloud) && (
-					<div className="d-flex">
-						<MenuItem
-							iconKey="lxc"
-							to={getKebabCase(PRODUCT_TYPES.dxpCloud)}
-						>
-							{MENU_TYPES.liferayPaaS}
-						</MenuItem>
-					</div>
-				)}
-
 				{accountSubscriptionGroupsMenuItem.length > 0 && (
 					<li>
 						<div className="d-flex">
@@ -180,7 +184,7 @@ const SideMenu = () => {
 								className={classNames(
 									'align-items-center btn-borderless d-flex px-2 py-2 rounded w-100',
 									{
-										'cp-product-activation-active':
+										'cp-activation-active':
 											isOpenedProductsMenu,
 										'text-neutral-4':
 											activationSubscriptionGroups.length <
@@ -192,7 +196,7 @@ const SideMenu = () => {
 								disabled={
 									activationSubscriptionGroups.length < 1
 								}
-								iconKey="productActivation"
+								iconKey="activation"
 								onClick={() =>
 									setIsOpenedProductsMenu(
 										(previousIsOpenedProductsMenu) =>
@@ -201,7 +205,7 @@ const SideMenu = () => {
 								}
 							>
 								{i18n.translate(
-									getKebabCase(MENU_TYPES.productActivation)
+									getKebabCase(MENU_TYPES.activation)
 								)}
 							</Button>
 						</div>
@@ -214,7 +218,7 @@ const SideMenu = () => {
 										isOpenedProductsMenu,
 								}
 							)}
-							ref={productActivationMenuRef}
+							ref={activationMenuRef}
 						>
 							{accountSubscriptionGroupsMenuItem}
 						</ul>
@@ -243,7 +247,7 @@ const SideMenu = () => {
 					</MenuItem>
 				</div>
 
-				{featureFlags.includes('LRSD-5119') && (
+				{hasSLASubscription && (
 					<div className="d-flex">
 						<MenuItem
 							iconKey="businessEvents"

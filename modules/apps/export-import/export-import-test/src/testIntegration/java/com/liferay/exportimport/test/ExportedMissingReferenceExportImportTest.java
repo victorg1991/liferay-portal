@@ -31,15 +31,13 @@ import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFacto
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.dao.orm.hibernate.DynamicQueryFactoryImpl;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
-import com.liferay.portal.kernel.module.service.Snapshot;
-import com.liferay.portal.kernel.portlet.PortletBag;
-import com.liferay.portal.kernel.portlet.PortletBagPool;
-import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.xml.Element;
+import com.liferay.portal.kernel.zip.ZipReader;
 import com.liferay.portal.kernel.zip.ZipReaderFactory;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -58,7 +56,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Akos Thurzo
@@ -187,24 +187,26 @@ public class ExportedMissingReferenceExportImportTest
 	}
 
 	protected void assertMissingReferences() throws Exception {
-		PortletDataContext portletDataContext =
-			PortletDataContextFactoryUtil.createImportPortletDataContext(
-				TestPropsValues.getCompanyId(), group.getGroupId(),
-				getImportParameterMap(),
-				ExportImportHelperUtil.getUserIdStrategy(
-					TestPropsValues.getUserId(),
-					TestUserIdStrategy.CURRENT_USER_ID),
-				_zipReaderFactory.getZipReader(larFile));
+		try (ZipReader zipReader = _zipReaderFactory.getZipReader(larFile)) {
+			PortletDataContext portletDataContext =
+				PortletDataContextFactoryUtil.createImportPortletDataContext(
+					TestPropsValues.getCompanyId(), group.getGroupId(),
+					getImportParameterMap(),
+					ExportImportHelperUtil.getUserIdStrategy(
+						TestPropsValues.getUserId(),
+						TestUserIdStrategy.CURRENT_USER_ID),
+					zipReader);
 
-		Element missingReferencesElement =
-			portletDataContext.getMissingReferencesElement();
+			Element missingReferencesElement =
+				portletDataContext.getMissingReferencesElement();
 
-		List<Element> missingReferenceElements =
-			missingReferencesElement.elements();
+			List<Element> missingReferenceElements =
+				missingReferencesElement.elements();
 
-		Assert.assertFalse(
-			missingReferenceElements.toString(),
-			missingReferenceElements.isEmpty());
+			Assert.assertFalse(
+				missingReferenceElements.toString(),
+				missingReferenceElements.isEmpty());
+		}
 	}
 
 	@Override
@@ -299,24 +301,21 @@ public class ExportedMissingReferenceExportImportTest
 			String portletId, PortletDataHandler portletDataHandler)
 		throws Exception {
 
-		PortletBag portletBag = PortletBagPool.get(portletId);
+		Bundle bundle = FrameworkUtil.getBundle(
+			ExportedMissingReferenceExportImportTest.class);
 
-		Snapshot<PortletDataHandler> portletDataHandlerSnapshot =
-			ReflectionTestUtil.getAndSetFieldValue(
-				portletBag, "_portletDataHandlerSnapshot",
-				new Snapshot<PortletDataHandler>(
-					PortletBag.class, PortletDataHandler.class) {
+		BundleContext bundleContext = bundle.getBundleContext();
 
-					@Override
-					public PortletDataHandler get() {
-						return portletDataHandler;
-					}
+		ServiceRegistration<PortletDataHandler> serviceRegistration =
+			bundleContext.registerService(
+				PortletDataHandler.class, portletDataHandler,
+				HashMapDictionaryBuilder.<String, Object>put(
+					"jakarta.portlet.name", portletId
+				).put(
+					"service.ranking", Integer.MAX_VALUE
+				).build());
 
-				});
-
-		return () -> ReflectionTestUtil.setFieldValue(
-			portletBag, "_portletDataHandlerSnapshot",
-			portletDataHandlerSnapshot);
+		return serviceRegistration::unregister;
 	}
 
 	private void _testMissingDummyOrder(boolean missingFirst) throws Exception {

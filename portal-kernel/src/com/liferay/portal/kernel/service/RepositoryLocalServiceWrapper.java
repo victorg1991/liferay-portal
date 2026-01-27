@@ -351,6 +351,11 @@ public class RepositoryLocalServiceWrapper
 		return _repositoryLocalService.getRepositories(start, end);
 	}
 
+	@Override
+	public java.util.List<Repository> getRepositories(String portletId) {
+		return _repositoryLocalService.getRepositories(portletId);
+	}
+
 	/**
 	 * Returns all the repositories matching the UUID and company.
 	 *
@@ -455,6 +460,13 @@ public class RepositoryLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _repositoryLocalService.getTypeSettingsProperties(repositoryId);
+	}
+
+	@Override
+	public boolean isHidden(long repositoryId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _repositoryLocalService.isHidden(repositoryId);
 	}
 
 	@Override

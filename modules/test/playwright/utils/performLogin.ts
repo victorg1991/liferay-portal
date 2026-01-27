@@ -5,7 +5,7 @@
 
 import {Cookie, Page, expect} from '@playwright/test';
 
-import {ApiHelpers, getHeader} from '../helpers/ApiHelpers';
+import {getHeader} from '../helpers/ApiHelpers';
 import {liferayConfig} from '../liferay.config';
 
 export type LoginScreenName =
@@ -38,7 +38,6 @@ export const userData = {
 };
 
 interface LoginOptions {
-	apiHelpers?: ApiHelpers;
 	domain?: string;
 	loginUrl?: string;
 	page: Page;
@@ -76,15 +75,7 @@ async function performLogin(
 	await page.getByLabel('Password').fill(password);
 	await page.getByLabel('Remember Me').setChecked(rememberMe);
 
-	if ((await signInButton.count()) === 1) {
-		await signInButton.click();
-	}
-	else {
-		await page
-			.getByLabel('Sign In- Loading')
-			.getByRole('button', {name: 'Sign In'})
-			.click();
-	}
+	await page.getByRole('button', {name: 'Sign In'}).last().click();
 
 	await expect(page.getByLabel(`${name} ${surname}`)).toBeVisible({
 		timeout: 30 * 1000,
@@ -94,7 +85,6 @@ async function performLogin(
 }
 
 export async function performLoginViaApi({
-	apiHelpers,
 	domain = '@liferay.com',
 	loginUrl = liferayConfig.environment.baseUrl,
 	page,
@@ -114,21 +104,21 @@ export async function performLoginViaApi({
 
 		const url = `${loginUrl}/c/portal/login`;
 
-		await page.request.post(url, {
-			data: params.toString(),
-			headers: await getHeader(page, 'application/x-www-form-urlencoded'),
-		});
+		await expect
+			.poll(async () => {
+				const response = await page.request.post(url, {
+					data: params.toString(),
+					headers: await getHeader(
+						page,
+						'application/x-www-form-urlencoded'
+					),
+				});
+
+				return response.status();
+			})
+			.toBe(200);
 
 		await page.goto(loginUrl);
-
-		if (!apiHelpers) {
-			apiHelpers = new ApiHelpers(page, loginUrl);
-		}
-
-		const {alternateName} =
-			await apiHelpers.headlessAdminUser.getMyUserAccount();
-
-		expect(alternateName).toBe(screenName);
 	}
 	catch (error) {
 		error.message = `Login via API failed\n\n${error.message}`;

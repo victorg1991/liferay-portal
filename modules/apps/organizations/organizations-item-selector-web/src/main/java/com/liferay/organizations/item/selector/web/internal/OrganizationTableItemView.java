@@ -35,7 +35,7 @@ public class OrganizationTableItemView implements TableItemView {
 
 	@Override
 	public List<String> getHeaderNames() {
-		if (FeatureFlagManagerUtil.isEnabled("LPD-47858")) {
+		if (FeatureFlagManagerUtil.isEnabled("LPD-35914")) {
 			return ListUtil.fromArray("name", "path", "type", "status");
 		}
 
@@ -71,7 +71,7 @@ public class OrganizationTableItemView implements TableItemView {
 
 		searchEntries.add(typeTextSearchEntry);
 
-		if (FeatureFlagManagerUtil.isEnabled("LPD-47858")) {
+		if (FeatureFlagManagerUtil.isEnabled("LPD-35914")) {
 			StatusSearchEntry statusSearchEntry = new StatusSearchEntry();
 
 			statusSearchEntry.setCssClass("text-nowrap");
@@ -110,7 +110,7 @@ public class OrganizationTableItemView implements TableItemView {
 
 		organization = organizations.get(size - 1);
 
-		sb.append(organization.getName());
+		sb.append(HtmlUtil.escape(organization.getName()));
 
 		for (int i = size - 2; i >= 0; i--) {
 			organization = organizations.get(i);
@@ -118,7 +118,7 @@ public class OrganizationTableItemView implements TableItemView {
 			sb.append(StringPool.SPACE);
 			sb.append(StringPool.GREATER_THAN);
 			sb.append(StringPool.SPACE);
-			sb.append(organization.getName());
+			sb.append(HtmlUtil.escape(organization.getName()));
 		}
 
 		return sb.toString();

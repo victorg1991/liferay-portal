@@ -13,8 +13,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 
+import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryLocalServiceUtil;
+import com.liferay.headless.batch.engine.client.dto.v1_0.ImportTask;
+import com.liferay.headless.batch.engine.client.http.HttpInvoker.HttpResponse;
+import com.liferay.headless.batch.engine.client.resource.v1_0.ImportTaskResource;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
@@ -31,6 +35,7 @@ import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.odata.entity.EntityField;
@@ -42,7 +47,6 @@ import com.liferay.portal.tools.rest.builder.test.client.http.HttpInvoker;
 import com.liferay.portal.tools.rest.builder.test.client.pagination.Page;
 import com.liferay.portal.tools.rest.builder.test.client.resource.v1_0.AssetLibraryTestEntityResource;
 import com.liferay.portal.tools.rest.builder.test.client.serdes.v1_0.AssetLibraryTestEntitySerDes;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
 import jakarta.annotation.Generated;
@@ -101,7 +105,7 @@ public abstract class BaseAssetLibraryTestEntityResourceTestCase {
 		irrelevantDepotEntry = DepotEntryLocalServiceUtil.addDepotEntry(
 			Collections.singletonMap(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
-			null,
+			null, DepotConstants.TYPE_ASSET_LIBRARY,
 			new ServiceContext() {
 				{
 					setCompanyId(testCompany.getCompanyId());
@@ -112,7 +116,7 @@ public abstract class BaseAssetLibraryTestEntityResourceTestCase {
 		testDepotEntry = DepotEntryLocalServiceUtil.addDepotEntry(
 			Collections.singletonMap(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
-			null,
+			null, DepotConstants.TYPE_ASSET_LIBRARY,
 			new ServiceContext() {
 				{
 					setCompanyId(testCompany.getCompanyId());
@@ -127,6 +131,16 @@ public abstract class BaseAssetLibraryTestEntityResourceTestCase {
 			testCompany.getCompanyId());
 
 		assetLibraryTestEntityResource = AssetLibraryTestEntityResource.builder(
+		).authentication(
+			_testCompanyAdminUser.getEmailAddress(),
+			PropsValues.DEFAULT_ADMIN_PASSWORD
+		).endpoint(
+			testCompany.getVirtualHostname(), 8080, "http"
+		).locale(
+			LocaleUtil.getDefault()
+		).build();
+
+		importTaskResource = ImportTaskResource.builder(
 		).authentication(
 			_testCompanyAdminUser.getEmailAddress(),
 			PropsValues.DEFAULT_ADMIN_PASSWORD
@@ -244,8 +258,83 @@ public abstract class BaseAssetLibraryTestEntityResourceTestCase {
 			testDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_getAssetLibraryId()
 		throws Exception {
 
-		throw new UnsupportedOperationException(
-			"This method needs to be implemented");
+		return testDepotEntry.getDepotEntryId();
+	}
+
+	@Test
+	public void testGraphQLDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode()
+		throws Exception {
+
+		// No namespace
+
+		AssetLibraryTestEntity assetLibraryTestEntity1 =
+			testGraphQLDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_addAssetLibraryTestEntity();
+
+		Assert.assertTrue(
+			JSONUtil.getValueAsBoolean(
+				invokeGraphQLMutation(
+					new GraphQLField(
+						"deleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode",
+						new HashMap<String, Object>() {
+							{
+								put(
+									"assetLibraryId",
+									"\"" +
+										testGraphQLDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_getAssetLibraryId() +
+											"\"");
+								put(
+									"externalReferenceCode",
+									"\"" +
+										assetLibraryTestEntity1.
+											getExternalReferenceCode() + "\"");
+							}
+						})),
+				"JSONObject/data",
+				"Object/deleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode"));
+
+		// Using the namespace test_v1_0
+
+		AssetLibraryTestEntity assetLibraryTestEntity2 =
+			testGraphQLDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_addAssetLibraryTestEntity();
+
+		Assert.assertTrue(
+			JSONUtil.getValueAsBoolean(
+				invokeGraphQLMutation(
+					new GraphQLField(
+						"test_v1_0",
+						new GraphQLField(
+							"deleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode",
+							new HashMap<String, Object>() {
+								{
+									put(
+										"assetLibraryId",
+										"\"" +
+											testGraphQLDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_getAssetLibraryId() +
+												"\"");
+									put(
+										"externalReferenceCode",
+										"\"" +
+											assetLibraryTestEntity2.
+												getExternalReferenceCode() +
+													"\"");
+								}
+							}))),
+				"JSONObject/data", "JSONObject/test_v1_0",
+				"Object/deleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode"));
+	}
+
+	protected Long
+			testGraphQLDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_getAssetLibraryId()
+		throws Exception {
+
+		return testDepotEntry.getDepotEntryId();
+	}
+
+	protected AssetLibraryTestEntity
+			testGraphQLDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_addAssetLibraryTestEntity()
+		throws Exception {
+
+		return testGraphQLAssetLibraryAssetLibraryTestEntity_addAssetLibraryTestEntity();
 	}
 
 	@Test
@@ -347,7 +436,59 @@ public abstract class BaseAssetLibraryTestEntityResourceTestCase {
 
 	@Test
 	public void testBatchEngineDeleteImportTask() throws Exception {
-		Assert.assertTrue(true);
+		AssetLibraryTestEntity assetLibraryTestEntity1 =
+			testBatchEngineDeleteImportTask_addAssetLibraryAssetLibraryTestEntity();
+
+		testBatchEngineDeleteImportTask_deleteAssetLibraryTestEntity(
+			200, assetLibraryTestEntity1.getExternalReferenceCode(),
+			"assetLibraryId", String.valueOf(testDepotEntryGroup.getGroupId()));
+	}
+
+	protected AssetLibraryTestEntity
+			testBatchEngineDeleteImportTask_addAssetLibraryAssetLibraryTestEntity()
+		throws Exception {
+
+		return testDeleteAssetLibraryAssetLibraryTestEntityByExternalReferenceCode_addAssetLibraryTestEntity();
+	}
+
+	protected void testBatchEngineDeleteImportTask_deleteAssetLibraryTestEntity(
+			int expectedStatusCode, String externalReferenceCode,
+			String... parameters)
+		throws Exception {
+
+		ImportTaskResource importTaskResource = ImportTaskResource.builder(
+		).authentication(
+			_testCompanyAdminUser.getEmailAddress(),
+			PropsValues.DEFAULT_ADMIN_PASSWORD
+		).endpoint(
+			testCompany.getVirtualHostname(), 8080, "http"
+		).parameters(
+			parameters
+		).build();
+
+		HttpResponse httpResponse =
+			importTaskResource.deleteImportTaskHttpResponse(
+				"com.liferay.portal.tools.rest.builder.test.dto.v1_0.AssetLibraryTestEntity",
+				null, null, null, null,
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"externalReferenceCode", () -> externalReferenceCode)));
+
+		Assert.assertEquals(expectedStatusCode, httpResponse.getStatusCode());
+
+		if (expectedStatusCode == 200) {
+			waitForFinish(
+				"COMPLETED",
+				JSONFactoryUtil.createJSONObject(httpResponse.getContent()));
+		}
+	}
+
+	protected AssetLibraryTestEntity
+			testGraphQLAssetLibraryAssetLibraryTestEntity_addAssetLibraryTestEntity()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
 	}
 
 	protected void assertContains(
@@ -542,6 +683,8 @@ public abstract class BaseAssetLibraryTestEntityResourceTestCase {
 
 	protected List<GraphQLField> getGraphQLFields() throws Exception {
 		List<GraphQLField> graphQLFields = new ArrayList<>();
+
+		graphQLFields.add(new GraphQLField("externalReferenceCode"));
 
 		for (java.lang.reflect.Field field :
 				getDeclaredFields(
@@ -1050,7 +1193,30 @@ public abstract class BaseAssetLibraryTestEntityResourceTestCase {
 		return randomAssetLibraryTestEntity();
 	}
 
+	protected final JSONObject waitForFinish(
+			String expectedExecuteStatus, JSONObject jsonObject)
+		throws Exception {
+
+		while (true) {
+			ImportTask importTask = importTaskResource.getImportTask(
+				jsonObject.getLong("id"));
+
+			ImportTask.ExecuteStatus executeStatus =
+				importTask.getExecuteStatus();
+
+			if (StringUtil.equals(executeStatus.getValue(), "COMPLETED") ||
+				StringUtil.equals(executeStatus.getValue(), "FAILED")) {
+
+				Assert.assertEquals(
+					expectedExecuteStatus, executeStatus.getValue());
+
+				return jsonObject;
+			}
+		}
+	}
+
 	protected AssetLibraryTestEntityResource assetLibraryTestEntityResource;
+	protected ImportTaskResource importTaskResource;
 	protected com.liferay.portal.kernel.model.Group irrelevantGroup;
 	protected com.liferay.portal.kernel.model.Company testCompany;
 	protected DepotEntry irrelevantDepotEntry;

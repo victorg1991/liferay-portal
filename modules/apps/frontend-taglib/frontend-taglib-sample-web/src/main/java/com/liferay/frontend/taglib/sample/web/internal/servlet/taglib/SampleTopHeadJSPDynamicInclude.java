@@ -5,12 +5,11 @@
 
 package com.liferay.frontend.taglib.sample.web.internal.servlet.taglib;
 
+import com.liferay.portal.kernel.frontend.spa.FrontendSPA;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.servlet.taglib.BaseJSPDynamicInclude;
 import com.liferay.portal.kernel.servlet.taglib.DynamicInclude;
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Antonio Ortega
@@ -34,6 +34,10 @@ public class SampleTopHeadJSPDynamicInclude extends BaseJSPDynamicInclude {
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse, String key)
 		throws IOException {
+
+		if (!_frontendSPA.isEnabled(_portal.getCompanyId(httpServletRequest))) {
+			return;
+		}
 
 		String currentURL = (String)httpServletRequest.getAttribute(
 			WebKeys.CURRENT_URL);
@@ -67,14 +71,7 @@ public class SampleTopHeadJSPDynamicInclude extends BaseJSPDynamicInclude {
 
 	@Override
 	public void register(DynamicIncludeRegistry dynamicIncludeRegistry) {
-		boolean singlePageApplicationEnabled = GetterUtil.getBoolean(
-			PropsUtil.get(
-				PropsKeys.JAVASCRIPT_SINGLE_PAGE_APPLICATION_ENABLED));
-
-		if (singlePageApplicationEnabled) {
-			dynamicIncludeRegistry.register(
-				"/html/common/themes/top_head.jsp#pre");
-		}
+		dynamicIncludeRegistry.register("/html/common/themes/top_head.jsp#pre");
 	}
 
 	@Override
@@ -91,5 +88,11 @@ public class SampleTopHeadJSPDynamicInclude extends BaseJSPDynamicInclude {
 	protected ServletContext getServletContext() {
 		return null;
 	}
+
+	@Reference
+	private FrontendSPA _frontendSPA;
+
+	@Reference
+	private Portal _portal;
 
 }

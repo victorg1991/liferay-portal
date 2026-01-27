@@ -10,7 +10,9 @@ import com.liferay.fragment.entry.processor.constants.FragmentEntryProcessorCons
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.renderer.DefaultFragmentRendererContext;
+import com.liferay.fragment.renderer.FragmentRenderer;
 import com.liferay.fragment.renderer.FragmentRendererController;
+import com.liferay.fragment.renderer.FragmentRendererRegistry;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.petra.string.StringPool;
@@ -67,8 +69,9 @@ public class RenderFragmentEntryLinkMVCResourceCommand
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.createFragmentEntryLink(0);
 
-		fragmentEntryLink.setFragmentEntryId(
-			fragmentEntry.getFragmentEntryId());
+		fragmentEntryLink.setFragmentEntryERC(
+			fragmentEntry.getExternalReferenceCode());
+		fragmentEntryLink.setFragmentEntryScopeERC(fragmentEntry.getScopeERC());
 		fragmentEntryLink.setCss(fragmentEntry.getCss());
 		fragmentEntryLink.setHtml(fragmentEntry.getHtml());
 		fragmentEntryLink.setJs(fragmentEntry.getJs());
@@ -131,14 +134,20 @@ public class RenderFragmentEntryLinkMVCResourceCommand
 	}
 
 	private FragmentEntry _getFragmentEntry(ResourceRequest resourceRequest) {
-		long groupId = ParamUtil.getLong(resourceRequest, "groupId");
-
 		String fragmentEntryKey = ParamUtil.getString(
 			resourceRequest, "fragmentEntryKey");
 
+		FragmentRenderer fragmentRenderer =
+			_fragmentRendererRegistry.getFragmentRenderer(fragmentEntryKey);
+
+		if (fragmentRenderer != null) {
+			return null;
+		}
+
 		FragmentEntry fragmentEntry =
 			_fragmentEntryLocalService.fetchFragmentEntry(
-				groupId, fragmentEntryKey);
+				ParamUtil.getLong(resourceRequest, "groupId"),
+				fragmentEntryKey);
 
 		if (fragmentEntry == null) {
 			fragmentEntry =
@@ -161,6 +170,9 @@ public class RenderFragmentEntryLinkMVCResourceCommand
 
 	@Reference
 	private FragmentRendererController _fragmentRendererController;
+
+	@Reference
+	private FragmentRendererRegistry _fragmentRendererRegistry;
 
 	@Reference
 	private JSONFactory _jsonFactory;

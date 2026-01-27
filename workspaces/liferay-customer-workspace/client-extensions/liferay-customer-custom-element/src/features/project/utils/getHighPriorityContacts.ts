@@ -12,7 +12,7 @@ import {
 import {
 	addContactRoleNameByEmailByProject,
 	deleteContactRoleNameByEmailByProject,
-} from '~/services/liferay/rest/raysource/LicenseKeys';
+} from '~/services/liferay/rest/raysource/TeamMembers';
 import i18n from '~/utils/I18n';
 import {IAccountRole, IProject} from '~/utils/types';
 
@@ -131,7 +131,7 @@ const removeContactRoleRaysource = async (
 	);
 };
 
-const rolesHighPriorityContacts = [
+const rolesHighPriorityContact = [
 	'Data Breach Contact',
 	'Security Incident Contact',
 	'Critical Incident Contact',
@@ -177,7 +177,7 @@ export {
 	HIGH_PRIORITY_CONTACT_CATEGORIES,
 	removeContactRoleLiferay,
 	removeContactRoleRaysource,
-	rolesHighPriorityContacts,
+	rolesHighPriorityContact,
 	updateLiferayContact,
 	updateRaysourceContact,
 };

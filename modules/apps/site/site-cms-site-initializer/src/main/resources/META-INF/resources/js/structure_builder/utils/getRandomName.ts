@@ -6,6 +6,13 @@
 import getUuid from './getUuid';
 import normalizeName from './normalizeName';
 
-export default function getRandomName() {
-	return normalizeName(`name${getUuid()}`, {limit: 30});
+export default function getRandomName({
+	capitalize,
+}: {capitalize?: boolean} = {}) {
+	const prefix = capitalize ? 'Name' : 'name';
+
+	// We are using 28 as limit because it's the max length that is then
+	// supported in the objectDefinition when building relationships
+
+	return normalizeName(`${prefix}${getUuid()}`, {limit: 28});
 }

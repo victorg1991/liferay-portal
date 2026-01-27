@@ -16,6 +16,7 @@ import com.liferay.contacts.service.EntryLocalService;
 import com.liferay.contacts.util.ContactsUtil;
 import com.liferay.contacts.web.internal.constants.ContactsPortletKeys;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
@@ -44,6 +45,7 @@ import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.ListTypeConstants;
 import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
@@ -236,18 +238,11 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 		throws Exception {
 
-		long[] userIds = StringUtil.split(
-			ParamUtil.getString(resourceRequest, "userIds"), 0L);
-
-		List<User> users = new ArrayList<>(userIds.length);
-
-		for (long userId : userIds) {
-			User user = userService.getUserById(userId);
-
-			users.add(user);
-		}
-
-		String vCards = ContactsUtil.getVCards(users);
+		String vCards = ContactsUtil.getVCards(
+			TransformUtil.transformToList(
+				StringUtil.split(
+					ParamUtil.getString(resourceRequest, "userIds"), 0L),
+				userId -> userService.getUserById(userId)));
 
 		PortletResponseUtil.sendFile(
 			resourceRequest, resourceResponse, "vcards.vcf",
@@ -1169,7 +1164,8 @@ public class ContactsCenterPortlet extends MVCPortlet {
 
 		UsersAdminUtil.updateAddresses(
 			Contact.class.getName(), user.getContactId(),
-			UsersAdminUtil.getAddresses(actionRequest));
+			UsersAdminUtil.getAddresses(actionRequest),
+			ListTypeConstants.CONTACT_ADDRESS);
 	}
 
 	private void _updateArchived(long userId, long userNotificationEventId)

@@ -9,11 +9,13 @@ import ClayLink from '@clayui/link';
 import {openConfirmModal} from '@liferay/layout-js-components-web';
 import {openToast} from 'frontend-js-components-web';
 import {addParams, navigate} from 'frontend-js-web';
-import React, {Dispatch} from 'react';
+import React, {Dispatch, useEffect} from 'react';
 
 import Toolbar from '../../common/components/Toolbar';
+import StructureService from '../../common/services/StructureService';
+import {ObjectDefinitions} from '../../common/types/ObjectDefinition';
 import {config} from '../config';
-import {CacheKey, useStaleCache} from '../contexts/CacheContext';
+import {CacheKey, useCache, useStaleCache} from '../contexts/CacheContext';
 import {
 	Action,
 	State,
@@ -30,10 +32,10 @@ import selectStructureLocalizedLabel from '../selectors/selectStructureLocalized
 import selectStructureName from '../selectors/selectStructureName';
 import selectStructureSpaces from '../selectors/selectStructureSpaces';
 import selectStructureStatus from '../selectors/selectStructureStatus';
+import selectStructureUuid from '../selectors/selectStructureUuid';
+import selectStructureWorkflows from '../selectors/selectStructureWorkflows';
 import selectUnsavedChanges from '../selectors/selectUnsavedChanges';
 import DisplayPageService from '../services/DisplayPageService';
-import StructureService from '../services/StructureService';
-import {Structure} from '../types/Structure';
 import {useValidate} from '../utils/validation';
 import AsyncButton from './AsyncButton';
 
@@ -41,21 +43,33 @@ export default function StructureBuilderToolbar() {
 	const label = useSelector(selectStructureLocalizedLabel);
 	const status = useSelector(selectStructureStatus);
 
+	const dispatch = useStateDispatch();
+
+	const {load, status: objectDefinitionStatus} =
+		useCache('object-definitions');
+
+	useEffect(() => {
+		if (objectDefinitionStatus === 'stale') {
+			load().then((objectDefinitions) =>
+				dispatch({
+					objectDefinitions,
+					type: 'refresh-referenced-structures',
+				})
+			);
+		}
+	}, [dispatch, load, objectDefinitionStatus]);
+
 	return (
 		<Toolbar
 			backURL="structures"
 			title={
 				status === 'published'
 					? label
-					: Liferay.Language.get('new-structure')
+					: Liferay.Language.get('new-content-structure')
 			}
 		>
-			<Toolbar.Item>
-				<CustomizeExperienceButton />
-			</Toolbar.Item>
-
-			<Toolbar.Item>
-				<div className="vertical-divider" />
+			<Toolbar.Item className="nav-divider-end">
+				<CustomizeEditorButton />
 			</Toolbar.Item>
 
 			<Toolbar.Item>
@@ -80,7 +94,7 @@ export default function StructureBuilderToolbar() {
 	);
 }
 
-function CustomizeExperienceButton() {
+function CustomizeEditorButton() {
 	const dispatch = useStateDispatch();
 	const validate = useValidate();
 
@@ -90,12 +104,14 @@ function CustomizeExperienceButton() {
 	const structureId = useSelector(selectStructureId);
 	const unsavedChanges = useSelector(selectUnsavedChanges);
 
+	const {data: objectDefinitions} = useCache('object-definitions');
+
 	const staleCache = useStaleCache();
 
 	return (
 		<ClayButton
 			borderless
-			className="font-weight-semi-bold"
+			className="font-weight-semi-bold mr-2"
 			displayType="primary"
 			onClick={() => {
 				if (status === 'published' && history.deletedChildren) {
@@ -105,6 +121,7 @@ function CustomizeExperienceButton() {
 						onConfirm: async () => {
 							await publishStructure({
 								dispatch,
+								objectDefinitions,
 								showExperienceLink: true,
 								showWarnings: false,
 								staleCache,
@@ -114,10 +131,10 @@ function CustomizeExperienceButton() {
 						},
 						status: 'danger',
 						text: Liferay.Language.get(
-							'to-customize-the-experience-you-need-to-publish-the-structure-first.-you-removed-one-or-more-fields-from-the-structure'
+							'to-customize-the-editor-you-need-to-publish-the-content-structure-first.-you-removed-one-or-more-fields-from-the-content-structure'
 						),
 						title: Liferay.Language.get(
-							'publish-to-customize-experience'
+							'publish-to-customize-editor'
 						),
 					});
 				}
@@ -128,6 +145,7 @@ function CustomizeExperienceButton() {
 						onConfirm: async () => {
 							await publishStructure({
 								dispatch,
+								objectDefinitions,
 								showExperienceLink: true,
 								staleCache,
 								state,
@@ -136,10 +154,10 @@ function CustomizeExperienceButton() {
 						},
 						status: 'warning',
 						text: Liferay.Language.get(
-							'to-customize-the-experience-you-need-to-publish-the-structure-first'
+							'to-customize-the-editor-you-need-to-publish-the-content-structure-first'
 						),
 						title: Liferay.Language.get(
-							'publish-to-customize-experience'
+							'publish-to-customize-editor'
 						),
 					});
 				}
@@ -148,11 +166,11 @@ function CustomizeExperienceButton() {
 						{
 							backURL: addParams(
 								{
-									objectDefinitionId: String(structureId),
+									objectDefinitionId: structureId,
 								},
 								config.structureBuilderURL
 							),
-							objectDefinitionId: String(structureId),
+							objectDefinitionId: structureId,
 						},
 						config.editStructureDisplayPageURL
 					);
@@ -162,7 +180,7 @@ function CustomizeExperienceButton() {
 			}}
 			size="sm"
 		>
-			{Liferay.Language.get('customize-experience')}
+			{Liferay.Language.get('customize-editor')}
 
 			<ClayIcon className="ml-2" symbol="shortcut" />
 		</ClayButton>
@@ -175,21 +193,24 @@ function SaveButton() {
 
 	const children = useSelector(selectStructureChildren);
 	const erc = useSelector(selectStructureERC);
+	const history = useSelector(selectHistory);
+	const id = useSelector(selectStructureId);
 	const label = useSelector(selectStructureLabel);
 	const localizedLabel = useSelector(selectStructureLocalizedLabel);
 	const name = useSelector(selectStructureName);
 	const spaces = useSelector(selectStructureSpaces);
 	const status = useSelector(selectStructureStatus);
-	const structureId = useSelector(selectStructureId);
+	const workflows = useSelector(selectStructureWorkflows);
+	const uuid = useSelector(selectStructureUuid);
 
-	const onError = (error: string) =>
+	const {data: objectDefinitions} = useCache('object-definitions');
+
+	const onError = () =>
 		dispatch({
-			error:
-				error ||
-				Liferay.Language.get(
-					'an-unexpected-error-occurred-while-saving-or-publishing-the-structure'
-				),
-			type: 'set-error',
+			error: 'unexpected',
+			property: 'global',
+			type: 'add-error',
+			uuid,
 		});
 
 	const onSave = async () => {
@@ -207,10 +228,11 @@ function SaveButton() {
 				name,
 				spaces,
 				status: 'draft',
+				workflows,
 			});
 
 			if (error) {
-				onError(error);
+				onError();
 
 				return;
 			}
@@ -222,20 +244,23 @@ function SaveButton() {
 			const {error} = await StructureService.updateStructure({
 				children,
 				erc,
-				id: structureId,
+				history,
+				id,
 				label,
 				name,
+				objectDefinitions,
 				spaces,
 				status: 'draft',
+				workflows,
 			});
 
 			if (error) {
-				onError(error);
+				onError();
 
 				return;
 			}
 			else {
-				dispatch({type: 'clear-error'});
+				dispatch({type: 'clear-errors'});
 			}
 		}
 
@@ -262,11 +287,14 @@ function PublishButton() {
 	const validate = useValidate();
 	const state = useSelector(selectState);
 
+	const {data: objectDefinitions} = useCache('object-definitions');
+
 	const staleCache = useStaleCache();
 
 	const onPublish = async () => {
 		await publishStructure({
 			dispatch,
+			objectDefinitions,
 			showExperienceLink: !config.autogeneratedDisplayPage,
 			staleCache,
 			state,
@@ -285,6 +313,7 @@ function PublishButton() {
 
 async function publishStructure({
 	dispatch,
+	objectDefinitions,
 	showExperienceLink,
 	showWarnings = true,
 	staleCache,
@@ -292,6 +321,7 @@ async function publishStructure({
 	validate,
 }: {
 	dispatch: Dispatch<Action>;
+	objectDefinitions: ObjectDefinitions;
 	showExperienceLink: boolean;
 	showWarnings?: boolean;
 	staleCache: (key: CacheKey) => void;
@@ -315,9 +345,11 @@ async function publishStructure({
 				center: true,
 				status: 'warning',
 				text: Liferay.Language.get(
-					'this-structure-is-being-used-in-other-existing-structures'
+					'this-content-structure-is-being-used-in-other-existing-content-structures'
 				),
-				title: Liferay.Language.get('publish-structure-changes'),
+				title: Liferay.Language.get(
+					'publish-content-structure-changes'
+				),
 			}))
 		) {
 			return;
@@ -331,9 +363,11 @@ async function publishStructure({
 				center: true,
 				status: 'danger',
 				text: Liferay.Language.get(
-					'you-removed-one-or-more-fields-from-the-structure'
+					'you-removed-one-or-more-fields-from-the-content-structure'
 				),
-				title: Liferay.Language.get('publish-structure-changes'),
+				title: Liferay.Language.get(
+					'publish-content-structure-changes'
+				),
 			}))
 		) {
 			return;
@@ -347,9 +381,11 @@ async function publishStructure({
 				center: true,
 				status: 'danger',
 				text: Liferay.Language.get(
-					'you-removed-one-or-more-fields-from-the-structure-and-this-structure-is-being-used'
+					'you-removed-one-or-more-fields-from-the-content-structure-and-this-content-structure-is-being-used'
 				),
-				title: Liferay.Language.get('publish-structure-changes'),
+				title: Liferay.Language.get(
+					'publish-content-structure-changes'
+				),
 			}))
 		) {
 			return;
@@ -358,6 +394,7 @@ async function publishStructure({
 
 	const children = selectStructureChildren(state);
 	const erc = selectStructureERC(state);
+	const id = selectStructureId(state);
 	const label = selectStructureLabel(state);
 
 	const localizedLabel = selectStructureLocalizedLabel(state);
@@ -365,10 +402,10 @@ async function publishStructure({
 	const spaces = selectStructureSpaces(state);
 	const status = selectStructureStatus(state);
 	const structureId = selectStructureId(state);
+	const workflows = selectStructureWorkflows(state);
+	const uuid = selectStructureUuid(state);
 
-	let id = structureId;
-
-	const onSuccess = async ({id}: {id: Structure['id']}) => {
+	const onSuccess = async () => {
 		staleCache('object-definitions');
 
 		if (!showExperienceLink) {
@@ -386,7 +423,7 @@ async function publishStructure({
 		openToast({
 			message: Liferay.Util.sub(
 				Liferay.Language.get(
-					'x-was-published-successfully.-remember-to-review-the-customized-experience-if-needed'
+					'x-was-published-successfully.-remember-to-review-the-customized-editor-if-needed'
 				),
 				localizedLabel
 			),
@@ -399,11 +436,11 @@ async function publishStructure({
 								{
 									backURL: addParams(
 										{
-											objectDefinitionId: id,
+											objectDefinitionId: structureId,
 										},
 										config.structureBuilderURL
 									),
-									objectDefinitionId: String(id),
+									objectDefinitionId: structureId,
 								},
 								config.editStructureDisplayPageURL
 							);
@@ -412,7 +449,7 @@ async function publishStructure({
 						}}
 						size="sm"
 					>
-						{Liferay.Language.get('customize-experience')}
+						{Liferay.Language.get('customize-editor')}
 
 						<ClayIcon className="ml-2" symbol="shortcut" />
 					</ClayButton>
@@ -421,14 +458,12 @@ async function publishStructure({
 		});
 	};
 
-	const onError = (error: string) =>
+	const onError = () =>
 		dispatch({
-			error:
-				error ||
-				Liferay.Language.get(
-					'an-unexpected-error-occurred-while-saving-or-publishing-the-structure'
-				),
-			type: 'set-error',
+			error: 'unexpected',
+			property: 'global',
+			type: 'add-error',
+			uuid,
 		});
 
 	if (status === 'new') {
@@ -439,32 +474,34 @@ async function publishStructure({
 			name,
 			spaces,
 			status: 'published',
+			workflows,
 		});
 
 		if (error) {
-			onError(error);
+			onError();
 
 			return;
 		}
-		else if (data && data.id) {
-			id = data.id;
-
-			dispatch({id, type: 'publish-structure'});
+		else if (data) {
+			dispatch({id: data.id, type: 'publish-structure'});
 		}
 	}
 	else if (status === 'draft') {
 		const {error} = await StructureService.updateStructure({
 			children,
 			erc,
-			id: structureId,
+			history,
+			id,
 			label,
 			name,
+			objectDefinitions,
 			spaces,
 			status: 'published',
+			workflows,
 		});
 
 		if (error) {
-			onError(error);
+			onError();
 
 			return;
 		}
@@ -476,15 +513,18 @@ async function publishStructure({
 		const {error} = await StructureService.updateStructure({
 			children,
 			erc,
-			id: structureId,
+			history,
+			id,
 			label,
 			name,
+			objectDefinitions,
 			spaces,
 			status: 'published',
+			workflows,
 		});
 
 		if (error) {
-			onError(error);
+			onError();
 
 			return;
 		}
@@ -494,8 +534,10 @@ async function publishStructure({
 	}
 
 	if (config.autogeneratedDisplayPage) {
-		await DisplayPageService.resetDisplayPage({id});
+		await DisplayPageService.resetDisplayPage({id: structureId});
 	}
 
-	onSuccess({id});
+	await DisplayPageService.resetTranslationDisplayPage({id: structureId});
+
+	onSuccess();
 }

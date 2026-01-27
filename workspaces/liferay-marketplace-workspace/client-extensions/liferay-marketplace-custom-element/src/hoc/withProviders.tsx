@@ -3,9 +3,13 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Component} from 'react';
+import {Component, ComponentProps, Fragment} from 'react';
+import {HashRouter} from 'react-router-dom';
 
+import {Breadcrumbs} from '../components/Breadcrumb/Breadcrumb';
+import ErrorBoundary from '../components/ErrorBoundary';
 import Providers from '../providers';
+import {MarketplaceProperties} from '../utils/attributes';
 
 /**
  * @description due the lazy rendering, the context needs to be initialized
@@ -15,14 +19,35 @@ import Providers from '../providers';
  */
 
 export default function withProviders<T extends object>(
-	WrappedComponent: React.ComponentType<T>
+	WrappedComponent: React.ComponentType<T>,
+	properties?: {
+		breadcrumbProps?: ComponentProps<typeof Breadcrumbs>;
+		withBreadcrumbs?: boolean;
+		withErrorBoundary?: boolean;
+		withHashRouter?: boolean;
+	}
 ) {
-	return class extends Component<T & {properties: DefaultProperties}> {
+	return class extends Component<T & {properties: MarketplaceProperties}> {
 		render() {
+			const {withBreadcrumbs, withHashRouter} = properties ?? {};
+			const HashRouterWrapper = withHashRouter ? HashRouter : Fragment;
+
+			const Wrapper = properties?.withErrorBoundary
+				? ErrorBoundary
+				: Fragment;
+
 			return (
-				<Providers properties={this.props.properties}>
-					<WrappedComponent {...this.props} />
-				</Providers>
+				<Wrapper>
+					<Providers properties={this.props.properties}>
+						<HashRouterWrapper>
+							{withBreadcrumbs && withHashRouter && (
+								<Breadcrumbs {...properties?.breadcrumbProps} />
+							)}
+
+							<WrappedComponent {...this.props} />
+						</HashRouterWrapper>
+					</Providers>
+				</Wrapper>
 			);
 		}
 	};

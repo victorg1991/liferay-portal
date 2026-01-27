@@ -24,7 +24,6 @@ import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.cluster.Clusterable;
 import com.liferay.portal.kernel.configuration.Configuration;
 import com.liferay.portal.kernel.configuration.ConfigurationFactoryUtil;
-import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.PortletIdException;
 import com.liferay.portal.kernel.exception.SystemException;
@@ -43,6 +42,7 @@ import com.liferay.portal.kernel.model.PortletFilter;
 import com.liferay.portal.kernel.model.PortletInfo;
 import com.liferay.portal.kernel.model.PortletPreferences;
 import com.liferay.portal.kernel.model.PortletURLListener;
+import com.liferay.portal.kernel.model.PortletWrapper;
 import com.liferay.portal.kernel.model.PublicRenderParameter;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
@@ -86,6 +86,7 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PortletKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -103,7 +104,6 @@ import com.liferay.portal.model.impl.PortletURLListenerImpl;
 import com.liferay.portal.model.impl.PublicRenderParameterImpl;
 import com.liferay.portal.service.base.PortletLocalServiceBaseImpl;
 import com.liferay.portal.servlet.ComboServlet;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.portlet.PortletBagFactory;
 import com.liferay.portlet.PortletContextFactoryUtil;
@@ -134,7 +134,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import org.osgi.framework.BundleContext;
@@ -506,7 +505,51 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		Portlet portlet = companyPortletsMap.get(rootPortletId);
 
 		if (portlet != null) {
-			portlet = portlet.getClonedInstance(portletId);
+			String finalPortletId = portletId;
+			boolean finalStatic = portlet.isStatic();
+			boolean finalStaticPortletStart = portlet.isStaticStart();
+
+			portlet = new PortletWrapper(portlet) {
+
+				@Override
+				public String getInstanceId() {
+					return PortletIdCodec.decodeInstanceId(finalPortletId);
+				}
+
+				@Override
+				public String getPortletId() {
+					return finalPortletId;
+				}
+
+				@Override
+				public boolean getStatic() {
+					return _staticPortlet;
+				}
+
+				@Override
+				public boolean isStatic() {
+					return _staticPortlet;
+				}
+
+				@Override
+				public boolean isStaticStart() {
+					return _staticPortletStart;
+				}
+
+				@Override
+				public void setStatic(boolean staticPortlet) {
+					_staticPortlet = staticPortlet;
+				}
+
+				@Override
+				public void setStaticStart(boolean staticPortletStart) {
+					_staticPortletStart = staticPortletStart;
+				}
+
+				private boolean _staticPortlet = finalStatic;
+				private boolean _staticPortletStart = finalStaticPortletStart;
+
+			};
 		}
 
 		return portlet;
@@ -880,18 +923,6 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		_portletApps.clear();
 		_portletsMap.clear();
 
-		if (_textReplacerBiFunction != null) {
-			for (int i = 0; i < xmls.length; i++) {
-				if (xmls[i] == null) {
-					continue;
-				}
-
-				xmls[i] = _textReplacerBiFunction.apply(
-					PortletLocalServiceImpl.class.getName() + "#initEAR#" + i,
-					xmls[i]);
-			}
-		}
-
 		try {
 			PortletApp portletApp = getPortletApp(StringPool.BLANK);
 
@@ -999,18 +1030,6 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		Set<String> liferayPortletIds = null;
 
 		PortletApp portletApp = getPortletApp(servletContextName);
-
-		if (_textReplacerBiFunction != null) {
-			for (int i = 0; i < xmls.length; i++) {
-				if (xmls[i] == null) {
-					continue;
-				}
-
-				xmls[i] = _textReplacerBiFunction.apply(
-					PortletLocalServiceImpl.class.getName() + "#initWAR#" + i,
-					xmls[i]);
-			}
-		}
 
 		try {
 			Set<String> servletURLPatterns = readWebXML(xmls[3]);
@@ -1175,6 +1194,24 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		for (Consumer<Long> consumer : _serviceTrackerList) {
 			consumer.accept(companyId);
 		}
+	}
+
+	@Override
+	public void removePortletModelResources(long companyId, String portletId) {
+		List<String> modelResources =
+			ResourceActionsUtil.getPortletModelResources(portletId);
+
+		_companyDefaultModelResources.compute(
+			companyId,
+			(key, value) -> {
+				if (value == null) {
+					return null;
+				}
+
+				modelResources.forEach(value::remove);
+
+				return value;
+			});
 	}
 
 	@Override
@@ -2957,32 +2994,6 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		new ShardedPortletsMap();
 	private static final Map<Long, Map<String, Portlet>> _portletsMaps =
 		new ConcurrentHashMap<>();
-	private static final BiFunction<String, String, String>
-		_textReplacerBiFunction;
-
-	static {
-		ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-
-		Object instance = null;
-
-		try {
-			Class<?> clazz = classLoader.loadClass(
-				"com.liferay.portal.tools.jakarta.ee.transformer.function." +
-					"TextReplacerBiFunction");
-
-			instance = clazz.newInstance();
-		}
-		catch (ReflectiveOperationException reflectiveOperationException) {
-			if (!(reflectiveOperationException instanceof
-					ClassNotFoundException)) {
-
-				throw new ExceptionInInitializerError(
-					reflectiveOperationException);
-			}
-		}
-
-		_textReplacerBiFunction = (BiFunction<String, String, String>)instance;
-	}
 
 	private final Map<Long, Set<String>> _companyDefaultModelResources =
 		new ConcurrentHashMap<>();
@@ -3021,7 +3032,7 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 		public Portlet get(Object key) {
 			Portlet portlet = super.get(key);
 
-			if (!DBPartition.isPartitionEnabled() ||
+			if (!PropsValues.DATABASE_PARTITION_ENABLED ||
 				((portlet != null) &&
 				 (portlet.getCompanyId() == CompanyConstants.SYSTEM))) {
 
@@ -3033,18 +3044,17 @@ public class PortletLocalServiceImpl extends PortletLocalServiceBaseImpl {
 
 		@Override
 		public Portlet put(String key, Portlet value) {
-			if (!DBPartition.isPartitionEnabled() || (value == null) ||
-				(value.getCompanyId() == CompanyConstants.SYSTEM)) {
-
+			if (value.getCompanyId() == CompanyConstants.SYSTEM) {
 				return super.put(key, value);
 			}
 
-			return super.put(DBPartitionUtil.getPartitionKey(key), value);
+			return super.put(
+				DBPartitionUtil.getPartitionKey(key, value), value);
 		}
 
 		@Override
 		public Portlet remove(Object key) {
-			if (DBPartition.isPartitionEnabled()) {
+			if (PropsValues.DATABASE_PARTITION_ENABLED) {
 				Portlet portlet = super.remove(
 					DBPartitionUtil.getPartitionKey(key));
 

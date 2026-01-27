@@ -7,6 +7,7 @@ package com.liferay.commerce.order.content.web.internal.fragment.renderer;
 
 import com.liferay.account.constants.AccountListTypeConstants;
 import com.liferay.account.model.AccountEntry;
+import com.liferay.commerce.constants.CommerceOrderActionKeys;
 import com.liferay.commerce.constants.CommerceWebKeys;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.model.CommerceAddress;
@@ -80,7 +81,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -100,11 +100,8 @@ public class InfoBoxFragmentRenderer implements FragmentRenderer {
 	}
 
 	@Override
-	public String getConfiguration(
+	public JSONObject getConfigurationJSONObject(
 		FragmentRendererContext fragmentRendererContext) {
-
-		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle(
-			"content.Language", getClass());
 
 		try {
 			JSONObject jsonObject = _jsonFactory.createJSONObject(
@@ -112,14 +109,15 @@ public class InfoBoxFragmentRenderer implements FragmentRenderer {
 					getClass(), "info_box/dependencies/configuration.json"));
 
 			return _fragmentEntryConfigurationParser.translateConfiguration(
-				jsonObject, resourceBundle);
+				jsonObject,
+				ResourceBundleUtil.getBundle("content.Language", getClass()));
 		}
 		catch (JSONException jsonException) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(jsonException);
 			}
 
-			return StringPool.BLANK;
+			return null;
 		}
 	}
 
@@ -148,8 +146,8 @@ public class InfoBoxFragmentRenderer implements FragmentRenderer {
 
 		boolean readOnly = GetterUtil.getBoolean(
 			_fragmentEntryConfigurationParser.getFieldValue(
-				getConfiguration(fragmentRendererContext),
-				fragmentEntryLink.getEditableValues(),
+				getConfigurationJSONObject(fragmentRendererContext),
+				fragmentEntryLink.getEditableValuesJSONObject(),
 				fragmentRendererContext.getLocale(), "readOnly"));
 
 		if (!readOnly && ArrayUtil.contains(_READ_ONLY_FIELDS, field)) {
@@ -207,9 +205,20 @@ public class InfoBoxFragmentRenderer implements FragmentRenderer {
 				"liferay-commerce:info-box:fieldValueType",
 				_getEditableFieldValueType(field));
 			httpServletRequest.setAttribute(
-				"liferay-commerce:info-box:hasPermission",
-				_commerceOrderModelResourcePermission.contains(
+				"liferay-commerce:info-box:" +
+					"hasManageOrderRestrictedNotesPermission",
+				_hasPermission(
+					permissionChecker, commerceOrder,
+					CommerceOrderActionKeys.
+						MANAGE_COMMERCE_ORDER_RESTRICTED_NOTES));
+			httpServletRequest.setAttribute(
+				"liferay-commerce:info-box:hasUpdatePermission",
+				_hasPermission(
 					permissionChecker, commerceOrder, ActionKeys.UPDATE));
+			httpServletRequest.setAttribute(
+				"liferay-commerce:info-box:hasViewPermission",
+				_hasPermission(
+					permissionChecker, commerceOrder, ActionKeys.VIEW));
 
 			ThemeDisplay themeDisplay =
 				(ThemeDisplay)httpServletRequest.getAttribute(
@@ -460,8 +469,8 @@ public class InfoBoxFragmentRenderer implements FragmentRenderer {
 
 		return GetterUtil.getString(
 			_fragmentEntryConfigurationParser.getFieldValue(
-				getConfiguration(fragmentRendererContext),
-				fragmentEntryLink.getEditableValues(),
+				getConfigurationJSONObject(fragmentRendererContext),
+				fragmentEntryLink.getEditableValuesJSONObject(),
 				fragmentRendererContext.getLocale(), name));
 	}
 
@@ -605,6 +614,15 @@ public class InfoBoxFragmentRenderer implements FragmentRenderer {
 		return StringPool.BLANK;
 	}
 
+	private boolean _hasPermission(
+			PermissionChecker permissionChecker, CommerceOrder commerceOrder,
+			String actionId)
+		throws PortalException {
+
+		return _commerceOrderModelResourcePermission.contains(
+			permissionChecker, commerceOrder, actionId);
+	}
+
 	private boolean _isEditMode(HttpServletRequest httpServletRequest) {
 		HttpServletRequest originalHttpServletRequest =
 			_portal.getOriginalServletRequest(httpServletRequest);
@@ -616,31 +634,16 @@ public class InfoBoxFragmentRenderer implements FragmentRenderer {
 	}
 
 	private void _printPortletMessageInfo(
-		HttpServletRequest httpServletRequest,
-		HttpServletResponse httpServletResponse, String message) {
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, String message)
+		throws IOException {
 
-		try {
-			PrintWriter printWriter = httpServletResponse.getWriter();
+		PrintWriter printWriter = httpServletResponse.getWriter();
 
-			StringBundler sb = new StringBundler(3);
-
-			sb.append("<div class=\"portlet-msg-info\">");
-
-			ThemeDisplay themeDisplay =
-				(ThemeDisplay)httpServletRequest.getAttribute(
-					WebKeys.THEME_DISPLAY);
-
-			sb.append(themeDisplay.translate(message));
-
-			sb.append("</div>");
-
-			printWriter.write(sb.toString());
-		}
-		catch (IOException ioException) {
-			if (_log.isDebugEnabled()) {
-				_log.debug(ioException);
-			}
-		}
+		printWriter.write(
+			StringBundler.concat(
+				"<div class=\"portlet-msg-info\">",
+				_language.get(httpServletRequest, message), "</div>"));
 	}
 
 	private static final String[] _READ_ONLY_FIELDS = {

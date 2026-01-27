@@ -174,6 +174,32 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 	}
 
 	@Override
+	public Portlet getDataSiteLevelPortlet(
+		String className, long companyId, boolean excludeDataAlwaysStaged) {
+
+		for (Portlet portlet : _portletLocalService.getPortlets(companyId)) {
+			if (!portlet.isActive()) {
+				continue;
+			}
+
+			PortletDataHandler portletDataHandler =
+				portlet.getPortletDataHandlerInstance();
+
+			if ((portletDataHandler != null) &&
+				ArrayUtil.contains(
+					portletDataHandler.getClassNames(), className) &&
+				portletDataHandler.isDataSiteLevel() &&
+				!(excludeDataAlwaysStaged &&
+				  portletDataHandler.isDataAlwaysStaged())) {
+
+				return portlet;
+			}
+		}
+
+		return null;
+	}
+
+	@Override
 	public List<Portlet> getDataSiteLevelPortlets(long companyId)
 		throws Exception {
 
@@ -201,6 +227,22 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			return _getPortlets(
 				companyId, new DataLevel[] {DataLevel.PORTAL},
 				excludeDataAlwaysStaged);
+		}
+
+		if (stagingGroupHelper.isDepotGroup(groupId)) {
+			return ListUtil.filter(
+				_getPortlets(
+					companyId,
+					new DataLevel[] {DataLevel.DEPOT, DataLevel.SITE},
+					excludeDataAlwaysStaged),
+				portlet -> {
+					PortletDataHandler portletDataHandler =
+						portlet.getPortletDataHandlerInstance();
+
+					return portletDataHandler.isDataDepotLevel() ||
+						   (portletDataHandler.isDataSiteLevel() &&
+							!portletDataHandler.isBatch());
+				});
 		}
 
 		return _getPortlets(
@@ -476,8 +518,6 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 
 		File file = FileUtil.createTempFile("lar");
 
-		ZipReader zipReader = null;
-
 		try (InputStream inputStream = _dlFileEntryLocalService.getFileAsStream(
 				fileEntry.getFileEntryId(), fileEntry.getVersion(), false)) {
 
@@ -487,20 +527,16 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			String userIdStrategy = MapUtil.getString(
 				parameterMap, PortletDataHandlerKeys.USER_ID_STRATEGY);
 
-			zipReader = _zipReaderFactory.getZipReader(file);
+			try (ZipReader zipReader = _zipReaderFactory.getZipReader(file)) {
+				PortletDataContext portletDataContext =
+					_portletDataContextFactory.createImportPortletDataContext(
+						group.getCompanyId(), groupId, parameterMap,
+						getUserIdStrategy(userId, userIdStrategy), zipReader);
 
-			PortletDataContext portletDataContext =
-				_portletDataContextFactory.createImportPortletDataContext(
-					group.getCompanyId(), groupId, parameterMap,
-					getUserIdStrategy(userId, userIdStrategy), zipReader);
-
-			manifestSummary = getManifestSummary(portletDataContext);
+				manifestSummary = getManifestSummary(portletDataContext);
+			}
 		}
 		finally {
-			if (zipReader != null) {
-				zipReader.close();
-			}
-
 			FileUtil.delete(file);
 		}
 
@@ -690,7 +726,7 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			portletDataContext.getParameterMap();
 
 		String[] referencedContentBehaviorArray = parameterMap.get(
-			PortletDataHandlerControl.getNamespacedControlName(
+			PortletDataHandlerControl.getNamespacedName(
 				portletDataHandler.getNamespace(),
 				"referenced-content-behavior"));
 
@@ -1438,7 +1474,7 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 			return false;
 		}
 
-		if (importPortletDataAll || !portletDataHandler.isDataSiteLevel()) {
+		if (importPortletDataAll) {
 			return true;
 		}
 
@@ -1643,6 +1679,7 @@ public class ExportImportHelperImpl implements ExportImportHelper {
 						DefaultConfigurationPortletDataHandler) &&
 					((portletDataHandler.isBatch() &&
 					  portletDataHandler.isDataPortalLevel()) ||
+					 portletDataHandler.isDataDepotLevel() ||
 					 portletDataHandler.isDataSiteLevel()) &&
 					GetterUtil.getBoolean(
 						element.attributeValue("portlet-data"))) {

@@ -5,8 +5,7 @@
 
 import ClayIcon from '@clayui/icon';
 import {useSelector} from '@xstate/store/react';
-import {useEffect, useMemo} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useMemo} from 'react';
 
 import CardButton from '../../../../../components/CardButton/CardButton';
 import ProductPurchase from '../../../../../components/ProductPurchase';
@@ -22,16 +21,24 @@ import {PaymentMethodType} from '../../../types';
 import PaidLicense from './PaidLicense';
 import TrialLicense from './TrialLicense';
 
-import '../../../../GetApp/styles/index.scss';
+import '../../../../ProductPurchase/components/StepWizard/StepWizard.scss';
+import {cartStore} from '../../../store/CartStore';
+
+import './index.scss';
 
 const isContinueButtonDisabled = () => {
 	const snapshot = productPurchaseStore.getSnapshot();
+	const cartSnaptshot = cartStore.getSnapshot();
 
 	if (snapshot.context.licenseType === null) {
 		return true;
 	}
 
-	if (snapshot.context.licenseType === 'PAID') {
+	if (
+		cartSnaptshot.context.cart.id &&
+		cartSnaptshot.context.cartItems.length &&
+		snapshot.context.licenseType === 'PAID'
+	) {
 		return false;
 	}
 
@@ -39,9 +46,7 @@ const isContinueButtonDisabled = () => {
 };
 
 const License = () => {
-	const {product, selectedAccount} = useProductPurchaseOutletContext();
-
-	const navigate = useNavigate();
+	const {product, productPurchaseCart} = useProductPurchaseOutletContext();
 
 	const {
 		actions: {nextStep, previousStep},
@@ -73,12 +78,6 @@ const License = () => {
 
 	const Component = licenseType === 'PAID' ? PaidLicense : TrialLicense;
 
-	useEffect(() => {
-		if (!selectedAccount) {
-			navigate('/', {replace: true});
-		}
-	}, [navigate, selectedAccount]);
-
 	return (
 		<ProductPurchase.Shell
 			className="d-flex flex-column license-selector-timeline"
@@ -91,22 +90,31 @@ const License = () => {
 			}}
 			title={i18n.translate('license-selection')}
 		>
-			<div className="license-selector mb-6">
+			<div className="d-flex justify-content-between license-selector mb-6 w-100">
 				{licenseOptions.map(({icon, type, ...licenseOption}, index) => (
 					<CardButton
 						{...licenseOption}
+						fullSize={true}
 						icon={
 							<span className="license-icon">
 								<ClayIcon symbol={icon} />
 							</span>
 						}
 						key={index}
-						onClick={() =>
+						onClick={() => {
+							if (
+								licenseType !== type &&
+								productPurchaseCart?.cart?.id
+							) {
+								productPurchaseCart.removeCart(
+									productPurchaseCart.cart.id
+								);
+							}
 							productPurchaseStore.send({
 								licenseType: type as LicenseType,
 								type: 'setLicenseType',
-							})
-						}
+							});
+						}}
 						selected={licenseType === type}
 					/>
 				))}

@@ -8,9 +8,20 @@ export const ASSET_TYPE = {
 	CONTENTS: 'basic-web-contents',
 	FILES: 'files',
 	FOLDER: 'folder',
-	KNOWLEDGE_BASES: 'knowledge-bases',
 };
 
-export const EVENTS = {
-	ASSET_DATA: 'asset-data',
+export const ASSET_TYPE_ERC = {
+	BASIC_DOCUMENT: 'L_CMS_BASIC_DOCUMENT',
+	BASIC_WEB_CONTENT: 'L_CMS_BASIC_WEB_CONTENT',
+	BLOG: 'L_CMS_BLOG',
+	EXTERNAL_VIDEO: 'L_CMS_EXTERNAL_VIDEO',
 };
+
+export const COPY = 'copy';
+export const DELETE_VERSION = 'delete';
+export const EXPIRE = 'expire';
+export const L_CONTENTS = 'L_CONTENTS';
+export const L_FILES = 'L_FILES';
+export const RESTORE = 'restore';
+
+export const VIEW_CONTENT_VERSION_URL = `${Liferay.ThemeDisplay.getPortalURL()}${Liferay.ThemeDisplay.getPathMain()}/cms`;

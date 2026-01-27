@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.search.BooleanClause;
 import com.liferay.portal.kernel.search.BooleanClauseFactoryUtil;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.search.filter.Filter;
@@ -71,7 +72,7 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 			com.liferay.change.tracking.model.CTEntry.class.getName(), search,
 			pagination,
 			queryConfig -> queryConfig.setSelectedFieldNames(
-				Field.ENTRY_CLASS_PK),
+				Field.ENTRY_CLASS_PK, Field.UID),
 			searchContext -> {
 				searchContext.setAttribute("ctCollectionId", ctCollectionId);
 				searchContext.setAttribute("showHideable", showHideable);
@@ -82,8 +83,23 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 				}
 			},
 			sorts,
-			document -> _toCTEntry(
-				GetterUtil.getLong(document.get(Field.ENTRY_CLASS_PK))));
+			document -> {
+				long ctEntryId = GetterUtil.getLong(
+					document.get(Field.ENTRY_CLASS_PK));
+
+				com.liferay.change.tracking.model.CTEntry ctEntry =
+					_ctEntryLocalService.fetchCTEntry(ctEntryId);
+
+				if (ctEntry == null) {
+					_indexer.delete(
+						contextCompany.getCompanyId(), document.get(Field.UID));
+
+					return null;
+				}
+
+				return _ctEntryDTOConverter.toDTO(
+					_getDTOConverterContext(ctEntry), ctEntry);
+			});
 	}
 
 	@Override
@@ -211,9 +227,7 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 			HashMapBuilder.put(
 				"checkout",
 				() -> {
-					if (ctCollection.getStatus() !=
-							WorkflowConstants.STATUS_DRAFT) {
-
+					if (!ctCollection.isInProgress()) {
 						return null;
 					}
 
@@ -224,9 +238,7 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 			).put(
 				"delete",
 				() -> {
-					if (ctCollection.getStatus() !=
-							WorkflowConstants.STATUS_DRAFT) {
-
+					if (!ctCollection.isInProgress()) {
 						return null;
 					}
 
@@ -242,8 +254,7 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 			).put(
 				"move-changes",
 				() -> {
-					if ((ctCollection.getStatus() !=
-							WorkflowConstants.STATUS_DRAFT) &&
+					if (!ctCollection.isInProgress() &&
 						(ctCollection.getStatus() !=
 							WorkflowConstants.STATUS_EXPIRED)) {
 
@@ -257,9 +268,7 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 			).put(
 				"update",
 				() -> {
-					if (ctCollection.getStatus() !=
-							WorkflowConstants.STATUS_DRAFT) {
-
+					if (!ctCollection.isInProgress()) {
 						return null;
 					}
 
@@ -270,9 +279,7 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 			).put(
 				"view-discard",
 				() -> {
-					if (ctCollection.getStatus() !=
-							WorkflowConstants.STATUS_DRAFT) {
-
+					if (!ctCollection.isInProgress()) {
 						return null;
 					}
 
@@ -319,5 +326,10 @@ public class CTEntryResourceImpl extends BaseCTEntryResourceImpl {
 
 	@Reference
 	private CTEntryLocalService _ctEntryLocalService;
+
+	@Reference(
+		target = "(indexer.class.name=com.liferay.change.tracking.model.CTEntry)"
+	)
+	private Indexer<?> _indexer;
 
 }

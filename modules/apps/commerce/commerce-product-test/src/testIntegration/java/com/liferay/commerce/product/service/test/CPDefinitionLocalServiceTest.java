@@ -13,6 +13,7 @@ import com.liferay.commerce.price.list.service.CommercePriceListLocalService;
 import com.liferay.commerce.product.configuration.CProductVersionConfiguration;
 import com.liferay.commerce.product.constants.CPInstanceConstants;
 import com.liferay.commerce.product.model.CPDefinition;
+import com.liferay.commerce.product.model.CPDefinitionLocalization;
 import com.liferay.commerce.product.model.CPDefinitionSpecificationOptionValue;
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.model.CPOption;
@@ -31,6 +32,7 @@ import com.liferay.commerce.service.CPDefinitionInventoryLocalService;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
+import com.liferay.portal.kernel.dao.orm.QueryDefinition;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Company;
@@ -374,6 +376,24 @@ public class CPDefinitionLocalServiceTest {
 	}
 
 	@Test
+	public void testAddCPDefinitionWithSpecialCharactersInName()
+		throws Exception {
+
+		CPDefinition cpDefinition = CPTestUtil.addCPDefinitionFromCatalog(
+			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME, false,
+			false);
+
+		String testString = "Test & String+";
+
+		CPDefinitionLocalization cpDefinitionLocalization =
+			_cpDefinitionLocalService.updateCPDefinitionLocalization(
+				cpDefinition, cpDefinition.getDefaultLanguageId(), testString,
+				null, null, null, null, null);
+
+		Assert.assertEquals(testString, cpDefinitionLocalization.getName());
+	}
+
+	@Test
 	public void testAddExpiredCPDefinition() throws Exception {
 		frutillaRule.scenario(
 			"Add product definition"
@@ -618,6 +638,41 @@ public class CPDefinitionLocalServiceTest {
 
 		Assert.assertEquals(
 			WorkflowConstants.STATUS_APPROVED, cpDefinition.getStatus());
+	}
+
+	@Test
+	public void testFindByExpirationDate() throws Exception {
+		long time = System.currentTimeMillis();
+
+		Date date = new Date(time + Time.DAY);
+
+		CPDefinition cpDefinition1 = CPTestUtil.addCPDefinitionFromCatalog(
+			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME,
+			new Date(time - Time.MONTH), date, false, false,
+			WorkflowConstants.STATUS_APPROVED);
+
+		cpDefinition1.setExpirationDate(new Date(time - Time.DAY));
+
+		cpDefinition1 = _cpDefinitionLocalService.updateCPDefinition(
+			cpDefinition1);
+
+		CPTestUtil.addCPDefinitionFromCatalog(
+			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME,
+			new Date(time - Time.MONTH), date, false, false,
+			WorkflowConstants.STATUS_APPROVED);
+
+		List<CPDefinition> cpDefinitions =
+			_cpDefinitionLocalService.findByExpirationDate(
+				new Date(time),
+				new QueryDefinition(WorkflowConstants.STATUS_APPROVED));
+
+		Assert.assertEquals(cpDefinitions.toString(), 1, cpDefinitions.size());
+
+		CPDefinition cpDefinition2 = cpDefinitions.get(0);
+
+		Assert.assertEquals(
+			cpDefinition1.getCPDefinitionId(),
+			cpDefinition2.getCPDefinitionId());
 	}
 
 	@Test

@@ -488,9 +488,7 @@ public class SamlProvider implements Serializable {
 			sb.append("\"role\": ");
 
 			sb.append("\"");
-
 			sb.append(role);
-
 			sb.append("\"");
 		}
 
@@ -545,7 +543,7 @@ public class SamlProvider implements Serializable {
 	@GraphQLName("Role")
 	public static enum Role {
 
-		IDP("idp"), SP("sp");
+		IB("ib"), IDP("idp"), SP("sp");
 
 		@JsonCreator
 		public static Role create(String value) {

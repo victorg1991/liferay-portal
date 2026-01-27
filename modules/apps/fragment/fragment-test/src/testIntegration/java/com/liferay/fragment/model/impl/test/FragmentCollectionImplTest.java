@@ -11,7 +11,10 @@ import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.fragment.constants.FragmentExportImportConstants;
 import com.liferay.fragment.constants.FragmentPortletKeys;
 import com.liferay.fragment.model.FragmentCollection;
+import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.service.FragmentCollectionLocalService;
+import com.liferay.fragment.service.FragmentEntryLocalService;
+import com.liferay.fragment.test.util.FragmentEntryTestUtil;
 import com.liferay.fragment.test.util.FragmentTestUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -22,6 +25,7 @@ import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ContentTypes;
@@ -105,33 +109,78 @@ public class FragmentCollectionImplTest {
 
 		_fragmentCollection.populateZipWriter(zipWriter, "test");
 
-		ZipReader zipReader = _zipReaderFactory.getZipReader(
-			zipWriter.getFile());
+		try (ZipReader zipReader = _zipReaderFactory.getZipReader(
+				zipWriter.getFile())) {
 
-		List<String> entries = zipReader.getEntries();
+			List<String> entries = zipReader.getEntries();
 
-		for (String entry : entries) {
-			if (StringUtil.endsWith(
-					entry,
-					FragmentExportImportConstants.FILE_NAME_COLLECTION)) {
+			for (String entry : entries) {
+				if (StringUtil.endsWith(
+						entry,
+						FragmentExportImportConstants.FILE_NAME_COLLECTION)) {
 
-				JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-					zipReader.getEntryAsString(entry));
+					JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
+						zipReader.getEntryAsString(entry));
 
-				Assert.assertNotNull(jsonObject);
-				Assert.assertEquals(
-					jsonObject.getString("name"),
-					_fragmentCollection.getName());
-				Assert.assertEquals(
-					jsonObject.getString("description"),
-					_fragmentCollection.getDescription());
-			}
-			else if (StringUtil.contains(entry, "/resources")) {
-				Assert.assertTrue(entry.contains("/resources/liferay.png"));
+					Assert.assertNotNull(jsonObject);
+					Assert.assertEquals(
+						jsonObject.getString("name"),
+						_fragmentCollection.getName());
+					Assert.assertEquals(
+						jsonObject.getString("description"),
+						_fragmentCollection.getDescription());
+				}
+				else if (StringUtil.contains(entry, "/resources")) {
+					Assert.assertTrue(entry.contains("/resources/liferay.png"));
+				}
 			}
 		}
 
 		FileUtil.delete(zipWriter.getFile());
+	}
+
+	@Test
+	@TestInfo("LPD-57728")
+	public void testPopulateZipWriterMarketplaceFragmentEntries()
+		throws Exception {
+
+		ZipWriter zipWriter = _zipWriterFactory.getZipWriter();
+
+		FragmentEntryTestUtil.addFragmentEntry(
+			_fragmentCollection.getFragmentCollectionId());
+
+		FragmentEntry marketplaceFragmentEntry =
+			FragmentEntryTestUtil.addFragmentEntry(
+				_fragmentCollection.getFragmentCollectionId());
+
+		marketplaceFragmentEntry.setMarketplace(true);
+
+		marketplaceFragmentEntry =
+			_fragmentEntryLocalService.updateFragmentEntry(
+				marketplaceFragmentEntry);
+
+		marketplaceFragmentEntry.populateZipWriter(
+			zipWriter, RandomTestUtil.randomString());
+
+		try (ZipReader zipReader = _zipReaderFactory.getZipReader(
+				zipWriter.getFile())) {
+
+			List<String> entries = zipReader.getEntries();
+
+			Assert.assertTrue(entries.isEmpty());
+		}
+
+		_fragmentCollection.populateZipWriter(
+			zipWriter, RandomTestUtil.randomString());
+
+		try (ZipReader zipReader = _zipReaderFactory.getZipReader(
+				zipWriter.getFile())) {
+
+			for (String entry : zipReader.getEntries()) {
+				Assert.assertFalse(
+					entry.contains(marketplaceFragmentEntry.getName()));
+			}
+		}
 	}
 
 	@Inject
@@ -141,6 +190,9 @@ public class FragmentCollectionImplTest {
 
 	@Inject
 	private FragmentCollectionLocalService _fragmentCollectionLocalService;
+
+	@Inject
+	private FragmentEntryLocalService _fragmentEntryLocalService;
 
 	@DeleteAfterTestRun
 	private Group _group;

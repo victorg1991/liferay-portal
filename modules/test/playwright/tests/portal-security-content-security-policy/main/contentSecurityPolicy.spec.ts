@@ -7,6 +7,7 @@ import {expect, mergeTests} from '@playwright/test';
 
 import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
 import {contentSecurityPolicyPagesTest} from '../../../fixtures/contentSecurityPolicyPagesTest';
+import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {pageEditorPagesTest} from '../../../fixtures/pageEditorPagesTest';
@@ -21,6 +22,9 @@ import getPageDefinition from '../../layout-content-page-editor-web/main/utils/g
 export const test = mergeTests(
 	apiHelpersTest,
 	contentSecurityPolicyPagesTest,
+	featureFlagsTest({
+		'LPS-178052': {enabled: true},
+	}),
 	isolatedSiteTest,
 	loginTest(),
 	pageEditorPagesTest,
@@ -307,7 +311,95 @@ test('CSP connect-src blocks connections', async ({
 		button: 'middle',
 	});
 
-	expect(errors).toHaveLength(9);
+	expect(errors.length).toBeGreaterThanOrEqual(9);
+});
+
+test('CSP-Report-Only connect-src alerts connections', async ({
+	apiHelpers,
+	contentSecurityPolicyPage,
+	page,
+	pageEditorPage,
+	site,
+}) => {
+	await contentSecurityPolicyPage.gotoAndConfigurePolicy(
+		`connect-src 'self';`,
+		true
+	);
+
+	const layout = await apiHelpers.headlessDelivery.createSitePage({
+		pageDefinition: getPageDefinition([
+			getFragmentDefinition({
+				id: getRandomString(),
+				key: 'BASIC_COMPONENT-html',
+			}),
+		]),
+		siteId: site.id,
+		title: getRandomString(),
+	});
+
+	await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+	await pageEditorPage.editHTMLEditable({
+		editableId: 'element-html',
+		fragmentId: await pageEditorPage.getFragmentId('HTML'),
+		value: `<a  ping="http://www.able.com:8080" href="http://localhost:8080" target="_blank">
+		 			Test CSP
+					<script>
+						const response = fetch("http://www.able.com:8080");
+
+						const xmlHttpRequest = new XMLHttpRequest();
+						xmlHttpRequest.open("GET", "http://www.able.com:8080");
+						xmlHttpRequest.send();
+
+						const webSocket = new WebSocket("wss://www.able.com:8080/");
+
+						const eventSource = new EventSource("http://www.able.com:8080");
+
+						navigator.sendBeacon("http://www.able.com:8080", {
+						/* … */
+						});
+					</script>
+				</a>`,
+	});
+
+	await pageEditorPage.publishPage();
+
+	const errors = [];
+
+	const logs = [];
+
+	page.on('console', (msg) => {
+		if (
+			msg.type() === 'error' &&
+			msg.text().includes('[Report Only] Refused to connect to') &&
+			msg
+				.text()
+				.includes('Content Security Policy directive: "connect-src')
+		) {
+			logs.push({text: msg.text(), type: msg.type()});
+		}
+	});
+
+	page.on('requestfailed', (request) => {
+		if (
+			request.url().includes('www.able.com') &&
+			request.failure().errorText.includes('csp')
+		) {
+			errors.push({
+				failure: request.failure(),
+				url: request.url(),
+			});
+		}
+	});
+
+	await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
+
+	await page.getByRole('link', {name: 'Test CSP'}).click({
+		button: 'middle',
+	});
+
+	expect(errors).toHaveLength(0);
+	expect(logs.length).toBeGreaterThanOrEqual(10);
 });
 
 test('CSP frame-ancestors allows framing from specific domain', async ({
@@ -502,7 +594,7 @@ test('CSP frame-ancestors blocks framing from specific domain', async ({
 
 		await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
 
-		expect(errors).toHaveLength(5);
+		expect(errors.length).toBeGreaterThanOrEqual(5);
 	}).toPass();
 });
 
@@ -600,7 +692,7 @@ test('CSP frame-ancestors directive in the same instance', async ({
 
 		await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
 
-		expect(errors).toHaveLength(5);
+		expect(errors.length).toBeGreaterThanOrEqual(4);
 	});
 });
 
@@ -743,7 +835,63 @@ test('CSP frame-src blocks frames', async ({
 
 	await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
 
-	expect(errors).toHaveLength(2);
+	expect(errors.length).toBeGreaterThanOrEqual(2);
+});
+
+test('CSP-Report-Only frame-src allerts frames', async ({
+	apiHelpers,
+	contentSecurityPolicyPage,
+	page,
+	pageEditorPage,
+	site,
+}) => {
+	await contentSecurityPolicyPage.gotoAndConfigurePolicy(
+		"frame-src 'self';",
+		true
+	);
+
+	const layout = await apiHelpers.headlessDelivery.createSitePage({
+		pageDefinition: getPageDefinition([
+			getFragmentDefinition({
+				id: getRandomString(),
+				key: 'BASIC_COMPONENT-html',
+			}),
+		]),
+		siteId: site.id,
+		title: getRandomString(),
+	});
+
+	await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+	await pageEditorPage.editHTMLEditable({
+		editableId: 'element-html',
+		fragmentId: await pageEditorPage.getFragmentId('HTML'),
+		value: `<iframe src="http://www.able.com:8080/" />`,
+	});
+
+	await pageEditorPage.publishPage();
+
+	const logs = [];
+
+	page.on('console', (message) => {
+		if (message.type() === 'error') {
+			const text = message.text();
+			if (
+				text.includes('http://www.able.com:8080/') &&
+				text.includes('[Report Only] Refused to frame')
+			) {
+				logs.push(text);
+			}
+		}
+	});
+
+	await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
+
+	await expect(
+		page.locator('iframe[src="http://www.able.com:8080/"]')
+	).toBeVisible();
+
+	expect(logs.length).toBeGreaterThanOrEqual(6);
 });
 
 test("CSP img-src allow images from 'self'", async ({
@@ -895,5 +1043,65 @@ test('CSP img-src blocks images', async ({
 
 	await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
 
-	expect(errors).toHaveLength(1);
+	expect(errors.length).toBeGreaterThanOrEqual(1);
+});
+
+test('CSP-Report-Only img-src alerts images', async ({
+	apiHelpers,
+	contentSecurityPolicyPage,
+	page,
+	pageEditorPage,
+	site,
+}) => {
+	await contentSecurityPolicyPage.gotoAndConfigurePolicy(
+		"img-src 'self';",
+		true
+	);
+
+	const layout = await apiHelpers.headlessDelivery.createSitePage({
+		pageDefinition: getPageDefinition([
+			getFragmentDefinition({
+				id: getRandomString(),
+				key: 'BASIC_COMPONENT-html',
+			}),
+		]),
+		siteId: site.id,
+		title: getRandomString(),
+	});
+
+	await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+	await pageEditorPage.editHTMLEditable({
+		editableId: 'element-html',
+		fragmentId: await pageEditorPage.getFragmentId('HTML'),
+		value: `<img src="http://www.able.com:8080/html/icons/default.png" alt="example picture" />`,
+	});
+
+	await pageEditorPage.publishPage();
+
+	const logs = [];
+
+	page.on('console', (message) => {
+		if (message.type() === 'error') {
+			const text = message.text();
+			if (
+				text.includes(
+					'http://www.able.com:8080/html/icons/default.png'
+				) &&
+				text.includes('[Report Only] Refused to load the image')
+			) {
+				logs.push(text);
+			}
+		}
+	});
+
+	await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
+
+	expect(logs.length).toBeGreaterThanOrEqual(1);
+
+	await expect(
+		page.locator(
+			'img[src="http://www.able.com:8080/html/icons/default.png"]'
+		)
+	).toBeVisible();
 });

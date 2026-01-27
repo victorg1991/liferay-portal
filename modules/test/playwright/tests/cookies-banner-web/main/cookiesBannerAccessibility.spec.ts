@@ -8,18 +8,31 @@ import {expect, mergeTests} from '@playwright/test';
 import {loginTest} from '../../../fixtures/loginTest';
 import {systemSettingsPageTest} from '../../../fixtures/systemSettingsPageTest';
 import {waitForAlert} from '../../../utils/waitForAlert';
+import {
+	clearConsentCookies,
+	resetCookieManagerConfiguration,
+} from './utils/cookieManagerAfterEach';
 
 export const test = mergeTests(loginTest(), systemSettingsPageTest);
+
+test.afterEach(async ({systemSettingsPage}) => {
+	await test.step('Reset Cookie Manager Configuration', async () => {
+		await resetCookieManagerConfiguration(systemSettingsPage);
+	});
+
+	await test.step('Clear Consent Cookies if present', async () => {
+		await clearConsentCookies(systemSettingsPage);
+	});
+});
 
 test('LPD-30822 Cookie Banner Accessibility', async ({
 	page,
 	systemSettingsPage,
 }) => {
 	await test.step('Enable Third Party Cookies', async () => {
-		await systemSettingsPage.goToSystemSetting(
-			'Cookies',
-			'Preference Handling'
-		);
+		await systemSettingsPage.goToSystemSetting('Privacy', 'Cookie Manager');
+
+		await systemSettingsPage.page.waitForTimeout(1000);
 
 		const enabledButton = page.getByLabel('Enabled');
 

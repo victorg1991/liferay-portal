@@ -261,10 +261,24 @@ public class ObjectEntryVersionLocalServiceUtil {
 			userId, objectEntry, serviceContext);
 	}
 
+	public static ObjectEntryVersion fetchLatestApprovedObjectEntryVersion(
+		long objectEntryId,
+		OrderByComparator<ObjectEntryVersion> orderByComparator) {
+
+		return getService().fetchLatestApprovedObjectEntryVersion(
+			objectEntryId, orderByComparator);
+	}
+
 	public static ObjectEntryVersion fetchObjectEntryVersion(
 		long objectEntryVersionId) {
 
 		return getService().fetchObjectEntryVersion(objectEntryVersionId);
+	}
+
+	public static ObjectEntryVersion fetchObjectEntryVersion(
+		long objectEntryId, int version) {
+
+		return getService().fetchObjectEntryVersion(objectEntryId, version);
 	}
 
 	/**
@@ -368,6 +382,14 @@ public class ObjectEntryVersionLocalServiceUtil {
 		return getService().getObjectEntryVersions(objectEntryId, start, end);
 	}
 
+	public static List<ObjectEntryVersion> getObjectEntryVersions(
+		long objectEntryId, int start, int end,
+		OrderByComparator<ObjectEntryVersion> orderByComparator) {
+
+		return getService().getObjectEntryVersions(
+			objectEntryId, start, end, orderByComparator);
+	}
+
 	/**
 	 * Returns the number of object entry versions.
 	 *
@@ -399,11 +421,26 @@ public class ObjectEntryVersionLocalServiceUtil {
 		return getService().getPersistedModel(primaryKeyObj);
 	}
 
+	public static boolean isLatestObjectEntryVersion(
+			long objectEntryId, int version)
+		throws PortalException {
+
+		return getService().isLatestObjectEntryVersion(objectEntryId, version);
+	}
+
 	public static ObjectEntryVersion updateLatestObjectEntryVersion(
 			com.liferay.object.model.ObjectEntry objectEntry)
 		throws PortalException {
 
 		return getService().updateLatestObjectEntryVersion(objectEntry);
+	}
+
+	public static ObjectEntryVersion updateLatestObjectEntryVersionModifiedDate(
+			java.util.Date modifiedDate, long objectEntryId)
+		throws PortalException {
+
+		return getService().updateLatestObjectEntryVersionModifiedDate(
+			modifiedDate, objectEntryId);
 	}
 
 	/**

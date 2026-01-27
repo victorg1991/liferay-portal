@@ -5,10 +5,10 @@
 
 import {Locator, Page, expect} from '@playwright/test';
 
+import {captureScreenshot} from '../../utils/captureScreenshot';
 import {clickAndExpectToBeHidden} from '../../utils/clickAndExpectToBeHidden';
 import {clickAndExpectToBeVisible} from '../../utils/clickAndExpectToBeVisible';
 import {collapseSection} from '../../utils/collapseSection';
-import dragAndDropElement from '../../utils/dragAndDropElement';
 import {expandSection} from '../../utils/expandSection';
 import fillAndClickOutside from '../../utils/fillAndClickOutside';
 import {hoverAndExpectToBeVisible} from '../../utils/hoverAndExpectToBeVisible';
@@ -52,6 +52,7 @@ export class PageEditorPage {
 	readonly editModeButton: Locator;
 	readonly experienceSelector: Locator;
 	readonly languageSelector: Locator;
+	readonly newRuleButton: Locator;
 	readonly publishButton: Locator;
 	readonly publishMasterButton: Locator;
 	readonly publishToLiveButton: Locator;
@@ -71,6 +72,7 @@ export class PageEditorPage {
 		this.languageSelector = page
 			.locator('.page-editor__toolbar')
 			.getByLabel('Select a language');
+		this.newRuleButton = page.getByRole('button', {name: 'New Rule'});
 		this.publishButton = page.getByLabel('Publish', {exact: true}).or(
 			page.getByLabel('Submit for Workflow', {
 				exact: true,
@@ -89,15 +91,11 @@ export class PageEditorPage {
 		this.undoHistory = page.locator('.page-editor__undo-history');
 	}
 
-	async goto(
-		layout: Layout,
-		siteUrl?: Site['friendlyUrlPath'],
-		doAsUserId?: string
-	) {
+	async goto(layout: Layout, siteUrl?: Site['friendlyUrlPath']) {
 		await this.page.goto('/');
 
 		await this.page.goto(
-			`/web${siteUrl || '/guest'}${layout.friendlyUrlPath || layout.friendlyURL}?p_l_mode=edit${doAsUserId ? '&doAsUserId=' + doAsUserId : ''}`
+			`/web${siteUrl || '/guest'}${layout.friendlyUrlPath || layout.friendlyURL}?p_l_mode=edit`
 		);
 	}
 
@@ -116,7 +114,7 @@ export class PageEditorPage {
 		await expandSection(header);
 
 		if (dropTarget) {
-			await dragAndDropElement({
+			await this.dragAndDropFragment({
 				dragTarget: this.page.getByRole('menuitem', {name}).first(),
 				dropTarget,
 				page: this.page,
@@ -130,7 +128,7 @@ export class PageEditorPage {
 		}
 
 		if (name !== 'Stepper') {
-			await this.waitForChangesSaved();
+			await this.waitForChangesSaved({timeout: 2000});
 		}
 	}
 
@@ -154,7 +152,79 @@ export class PageEditorPage {
 		await commentButton.waitFor({state: 'hidden'});
 	}
 
-	async addRuleAction() {
+	async addRule({
+		actions,
+		conditions,
+		name,
+		saveRule = true,
+	}: {
+		actions: {label: string; option: string}[][];
+		conditions: {label: string; option: string}[][];
+		name: string;
+		saveRule?: boolean;
+	}) {
+		const addActionOrCondition = async ({index, label, option}) => {
+			const trigger = this.page.getByLabel(label).nth(index);
+
+			await trigger.waitFor();
+
+			await clickAndExpectToBeVisible({
+				autoClick: true,
+				target: this.page.getByRole('option', {
+					exact: true,
+					name: option,
+				}),
+				timeout: 2000,
+				trigger,
+			});
+		};
+
+		await this.goToSidebarTab('Page Rules');
+
+		const modal = await this.openRulesModal();
+
+		const nameInput = modal.getByLabel('Rule Name');
+
+		await nameInput.waitFor();
+		await nameInput.fill(name);
+
+		for (const [index, condition] of conditions.entries()) {
+			if (index) {
+				await this.page
+					.getByRole('button', {name: 'Add Condition'})
+					.click();
+			}
+
+			for (const {label, option} of condition) {
+				await addActionOrCondition({index, label, option});
+			}
+		}
+
+		for (const [index, action] of actions.entries()) {
+			if (index) {
+				await this.page
+					.getByRole('button', {name: 'Add Action'})
+					.click();
+			}
+
+			for (const {label, option} of action) {
+				await addActionOrCondition({index, label, option});
+			}
+		}
+
+		if (saveRule) {
+			await modal
+				.getByRole('button', {exact: true, name: 'Save'})
+				.click();
+
+			await waitForAlert(
+				this.page,
+				'Success:The rule was created successfully.'
+			);
+		}
+	}
+
+	async addRandomRuleAction() {
 		await this.page.getByLabel('Select Action').press('Enter');
 		await this.page.keyboard.press('Tab');
 		await this.page.keyboard.press('Enter');
@@ -166,7 +236,7 @@ export class PageEditorPage {
 			.press('Enter');
 	}
 
-	async addRuleCondition() {
+	async addRandomRuleCondition() {
 		await this.page
 			.getByLabel('Select Item for the Condition')
 			.press('Enter');
@@ -195,7 +265,7 @@ export class PageEditorPage {
 		await expandSection(header);
 
 		if (dropTarget) {
-			await dragAndDropElement({
+			await this.dragAndDropFragment({
 				dragTarget: this.page.getByRole('menuitem', {name}).first(),
 				dropTarget,
 				page: this.page,
@@ -398,19 +468,34 @@ export class PageEditorPage {
 		await this.waitForChangesSaved();
 	}
 
-	async chooseCollectionDisplayCollection(type: string, title: string) {
+	async chooseCollectionDisplayCollection(
+		type: string,
+		title: string,
+		options?: {search?: boolean}
+	) {
 		await this.page.getByLabel('Select Collection', {exact: true}).click();
 
-		await this.page
-			.frameLocator('iframe[title="Select"]')
-			.getByRole('link', {name: type})
-			.click();
+		const iframe = this.page.frameLocator('iframe[title="Select"]');
+
+		await iframe.getByRole('link', {name: type}).click();
+
+		// Filter Collection in case there are multiple pages
+
+		if (options?.search) {
+			await expect(async () => {
+				await iframe.getByPlaceholder('Search for').fill(title);
+
+				await expect(iframe.getByPlaceholder('Search for')).toHaveValue(
+					title
+				);
+			}).toPass();
+
+			await iframe.getByLabel('Search for', {exact: true}).click();
+		}
 
 		await clickAndExpectToBeHidden({
 			target: this.page.locator('.modal-dialog'),
-			trigger: this.page
-				.frameLocator('iframe[title="Select"]')
-				.getByRole('button', {name: 'Select ' + title}),
+			trigger: iframe.getByRole('button', {name: `Select ${title}`}),
 		});
 	}
 
@@ -486,8 +571,10 @@ export class PageEditorPage {
 		await collapseSection(this.experienceSelector);
 
 		await this.page
-			.getByText('Select Experience')
-			.waitFor({state: 'hidden'});
+			.getByRole('heading', {name: 'Select Experience'})
+			.waitFor({
+				state: 'hidden',
+			});
 	}
 
 	async copyFragment(fragmentId: string) {
@@ -626,6 +713,39 @@ export class PageEditorPage {
 
 			await this.waitForChangesSaved();
 		}
+	}
+
+	async dragAndDropFragment({
+		dragTarget,
+		dropTarget,
+		force = false,
+		page,
+		timeout,
+	}: {
+		dragTarget: Locator;
+		dropTarget: Locator;
+		force?: boolean;
+		page: Page;
+		timeout?: number;
+	}) {
+		await dragTarget.hover({force, timeout});
+
+		await page.mouse.down();
+
+		const boundingClientRect = await dropTarget.evaluate((element) =>
+			element.getBoundingClientRect()
+		);
+
+		await dropTarget.hover({
+			force,
+			position: {
+				x: boundingClientRect.width / 2,
+				y: boundingClientRect.height / 2,
+			},
+			timeout,
+		});
+
+		await page.mouse.up();
 	}
 
 	async dragTreeNode({
@@ -807,7 +927,7 @@ export class PageEditorPage {
 		await expect(async () => {
 			await this.page.keyboard.press('Escape');
 
-			await this.waitForChangesSaved();
+			await this.waitForChangesSaved({timeout: 2000});
 
 			await expect(editor).not.toBeVisible({
 				timeout: 1000,
@@ -1066,9 +1186,28 @@ export class PageEditorPage {
 			.check({trial: true});
 
 		if (!fields || fields === 'all') {
+
+			// Select all fields and then deselect metadata fields
+
 			await fieldsModal
 				.getByLabel('Select All Items on the Page')
 				.check();
+
+			const basicInfoHeader = fieldsModal.locator('.table-divider', {
+				hasText: 'Basic Information',
+			});
+
+			let current = basicInfoHeader.locator(
+				'xpath=./following-sibling::*[1]'
+			);
+
+			while (
+				!(await current.getAttribute('class')).includes('table-divider')
+			) {
+				await current.getByRole('checkbox').uncheck();
+
+				current = current.locator('xpath=./following-sibling::*[1]');
+			}
 		}
 		else {
 			for (const field of fields) {
@@ -1110,6 +1249,14 @@ export class PageEditorPage {
 		);
 	}
 
+	async mapFormRelationshipFragment(fragmentId: string, type: string) {
+		const fragment = this.getFragment(fragmentId);
+
+		await fragment.getByLabel('Select a content type').selectOption(type);
+
+		await this.waitForChangesSaved();
+	}
+
 	async mapEditableLink({
 		editableId,
 		fragmentName,
@@ -1137,7 +1284,9 @@ export class PageEditorPage {
 	async openExperienceSelector() {
 		await expandSection(this.experienceSelector);
 
-		await this.page.getByText('Select Experience').waitFor();
+		await this.page
+			.getByRole('heading', {name: 'Select Experience'})
+			.waitFor();
 	}
 
 	async openMappingSelector() {
@@ -1152,6 +1301,16 @@ export class PageEditorPage {
 				.getByRole('menuitem', {name: 'Select Item...'})
 				.click();
 		}
+	}
+
+	async openRulesModal() {
+		const modal = this.page.locator('.modal-dialog');
+
+		await this.newRuleButton.click();
+
+		await expect(modal).toBeVisible();
+
+		return modal;
 	}
 
 	async openSpacingSelector(fragmentId: string, spacingType: SpacingType) {
@@ -1175,9 +1334,12 @@ export class PageEditorPage {
 		const button = isMaster ? this.publishMasterButton : this.publishButton;
 
 		await button.waitFor();
-		await button.click();
 
-		await waitForAlert(this.page, 'successfully');
+		await expect(async () => {
+			await button.click({timeout: 1000});
+
+			await waitForAlert(this.page, 'successfully', {timeout: 2000});
+		}).toPass();
 	}
 
 	async redoAction() {
@@ -1198,6 +1360,18 @@ export class PageEditorPage {
 		});
 	}
 
+	async removeMapping() {
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('menuitem', {name: 'Remove Item'}),
+			trigger: this.page.getByLabel('View Item Options'),
+		});
+
+		await expect(
+			this.page.getByPlaceholder('No Item Selected')
+		).toBeVisible();
+	}
+
 	async removeFragment(fragmentId: string) {
 		await this.selectFragment(fragmentId);
 
@@ -1208,6 +1382,35 @@ export class PageEditorPage {
 		await this.waitForChangesSaved();
 
 		await fragment.waitFor({state: 'hidden'});
+	}
+
+	async renameRuleInline({
+		currentName,
+		newName,
+		nth,
+	}: {
+		currentName: string;
+		newName: string;
+		nth?: number;
+	}) {
+		const name = this.page
+			.locator('.page-editor__rule')
+			.getByText(currentName)
+			.nth(nth || 0);
+
+		const input = this.page.locator('.page-editor__rule input');
+
+		await expect(async () => {
+			await name.dblclick({timeout: 1000});
+
+			await expect(input).toBeVisible({timeout: 1000});
+
+			await input.fill(newName, {timeout: 2000});
+
+			await input.press('Enter', {timeout: 2000});
+
+			await this.waitForChangesSaved({timeout: 2000});
+		}).toPass();
 	}
 
 	async resetSpacing(fragmentId: string, spacingType: SpacingType) {
@@ -1531,7 +1734,7 @@ export class PageEditorPage {
 
 		if (source === 'relationship') {
 			await this.page
-				.getByLabel('Relationship')
+				.getByLabel('Relationship', {exact: true})
 				.selectOption(mappingConfiguration.relationship);
 		}
 
@@ -1550,10 +1753,60 @@ export class PageEditorPage {
 		await this.setMappedItem(mappingConfiguration.mapping);
 	}
 
+	async swapFragment({
+		folder,
+		fragmentId,
+		fragmentName,
+	}: {
+		folder: string;
+		fragmentId: string;
+		fragmentName: string;
+	}) {
+		await this.selectFragment(fragmentId);
+
+		await clickAndExpectToBeVisible({
+			target: this.page.locator('.modal-title', {
+				hasText: 'Swap Fragment',
+			}),
+			trigger: this.page.getByLabel('Swap Fragment'),
+		});
+
+		const iframe = this.page.frameLocator('iframe[title="Swap Fragment"]');
+
+		await clickAndExpectToBeVisible({
+			target: iframe.locator('.card', {
+				hasText: fragmentName,
+			}),
+			trigger: iframe.locator('.card', {
+				hasText: folder,
+			}),
+		});
+
+		await clickAndExpectToBeHidden({
+			target: this.page.locator('.modal-title', {
+				hasText: 'Swap Fragment',
+			}),
+			trigger: iframe.locator('.card', {
+				hasText: fragmentName,
+			}),
+		});
+
+		await this.waitForChangesSaved();
+
+		await expect(
+			this.page
+				.getByLabel('Configuration Panel')
+				.locator('header', {hasText: fragmentName})
+		).toBeVisible();
+
+		await this.page
+			.getByLabel('Configuration Panel')
+			.locator('header', {hasText: fragmentName})
+			.click();
+	}
+
 	async switchExperience(experience: string) {
 		await this.openExperienceSelector();
-
-		await this.page.getByText('Select Experience').waitFor();
 
 		await this.page
 			.locator('.dropdown-menu__experience', {
@@ -1576,13 +1829,27 @@ export class PageEditorPage {
 			.click();
 	}
 
-	async switchViewport(viewport: Viewport) {
-		await this.page.getByLabel(viewport, {exact: true}).click();
+	async switchViewport(
+		viewport: Viewport,
+		{timeout}: {timeout?: number} = {}
+	) {
+		await this.page.getByLabel(viewport, {exact: true}).click({timeout});
+
 		await this.page
 			.locator(
 				`.page-editor__layout-viewport--size-${VIEWPORTS_CLASSNAMES[viewport]}`
 			)
-			.waitFor();
+			.waitFor({timeout});
+
+		const resizer = this.page.locator(
+			'.page-editor__layout-viewport__resizer'
+		);
+
+		const loadingIndicator = resizer.locator('.loading-animation');
+
+		if (await loadingIndicator.isVisible()) {
+			await loadingIndicator.waitFor({state: 'hidden'});
+		}
 	}
 
 	async undoAction() {
@@ -1591,14 +1858,14 @@ export class PageEditorPage {
 		await this.waitForChangesSaved();
 	}
 
-	async waitForChangesSaved() {
-		await this.page.getByLabel('Saved', {exact: true}).waitFor();
+	async waitForChangesSaved({timeout}: {timeout?: number} = {}) {
+		await this.page.getByLabel('Saved', {exact: true}).waitFor({timeout});
 
 		await this.page
 			.getByText(
 				'Changes have been saved. Page editor will autosave new changes.'
 			)
-			.waitFor();
+			.waitFor({timeout});
 	}
 
 	getEditable({
@@ -1642,5 +1909,58 @@ export class PageEditorPage {
 					.frameLocator('.page-editor__global-context-iframe')
 					.locator(`.lfr-layout-structure-item-topper-${fragmentId}`)
 					.first();
+	}
+
+	async captureScreenshot({
+		layoutName,
+		layoutOptions = {editMode: false},
+		mask = [],
+		name,
+		siteUrl,
+	}: {
+		layoutName: string;
+		layoutOptions?: {editMode?: boolean};
+		mask?: Locator[];
+		name: string;
+		siteUrl?: Site['friendlyUrlPath'];
+	}) {
+		const PAGE_EDITOR_SIDEBAR_WIDTH = 322;
+
+		let banner: Locator = this.page.locator('#banner .navbar-top');
+		const controlMenu: Locator = this.page.locator('.control-menu');
+
+		const {editMode} = layoutOptions;
+
+		await this.page.goto(
+			`/web${siteUrl || '/guest'}/${layoutName}?${editMode ? 'p_l_mode=edit' : ''}`
+		);
+
+		if (editMode) {
+			await this.page.waitForFunction((sidebarWidth) => {
+				const wrapper = document.querySelector('.page-editor__wrapper');
+
+				if (!wrapper) {
+					return false;
+				}
+
+				const paddingLeft = parseFloat(
+					getComputedStyle(wrapper).paddingLeft
+				);
+
+				return paddingLeft >= sidebarWidth;
+			}, PAGE_EDITOR_SIDEBAR_WIDTH);
+
+			banner = this.page.locator('#banner.page-editor__disabled-area');
+		}
+
+		if(await this.page.locator('.product-menu-open').isVisible()) {
+			await this.page.locator('.product-menu-open').getByRole('button', {name: 'Close'}).click();
+		}
+
+		return captureScreenshot({
+			mask: [...mask, banner, controlMenu],
+			name,
+			page: this.page,
+		});
 	}
 }

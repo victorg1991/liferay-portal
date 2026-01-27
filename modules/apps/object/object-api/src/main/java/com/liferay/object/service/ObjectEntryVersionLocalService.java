@@ -29,6 +29,7 @@ import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.io.Serializable;
 
+import java.util.Date;
 import java.util.List;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -223,8 +224,17 @@ public interface ObjectEntryVersionLocalService
 		throws Exception;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectEntryVersion fetchLatestApprovedObjectEntryVersion(
+		long objectEntryId,
+		OrderByComparator<ObjectEntryVersion> orderByComparator);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ObjectEntryVersion fetchObjectEntryVersion(
 		long objectEntryVersionId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectEntryVersion fetchObjectEntryVersion(
+		long objectEntryId, int version);
 
 	/**
 	 * Returns the object entry version with the matching UUID and company.
@@ -297,6 +307,11 @@ public interface ObjectEntryVersionLocalService
 	public List<ObjectEntryVersion> getObjectEntryVersions(
 		long objectEntryId, int start, int end);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<ObjectEntryVersion> getObjectEntryVersions(
+		long objectEntryId, int start, int end,
+		OrderByComparator<ObjectEntryVersion> orderByComparator);
+
 	/**
 	 * Returns the number of object entry versions.
 	 *
@@ -323,8 +338,16 @@ public interface ObjectEntryVersionLocalService
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException;
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public boolean isLatestObjectEntryVersion(long objectEntryId, int version)
+		throws PortalException;
+
 	public ObjectEntryVersion updateLatestObjectEntryVersion(
 			ObjectEntry objectEntry)
+		throws PortalException;
+
+	public ObjectEntryVersion updateLatestObjectEntryVersionModifiedDate(
+			Date modifiedDate, long objectEntryId)
 		throws PortalException;
 
 	/**

@@ -14,6 +14,7 @@ import com.liferay.document.library.constants.DLPortletKeys;
 import com.liferay.document.library.exception.DLStorageQuotaExceededException;
 import com.liferay.document.library.kernel.antivirus.AntivirusScannerException;
 import com.liferay.document.library.kernel.exception.DuplicateFileEntryException;
+import com.liferay.document.library.kernel.exception.DuplicateFileEntryExternalReferenceCodeException;
 import com.liferay.document.library.kernel.exception.DuplicateFolderNameException;
 import com.liferay.document.library.kernel.exception.FileEntryDisplayDateException;
 import com.liferay.document.library.kernel.exception.FileEntryExpirationDateException;
@@ -103,12 +104,12 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.RepositoryUtil;
 import com.liferay.trash.service.TrashEntryService;
 import com.liferay.upload.UploadResponseHandler;
@@ -1161,6 +1162,8 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 				 exception instanceof DDMFormValuesValidationException ||
 				 exception instanceof DLStorageQuotaExceededException ||
 				 exception instanceof DuplicateFileEntryException ||
+				 exception instanceof
+					 DuplicateFileEntryExternalReferenceCodeException ||
 				 exception instanceof DuplicateFolderNameException ||
 				 exception instanceof FileExtensionException ||
 				 exception instanceof FileMimeTypeException ||
@@ -1345,6 +1348,8 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 		long fileEntryId = ParamUtil.getLong(
 			uploadPortletRequest, "fileEntryId");
 
+		String externalReferenceCode = ParamUtil.getString(
+			actionRequest, "externalReferenceCode");
 		long repositoryId = ParamUtil.getLong(
 			uploadPortletRequest, "repositoryId");
 
@@ -1456,9 +1461,10 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 						uploadPortletRequest.getFileName("file")));
 
 				fileEntry = _dlAppService.addFileEntry(
-					null, repositoryId, folderId, sourceFileName, contentType,
-					title, urlTitle, description, changeLog, inputStream, size,
-					displayDate, expirationDate, reviewDate, serviceContext);
+					externalReferenceCode, repositoryId, folderId,
+					sourceFileName, contentType, title, urlTitle, description,
+					changeLog, inputStream, size, displayDate, expirationDate,
+					reviewDate, serviceContext);
 			}
 			else if (cmd.equals(Constants.ADD_DYNAMIC)) {
 
@@ -1473,10 +1479,10 @@ public class EditFileEntryMVCActionCommand extends BaseMVCActionCommand {
 					FileUtil.stripExtension(sourceFileName));
 
 				fileEntry = _dlAppService.addFileEntry(
-					null, repositoryId, folderId, uniqueFileName, contentType,
-					uniqueFileTitle, StringPool.BLANK, description, changeLog,
-					inputStream, size, displayDate, expirationDate, reviewDate,
-					serviceContext);
+					externalReferenceCode, repositoryId, folderId,
+					uniqueFileName, contentType, uniqueFileTitle,
+					StringPool.BLANK, description, changeLog, inputStream, size,
+					displayDate, expirationDate, reviewDate, serviceContext);
 
 				JSONObject jsonObject = JSONUtil.put(
 					"fileEntryId", fileEntry.getFileEntryId());

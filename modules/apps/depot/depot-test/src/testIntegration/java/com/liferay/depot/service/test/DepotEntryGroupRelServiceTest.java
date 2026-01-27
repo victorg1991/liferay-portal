@@ -6,11 +6,13 @@
 package com.liferay.depot.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.model.DepotEntryGroupRel;
 import com.liferay.depot.service.DepotEntryGroupRelLocalService;
 import com.liferay.depot.service.DepotEntryGroupRelService;
 import com.liferay.depot.service.DepotEntryLocalService;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.model.User;
@@ -60,16 +62,16 @@ public class DepotEntryGroupRelServiceTest {
 		throws Exception {
 
 		Group group = _groupLocalService.addGroup(
-			TestPropsValues.getUserId(), 0, null, 0,
+			StringPool.BLANK, TestPropsValues.getUserId(), 0, null, 0,
 			GroupConstants.DEFAULT_LIVE_GROUP_ID,
 			Collections.singletonMap(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
 			Collections.singletonMap(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
-			GroupConstants.TYPE_SITE_RESTRICTED, true,
+			GroupConstants.TYPE_SITE_RESTRICTED, null, true,
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION,
 			FriendlyURLNormalizerUtil.normalize(RandomTestUtil.randomString()),
-			true, true, ServiceContextTestUtil.getServiceContext());
+			true, false, true, ServiceContextTestUtil.getServiceContext());
 
 		DepotEntry depotEntry = _addDepotEntry();
 
@@ -86,7 +88,7 @@ public class DepotEntryGroupRelServiceTest {
 				_permissionCheckerFactory.create(user));
 
 			_depotEntryGroupRelService.getDepotEntryGroupRels(
-				group.getGroupId(), 0, 20);
+				group.getGroupId(), DepotConstants.TYPE_ASSET_LIBRARY, 0, 20);
 		}
 		catch (PrincipalException.MustHavePermission principalException) {
 			String message = principalException.getMessage();
@@ -106,16 +108,16 @@ public class DepotEntryGroupRelServiceTest {
 	@Test
 	public void testGetDepotEntryGroupRelsWithPermissions() throws Exception {
 		Group group = _groupLocalService.addGroup(
-			TestPropsValues.getUserId(), 0, null, 0,
+			StringPool.BLANK, TestPropsValues.getUserId(), 0, null, 0,
 			GroupConstants.DEFAULT_LIVE_GROUP_ID,
 			Collections.singletonMap(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
 			Collections.singletonMap(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
-			GroupConstants.TYPE_SITE_OPEN, true,
+			GroupConstants.TYPE_SITE_OPEN, null, true,
 			GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION,
 			FriendlyURLNormalizerUtil.normalize(RandomTestUtil.randomString()),
-			true, true, ServiceContextTestUtil.getServiceContext());
+			true, false, true, ServiceContextTestUtil.getServiceContext());
 
 		DepotEntry depotEntry = _addDepotEntry();
 
@@ -125,7 +127,8 @@ public class DepotEntryGroupRelServiceTest {
 		try {
 			List<DepotEntryGroupRel> depotEntryGroupRels =
 				_depotEntryGroupRelService.getDepotEntryGroupRels(
-					group.getGroupId(), 0, 20);
+					group.getGroupId(), DepotConstants.TYPE_ASSET_LIBRARY, 0,
+					20);
 
 			Assert.assertEquals(
 				depotEntryGroupRels.toString(), 1, depotEntryGroupRels.size());
@@ -149,6 +152,7 @@ public class DepotEntryGroupRelServiceTest {
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
 			Collections.singletonMap(
 				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
+			DepotConstants.TYPE_ASSET_LIBRARY,
 			ServiceContextTestUtil.getServiceContext());
 
 		_depotEntries.add(depotEntry);

@@ -5,62 +5,40 @@
 
 import '../../../css/categorization/Categorization.scss';
 
-import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
+import ClayButton from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
 import ClayNavigationBar from '@clayui/navigation-bar';
-import ClayToolbar from '@clayui/toolbar';
 import {navigate} from 'frontend-js-web';
-import React from 'react';
+import React, {ComponentProps} from 'react';
+
+import Breadcrumb, {
+	ActionDropdownItemProps,
+} from '../../common/components/Breadcrumb';
 
 export default function CategorizationToolbar({
+	actionItems,
 	activeTab,
 	tagsURL,
 	vocabulariesURL,
 }: {
+	actionItems?: ComponentProps<typeof ClayDropDownWithItems>['items'] &
+		ActionDropdownItemProps;
 	activeTab: string;
 	tagsURL: string;
 	vocabulariesURL: string;
 }) {
 	return (
 		<div>
-			<ClayToolbar
-				aria-label={Liferay.Language.get('categorization')}
-				className="categorization-toolbar"
-				light
-			>
-				<div className="container-fluid">
-					<ClayToolbar.Nav>
-						<ClayToolbar.Item className="text-left">
-							<ClayToolbar.Section>
-								<div className="categorization-title">
-									<span>Categorization</span>
-								</div>
-							</ClayToolbar.Section>
-						</ClayToolbar.Item>
-
-						<ClayToolbar.Item>
-							<ClayDropDownWithItems
-								items={[
-									{
-										label: Liferay.Language.get('order-by'),
-										type: 'group',
-									},
-								]}
-								trigger={
-									<ClayButtonWithIcon
-										aria-label={Liferay.Language.get(
-											'more-actions'
-										)}
-										displayType="unstyled"
-										size="xs"
-										symbol="ellipsis-v"
-									/>
-								}
-							/>
-						</ClayToolbar.Item>
-					</ClayToolbar.Nav>
-				</div>
-			</ClayToolbar>
+			<Breadcrumb
+				actionItems={actionItems}
+				breadcrumbItems={[
+					{
+						active: true,
+						label: Liferay.Language.get('categorization'),
+					},
+				]}
+				hideSpace
+			/>
 
 			<ClayNavigationBar
 				aria-label={Liferay.Language.get('navigation')}

@@ -30,7 +30,6 @@ import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
-import com.liferay.info.item.provider.filter.InfoItemServiceFilter;
 import com.liferay.info.item.renderer.InfoItemRenderer;
 import com.liferay.info.item.renderer.InfoItemRendererRegistry;
 import com.liferay.info.list.provider.item.selector.criterion.InfoListProviderItemSelectorReturnType;
@@ -90,7 +89,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 import org.osgi.service.component.annotations.Component;
@@ -147,13 +145,15 @@ public class GetCollectionFieldMVCResourceCommand
 
 		try {
 			jsonObject = _getCollectionFieldsJSONObject(
+				themeDisplay.getCompanyId(),
 				_portal.getHttpServletRequest(resourceRequest),
 				_portal.getHttpServletResponse(resourceResponse), activePage,
 				displayAllItems, displayAllPages, languageId,
 				layoutObjectReference, listStyle, listItemStyle,
 				resourceResponse.getNamespace(), numberOfItems,
 				numberOfItemsPerPage, numberOfPages, paginationType,
-				segmentsExperienceId, templateKey);
+				themeDisplay.getScopeGroupId(), segmentsExperienceId,
+				templateKey);
 		}
 		catch (Exception exception) {
 			_log.error("Unable to get collection field", exception);
@@ -216,13 +216,13 @@ public class GetCollectionFieldMVCResourceCommand
 	}
 
 	private JSONObject _getCollectionFieldsJSONObject(
-			HttpServletRequest httpServletRequest,
+			long companyId, HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse, int activePage,
 			boolean displayAllItems, boolean displayAllPages, String languageId,
 			String layoutObjectReference, String listStyle,
 			String listItemStyle, String namespace, int numberOfItems,
 			int numberOfItemsPerPage, int numberOfPages, String paginationType,
-			long segmentsExperienceId, String templateKey)
+			long scopeGroupId, long segmentsExperienceId, String templateKey)
 		throws PortalException {
 
 		JSONObject layoutObjectReferenceJSONObject =
@@ -308,11 +308,12 @@ public class GetCollectionFieldMVCResourceCommand
 			LayoutObjectReferenceUtil.getConfiguration(
 				layoutObjectReferenceJSONObject));
 		defaultLayoutListRetrieverContext.setContextObject(
-			_getInfoItem(httpServletRequest));
+			_getInfoItem(httpServletRequest, scopeGroupId));
 		defaultLayoutListRetrieverContext.setPagination(
 			CollectionPaginationUtil.getPagination(
 				activePage, displayAllItems, numberOfItems,
 				numberOfItemsPerPage, paginationType));
+		defaultLayoutListRetrieverContext.setScopeGroupId(scopeGroupId);
 		defaultLayoutListRetrieverContext.setSegmentsEntryIds(
 			_filterSegmentsEntryIds(
 				layoutListRetriever, listObjectReference,
@@ -383,12 +384,17 @@ public class GetCollectionFieldMVCResourceCommand
 			() -> {
 				JSONArray jsonArray = _jsonFactory.createJSONArray();
 
+				FragmentEntryProcessorContext fragmentEntryProcessorContext =
+					new DefaultFragmentEntryProcessorContext(
+						companyId, httpServletRequest, httpServletResponse,
+						LocaleUtil.fromLanguageId(languageId),
+						FragmentEntryLinkConstants.EDIT, scopeGroupId);
+
 				for (Object object : infoPage.getPageItems()) {
 					jsonArray.put(
 						_getDisplayObjectJSONObject(
-							httpServletRequest, httpServletResponse,
-							infoItemFieldValuesProvider, object,
-							LocaleUtil.fromLanguageId(languageId)));
+							fragmentEntryProcessorContext,
+							infoItemFieldValuesProvider, object));
 				}
 
 				return jsonArray;
@@ -498,10 +504,9 @@ public class GetCollectionFieldMVCResourceCommand
 	}
 
 	private JSONObject _getDisplayObjectJSONObject(
-		HttpServletRequest httpServletRequest,
-		HttpServletResponse httpServletResponse,
+		FragmentEntryProcessorContext fragmentEntryProcessorContext,
 		InfoItemFieldValuesProvider<Object> infoItemFieldValuesProvider,
-		Object object, Locale locale) {
+		Object object) {
 
 		InfoItemFieldValues infoItemFieldValues =
 			infoItemFieldValuesProvider.getInfoItemFieldValues(object);
@@ -549,11 +554,6 @@ public class GetCollectionFieldMVCResourceCommand
 			}
 		);
 
-		FragmentEntryProcessorContext fragmentEntryProcessorContext =
-			new DefaultFragmentEntryProcessorContext(
-				httpServletRequest, httpServletResponse,
-				FragmentEntryLinkConstants.EDIT, locale);
-
 		for (InfoFieldValue<Object> infoFieldValue :
 				infoItemFieldValues.getInfoFieldValues()) {
 
@@ -597,7 +597,9 @@ public class GetCollectionFieldMVCResourceCommand
 				InfoItemFieldValuesProvider.class, itemType);
 	}
 
-	private Object _getInfoItem(HttpServletRequest httpServletRequest) {
+	private Object _getInfoItem(
+		HttpServletRequest httpServletRequest, long scopeGroupId) {
+
 		String className = _portal.fetchClassName(
 			ParamUtil.getLong(httpServletRequest, "classNameId"));
 
@@ -611,34 +613,39 @@ public class GetCollectionFieldMVCResourceCommand
 			return null;
 		}
 
-		InfoItemServiceFilter infoItemServiceFilter =
-			ClassPKInfoItemIdentifier.INFO_ITEM_SERVICE_FILTER;
+		InfoItemIdentifier infoItemIdentifier = null;
+		InfoItemObjectProvider<Object> infoItemObjectProvider = null;
 
-		if (Validator.isNotNull(externalReferenceCode)) {
-			infoItemServiceFilter =
-				ERCInfoItemIdentifier.INFO_ITEM_SERVICE_FILTER;
+		if (classPK > 0) {
+			infoItemIdentifier = new ClassPKInfoItemIdentifier(classPK);
+			infoItemObjectProvider =
+				(InfoItemObjectProvider<Object>)
+					_infoItemServiceRegistry.getFirstInfoItemService(
+						InfoItemObjectProvider.class, className,
+						ClassPKInfoItemIdentifier.INFO_ITEM_SERVICE_FILTER);
 		}
 
-		InfoItemObjectProvider<Object> infoItemObjectProvider =
-			(InfoItemObjectProvider<Object>)
-				_infoItemServiceRegistry.getFirstInfoItemService(
-					InfoItemObjectProvider.class, className,
-					infoItemServiceFilter);
+		if ((infoItemObjectProvider == null) &&
+			Validator.isNotNull(externalReferenceCode)) {
+
+			infoItemIdentifier = new ERCInfoItemIdentifier(
+				externalReferenceCode,
+				ParamUtil.getString(
+					httpServletRequest, "scopeExternalReferenceCode", null));
+			infoItemObjectProvider =
+				(InfoItemObjectProvider<Object>)
+					_infoItemServiceRegistry.getFirstInfoItemService(
+						InfoItemObjectProvider.class, className,
+						ERCInfoItemIdentifier.INFO_ITEM_SERVICE_FILTER);
+		}
 
 		if (infoItemObjectProvider == null) {
 			return null;
 		}
 
 		try {
-			InfoItemIdentifier infoItemIdentifier =
-				new ClassPKInfoItemIdentifier(classPK);
-
-			if (Validator.isNotNull(externalReferenceCode)) {
-				infoItemIdentifier = new ERCInfoItemIdentifier(
-					externalReferenceCode);
-			}
-
-			return infoItemObjectProvider.getInfoItem(infoItemIdentifier);
+			return infoItemObjectProvider.getInfoItem(
+				scopeGroupId, infoItemIdentifier);
 		}
 		catch (NoSuchInfoItemException noSuchInfoItemException) {
 			if (_log.isDebugEnabled()) {

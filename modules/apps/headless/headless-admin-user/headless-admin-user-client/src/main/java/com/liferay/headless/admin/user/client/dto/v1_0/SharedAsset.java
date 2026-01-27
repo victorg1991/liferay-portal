@@ -217,6 +217,27 @@ public class SharedAsset implements Cloneable, Serializable {
 
 	protected String externalReferenceCode;
 
+	public FileEntry getFile() {
+		return file;
+	}
+
+	public void setFile(FileEntry file) {
+		this.file = file;
+	}
+
+	public void setFile(
+		UnsafeSupplier<FileEntry, Exception> fileUnsafeSupplier) {
+
+		try {
+			file = fileUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected FileEntry file;
+
 	public String getFileTypeIcon() {
 		return fileTypeIcon;
 	}
@@ -340,6 +361,27 @@ public class SharedAsset implements Cloneable, Serializable {
 	}
 
 	protected String title;
+
+	public Boolean getVisible() {
+		return visible;
+	}
+
+	public void setVisible(Boolean visible) {
+		this.visible = visible;
+	}
+
+	public void setVisible(
+		UnsafeSupplier<Boolean, Exception> visibleUnsafeSupplier) {
+
+		try {
+			visible = visibleUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean visible;
 
 	@Override
 	public SharedAsset clone() throws CloneNotSupportedException {

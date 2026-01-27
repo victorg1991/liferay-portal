@@ -29,13 +29,16 @@ public class DefaultFragmentEntryProcessorContext
 	implements FragmentEntryProcessorContext {
 
 	public DefaultFragmentEntryProcessorContext(
-		HttpServletRequest httpServletRequest,
-		HttpServletResponse httpServletResponse, String mode, Locale locale) {
+		long companyId, HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, Locale locale, String mode,
+		long scopeGroupId) {
 
+		_companyId = companyId;
 		_httpServletRequest = httpServletRequest;
 		_httpServletResponse = httpServletResponse;
-		_mode = mode;
 		_locale = locale;
+		_mode = mode;
+		_scopeGroupId = scopeGroupId;
 
 		_fragmentElementId = "fragment-" + PortalUUIDUtil.generate();
 	}
@@ -48,6 +51,11 @@ public class DefaultFragmentEntryProcessorContext
 	@Override
 	public Map<String, Serializable> getAttributes() {
 		return _attributes;
+	}
+
+	@Override
+	public long getCompanyId() {
+		return _companyId;
 	}
 
 	@Override
@@ -106,8 +114,18 @@ public class DefaultFragmentEntryProcessorContext
 	}
 
 	@Override
+	public long getScopeGroupId() {
+		return _scopeGroupId;
+	}
+
+	@Override
 	public long[] getSegmentsEntryIds() {
 		return _segmentsEntryIds;
+	}
+
+	@Override
+	public boolean isDisablePortletRender() {
+		return _disablePortletRender;
 	}
 
 	@Override
@@ -144,6 +162,10 @@ public class DefaultFragmentEntryProcessorContext
 		_infoItemReference = infoItemReference;
 	}
 
+	public void setDisablePortletRender(boolean disablePortletRender) {
+		_disablePortletRender = disablePortletRender;
+	}
+
 	public void setFragmentElementId(String fragmentElementId) {
 		_fragmentElementId = fragmentElementId;
 	}
@@ -173,6 +195,8 @@ public class DefaultFragmentEntryProcessorContext
 	}
 
 	private Map<String, Serializable> _attributes = new LinkedHashMap<>();
+	private final long _companyId;
+	private boolean _disablePortletRender;
 	private String _fragmentElementId;
 	private final HttpServletRequest _httpServletRequest;
 	private final HttpServletResponse _httpServletResponse;
@@ -184,6 +208,7 @@ public class DefaultFragmentEntryProcessorContext
 	private long _previewClassPK;
 	private int _previewType = AssetRendererFactory.TYPE_LATEST_APPROVED;
 	private String _previewVersion = InfoItemIdentifier.VERSION_LATEST_APPROVED;
+	private final long _scopeGroupId;
 	private long[] _segmentsEntryIds = new long[0];
 
 }

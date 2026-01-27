@@ -14,7 +14,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
-import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.instance.PortalInstancePool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -29,8 +28,8 @@ import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.NotificationThreadLocal;
 import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -292,7 +291,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	protected void closeConnections() {
 		Map<Thread, Connection> connectionsMap = _connectionsMaps.get(
-			DBPartition.isPartitionEnabled() ?
+			PropsValues.DATABASE_PARTITION_ENABLED ?
 				CompanyThreadLocal.getCompanyId() : CompanyConstants.SYSTEM);
 
 		_closeConnections(connectionsMap);
@@ -300,7 +299,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 	protected void closeConnections(Thread thread) {
 		Map<Thread, Connection> connectionsMap = _connectionsMaps.get(
-			DBPartition.isPartitionEnabled() ?
+			PropsValues.DATABASE_PARTITION_ENABLED ?
 				CompanyThreadLocal.getCompanyId() : CompanyConstants.SYSTEM);
 
 		_closeConnections(connectionsMap, thread);
@@ -410,6 +409,28 @@ public abstract class BaseDBProcess implements DBProcess {
 		db.process(unsafeConsumer);
 	}
 
+	protected <K, V> void processConcurrently(
+			Map<K, V> map,
+			UnsafeConsumer<Map.Entry<K, V>, Exception> unsafeConsumer,
+			String exceptionMessage)
+		throws Exception {
+
+		Set<Map.Entry<K, V>> set = map.entrySet();
+
+		Iterator<Map.Entry<K, V>> iterator = set.iterator();
+
+		_processConcurrently(
+			null,
+			() -> {
+				if (!iterator.hasNext()) {
+					return null;
+				}
+
+				return iterator.next();
+			},
+			unsafeConsumer, null, exceptionMessage);
+	}
+
 	protected void processConcurrently(
 			String sql, String updateSQL,
 			UnsafeFunction<ResultSet, Object[], Exception> unsafeFunction,
@@ -435,13 +456,11 @@ public abstract class BaseDBProcess implements DBProcess {
 			String exceptionMessage)
 		throws Exception {
 
-		int fetchSize = GetterUtil.getInteger(
-			PropsUtil.get(PropsKeys.UPGRADE_CONCURRENT_FETCH_SIZE));
-
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				sql)) {
 
-			preparedStatement.setFetchSize(fetchSize);
+			preparedStatement.setFetchSize(
+				PropsValues.UPGRADE_CONCURRENT_FETCH_SIZE);
 
 			unsafeConsumer.accept(preparedStatement);
 
@@ -467,11 +486,8 @@ public abstract class BaseDBProcess implements DBProcess {
 			String exceptionMessage)
 		throws Exception {
 
-		int fetchSize = GetterUtil.getInteger(
-			PropsUtil.get(PropsKeys.UPGRADE_CONCURRENT_FETCH_SIZE));
-
 		try (Statement statement = connection.createStatement()) {
-			statement.setFetchSize(fetchSize);
+			statement.setFetchSize(PropsValues.UPGRADE_CONCURRENT_FETCH_SIZE);
 
 			try (ResultSet resultSet = statement.executeQuery(sql)) {
 				_processConcurrently(
@@ -745,12 +761,10 @@ public abstract class BaseDBProcess implements DBProcess {
 							return null;
 						}));
 
-				int futuresMaxSize = GetterUtil.getInteger(
-					PropsUtil.get(
-						PropsKeys.
-							UPGRADE_CONCURRENT_PROCESS_FUTURE_LIST_MAX_SIZE));
+				if (futures.size() >=
+						PropsValues.
+							UPGRADE_CONCURRENT_PROCESS_FUTURE_LIST_MAX_SIZE) {
 
-				if (futures.size() >= futuresMaxSize) {
 					for (Future<Void> curFuture : futures) {
 						curFuture.get();
 					}
@@ -831,7 +845,7 @@ public abstract class BaseDBProcess implements DBProcess {
 
 			Map<Thread, Connection> connectionsMap =
 				_connectionsMaps.computeIfAbsent(
-					DBPartition.isPartitionEnabled() ?
+					PropsValues.DATABASE_PARTITION_ENABLED ?
 						CompanyThreadLocal.getCompanyId() :
 							CompanyConstants.SYSTEM,
 					key -> new ConcurrentHashMap<>());

@@ -98,6 +98,9 @@ public interface ObjectFieldLocalService
 			List<ObjectFieldSetting> objectFieldSettings)
 		throws PortalException;
 
+	public void addOrUpdateObjectFieldPLOEntries(ObjectField objectField)
+		throws PortalException;
+
 	@Indexable(type = IndexableType.REINDEX)
 	public ObjectField addOrUpdateSystemObjectField(
 			String externalReferenceCode, long userId,
@@ -264,6 +267,11 @@ public interface ObjectFieldLocalService
 	public ObjectField fetchObjectField(
 		String externalReferenceCode, long objectDefinitionId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public ObjectField fetchObjectFieldByBusinessType(
+		long objectDefinitionId, String businessType,
+		OrderByComparator<ObjectField> orderByComparator);
+
 	/**
 	 * Returns the object field with the matching UUID and company.
 	 *
@@ -394,6 +402,10 @@ public interface ObjectFieldLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public Map<Long, List<ObjectField>> getObjectFieldsMap(long companyId);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public Map<Long, List<ObjectField>> getObjectFieldsMap(
+		long companyId, String businessType);
 
 	/**
 	 * Returns the OSGi service identifier.

@@ -32,12 +32,12 @@ import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 
 import jakarta.annotation.Generated;
@@ -285,6 +285,11 @@ public abstract class BaseCartTransitionResourceTestCase {
 	}
 
 	@Test
+	public void testGraphQLPostCartCartTransition() throws Exception {
+		Assert.assertTrue(false);
+	}
+
+	@Test
 	public void testBatchEngineDeleteImportTask() throws Exception {
 		Assert.assertTrue(true);
 	}
@@ -399,6 +404,14 @@ public abstract class BaseCartTransitionResourceTestCase {
 
 			if (Objects.equals("open", additionalAssertFieldName)) {
 				if (cartTransition.getOpen() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("restricted", additionalAssertFieldName)) {
+				if (cartTransition.getRestricted() == null) {
 					valid = false;
 				}
 
@@ -578,6 +591,17 @@ public abstract class BaseCartTransitionResourceTestCase {
 			if (Objects.equals("open", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						cartTransition1.getOpen(), cartTransition2.getOpen())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("restricted", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						cartTransition1.getRestricted(),
+						cartTransition2.getRestricted())) {
 
 					return false;
 				}
@@ -852,6 +876,11 @@ public abstract class BaseCartTransitionResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("restricted")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("workflowTaskId")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
@@ -907,6 +936,7 @@ public abstract class BaseCartTransitionResourceTestCase {
 				label = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				name = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				open = RandomTestUtil.randomBoolean();
+				restricted = RandomTestUtil.randomBoolean();
 				workflowTaskId = RandomTestUtil.randomLong();
 			}
 		};

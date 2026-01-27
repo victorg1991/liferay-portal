@@ -7,6 +7,7 @@ package com.liferay.change.tracking.internal.search.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.change.tracking.constants.CTConstants;
+import com.liferay.change.tracking.constants.CTDestinationNames;
 import com.liferay.change.tracking.model.CTCollection;
 import com.liferay.change.tracking.model.CTEntry;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
@@ -23,6 +24,9 @@ import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
+import com.liferay.portal.kernel.messaging.Destination;
+import com.liferay.portal.kernel.messaging.DestinationStatistics;
+import com.liferay.portal.kernel.messaging.MessageBusUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
@@ -31,6 +35,7 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
@@ -493,6 +498,26 @@ public class CTEntrySearcherTest {
 			Consumer<SearchRequestBuilder>... consumers)
 		throws Exception {
 
+		Destination destination = MessageBusUtil.getDestination(
+			CTDestinationNames.CT_ENTRY_REINDEX);
+
+		DestinationStatistics destinationStatistics =
+			destination.getDestinationStatistics();
+
+		int i = 0;
+
+		while ((destinationStatistics.getActiveThreadCount() > 0) ||
+			   (destinationStatistics.getPendingMessageCount() > 0)) {
+
+			if (i++ > 60) {
+				break;
+			}
+
+			Thread.sleep(500);
+
+			destinationStatistics = destination.getDestinationStatistics();
+		}
+
 		SearchRequestBuilder searchRequestBuilder =
 			_searchRequestBuilderFactory.builder(
 			).companyId(
@@ -565,6 +590,7 @@ public class CTEntrySearcherTest {
 	@Inject
 	private CounterLocalService _counterLocalService;
 
+	@DeleteAfterTestRun
 	private CTCollection _ctCollection;
 
 	@Inject

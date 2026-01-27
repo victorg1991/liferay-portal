@@ -12,7 +12,9 @@ import com.liferay.account.manager.CurrentAccountEntryManager;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountEntryModel;
 import com.liferay.account.model.AccountEntryUserRel;
+import com.liferay.account.role.AccountRolePermissionThreadLocal;
 import com.liferay.account.service.AccountEntryLocalService;
+import com.liferay.account.service.AccountEntryService;
 import com.liferay.account.service.AccountEntryUserRelLocalService;
 import com.liferay.commerce.configuration.CommerceAccountGroupServiceConfiguration;
 import com.liferay.commerce.configuration.CommerceAccountServiceConfiguration;
@@ -26,6 +28,7 @@ import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.model.CommerceChannelAccountEntryRel;
 import com.liferay.commerce.product.service.CommerceChannelAccountEntryRelLocalService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
+import com.liferay.commerce.util.CommerceGroupThreadLocal;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
@@ -361,6 +364,14 @@ public class CommerceAccountHelperImpl implements CommerceAccountHelper {
 		}
 
 		if (accountEntry != null) {
+			if (accountEntry.isGuestAccount()) {
+				setCurrentCommerceAccount(
+					httpServletRequest, commerceChannelGroupId,
+					AccountConstants.ACCOUNT_ENTRY_ID_GUEST);
+
+				return accountEntry;
+			}
+
 			CommerceChannelAccountEntryRel commerceChannelAccountEntryRel =
 				_commerceChannelAccountEntryRelLocalService.
 					fetchCommerceChannelAccountEntryRel(
@@ -488,18 +499,35 @@ public class CommerceAccountHelperImpl implements CommerceAccountHelper {
 			long commerceAccountId)
 		throws PortalException {
 
-		if (commerceAccountId > 0) {
-			_checkAccountType(commerceChannelGroupId, commerceAccountId);
+		CommerceChannel commerceChannel =
+			_commerceChannelLocalService.getCommerceChannelByGroupId(
+				commerceChannelGroupId);
+
+		if ((commerceAccountId > 0) &&
+			(commerceAccountId !=
+				AccountRolePermissionThreadLocal.getAccountEntryId())) {
+
+			Group group = CommerceGroupThreadLocal.get();
+
+			if (group == null) {
+				CommerceGroupThreadLocal.setCommerceGroupWithSafeCloseable(
+					commerceChannel.getGroupId());
+			}
+
+			AccountEntry accountEntry = _accountEntryService.getAccountEntry(
+				commerceAccountId);
+
+			_checkAccountType(
+				commerceChannelGroupId, accountEntry.getAccountEntryId());
 		}
+
+		AccountRolePermissionThreadLocal.setAccountEntryIdWithSafeCloseable(
+			commerceAccountId);
 
 		if (PortalSessionThreadLocal.getHttpSession() == null) {
 			PortalSessionThreadLocal.setHttpSession(
 				httpServletRequest.getSession());
 		}
-
-		CommerceChannel commerceChannel =
-			_commerceChannelLocalService.getCommerceChannelByGroupId(
-				commerceChannelGroupId);
 
 		long userId = _portal.getUserId(httpServletRequest);
 
@@ -616,6 +644,9 @@ public class CommerceAccountHelperImpl implements CommerceAccountHelper {
 
 	@Reference
 	private AccountEntryLocalService _accountEntryLocalService;
+
+	@Reference
+	private AccountEntryService _accountEntryService;
 
 	@Reference
 	private AccountEntryUserRelLocalService _accountEntryUserRelLocalService;

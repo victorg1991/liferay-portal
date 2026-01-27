@@ -50,4 +50,12 @@ public interface ObjectEntryFolder
 
 			};
 
+	public java.util.List<Long> getAncestorObjectEntryFolderIds()
+		throws com.liferay.portal.kernel.exception.PortalException;
+
+	public boolean isRoot();
+
+	public boolean isTrashable(com.liferay.trash.TrashHelper trashHelper)
+		throws com.liferay.portal.kernel.exception.PortalException;
+
 }

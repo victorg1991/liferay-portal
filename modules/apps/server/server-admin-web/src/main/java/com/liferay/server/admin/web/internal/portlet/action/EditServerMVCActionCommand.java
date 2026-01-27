@@ -10,6 +10,8 @@ import com.liferay.change.tracking.constants.CTConstants;
 import com.liferay.change.tracking.model.CTCollectionModel;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.configuration.admin.constants.ConfigurationAdminPortletKeys;
+import com.liferay.data.cleanup.DataCleanup;
+import com.liferay.data.cleanup.util.DataCleanupUtil;
 import com.liferay.document.library.kernel.document.conversion.DocumentConversion;
 import com.liferay.document.library.kernel.model.DLProcessorConstants;
 import com.liferay.document.library.kernel.processor.AudioProcessor;
@@ -20,8 +22,6 @@ import com.liferay.document.library.kernel.store.Store;
 import com.liferay.document.library.preview.processor.BasePreviewableDLProcessor;
 import com.liferay.image.Ghostscript;
 import com.liferay.image.ImageMagick;
-import com.liferay.mail.kernel.model.Account;
-import com.liferay.mail.kernel.service.MailService;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
@@ -33,7 +33,6 @@ import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.cache.SingleVMPool;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
-import com.liferay.portal.kernel.cluster.ClusterMasterExecutorUtil;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
@@ -59,10 +58,12 @@ import com.liferay.portal.kernel.model.LayoutStagingHandler;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.ModelWrapper;
 import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.role.RoleConstants;
+import com.liferay.portal.kernel.module.framework.ThrowableCollector;
 import com.liferay.portal.kernel.portlet.LiferayActionResponse;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
@@ -81,6 +82,7 @@ import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutRevisionLocalService;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
+import com.liferay.portal.kernel.service.ReleaseLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.servlet.DirectServletRegistryUtil;
@@ -126,8 +128,10 @@ import java.lang.reflect.InvocationHandler;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -163,23 +167,8 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
-
-		String redirect = ParamUtil.getString(actionRequest, "redirect");
-
 		PermissionChecker permissionChecker =
 			themeDisplay.getPermissionChecker();
-
-		PortletPreferences portletPreferences = _prefsProps.getPreferences(
-			ParamUtil.getLong(actionRequest, "preferencesCompanyId"));
-
-		if (permissionChecker.isCompanyAdmin() && cmd.equals("updateMail")) {
-			_updateMail(actionRequest, portletPreferences);
-
-			sendRedirect(actionRequest, actionResponse, redirect);
-
-			return;
-		}
 
 		if (!permissionChecker.isOmniadmin()) {
 			SessionErrors.add(
@@ -190,6 +179,10 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 
 			return;
 		}
+
+		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
+
+		String redirect = ParamUtil.getString(actionRequest, "redirect");
 
 		if (!cmd.equals("addLogLevel") &&
 			!cmd.equals("dlGenerateAudioPreviews") &&
@@ -221,6 +214,12 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		}
 		else if (cmd.equals("cleanUpAddToPagePermissions")) {
 			_cleanUpAddToPagePermissions(actionRequest);
+		}
+		else if (cmd.equals("cleanUpAllModuleData")) {
+			_executeDataCleanups(DataCleanupUtil.getModuleDataCleanups());
+		}
+		else if (cmd.equals("cleanUpAllSystemData")) {
+			_executeDataCleanups(DataCleanupUtil.getSystemDataCleanups());
 		}
 		else if (cmd.equals("cleanUpLayoutRevisionPortletPreferences")) {
 			_cleanUpLayoutRevisionPortletPreferences();
@@ -281,19 +280,23 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 			_threadDump();
 		}
 		else if (cmd.equals("updateExternalServices")) {
+			PortletPreferences portletPreferences = _prefsProps.getPreferences(
+				ParamUtil.getLong(actionRequest, "preferencesCompanyId"));
+
 			_updateExternalServices(actionRequest, portletPreferences);
 		}
 		else if (cmd.equals("updateLogLevels")) {
 			_updateLogLevels(actionRequest);
-		}
-		else if (cmd.equals("updateMail")) {
-			_updateMail(actionRequest, portletPreferences);
 		}
 		else if (cmd.equals("updatePortalProperties")) {
 			_updatePortalProperties(actionRequest);
 		}
 		else if (cmd.equals("verifyMembershipPolicies")) {
 			_verifyMembershipPolicies();
+		}
+		else {
+			_executeDataCleanup(cmd, DataCleanupUtil.getModuleDataCleanups());
+			_executeDataCleanup(cmd, DataCleanupUtil.getSystemDataCleanups());
 		}
 
 		sendRedirect(actionRequest, actionResponse, redirect);
@@ -302,38 +305,26 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 	private static void _resetLogLevels(
 		Map<String, String> logLevels, Map<String, String> customLogSettings) {
 
+		Map<String, String> priorities = Log4JUtil.getPriorities();
+
+		Set<Map.Entry<String, String>> set = logLevels.entrySet();
+
+		Iterator<Map.Entry<String, String>> iterator = set.iterator();
+
+		while (iterator.hasNext()) {
+			Map.Entry<String, String> entry = iterator.next();
+
+			if (Objects.equals(
+					entry.getValue(), priorities.get(entry.getKey()))) {
+
+				iterator.remove();
+			}
+		}
+
 		for (Map.Entry<String, String> logLevel : logLevels.entrySet()) {
 			Log4JUtil.setLevel(
 				logLevel.getKey(), logLevel.getValue(),
 				customLogSettings.containsKey(logLevel.getKey()));
-		}
-	}
-
-	private static void _updateLogLevels(Map<String, String> logLevels) {
-		for (Map.Entry<String, String> logLevelEntry : logLevels.entrySet()) {
-			Log4JUtil.setLevel(
-				logLevelEntry.getKey(), logLevelEntry.getValue(), true);
-		}
-
-		if (!ClusterExecutorUtil.isEnabled()) {
-			return;
-		}
-
-		if (ClusterMasterExecutorUtil.isMaster()) {
-			ClusterRequest clusterRequest =
-				ClusterRequest.createMulticastRequest(
-					new MethodHandler(
-						_resetLogLevelsMethodKey, Log4JUtil.getPriorities(),
-						Log4JUtil.getCustomLogSettings()),
-					true);
-
-			clusterRequest.setFireAndForget(true);
-
-			ClusterExecutorUtil.execute(clusterRequest);
-		}
-		else {
-			ClusterMasterExecutorUtil.executeOnMaster(
-				new MethodHandler(_updateLogLevelsMethodKey, logLevels));
 		}
 	}
 
@@ -632,6 +623,38 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 			});
 	}
 
+	private void _executeDataCleanup(String cmd, List<DataCleanup> dataCleanups)
+		throws Exception {
+
+		for (DataCleanup dataCleanup : dataCleanups) {
+			if (cmd.equals(dataCleanup.getLabel())) {
+				dataCleanup.cleanup();
+			}
+		}
+	}
+
+	private void _executeDataCleanups(List<DataCleanup> dataCleanups) {
+		ThrowableCollector throwableCollector = new ThrowableCollector();
+
+		for (DataCleanup dataCleanup : dataCleanups) {
+			try {
+				Release release = _releaseLocalService.fetchRelease(
+					dataCleanup.getServletContextName());
+
+				if (release != null) {
+					dataCleanup.cleanup();
+				}
+			}
+			catch (Exception exception) {
+				_log.error(exception);
+
+				throwableCollector.collect(exception);
+			}
+		}
+
+		throwableCollector.rethrow();
+	}
+
 	private void _gc() throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 
@@ -815,83 +838,25 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		_updateLogLevels(logLevels);
 	}
 
-	private void _updateMail(
-			ActionRequest actionRequest, PortletPreferences portletPreferences)
-		throws Exception {
-
-		String advancedProperties = ParamUtil.getString(
-			actionRequest, "advancedProperties");
-		String pop3Host = ParamUtil.getString(actionRequest, "pop3Host");
-		String pop3Password = ParamUtil.getString(
-			actionRequest, "pop3Password");
-		int pop3Port = ParamUtil.getInteger(actionRequest, "pop3Port");
-		boolean pop3Secure = ParamUtil.getBoolean(actionRequest, "pop3Secure");
-		String pop3User = ParamUtil.getString(actionRequest, "pop3User");
-		boolean popServerNotificationsEnabled = ParamUtil.getBoolean(
-			actionRequest, "popServerNotificationsEnabled");
-		String smtpHost = ParamUtil.getString(actionRequest, "smtpHost");
-		String smtpPassword = ParamUtil.getString(
-			actionRequest, "smtpPassword");
-		int smtpPort = ParamUtil.getInteger(actionRequest, "smtpPort");
-		boolean smtpSecure = ParamUtil.getBoolean(actionRequest, "smtpSecure");
-		boolean smtpStartTLSEnable = ParamUtil.getBoolean(
-			actionRequest, "smtpStartTLSEnable");
-		String smtpUser = ParamUtil.getString(actionRequest, "smtpUser");
-
-		String storeProtocol = Account.PROTOCOL_POP;
-
-		if (pop3Secure) {
-			storeProtocol = Account.PROTOCOL_POPS;
+	private void _updateLogLevels(Map<String, String> logLevels) {
+		for (Map.Entry<String, String> logLevelEntry : logLevels.entrySet()) {
+			Log4JUtil.setLevel(
+				logLevelEntry.getKey(), logLevelEntry.getValue(), true);
 		}
 
-		String transportProtocol = Account.PROTOCOL_SMTP;
-
-		if (smtpSecure) {
-			transportProtocol = Account.PROTOCOL_SMTPS;
+		if (!ClusterExecutorUtil.isEnabled()) {
+			return;
 		}
 
-		portletPreferences.setValue(PropsKeys.MAIL_SESSION_MAIL, "true");
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_ADVANCED_PROPERTIES,
-			advancedProperties);
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_POP3_HOST, pop3Host);
+		ClusterRequest clusterRequest = ClusterRequest.createMulticastRequest(
+			new MethodHandler(
+				_resetLogLevelsMethodKey, Log4JUtil.getPriorities(),
+				Log4JUtil.getCustomLogSettings()),
+			true);
 
-		if (!pop3Password.equals(Portal.TEMP_OBFUSCATION_VALUE)) {
-			portletPreferences.setValue(
-				PropsKeys.MAIL_SESSION_MAIL_POP3_PASSWORD, pop3Password);
-		}
+		clusterRequest.setFireAndForget(true);
 
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_POP3_PORT, String.valueOf(pop3Port));
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_POP3_USER, pop3User);
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_SMTP_HOST, smtpHost);
-
-		if (!smtpPassword.equals(Portal.TEMP_OBFUSCATION_VALUE)) {
-			portletPreferences.setValue(
-				PropsKeys.MAIL_SESSION_MAIL_SMTP_PASSWORD, smtpPassword);
-		}
-
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_SMTP_PORT, String.valueOf(smtpPort));
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_SMTP_STARTTLS_ENABLE,
-			String.valueOf(smtpStartTLSEnable));
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_SMTP_USER, smtpUser);
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_STORE_PROTOCOL, storeProtocol);
-		portletPreferences.setValue(
-			PropsKeys.MAIL_SESSION_MAIL_TRANSPORT_PROTOCOL, transportProtocol);
-		portletPreferences.setValue(
-			PropsKeys.POP_SERVER_NOTIFICATIONS_ENABLED,
-			String.valueOf(popServerNotificationsEnabled));
-
-		portletPreferences.store();
-
-		_mailService.clearSession();
+		ClusterExecutorUtil.execute(clusterRequest);
 	}
 
 	private void _updatePortalProperties(ActionRequest actionRequest) {
@@ -947,8 +912,6 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 	private static final MethodKey _resetLogLevelsMethodKey = new MethodKey(
 		EditServerMVCActionCommand.class, "_resetLogLevels", Map.class,
 		Map.class);
-	private static final MethodKey _updateLogLevelsMethodKey = new MethodKey(
-		EditServerMVCActionCommand.class, "_updateLogLevels", Map.class);
 
 	@Reference(target = "(type=" + DLProcessorConstants.AUDIO_PROCESSOR + ")")
 	private DLProcessor _audioDLProcessor;
@@ -981,9 +944,6 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 	private LayoutRevisionLocalService _layoutRevisionLocalService;
 
 	@Reference
-	private MailService _mailService;
-
-	@Reference
 	private MessageBus _messageBus;
 
 	@Reference
@@ -1001,6 +961,9 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private PrefsProps _prefsProps;
+
+	@Reference
+	private ReleaseLocalService _releaseLocalService;
 
 	@Reference
 	private ResourcePermissionLocalService _resourcePermissionLocalService;

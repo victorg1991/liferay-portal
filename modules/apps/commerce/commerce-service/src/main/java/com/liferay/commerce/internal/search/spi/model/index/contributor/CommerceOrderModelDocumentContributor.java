@@ -36,6 +36,7 @@ import com.liferay.portal.search.spi.model.index.contributor.ModelDocumentContri
 import java.math.BigDecimal;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -149,6 +150,7 @@ public class CommerceOrderModelDocumentContributor
 			if (user != null) {
 				document.addKeyword(
 					"orderCreatorEmailAddress", user.getEmailAddress());
+				document.addKeyword("orderCreatorUserId", user.getUserId());
 			}
 
 			document.addDate("orderDate", commerceOrder.getOrderDate());
@@ -156,8 +158,11 @@ public class CommerceOrderModelDocumentContributor
 			document.addKeyword(
 				"orderItemNames", _getCommerceOrderItemNames(commerceOrder));
 			document.addKeyword("orderStatus", commerceOrder.getOrderStatus());
+			document.addNumber(
+				"paymentStatus", commerceOrder.getPaymentStatus());
 			document.addKeyword(
-				"purchaseOrderNumber", commerceOrder.getPurchaseOrderNumber());
+				"purchaseOrderNumber", commerceOrder.getPurchaseOrderNumber(),
+				true);
 
 			if (address != null) {
 				Region region = address.getRegion();
@@ -165,9 +170,15 @@ public class CommerceOrderModelDocumentContributor
 				document.addKeyword("regionName", region.getName());
 			}
 
-			document.addDateSortable(
-				"requestedDeliveryDate",
-				commerceOrder.getRequestedDeliveryDate());
+			Date requestedDeliveryDate =
+				commerceOrder.getRequestedDeliveryDate();
+
+			if (requestedDeliveryDate != null) {
+				document.addDate(
+					"requestedDeliveryDate", requestedDeliveryDate);
+				document.addDateSortable(
+					"requestedDeliveryDate", requestedDeliveryDate);
+			}
 
 			if (address != null) {
 				document.addKeyword(

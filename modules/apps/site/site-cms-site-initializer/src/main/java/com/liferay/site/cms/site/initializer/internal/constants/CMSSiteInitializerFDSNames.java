@@ -10,11 +10,28 @@ package com.liferay.site.cms.site.initializer.internal.constants;
  */
 public class CMSSiteInitializerFDSNames {
 
+	public static final String ALL_RELATED_ASSETS_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-allRelatedAssetsSection";
+
 	public static final String ALL_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-allSection";
 
 	public static final String ALL_SPACES_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-allSpacesSection";
+
+	public static final String BULK_ACTION_TASK_REPORT_ERROR_ITEMS_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-bulkActionTaskReportErrorItemsSection";
+
+	public static final String BULK_ACTION_TASK_REPORT_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-bulkActionTaskReportSection";
+
+	public static final String
+		BULK_ACTION_TASK_REPORT_SUCCESSFUL_ITEMS_SECTION =
+			CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+				"-bulkActionTaskReportSuccessfulItemsSection";
 
 	public static final String CATEGORIES =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-categories";
@@ -36,29 +53,47 @@ public class CMSSiteInitializerFDSNames {
 	public static final String FILES_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-filesSection";
 
-	public static final String SPACE_CONTENTS_ABSTRACT_SECTION =
+	public static final String HOME_MY_WORKFLOW_TASKS_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
-			"-spaceContentsAbstractSection";
+			"-homeMyWorkflowTasksSection";
 
-	public static final String SPACE_FILES_ABSTRACT_SECTION =
+	public static final String HOME_RECENT_ASSETS_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
-			"-spaceFilesAbstractSection";
+			"-homeRecentAssetsSection";
 
-	public static final String SPACE_MEMBERS_ABSTRACT_SECTION =
-		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
-			"-spaceMembersAbstractSection";
+	public static final String RECYCLE_BIN_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-recycleBinSection";
 
-	public static final String SPACE_MEMBERS_USER_GROUPS_ABSTRACT_SECTION =
+	public static final String RELATED_ASSETS_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
-			"-spaceMembersUserGroupsAbstractSection";
+			"-relatedAssetsSection";
 
-	public static final String SPACE_MEMBERS_USERS_ABSTRACT_SECTION =
-		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
-			"-spaceMembersUsersAbstractSection";
+	public static final String SHARED_WITH_ME =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-sharedWithMe";
 
-	public static final String SPACE_SITES_ABSTRACT_SECTION =
+	public static final String SPACE_CONTENTS_SUMMARY_SECTION =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
-			"-spaceSitesAbstractSection";
+			"-spaceContentsSummarySection";
+
+	public static final String SPACE_FILES_SUMMARY_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-spaceFilesSummarySection";
+
+	public static final String SPACE_MEMBERS_SUMMARY_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-spaceMembersSummarySection";
+
+	public static final String SPACE_MEMBERS_USER_GROUPS_SUMMARY_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-spaceMembersUserGroupsSummarySection";
+
+	public static final String SPACE_MEMBERS_USERS_SUMMARY_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-spaceMembersUsersSummarySection";
+
+	public static final String SPACE_SITES_SUMMARY_SECTION =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-spaceSitesSummarySection";
 
 	public static final String STRUCTURE_USAGES =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-structureUsages";
@@ -69,8 +104,12 @@ public class CMSSiteInitializerFDSNames {
 	public static final String TAG_USAGES =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-tagUsages";
 
-	public static final String VIEW_FOLDER =
-		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-viewFolder";
+	public static final String VIEW_CONTENTS_FOLDER =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME +
+			"-viewContentsFolder";
+
+	public static final String VIEW_FILES_FOLDER =
+		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-viewFilesFolder";
 
 	public static final String VIEW_HISTORY =
 		CMSSiteInitializerConstants.BUNDLE_SYMBOLIC_NAME + "-viewHistory";

@@ -6,19 +6,23 @@
 package com.liferay.frontend.js.web.internal.js.importmaps.extender;
 
 import com.liferay.frontend.js.importmaps.extender.DynamicJSImportMapsContributor;
-import com.liferay.frontend.js.web.internal.hashed.files.HashedFilesRegistry;
+import com.liferay.frontend.js.web.internal.resource.handler.LanguageFrontendResourceRequestHandler;
+import com.liferay.frontend.js.web.internal.util.FrontendJsWebUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
+import com.liferay.portal.kernel.frontend.hashed.files.HashedFilesRegistry;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.url.builder.configuration.PortalURLBuilderConfiguration;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.io.Writer;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
 /**
@@ -33,7 +37,29 @@ public class FrontendJsWebDynamicJSImportMapsContributor
 			HttpServletRequest httpServletRequest, Writer writer)
 		throws IOException {
 
-		writer.write("\"@liferay/language/\": \"/o/js/language/\"");
+		writer.write(StringPool.QUOTE);
+		writer.write(
+			LanguageFrontendResourceRequestHandler.LANGUAGE_MODULE_PREFIX);
+		writer.write("\": \"");
+
+		String baseURL = FrontendJsWebUtil.getBaseURL(
+			httpServletRequest, _portal);
+
+		writer.write(baseURL);
+
+		writer.write(FrontendJsWebUtil.getPortalContextPath(_portal));
+		writer.write(
+			LanguageFrontendResourceRequestHandler.LANGUAGE_URI_PREFIX);
+		writer.write(StringPool.QUOTE);
+
+		PortalURLBuilderConfiguration portalURLBuilderConfiguration =
+			_getPortalURLBuilderConfiguration(httpServletRequest);
+
+		if ((portalURLBuilderConfiguration != null) &&
+			!portalURLBuilderConfiguration.enableESModulesHashing()) {
+
+			return;
+		}
 
 		_hashedFilesRegistry.forEach(
 			(unhashedFileURI, hashedFileURI) -> {
@@ -43,13 +69,15 @@ public class FrontendJsWebDynamicJSImportMapsContributor
 
 				try {
 					writer.write(", \"");
+					writer.write(baseURL);
 					writer.write(unhashedFileURI);
 					writer.write("\": \"");
+					writer.write(baseURL);
 					writer.write(hashedFileURI);
 					writer.write(StringPool.QUOTE);
 				}
-				catch (IOException ioException) {
-					throw new RuntimeException(ioException);
+				catch (Exception exception) {
+					throw new RuntimeException(exception);
 				}
 			});
 	}
@@ -60,18 +88,35 @@ public class FrontendJsWebDynamicJSImportMapsContributor
 		throws IOException {
 	}
 
-	@Activate
-	protected void activate(BundleContext bundleContext) {
-		_hashedFilesRegistry = new HashedFilesRegistry(bundleContext);
+	private PortalURLBuilderConfiguration _getPortalURLBuilderConfiguration(
+		HttpServletRequest httpServletRequest) {
+
+		PortalURLBuilderConfiguration portalURLBuilderConfiguration = null;
+
+		try {
+			portalURLBuilderConfiguration =
+				_configurationProvider.getCompanyConfiguration(
+					PortalURLBuilderConfiguration.class,
+					_portal.getCompanyId(httpServletRequest));
+		}
+		catch (ConfigurationException configurationException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					"Unable to get portal URL builder configuration",
+					configurationException);
+			}
+		}
+
+		return portalURLBuilderConfiguration;
 	}
 
-	@Deactivate
-	protected void deactivate() {
-		_hashedFilesRegistry.close();
+	private static final Log _log = LogFactoryUtil.getLog(
+		FrontendJsWebDynamicJSImportMapsContributor.class);
 
-		_hashedFilesRegistry = null;
-	}
+	@Reference
+	private ConfigurationProvider _configurationProvider;
 
+	@Reference
 	private HashedFilesRegistry _hashedFilesRegistry;
 
 	@Reference

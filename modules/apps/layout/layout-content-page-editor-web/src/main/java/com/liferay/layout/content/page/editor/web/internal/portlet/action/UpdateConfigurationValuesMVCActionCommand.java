@@ -82,10 +82,12 @@ public class UpdateConfigurationValuesMVCActionCommand
 
 		FragmentEntryProcessorContext fragmentEntryProcessorContext =
 			new DefaultFragmentEntryProcessorContext(
+				fragmentEntryLink.getCompanyId(),
 				_portal.getHttpServletRequest(actionRequest),
 				_portal.getHttpServletResponse(actionResponse),
+				LocaleUtil.getMostRelevantLocale(),
 				FragmentEntryLinkConstants.EDIT,
-				LocaleUtil.getMostRelevantLocale());
+				fragmentEntryLink.getGroupId());
 
 		String processedHTML =
 			_fragmentEntryProcessorRegistry.processFragmentEntryLinkHTML(
@@ -93,7 +95,7 @@ public class UpdateConfigurationValuesMVCActionCommand
 
 		JSONObject newEditableValuesJSONObject = _mergeEditableValuesJSONObject(
 			_fragmentEntryProcessorRegistry.getDefaultEditableValuesJSONObject(
-				processedHTML, fragmentEntryLink.getConfiguration()),
+				processedHTML, fragmentEntryLink.getConfigurationJSONObject()),
 			editableValues);
 
 		fragmentEntryLink = _fragmentEntryLinkService.updateFragmentEntryLink(

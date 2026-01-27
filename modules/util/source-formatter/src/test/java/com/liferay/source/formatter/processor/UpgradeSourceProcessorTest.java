@@ -90,18 +90,6 @@ public class UpgradeSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
-	public void testUpgradeJavaBasePanelAppExtendedClassesCheck()
-		throws Exception {
-
-		test("upgrade/UpgradeJavaBasePanelAppExtendedClassesCheck.testjava");
-	}
-
-	@Test
-	public void testUpgradeJavaCommerceOrderValidatorCheck() throws Exception {
-		test("upgrade/UpgradeJavaCommerceOrderValidatorCheck.testjava");
-	}
-
-	@Test
 	public void testUpgradeJavaDDMFormValuesSerializerTrackerCheck()
 		throws Exception {
 
@@ -180,14 +168,6 @@ public class UpgradeSourceProcessorTest extends BaseSourceProcessorTestCase {
 	@Test
 	public void testUpgradeJavaModelPermissionsCheck() throws Exception {
 		test("upgrade/UpgradeJavaModelPermissionsCheck.testjava");
-	}
-
-	@Test
-	public void testUpgradeJavaMultiVMPoolUtilCheck() throws Exception {
-		test(
-			"upgrade/UpgradeJavaMultiVMPoolUtilCheck.testjava",
-			"Unable to resolve types for MultiVMPool.getPortalCache(). " +
-				"Replace \"TO_BE_REPLACED\" with the correct type");
 	}
 
 	@Test

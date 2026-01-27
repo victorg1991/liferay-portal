@@ -1,15 +1,17 @@
 .space-members-with-list {
-	padding: 24px;
+	.permission-select-trigger-text {
+		max-width: 300px !important;
+	}
 
 	.members-list {
-		margin-top: 16px;
 		max-height: 200px;
 		overflow-y: auto;
-		padding: 0;
+
+		html:not(#__):not(#___) .cadmin & {
+			max-height: 200px;
+		}
 
 		li {
-			list-style: none;
-
 			&:not(:last-child) {
 				margin-bottom: 8px;
 			}

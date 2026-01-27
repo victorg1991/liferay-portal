@@ -10,6 +10,10 @@ import {systemSettingsPageTest} from '../../../fixtures/systemSettingsPageTest';
 import getRandomString from '../../../utils/getRandomString';
 import {waitForAlert} from '../../../utils/waitForAlert';
 import {journalPagesTest} from '../../journal-web/main/fixtures/journalPagesTest';
+import {
+	clearConsentCookies,
+	resetCookieManagerConfiguration,
+} from './utils/cookieManagerAfterEach';
 
 export const test = mergeTests(
 	journalPagesTest,
@@ -17,14 +21,24 @@ export const test = mergeTests(
 	systemSettingsPageTest
 );
 
+test.afterEach(async ({systemSettingsPage}) => {
+	await test.step('Reset Cookie Manager Configuration', async () => {
+		await resetCookieManagerConfiguration(systemSettingsPage);
+	});
+
+	await test.step('Clear Consent Cookies if present', async () => {
+		await clearConsentCookies(systemSettingsPage);
+	});
+});
+
 test(
 	'Cookie Banner Script',
 	{tag: '@LPD-25701'},
 	async ({journalEditArticlePage, page, systemSettingsPage}) => {
 		await test.step('Enable Third Party Cookies', async () => {
 			await systemSettingsPage.goToSystemSetting(
-				'Cookies',
-				'Preference Handling'
+				'Privacy',
+				'Cookie Manager'
 			);
 
 			const enabledButton = page.getByLabel('Enabled');
@@ -48,10 +62,10 @@ test(
 			});
 
 			if (await saveButton.isVisible()) {
-				await saveButton.click();
+				await saveButton.dispatchEvent('click');
 			}
 			else if (await updateButton.isVisible()) {
-				await updateButton.click();
+				await updateButton.dispatchEvent('click');
 			}
 
 			await waitForAlert(page);

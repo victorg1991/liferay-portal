@@ -44,7 +44,7 @@ public class ProductNavigationControlMenuTopHeadDynamicInclude
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		if (!themeDisplay.isSignedIn()) {
+		if (!themeDisplay.isShowControlMenu() || !themeDisplay.isSignedIn()) {
 			return;
 		}
 
@@ -59,8 +59,9 @@ public class ProductNavigationControlMenuTopHeadDynamicInclude
 				httpServletRequest);
 
 		sb.append(
-			absolutePortalURLBuilder.forBundleStylesheet(
-				_bundle, "/product_navigation_control_menu.css"
+			absolutePortalURLBuilder.forWebContextStylesheet(
+				"product-navigation-control-menu-theme-contributor",
+				"/product_navigation_control_menu.css"
 			).build());
 
 		sb.append(StringPool.QUOTE);

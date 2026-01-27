@@ -37,6 +37,7 @@ import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -122,7 +123,8 @@ public class DisplayPagesImporterTest {
 						ObjectFieldUtil.createObjectField(
 							ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 							ObjectFieldConstants.DB_TYPE_STRING, "First Name",
-							"firstName")));
+							"firstName")),
+					false);
 
 			LayoutPageTemplateEntry layoutPageTemplateEntry =
 				_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
@@ -154,8 +156,8 @@ public class DisplayPagesImporterTest {
 
 			_layoutPageTemplateStructureLocalService.
 				updateLayoutPageTemplateStructureData(
-					_group.getGroupId(), draftLayout.getPlid(),
-					layoutStructure.toString());
+					TestPropsValues.getUserId(), _group.getGroupId(),
+					draftLayout.getPlid(), layoutStructure.toString());
 
 			ContentLayoutTestUtil.publishLayout(draftLayout, layout);
 
@@ -220,7 +222,8 @@ public class DisplayPagesImporterTest {
 						ObjectFieldUtil.createObjectField(
 							ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 							ObjectFieldConstants.DB_TYPE_STRING, "First Name",
-							"firstName")));
+							"firstName")),
+					false);
 
 			LayoutPageTemplateEntry layoutPageTemplateEntry =
 				_layoutPageTemplateEntryLocalService.addLayoutPageTemplateEntry(
@@ -247,10 +250,12 @@ public class DisplayPagesImporterTest {
 			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 				_fragmentEntryLinkLocalService.addFragmentEntryLink(
 					null, TestPropsValues.getUserId(), draftLayout.getGroupId(),
-					0, 0, segmentsExperienceId, draftLayout.getPlid(),
-					StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
-					fragmentRenderer.getConfiguration(
-						new DefaultFragmentRendererContext(null)),
+					null, null, null, segmentsExperienceId,
+					draftLayout.getPlid(), StringPool.BLANK, StringPool.BLANK,
+					StringPool.BLANK,
+					JSONFactoryUtil.toString(
+						fragmentRenderer.getConfigurationJSONObject(
+							new DefaultFragmentRendererContext(null))),
 					JSONUtil.put(
 						FragmentEntryProcessorConstants.
 							KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR,
@@ -311,8 +316,8 @@ public class DisplayPagesImporterTest {
 			Assert.assertEquals(
 				"small",
 				_fragmentEntryConfigurationParser.getFieldValue(
-					fragmentEntryLink.getConfiguration(),
-					fragmentEntryLink.getEditableValues(),
+					fragmentEntryLink.getConfigurationJSONObject(),
+					fragmentEntryLink.getEditableValuesJSONObject(),
 					LocaleUtil.getDefault(), "size"));
 		}
 		finally {

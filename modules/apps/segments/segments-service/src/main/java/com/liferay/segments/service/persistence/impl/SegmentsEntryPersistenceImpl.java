@@ -19,15 +19,21 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.dao.orm.SQLQuery;
 import com.liferay.portal.kernel.dao.orm.Session;
 import com.liferay.portal.kernel.dao.orm.SessionFactory;
+import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.sanitizer.Sanitizer;
+import com.liferay.portal.kernel.sanitizer.SanitizerException;
+import com.liferay.portal.kernel.sanitizer.SanitizerUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.security.permission.InlineSQLHelperUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.change.tracking.helper.CTPersistenceHelper;
 import com.liferay.portal.kernel.service.persistence.impl.BasePersistenceImpl;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.PropsKeys;
@@ -37,6 +43,7 @@ import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
+import com.liferay.segments.exception.DuplicateSegmentsEntryExternalReferenceCodeException;
 import com.liferay.segments.exception.NoSuchEntryException;
 import com.liferay.segments.model.SegmentsEntry;
 import com.liferay.segments.model.SegmentsEntryTable;
@@ -2566,6 +2573,16 @@ public class SegmentsEntryPersistenceImpl
 			return findByGroupId(groupId, start, end, orderByComparator);
 		}
 
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByGroupId(
+					groupId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator),
+				groupId);
+		}
+
 		StringBundler sb = null;
 
 		if (orderByComparator != null) {
@@ -2895,6 +2912,16 @@ public class SegmentsEntryPersistenceImpl
 
 		if (!InlineSQLHelperUtil.isEnabled(groupIds)) {
 			return findByGroupId(groupIds, start, end, orderByComparator);
+		}
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByGroupId(
+					groupIds, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator),
+				groupIds);
 		}
 
 		if (groupIds == null) {
@@ -3324,6 +3351,15 @@ public class SegmentsEntryPersistenceImpl
 			return countByGroupId(groupId);
 		}
 
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<SegmentsEntry> segmentsEntries = findByGroupId(groupId);
+
+			segmentsEntries = InlineSQLHelperUtil.filter(
+				segmentsEntries, groupId);
+
+			return segmentsEntries.size();
+		}
+
 		StringBundler sb = new StringBundler(2);
 
 		sb.append(_FILTER_SQL_COUNT_SEGMENTSENTRY_WHERE);
@@ -3370,6 +3406,13 @@ public class SegmentsEntryPersistenceImpl
 	public int filterCountByGroupId(long[] groupIds) {
 		if (!InlineSQLHelperUtil.isEnabled(groupIds)) {
 			return countByGroupId(groupIds);
+		}
+
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<SegmentsEntry> segmentsEntries = InlineSQLHelperUtil.filter(
+				findByGroupId(groupIds), groupIds);
+
+			return segmentsEntries.size();
 		}
 
 		if (groupIds == null) {
@@ -5984,6 +6027,16 @@ public class SegmentsEntryPersistenceImpl
 			return findByG_A(groupId, active, start, end, orderByComparator);
 		}
 
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByG_A(
+					groupId, active, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator),
+				groupId);
+		}
+
 		StringBundler sb = null;
 
 		if (orderByComparator != null) {
@@ -6330,6 +6383,16 @@ public class SegmentsEntryPersistenceImpl
 
 		if (!InlineSQLHelperUtil.isEnabled(groupIds)) {
 			return findByG_A(groupIds, active, start, end, orderByComparator);
+		}
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByG_A(
+					groupIds, active, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator),
+				groupIds);
 		}
 
 		if (groupIds == null) {
@@ -6802,6 +6865,15 @@ public class SegmentsEntryPersistenceImpl
 			return countByG_A(groupId, active);
 		}
 
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<SegmentsEntry> segmentsEntries = findByG_A(groupId, active);
+
+			segmentsEntries = InlineSQLHelperUtil.filter(
+				segmentsEntries, groupId);
+
+			return segmentsEntries.size();
+		}
+
 		StringBundler sb = new StringBundler(3);
 
 		sb.append(_FILTER_SQL_COUNT_SEGMENTSENTRY_WHERE);
@@ -6853,6 +6925,13 @@ public class SegmentsEntryPersistenceImpl
 	public int filterCountByG_A(long[] groupIds, boolean active) {
 		if (!InlineSQLHelperUtil.isEnabled(groupIds)) {
 			return countByG_A(groupIds, active);
+		}
+
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<SegmentsEntry> segmentsEntries = InlineSQLHelperUtil.filter(
+				findByG_A(groupIds, active), groupIds);
+
+			return segmentsEntries.size();
 		}
 
 		if (groupIds == null) {
@@ -7478,6 +7557,16 @@ public class SegmentsEntryPersistenceImpl
 			return findByG_SRC(groupId, source, start, end, orderByComparator);
 		}
 
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByG_SRC(
+					groupId, source, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator),
+				groupId);
+		}
+
 		source = Objects.toString(source, "");
 
 		StringBundler sb = null;
@@ -7850,6 +7939,16 @@ public class SegmentsEntryPersistenceImpl
 
 		if (!InlineSQLHelperUtil.isEnabled(groupIds)) {
 			return findByG_SRC(groupIds, source, start, end, orderByComparator);
+		}
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByG_SRC(
+					groupIds, source, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator),
+				groupIds);
 		}
 
 		if (groupIds == null) {
@@ -8376,6 +8475,15 @@ public class SegmentsEntryPersistenceImpl
 			return countByG_SRC(groupId, source);
 		}
 
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<SegmentsEntry> segmentsEntries = findByG_SRC(groupId, source);
+
+			segmentsEntries = InlineSQLHelperUtil.filter(
+				segmentsEntries, groupId);
+
+			return segmentsEntries.size();
+		}
+
 		source = Objects.toString(source, "");
 
 		StringBundler sb = new StringBundler(3);
@@ -8440,6 +8548,13 @@ public class SegmentsEntryPersistenceImpl
 	public int filterCountByG_SRC(long[] groupIds, String source) {
 		if (!InlineSQLHelperUtil.isEnabled(groupIds)) {
 			return countByG_SRC(groupIds, source);
+		}
+
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<SegmentsEntry> segmentsEntries = InlineSQLHelperUtil.filter(
+				findByG_SRC(groupIds, source), groupIds);
+
+			return segmentsEntries.size();
 		}
 
 		if (groupIds == null) {
@@ -8527,6 +8642,217 @@ public class SegmentsEntryPersistenceImpl
 	private static final String _FINDER_COLUMN_G_SRC_SOURCE_3 =
 		"(segmentsEntry.source IS NULL OR segmentsEntry.source = '')";
 
+	private FinderPath _finderPathFetchByERC_G;
+
+	/**
+	 * Returns the segments entry where externalReferenceCode = &#63; and groupId = &#63; or throws a <code>NoSuchEntryException</code> if it could not be found.
+	 *
+	 * @param externalReferenceCode the external reference code
+	 * @param groupId the group ID
+	 * @return the matching segments entry
+	 * @throws NoSuchEntryException if a matching segments entry could not be found
+	 */
+	@Override
+	public SegmentsEntry findByERC_G(String externalReferenceCode, long groupId)
+		throws NoSuchEntryException {
+
+		SegmentsEntry segmentsEntry = fetchByERC_G(
+			externalReferenceCode, groupId);
+
+		if (segmentsEntry == null) {
+			StringBundler sb = new StringBundler(6);
+
+			sb.append(_NO_SUCH_ENTITY_WITH_KEY);
+
+			sb.append("externalReferenceCode=");
+			sb.append(externalReferenceCode);
+
+			sb.append(", groupId=");
+			sb.append(groupId);
+
+			sb.append("}");
+
+			if (_log.isDebugEnabled()) {
+				_log.debug(sb.toString());
+			}
+
+			throw new NoSuchEntryException(sb.toString());
+		}
+
+		return segmentsEntry;
+	}
+
+	/**
+	 * Returns the segments entry where externalReferenceCode = &#63; and groupId = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 *
+	 * @param externalReferenceCode the external reference code
+	 * @param groupId the group ID
+	 * @return the matching segments entry, or <code>null</code> if a matching segments entry could not be found
+	 */
+	@Override
+	public SegmentsEntry fetchByERC_G(
+		String externalReferenceCode, long groupId) {
+
+		return fetchByERC_G(externalReferenceCode, groupId, true);
+	}
+
+	/**
+	 * Returns the segments entry where externalReferenceCode = &#63; and groupId = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 *
+	 * @param externalReferenceCode the external reference code
+	 * @param groupId the group ID
+	 * @param useFinderCache whether to use the finder cache
+	 * @return the matching segments entry, or <code>null</code> if a matching segments entry could not be found
+	 */
+	@Override
+	public SegmentsEntry fetchByERC_G(
+		String externalReferenceCode, long groupId, boolean useFinderCache) {
+
+		try (SafeCloseable safeCloseable =
+				ctPersistenceHelper.setCTCollectionIdWithSafeCloseable(
+					SegmentsEntry.class)) {
+
+			externalReferenceCode = Objects.toString(externalReferenceCode, "");
+
+			Object[] finderArgs = null;
+
+			if (useFinderCache) {
+				finderArgs = new Object[] {externalReferenceCode, groupId};
+			}
+
+			Object result = null;
+
+			if (useFinderCache) {
+				result = finderCache.getResult(
+					_finderPathFetchByERC_G, finderArgs, this);
+			}
+
+			if (result instanceof SegmentsEntry) {
+				SegmentsEntry segmentsEntry = (SegmentsEntry)result;
+
+				if (!Objects.equals(
+						externalReferenceCode,
+						segmentsEntry.getExternalReferenceCode()) ||
+					(groupId != segmentsEntry.getGroupId())) {
+
+					result = null;
+				}
+			}
+
+			if (result == null) {
+				StringBundler sb = new StringBundler(4);
+
+				sb.append(_SQL_SELECT_SEGMENTSENTRY_WHERE);
+
+				boolean bindExternalReferenceCode = false;
+
+				if (externalReferenceCode.isEmpty()) {
+					sb.append(_FINDER_COLUMN_ERC_G_EXTERNALREFERENCECODE_3);
+				}
+				else {
+					bindExternalReferenceCode = true;
+
+					sb.append(_FINDER_COLUMN_ERC_G_EXTERNALREFERENCECODE_2);
+				}
+
+				sb.append(_FINDER_COLUMN_ERC_G_GROUPID_2);
+
+				String sql = sb.toString();
+
+				Session session = null;
+
+				try {
+					session = openSession();
+
+					Query query = session.createQuery(sql);
+
+					QueryPos queryPos = QueryPos.getInstance(query);
+
+					if (bindExternalReferenceCode) {
+						queryPos.add(externalReferenceCode);
+					}
+
+					queryPos.add(groupId);
+
+					List<SegmentsEntry> list = query.list();
+
+					if (list.isEmpty()) {
+						if (useFinderCache) {
+							finderCache.putResult(
+								_finderPathFetchByERC_G, finderArgs, list);
+						}
+					}
+					else {
+						SegmentsEntry segmentsEntry = list.get(0);
+
+						result = segmentsEntry;
+
+						cacheResult(segmentsEntry);
+					}
+				}
+				catch (Exception exception) {
+					throw processException(exception);
+				}
+				finally {
+					closeSession(session);
+				}
+			}
+
+			if (result instanceof List<?>) {
+				return null;
+			}
+			else {
+				return (SegmentsEntry)result;
+			}
+		}
+	}
+
+	/**
+	 * Removes the segments entry where externalReferenceCode = &#63; and groupId = &#63; from the database.
+	 *
+	 * @param externalReferenceCode the external reference code
+	 * @param groupId the group ID
+	 * @return the segments entry that was removed
+	 */
+	@Override
+	public SegmentsEntry removeByERC_G(
+			String externalReferenceCode, long groupId)
+		throws NoSuchEntryException {
+
+		SegmentsEntry segmentsEntry = findByERC_G(
+			externalReferenceCode, groupId);
+
+		return remove(segmentsEntry);
+	}
+
+	/**
+	 * Returns the number of segments entries where externalReferenceCode = &#63; and groupId = &#63;.
+	 *
+	 * @param externalReferenceCode the external reference code
+	 * @param groupId the group ID
+	 * @return the number of matching segments entries
+	 */
+	@Override
+	public int countByERC_G(String externalReferenceCode, long groupId) {
+		SegmentsEntry segmentsEntry = fetchByERC_G(
+			externalReferenceCode, groupId);
+
+		if (segmentsEntry == null) {
+			return 0;
+		}
+
+		return 1;
+	}
+
+	private static final String _FINDER_COLUMN_ERC_G_EXTERNALREFERENCECODE_2 =
+		"segmentsEntry.externalReferenceCode = ? AND ";
+
+	private static final String _FINDER_COLUMN_ERC_G_EXTERNALREFERENCECODE_3 =
+		"(segmentsEntry.externalReferenceCode IS NULL OR segmentsEntry.externalReferenceCode = '') AND ";
+
+	private static final String _FINDER_COLUMN_ERC_G_GROUPID_2 =
+		"segmentsEntry.groupId = ?";
+
 	public SegmentsEntryPersistenceImpl() {
 		Map<String, String> dbColumnNames = new HashMap<String, String>();
 
@@ -8570,6 +8896,14 @@ public class SegmentsEntryPersistenceImpl
 				new Object[] {
 					segmentsEntry.getGroupId(),
 					segmentsEntry.getSegmentsEntryKey()
+				},
+				segmentsEntry);
+
+			finderCache.putResult(
+				_finderPathFetchByERC_G,
+				new Object[] {
+					segmentsEntry.getExternalReferenceCode(),
+					segmentsEntry.getGroupId()
 				},
 				segmentsEntry);
 		}
@@ -8670,6 +9004,14 @@ public class SegmentsEntryPersistenceImpl
 
 			finderCache.putResult(
 				_finderPathFetchByG_S, args, segmentsEntryModelImpl);
+
+			args = new Object[] {
+				segmentsEntryModelImpl.getExternalReferenceCode(),
+				segmentsEntryModelImpl.getGroupId()
+			};
+
+			finderCache.putResult(
+				_finderPathFetchByERC_G, args, segmentsEntryModelImpl);
 		}
 	}
 
@@ -8810,6 +9152,69 @@ public class SegmentsEntryPersistenceImpl
 			String uuid = PortalUUIDUtil.generate();
 
 			segmentsEntry.setUuid(uuid);
+		}
+
+		if (Validator.isNull(segmentsEntry.getExternalReferenceCode())) {
+			segmentsEntry.setExternalReferenceCode(segmentsEntry.getUuid());
+		}
+		else {
+			if (!Objects.equals(
+					segmentsEntryModelImpl.getColumnOriginalValue(
+						"externalReferenceCode"),
+					segmentsEntry.getExternalReferenceCode())) {
+
+				long userId = GetterUtil.getLong(
+					PrincipalThreadLocal.getName());
+
+				if (userId > 0) {
+					long companyId = segmentsEntry.getCompanyId();
+
+					long groupId = segmentsEntry.getGroupId();
+
+					long classPK = 0;
+
+					if (!isNew) {
+						classPK = segmentsEntry.getPrimaryKey();
+					}
+
+					try {
+						segmentsEntry.setExternalReferenceCode(
+							SanitizerUtil.sanitize(
+								companyId, groupId, userId,
+								SegmentsEntry.class.getName(), classPK,
+								ContentTypes.TEXT_HTML, Sanitizer.MODE_ALL,
+								segmentsEntry.getExternalReferenceCode(),
+								null));
+					}
+					catch (SanitizerException sanitizerException) {
+						throw new SystemException(sanitizerException);
+					}
+				}
+			}
+
+			SegmentsEntry ercSegmentsEntry = fetchByERC_G(
+				segmentsEntry.getExternalReferenceCode(),
+				segmentsEntry.getGroupId());
+
+			if (isNew) {
+				if (ercSegmentsEntry != null) {
+					throw new DuplicateSegmentsEntryExternalReferenceCodeException(
+						"Duplicate segments entry with external reference code " +
+							segmentsEntry.getExternalReferenceCode() +
+								" and group " + segmentsEntry.getGroupId());
+				}
+			}
+			else {
+				if ((ercSegmentsEntry != null) &&
+					(segmentsEntry.getSegmentsEntryId() !=
+						ercSegmentsEntry.getSegmentsEntryId())) {
+
+					throw new DuplicateSegmentsEntryExternalReferenceCodeException(
+						"Duplicate segments entry with external reference code " +
+							segmentsEntry.getExternalReferenceCode() +
+								" and group " + segmentsEntry.getGroupId());
+				}
+			}
 		}
 
 		ServiceContext serviceContext =
@@ -9354,6 +9759,7 @@ public class SegmentsEntryPersistenceImpl
 		ctControlColumnNames.add("mvccVersion");
 		ctControlColumnNames.add("ctCollectionId");
 		ctStrictColumnNames.add("uuid_");
+		ctStrictColumnNames.add("externalReferenceCode");
 		ctStrictColumnNames.add("groupId");
 		ctStrictColumnNames.add("companyId");
 		ctStrictColumnNames.add("userId");
@@ -9383,6 +9789,9 @@ public class SegmentsEntryPersistenceImpl
 
 		_uniqueIndexColumnNames.add(
 			new String[] {"groupId", "segmentsEntryKey"});
+
+		_uniqueIndexColumnNames.add(
+			new String[] {"externalReferenceCode", "groupId"});
 	}
 
 	/**
@@ -9604,6 +10013,11 @@ public class SegmentsEntryPersistenceImpl
 			FINDER_CLASS_NAME_LIST_WITH_PAGINATION, "countByG_SRC",
 			new String[] {Long.class.getName(), String.class.getName()},
 			new String[] {"groupId", "source"}, false);
+
+		_finderPathFetchByERC_G = new FinderPath(
+			FINDER_CLASS_NAME_ENTITY, "fetchByERC_G",
+			new String[] {String.class.getName(), Long.class.getName()},
+			new String[] {"externalReferenceCode", "groupId"}, true);
 
 		SegmentsEntryUtil.setPersistence(this);
 	}

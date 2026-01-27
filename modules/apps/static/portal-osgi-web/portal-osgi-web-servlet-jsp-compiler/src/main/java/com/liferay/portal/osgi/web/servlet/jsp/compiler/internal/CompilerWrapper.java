@@ -16,6 +16,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.URLUtil;
 import com.liferay.portal.osgi.web.servlet.jsp.compiler.internal.util.ClassPathUtil;
@@ -23,16 +24,12 @@ import com.liferay.portal.osgi.web.servlet.jsp.compiler.internal.util.ClassPathU
 import jakarta.servlet.ServletContext;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.lang.reflect.Field;
 
 import java.net.URL;
-
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
@@ -46,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -206,30 +202,6 @@ public class CompilerWrapper extends Compiler {
 		}
 	}
 
-	@Override
-	protected Map<String, SmapStratum> generateJava() throws Exception {
-		Map<String, SmapStratum> smapStratums = super.generateJava();
-
-		if (_textReplacerBiFunction == null) {
-			return smapStratums;
-		}
-
-		File javaFile = new File(ctxt.getServletJavaFileName());
-
-		String content = StreamUtil.toString(new FileInputStream(javaFile));
-
-		String newContent = _textReplacerBiFunction.apply(
-			"ModuleJspCJava#" + javaFile, content);
-
-		if (!newContent.equals(content)) {
-			Files.write(
-				javaFile.toPath(), newContent.getBytes(StringPool.UTF8),
-				StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-		}
-
-		return smapStratums;
-	}
-
 	private static Set<String> _collectPackageNames(BundleWiring bundleWiring) {
 		Set<String> packageNames = _bundleWiringPackageNamesCache.get(
 			bundleWiring);
@@ -333,7 +305,7 @@ public class CompilerWrapper extends Compiler {
 			}
 
 			_populateTldMappings(
-				StringPool.SLASH.concat(resourcePath), taglibXmls,
+				StringPool.SLASH.concat(resourcePath), bundle, taglibXmls,
 				tldResourcePaths, url);
 		}
 
@@ -347,7 +319,7 @@ public class CompilerWrapper extends Compiler {
 
 		for (URL url : urls) {
 			_populateTldMappings(
-				url.getPath(), taglibXmls, tldResourcePaths, url);
+				url.getPath(), bundle, taglibXmls, tldResourcePaths, url);
 		}
 	}
 
@@ -617,7 +589,7 @@ public class CompilerWrapper extends Compiler {
 	}
 
 	private void _populateTldMappings(
-			String absoluteResourcePath,
+			String absoluteResourcePath, Bundle bundle,
 			Map<TldResourcePath, TaglibXml> taglibXmls,
 			Map<String, TldResourcePath> tldResourcePaths, URL url)
 		throws IOException {
@@ -634,8 +606,6 @@ public class CompilerWrapper extends Compiler {
 			TldResourcePath tldResourcePath = new TldResourcePath(
 				url, absoluteResourcePath);
 
-			tldResourcePaths.put(uri, tldResourcePath);
-
 			TldParser tldParser = new TldParser(true, false, true);
 
 			Digester digester = (Digester)_digesterField.get(tldParser);
@@ -645,7 +615,18 @@ public class CompilerWrapper extends Compiler {
 					DigesterFactory.SERVLET_API_PUBLIC_IDS,
 					DigesterFactory.SERVLET_API_SYSTEM_IDS, true));
 
-			taglibXmls.put(tldResourcePath, tldParser.parse(tldResourcePath));
+			TaglibXml taglibXml = tldParser.parse(tldResourcePath);
+
+			if (ListUtil.isNotEmpty(taglibXml.getTagFiles())) {
+				URL bundleURL = new URL(bundle.getLocation());
+
+				tldResourcePath = new TldResourcePath(
+					bundleURL, absoluteResourcePath,
+					absoluteResourcePath.substring(1));
+			}
+
+			taglibXmls.put(tldResourcePath, taglibXml);
+			tldResourcePaths.put(uri, tldResourcePath);
 		}
 		catch (Exception exception) {
 			_log.error(exception);
@@ -707,8 +688,6 @@ public class CompilerWrapper extends Compiler {
 	private static final Field _digesterField;
 	private static final Map<BundleWiring, Set<String>>
 		_jspBundleWiringPackageNames = new HashMap<>();
-	private static final BiFunction<String, String, String>
-		_textReplacerBiFunction;
 
 	static {
 		Bundle jspBundle = FrameworkUtil.getBundle(CompilerWrapper.class);
@@ -732,28 +711,6 @@ public class CompilerWrapper extends Compiler {
 		catch (Exception exception) {
 			throw new ExceptionInInitializerError(exception);
 		}
-
-		ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-
-		Object instance = null;
-
-		try {
-			Class<?> clazz = classLoader.loadClass(
-				"com.liferay.portal.tools.jakarta.ee.transformer.function." +
-					"TextReplacerBiFunction");
-
-			instance = clazz.newInstance();
-		}
-		catch (ReflectiveOperationException reflectiveOperationException) {
-			if (!(reflectiveOperationException instanceof
-					ClassNotFoundException)) {
-
-				throw new ExceptionInInitializerError(
-					reflectiveOperationException);
-			}
-		}
-
-		_textReplacerBiFunction = (BiFunction<String, String, String>)instance;
 	}
 
 	private Bundle[] _allParticipatingBundles;

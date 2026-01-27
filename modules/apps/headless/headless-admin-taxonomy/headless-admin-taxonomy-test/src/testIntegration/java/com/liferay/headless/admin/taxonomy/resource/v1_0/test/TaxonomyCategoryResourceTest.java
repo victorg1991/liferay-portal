@@ -16,6 +16,8 @@ import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
 import com.liferay.asset.test.util.AssetTestUtil;
 import com.liferay.depot.service.DepotEntryLocalService;
+import com.liferay.exportimport.test.rule.LazyReferencing;
+import com.liferay.exportimport.test.rule.LazyReferencingTestRule;
 import com.liferay.headless.admin.taxonomy.client.dto.v1_0.AssetType;
 import com.liferay.headless.admin.taxonomy.client.dto.v1_0.ParentTaxonomyCategory;
 import com.liferay.headless.admin.taxonomy.client.dto.v1_0.ParentTaxonomyVocabulary;
@@ -43,14 +45,16 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.odata.entity.EntityField;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
-import com.liferay.portal.util.PropsValues;
+import com.liferay.portal.vulcan.scope.Scope;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -60,16 +64,23 @@ import java.util.Objects;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
  * @author Javier Gamarra
  */
-@FeatureFlag("LPD-17564")
 @RunWith(Arquillian.class)
 public class TaxonomyCategoryResourceTest
 	extends BaseTaxonomyCategoryResourceTestCase {
+
+	@ClassRule
+	@Rule
+	public static final LazyReferencingTestRule lazyReferencingTestRule =
+		LazyReferencingTestRule.INSTANCE;
 
 	@Before
 	@Override
@@ -96,6 +107,108 @@ public class TaxonomyCategoryResourceTest
 			).build(),
 			null, null, AssetVocabularyConstants.VISIBILITY_TYPE_INTERNAL,
 			new ServiceContext());
+	}
+
+	@Override
+	@Test
+	public void testDeleteAssetLibraryTaxonomyCategoryByExternalReferenceCode()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testDeleteAssetLibraryTaxonomyCategoryByExternalReferenceCode();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPage() throws Exception {
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testGetAssetLibraryTaxonomyCategoriesPage();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPageWithFilterDateTimeEquals()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.
+			testGetAssetLibraryTaxonomyCategoriesPageWithFilterDateTimeEquals();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPageWithFilterStringContains()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.
+			testGetAssetLibraryTaxonomyCategoriesPageWithFilterStringContains();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPageWithFilterStringEquals()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testGetAssetLibraryTaxonomyCategoriesPageWithFilterStringEquals();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPageWithFilterStringStartsWith()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.
+			testGetAssetLibraryTaxonomyCategoriesPageWithFilterStringStartsWith();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPageWithPagination()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.
+			testGetAssetLibraryTaxonomyCategoriesPageWithFilterStringStartsWith();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPageWithSortDateTime()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testGetAssetLibraryTaxonomyCategoriesPageWithSortDateTime();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoriesPageWithSortString()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testGetAssetLibraryTaxonomyCategoriesPageWithSortString();
+	}
+
+	@Override
+	@Test
+	public void testGetAssetLibraryTaxonomyCategoryByExternalReferenceCode()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testGetAssetLibraryTaxonomyCategoryByExternalReferenceCode();
 	}
 
 	@Override
@@ -196,6 +309,82 @@ public class TaxonomyCategoryResourceTest
 
 	@Override
 	@Test
+	public void testGraphQLDeleteAssetLibraryTaxonomyCategoryByExternalReferenceCode()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.
+			testGraphQLDeleteAssetLibraryTaxonomyCategoryByExternalReferenceCode();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLDeleteTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode()
+		throws Exception {
+
+		super.
+			testGraphQLDeleteTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode();
+	}
+
+	@Override
+	@Test
+	public void testGraphQLGetAssetLibraryTaxonomyCategoriesPage()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testGraphQLGetAssetLibraryTaxonomyCategoriesPage();
+	}
+
+	@Override
+	@Test
+	public void testGraphQLGetAssetLibraryTaxonomyCategoryByExternalReferenceCode()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.
+			testGraphQLGetAssetLibraryTaxonomyCategoryByExternalReferenceCode();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLGetTaxonomyCategoriesRankedPage() throws Exception {
+		super.testGraphQLGetTaxonomyCategoriesRankedPage();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLGetTaxonomyCategoryTaxonomyCategoriesPage()
+		throws Exception {
+
+		super.testGraphQLGetTaxonomyCategoryTaxonomyCategoriesPage();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLGetTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode()
+		throws Exception {
+
+		super.
+			testGraphQLGetTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode();
+	}
+
+	@Override
+	@Test
+	public void testGraphQLPostAssetLibraryTaxonomyCategory() throws Exception {
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testGraphQLPostAssetLibraryTaxonomyCategory();
+	}
+
+	@Override
+	@Test
 	public void testGraphQLPostSiteTaxonomyCategory() throws Exception {
 		TaxonomyCategory randomTaxonomyCategory = randomTaxonomyCategory();
 
@@ -221,10 +410,19 @@ public class TaxonomyCategoryResourceTest
 			});
 
 		TaxonomyCategory taxonomyCategory =
-			testGraphQLTaxonomyCategory_addTaxonomyCategory(
-				randomTaxonomyCategory);
+			testGraphQLSiteTaxonomyCategory_addTaxonomyCategory(
+				testGroup.getGroupId(), randomTaxonomyCategory);
 
 		Assert.assertTrue(equals(randomTaxonomyCategory, taxonomyCategory));
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLPostTaxonomyVocabularyTaxonomyCategory()
+		throws Exception {
+
+		super.testGraphQLPostTaxonomyVocabularyTaxonomyCategory();
 	}
 
 	@Override
@@ -250,17 +448,25 @@ public class TaxonomyCategoryResourceTest
 			_addTaxonomyCategoryWithParentAssetVocabulary(assetVocabulary2));
 	}
 
-	@FeatureFlag("LPD-47858")
+	@FeatureFlags(
+		featureFlags = {@FeatureFlag("LPD-35443"), @FeatureFlag("LPD-35914")}
+	)
+	@LazyReferencing
 	@Override
 	@Test
 	public void testPostAssetLibraryTaxonomyCategory() throws Exception {
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
 		super.testPostAssetLibraryTaxonomyCategory();
 
 		_testPostAssetLibraryTaxonomyCategoryBatch("INSERT");
 		_testPostAssetLibraryTaxonomyCategoryBatch("UPSERT");
 	}
 
-	@FeatureFlag("LPD-47858")
+	@FeatureFlags(
+		featureFlags = {@FeatureFlag("LPD-35443"), @FeatureFlag("LPD-35914")}
+	)
+	@LazyReferencing
 	@Override
 	@Test
 	public void testPostSiteTaxonomyCategory() throws Exception {
@@ -268,6 +474,42 @@ public class TaxonomyCategoryResourceTest
 
 		_testPostSiteTaxonomyCategoryBatch("INSERT");
 		_testPostSiteTaxonomyCategoryBatch("UPSERT");
+	}
+
+	@Override
+	@Test
+	public void testPostTaxonomyVocabularyTaxonomyCategory() throws Exception {
+		super.testPostTaxonomyVocabularyTaxonomyCategory();
+
+		TaxonomyCategory randomTaxonomyCategory = randomTaxonomyCategory();
+
+		TaxonomyCategory parentTaxonomyCategory =
+			testGetSiteTaxonomyCategoryByExternalReferenceCode_addTaxonomyCategory();
+
+		randomTaxonomyCategory.setParentTaxonomyCategory(
+			new ParentTaxonomyCategory() {
+				{
+					externalReferenceCode =
+						parentTaxonomyCategory.getExternalReferenceCode();
+					id = Long.valueOf(parentTaxonomyCategory.getId());
+				}
+			});
+
+		TaxonomyCategory postTaxonomyCategory =
+			testPostTaxonomyVocabularyTaxonomyCategory_addTaxonomyCategory(
+				randomTaxonomyCategory);
+
+		Assert.assertTrue(equals(randomTaxonomyCategory, postTaxonomyCategory));
+	}
+
+	@Override
+	@Test
+	public void testPutAssetLibraryTaxonomyCategoryByExternalReferenceCode()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		super.testPutAssetLibraryTaxonomyCategoryByExternalReferenceCode();
 	}
 
 	@Override
@@ -285,14 +527,85 @@ public class TaxonomyCategoryResourceTest
 	}
 
 	@Override
+	protected TaxonomyCategory randomIrrelevantTaxonomyCategory()
+		throws Exception {
+
+		TaxonomyCategory randomIrrelevantTaxonomyCategory =
+			randomTaxonomyCategory();
+		AssetVocabulary randomIrrelevantAssetVocabulary = null;
+
+		if (_scopeType.equals(Scope.Type.SITE)) {
+			randomIrrelevantTaxonomyCategory.setSiteExternalReferenceCode(
+				irrelevantGroup.getExternalReferenceCode());
+
+			randomIrrelevantTaxonomyCategory.setSiteId(
+				irrelevantGroup.getGroupId());
+
+			randomIrrelevantAssetVocabulary =
+				_assetVocabularyLocalService.addVocabulary(
+					UserLocalServiceUtil.getGuestUserId(
+						testGroup.getCompanyId()),
+					irrelevantGroup.getGroupId(), RandomTestUtil.randomString(),
+					new ServiceContext());
+		}
+		else {
+			randomIrrelevantTaxonomyCategory.setAssetLibraryKey(
+				String.valueOf(irrelevantDepotEntry.getDepotEntryId()));
+
+			randomIrrelevantTaxonomyCategory.setSiteId(
+				irrelevantDepotEntry.getGroupId());
+
+			randomIrrelevantAssetVocabulary =
+				_assetVocabularyLocalService.addVocabulary(
+					UserLocalServiceUtil.getGuestUserId(
+						testGroup.getCompanyId()),
+					irrelevantDepotEntry.getGroupId(),
+					RandomTestUtil.randomString(), new ServiceContext());
+		}
+
+		randomIrrelevantTaxonomyCategory.setTaxonomyVocabularyId(
+			randomIrrelevantAssetVocabulary.getVocabularyId());
+
+		return randomIrrelevantTaxonomyCategory;
+	}
+
+	@Override
 	protected TaxonomyCategory randomTaxonomyCategory() throws Exception {
 		TaxonomyCategory taxonomyCategory = super.randomTaxonomyCategory();
 
 		taxonomyCategory.setId(String.valueOf(RandomTestUtil.randomLong()));
-		taxonomyCategory.setTaxonomyVocabularyId(
-			_assetVocabulary.getVocabularyId());
+
+		if (_scopeType.equals(Scope.Type.SITE)) {
+			taxonomyCategory.setTaxonomyVocabularyId(
+				_assetVocabulary.getVocabularyId());
+		}
+		else {
+			taxonomyCategory.setTaxonomyVocabularyId(
+				_depotAssetVocabulary.getVocabularyId());
+		}
 
 		return taxonomyCategory;
+	}
+
+	@Override
+	protected TaxonomyCategory
+			testBatchEngineDeleteImportTask_addAssetLibraryTaxonomyCategory()
+		throws Exception {
+
+		_scopeType = Scope.Type.ASSET_LIBRARY;
+
+		return super.
+			testBatchEngineDeleteImportTask_addAssetLibraryTaxonomyCategory();
+	}
+
+	@Override
+	protected TaxonomyCategory
+			testBatchEngineDeleteImportTask_addSiteTaxonomyCategory()
+		throws Exception {
+
+		_scopeType = Scope.Type.SITE;
+
+		return super.testBatchEngineDeleteImportTask_addSiteTaxonomyCategory();
 	}
 
 	@Override
@@ -410,15 +723,6 @@ public class TaxonomyCategoryResourceTest
 		testGraphQLGetAssetLibraryTaxonomyCategoryByExternalReferenceCode_getAssetLibraryId() {
 
 		return testDepotEntry.getGroupId();
-	}
-
-	@Override
-	protected Long
-			testGraphQLGetTaxonomyVocabularyTaxonomyCategoryByExternalReferenceCode_getTaxonomyVocabularyId(
-				TaxonomyCategory taxonomyCategory)
-		throws Exception {
-
-		return taxonomyCategory.getTaxonomyVocabularyId();
 	}
 
 	@Override
@@ -996,6 +1300,19 @@ public class TaxonomyCategoryResourceTest
 		throws Exception {
 
 		assertHttpResponseStatusCode(
+			200,
+			taxonomyCategoryResource.patchTaxonomyCategoryHttpResponse(
+				taxonomyCategory.getId(),
+				new TaxonomyCategory() {
+					{
+						taxonomyVocabularyId = randomTaxonomyVocabulary.getId();
+					}
+				}));
+
+		taxonomyCategoryResource.deleteTaxonomyCategory(
+			taxonomyCategory.getId());
+
+		assertHttpResponseStatusCode(
 			404,
 			taxonomyCategoryResource.patchTaxonomyCategoryHttpResponse(
 				taxonomyCategory.getId(),
@@ -1047,13 +1364,13 @@ public class TaxonomyCategoryResourceTest
 		_testPostTaxonomyCategoryBatchCompleteReferences(
 			_depotAssetVocabulary, createStrategy, testDepotEntry.getGroupId(),
 			"assetLibraryId", testDepotEntry.getDepotEntryId());
-		_testPostTaxonomyCategoryBatchFullLazyReferences(
-			createStrategy, testDepotEntry.getGroupId(), "assetLibraryId",
-			testDepotEntry.getDepotEntryId());
-		_testPostTaxonomyCategoryBatchIncompleteParentTaxonomyCategory(
+		_testPostTaxonomyCategoryBatchEmptyParentTaxonomyCategory(
 			_depotAssetVocabulary, createStrategy, testDepotEntry.getGroupId(),
 			"assetLibraryId", testDepotEntry.getDepotEntryId());
-		_testPostTaxonomyCategoryBatchIncompleteParentTaxonomyVocabulary(
+		_testPostTaxonomyCategoryBatchEmptyParentTaxonomyVocabulary(
+			createStrategy, testDepotEntry.getGroupId(), "assetLibraryId",
+			testDepotEntry.getDepotEntryId());
+		_testPostTaxonomyCategoryBatchFullLazyReferences(
 			createStrategy, testDepotEntry.getGroupId(), "assetLibraryId",
 			testDepotEntry.getDepotEntryId());
 	}
@@ -1067,10 +1384,10 @@ public class TaxonomyCategoryResourceTest
 		_testPostTaxonomyCategoryBatchFullLazyReferences(
 			createStrategy, testGroup.getGroupId(), "siteId",
 			testGroup.getGroupId());
-		_testPostTaxonomyCategoryBatchIncompleteParentTaxonomyCategory(
+		_testPostTaxonomyCategoryBatchEmptyParentTaxonomyCategory(
 			_assetVocabulary, createStrategy, testGroup.getGroupId(), "siteId",
 			testGroup.getGroupId());
-		_testPostTaxonomyCategoryBatchIncompleteParentTaxonomyVocabulary(
+		_testPostTaxonomyCategoryBatchEmptyParentTaxonomyVocabulary(
 			createStrategy, testGroup.getGroupId(), "siteId",
 			testGroup.getGroupId());
 	}
@@ -1213,38 +1530,7 @@ public class TaxonomyCategoryResourceTest
 			parentTaxonomyVocabulary, taxonomyCategory);
 	}
 
-	private void _testPostTaxonomyCategoryBatchFullLazyReferences(
-			String createStrategy, long groupId, String parameter,
-			long parameterValue)
-		throws Exception {
-
-		ParentTaxonomyCategory parentTaxonomyCategory =
-			new ParentTaxonomyCategory() {
-				{
-					externalReferenceCode = RandomTestUtil.randomString();
-					id = RandomTestUtil.randomLong();
-				}
-			};
-
-		ParentTaxonomyVocabulary parentTaxonomyVocabulary =
-			new ParentTaxonomyVocabulary() {
-				{
-					externalReferenceCode = RandomTestUtil.randomString();
-					id = RandomTestUtil.randomLong();
-				}
-			};
-
-		TaxonomyCategory taxonomyCategory = super.randomTaxonomyCategory();
-
-		taxonomyCategory.setTaxonomyVocabularyId(() -> null);
-		taxonomyCategory.setSiteId(groupId);
-
-		_testPostTaxonomyCategoryBatch(
-			createStrategy, parameter, parameterValue, parentTaxonomyCategory,
-			parentTaxonomyVocabulary, taxonomyCategory);
-	}
-
-	private void _testPostTaxonomyCategoryBatchIncompleteParentTaxonomyCategory(
+	private void _testPostTaxonomyCategoryBatchEmptyParentTaxonomyCategory(
 			AssetVocabulary assetVocabulary, String createStrategy,
 			long groupId, String parameter, long parameterValue)
 		throws Exception {
@@ -1276,10 +1562,9 @@ public class TaxonomyCategoryResourceTest
 			parentTaxonomyVocabulary, taxonomyCategory);
 	}
 
-	private void
-			_testPostTaxonomyCategoryBatchIncompleteParentTaxonomyVocabulary(
-				String createStrategy, long groupId, String parameter,
-				long parameterValue)
+	private void _testPostTaxonomyCategoryBatchEmptyParentTaxonomyVocabulary(
+			String createStrategy, long groupId, String parameter,
+			long parameterValue)
 		throws Exception {
 
 		TaxonomyCategory postParentTaxonomyCategory =
@@ -1293,6 +1578,37 @@ public class TaxonomyCategoryResourceTest
 					externalReferenceCode =
 						postParentTaxonomyCategory.getExternalReferenceCode();
 					id = Long.valueOf(postParentTaxonomyCategory.getId());
+				}
+			};
+
+		ParentTaxonomyVocabulary parentTaxonomyVocabulary =
+			new ParentTaxonomyVocabulary() {
+				{
+					externalReferenceCode = RandomTestUtil.randomString();
+					id = RandomTestUtil.randomLong();
+				}
+			};
+
+		TaxonomyCategory taxonomyCategory = super.randomTaxonomyCategory();
+
+		taxonomyCategory.setTaxonomyVocabularyId(() -> null);
+		taxonomyCategory.setSiteId(groupId);
+
+		_testPostTaxonomyCategoryBatch(
+			createStrategy, parameter, parameterValue, parentTaxonomyCategory,
+			parentTaxonomyVocabulary, taxonomyCategory);
+	}
+
+	private void _testPostTaxonomyCategoryBatchFullLazyReferences(
+			String createStrategy, long groupId, String parameter,
+			long parameterValue)
+		throws Exception {
+
+		ParentTaxonomyCategory parentTaxonomyCategory =
+			new ParentTaxonomyCategory() {
+				{
+					externalReferenceCode = RandomTestUtil.randomString();
+					id = RandomTestUtil.randomLong();
 				}
 			};
 
@@ -1365,5 +1681,7 @@ public class TaxonomyCategoryResourceTest
 
 	@Inject
 	private ResourcePermissionLocalService _resourcePermissionLocalService;
+
+	private Scope.Type _scopeType = Scope.Type.SITE;
 
 }

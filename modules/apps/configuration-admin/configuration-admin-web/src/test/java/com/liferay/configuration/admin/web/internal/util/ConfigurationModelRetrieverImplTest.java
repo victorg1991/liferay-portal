@@ -6,6 +6,10 @@
 package com.liferay.configuration.admin.web.internal.util;
 
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
@@ -17,13 +21,18 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import org.mockito.MockSettings;
+import org.mockito.Mockito;
+
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
 /**
  * @author Raymond Augé
+ * @author Thiago Buarque
  */
 public class ConfigurationModelRetrieverImplTest {
 
@@ -31,6 +40,108 @@ public class ConfigurationModelRetrieverImplTest {
 	@Rule
 	public static final LiferayUnitTestRule liferayUnitTestRule =
 		LiferayUnitTestRule.INSTANCE;
+
+	@Test
+	public void testGetConfiguration() throws Exception {
+		MockSettings mockSettings = Mockito.withSettings();
+
+		mockSettings = mockSettings.useConstructor();
+
+		ConfigurationModelRetrieverImpl configurationModelRetrieverImpl =
+			Mockito.mock(
+				ConfigurationModelRetrieverImpl.class,
+				mockSettings.defaultAnswer(Mockito.CALLS_REAL_METHODS));
+
+		ConfigurationAdmin configurationAdmin = Mockito.mock(
+			ConfigurationAdmin.class);
+
+		Mockito.when(
+			configurationAdmin.listConfigurations(Mockito.anyString())
+		).thenReturn(
+			new Configuration[0]
+		);
+
+		ReflectionTestUtil.setFieldValue(
+			configurationModelRetrieverImpl, "_configurationAdmin",
+			configurationAdmin);
+
+		GroupLocalService groupLocalService = Mockito.mock(
+			GroupLocalService.class);
+
+		Group group = Mockito.mock(Group.class);
+
+		long groupId = RandomTestUtil.randomLong();
+
+		Mockito.when(
+			group.getGroupId()
+		).thenReturn(
+			groupId
+		);
+
+		long companyId = RandomTestUtil.randomLong();
+
+		Mockito.when(
+			group.getCompanyId()
+		).thenReturn(
+			companyId
+		);
+
+		Mockito.when(
+			groupLocalService.fetchGroup(Mockito.eq(groupId))
+		).thenReturn(
+			group
+		);
+
+		ReflectionTestUtil.setFieldValue(
+			configurationModelRetrieverImpl, "_groupLocalService",
+			groupLocalService);
+
+		String pid = RandomTestUtil.randomString();
+
+		configurationModelRetrieverImpl.getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.GROUP, groupId);
+
+		Mockito.verify(
+			configurationModelRetrieverImpl, Mockito.times(1)
+		).getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.GROUP, groupId, true
+		);
+
+		Mockito.verify(
+			configurationModelRetrieverImpl, Mockito.never()
+		).getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.COMPANY, companyId, true
+		);
+
+		Mockito.verify(
+			configurationModelRetrieverImpl, Mockito.never()
+		).getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.SYSTEM, null, true
+		);
+
+		Mockito.clearInvocations(configurationModelRetrieverImpl);
+
+		configurationModelRetrieverImpl.getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.GROUP, groupId, false);
+
+		Mockito.verify(
+			configurationModelRetrieverImpl, Mockito.times(1)
+		).getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.GROUP, groupId, false
+		);
+
+		Mockito.verify(
+			configurationModelRetrieverImpl, Mockito.times(1)
+		).getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.COMPANY, companyId, false
+		);
+
+		Mockito.verify(
+			configurationModelRetrieverImpl, Mockito.times(1)
+		).getConfiguration(
+			pid, ExtendedObjectClassDefinition.Scope.SYSTEM, null, false
+		);
+	}
 
 	@Test
 	public void testGetPidFilterStringScopeCompany() throws Exception {
@@ -202,35 +313,43 @@ public class ConfigurationModelRetrieverImplTest {
 			).put(
 				"groupId", "any"
 			).build());
-		_test(
-			false, pidFilterString,
-			HashMapBuilder.put(
-				key, pid + ".scoped"
-			).build());
 
-		key = ConfigurationAdmin.SERVICE_FACTORYPID;
-
-		pid = "foo~1234";
+		String factoryInstancePID = "foo~1234";
 
 		pidFilterString = _configurationModelRetrieverImpl.getPidFilterString(
-			pid, ExtendedObjectClassDefinition.Scope.SYSTEM);
+			factoryInstancePID, ExtendedObjectClassDefinition.Scope.SYSTEM);
 
 		_test(
 			true, pidFilterString,
 			HashMapBuilder.put(
-				key, pid
+				ConfigurationAdmin.SERVICE_FACTORYPID, pid
+			).put(
+				key, factoryInstancePID
+			).build());
+		_test(
+			true, pidFilterString,
+			HashMapBuilder.put(
+				ConfigurationAdmin.SERVICE_FACTORYPID, pid
+			).put(
+				key, factoryInstancePID
+			).put(
+				"companyId", "0"
 			).build());
 		_test(
 			false, pidFilterString,
 			HashMapBuilder.put(
-				key, pid
+				ConfigurationAdmin.SERVICE_FACTORYPID, pid
+			).put(
+				key, factoryInstancePID
 			).put(
 				"companyId", "any"
 			).build());
 		_test(
 			false, pidFilterString,
 			HashMapBuilder.put(
-				key, pid
+				ConfigurationAdmin.SERVICE_FACTORYPID, pid
+			).put(
+				key, factoryInstancePID
 			).put(
 				"groupId", "any"
 			).build());

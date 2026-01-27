@@ -274,8 +274,8 @@ public class CPDefinitionsImporter {
 						StringPool.BLANK, serviceContext.getCompanyId(),
 						serviceContext.getUserId(),
 						commerceInventoryWarehouseId,
-						BigDecimal.valueOf(quantity), cpInstance.getSku(),
-						StringPool.BLANK);
+						BigDecimal.valueOf(quantity), BigDecimal.ZERO,
+						cpInstance.getSku(), StringPool.BLANK);
 			}
 		}
 	}
@@ -644,7 +644,7 @@ public class CPDefinitionsImporter {
 				minStockQuantity, multipleOrderQuantity, true, shippable,
 				cpDefinition.getShippingExtraPrice(),
 				cpDefinition.isShipSeparately(), cpDefinition.isTaxExempt(),
-				true, weight, width);
+				weight, width);
 		}
 		else {
 			_cpConfigurationEntryLocalService.updateCPConfigurationEntry(
@@ -659,7 +659,7 @@ public class CPDefinitionsImporter {
 				minStockQuantity, multipleOrderQuantity, true, shippable,
 				cpDefinition.getShippingExtraPrice(),
 				cpDefinition.isShipSeparately(), cpDefinition.isTaxExempt(),
-				true, weight, width);
+				weight, width);
 		}
 
 		// Commerce product images

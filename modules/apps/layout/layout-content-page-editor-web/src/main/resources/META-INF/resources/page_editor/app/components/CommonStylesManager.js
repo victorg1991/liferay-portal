@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {usePrevious} from '@liferay/frontend-js-react-web';
 import {useEffect, useRef} from 'react';
 
 import {CONTAINER_WIDTH_TYPES} from '../config/constants/containerWidthTypes';
@@ -11,6 +12,8 @@ import {VIEWPORT_SIZES} from '../config/constants/viewportSizes';
 import {config} from '../config/index';
 import {useGlobalContext} from '../contexts/GlobalContext';
 import {useSelector, useSelectorRef} from '../contexts/StoreContext';
+import selectCanUpdateItemConfiguration from '../selectors/selectCanUpdateItemConfiguration';
+import selectCanUpdatePageStructure from '../selectors/selectCanUpdatePageStructure';
 import {deepEqual} from '../utils/checkDeepEqual';
 import generateStyleSheet from '../utils/generateStyleSheet';
 import {getResponsiveConfig} from '../utils/getResponsiveConfig';
@@ -20,6 +23,7 @@ const LAYOUT_DATA_ITEMS_WITH_COMMON_STYLES = [
 	LAYOUT_DATA_ITEM_TYPES.collection,
 	LAYOUT_DATA_ITEM_TYPES.container,
 	LAYOUT_DATA_ITEM_TYPES.form,
+	LAYOUT_DATA_ITEM_TYPES.formRelationship,
 	LAYOUT_DATA_ITEM_TYPES.formStepContainer,
 	LAYOUT_DATA_ITEM_TYPES.row,
 	LAYOUT_DATA_ITEM_TYPES.fragment,
@@ -43,6 +47,16 @@ export default function CommonStylesManager() {
 
 	const globalContext = useGlobalContext();
 
+	const canUpdatePageStructure = useSelector(selectCanUpdatePageStructure);
+	const canUpdateItemConfiguration = useSelector(
+		selectCanUpdateItemConfiguration
+	);
+
+	const isTopperVisible =
+		canUpdatePageStructure || canUpdateItemConfiguration;
+
+	const previousIsTopperVisible = usePrevious(isTopperVisible);
+
 	useEffect(() => {
 		const {styleSheet: previousStyleSheet, styles: previousStyles} =
 			stylesPerViewportRef.current[selectedViewportSize] || {};
@@ -50,7 +64,10 @@ export default function CommonStylesManager() {
 		const {styleSheet, styles} = calculateStyles({
 			fragmentEntryLinks: fragmentEntryLinksRef.current,
 			isMaster: true,
+			isTopperVisible:
+				canUpdatePageStructure || canUpdateItemConfiguration,
 			items: Object.values(layoutData.items),
+			previousIsTopperVisible,
 			previousStyleSheet,
 			previousStyles,
 			selectedViewportSize,
@@ -67,7 +84,10 @@ export default function CommonStylesManager() {
 			styleSheet,
 		});
 	}, [
+		canUpdatePageStructure,
+		canUpdateItemConfiguration,
 		layoutData.items,
+		previousIsTopperVisible,
 		selectedViewportSize,
 		globalContext,
 		fragmentEntryLinksRef,
@@ -165,7 +185,9 @@ function filterStyles({item, selectedViewportSize, styles}) {
 function calculateStyles({
 	fragmentEntryLinks,
 	isMaster,
+	isTopperVisible,
 	items,
+	previousIsTopperVisible,
 	previousStyleSheet,
 	previousStyles,
 	selectedViewportSize,
@@ -204,8 +226,9 @@ function calculateStyles({
 				fragmentEntryLinks[item.config.fragmentEntryLinkId];
 
 			if (
-				item.type !== LAYOUT_DATA_ITEM_TYPES.fragment ||
-				!hasInnerCommonStyles(fragmentEntryLink)
+				isTopperVisible &&
+				(item.type !== LAYOUT_DATA_ITEM_TYPES.fragment ||
+					!hasInnerCommonStyles(fragmentEntryLink))
 			) {
 				itemsWithTopper.add(item.itemId);
 			}
@@ -213,6 +236,7 @@ function calculateStyles({
 	});
 
 	if (
+		previousIsTopperVisible !== isTopperVisible ||
 		!previousStyles ||
 		!previousStyleSheet ||
 		!deepEqual(previousStyles, nextStyles)

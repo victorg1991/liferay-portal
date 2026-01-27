@@ -16,6 +16,16 @@ declare module Liferay {
 		): Promise<any>;
 	}
 
+	namespace Browser {
+		export function isChrome(): boolean;
+
+		export function isFirefox(): boolean;
+
+		export function isMobile(): boolean;
+
+		export function isMac(): boolean;
+	}
+
 	namespace CustomDialogs {
 		export const enabled: boolean;
 	}
@@ -245,18 +255,23 @@ declare module Liferay {
 
 	namespace ThemeDisplay {
 		export function getBCP47LanguageId(): string;
+		export function getCDNHost(): string;
 		export function getCompanyId(): string;
 		export function getDefaultLanguageId(): Language.Locale;
 		export function getLanguageId(): Language.Locale;
 		export function getLayoutRelativeControlPanelURL(): string;
 		export function getPathContext(): string;
+		export function getPathFriendlyURLPublic(): string;
 		export function getPathMain(): string;
 		export function getPathThemeImages(): string;
 		export function getPathThemeSpritemap(): string;
+		export function getPlid(): number;
 		export function getPortalURL(): string;
 		export function getRealUserId(): string;
+		export function getScopeGroupId(): number;
 		export function getSiteGroupId(): number;
 		export function getTimeZone(): string;
+		export function getUserEmailAddress(): string;
 		export function getUserId(): string;
 		export function isControlPanel(): boolean;
 		export function isImpersonated(): boolean;

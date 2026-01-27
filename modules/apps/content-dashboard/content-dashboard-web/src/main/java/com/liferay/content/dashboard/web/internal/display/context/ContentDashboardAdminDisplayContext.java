@@ -40,13 +40,11 @@ import com.liferay.portal.kernel.portlet.url.builder.ResourceURLBuilder;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.SessionClicks;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -57,11 +55,7 @@ import com.liferay.users.admin.item.selector.UserItemSelectorCriterion;
 import jakarta.portlet.ActionURL;
 import jakarta.portlet.ResourceURL;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.Format;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -475,12 +469,6 @@ public class ContentDashboardAdminDisplayContext {
 			StringPool.BLANK);
 	}
 
-	public Boolean getSinglePageApplicationEnabled() {
-		return GetterUtil.getBoolean(
-			PropsUtil.get(
-				PropsKeys.JAVASCRIPT_SINGLE_PAGE_APPLICATION_ENABLED));
-	}
-
 	public String getStartDateString() {
 		if (_startDateString != null) {
 			return _startDateString;
@@ -555,13 +543,14 @@ public class ContentDashboardAdminDisplayContext {
 	}
 
 	public String toString(Date date) {
-		Instant instant = date.toInstant();
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_liferayPortletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
 
-		ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
+		Format format = FastDateFormatFactoryUtil.getDateTime(
+			themeDisplay.getLocale(), themeDisplay.getTimeZone());
 
-		LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
-
-		return localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+		return format.format(date);
 	}
 
 	private Map<String, Object> _getContext() {

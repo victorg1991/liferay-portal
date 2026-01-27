@@ -7,10 +7,12 @@ import {expect, mergeTests} from '@playwright/test';
 import {readFileSync} from 'fs';
 
 import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
+import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
 import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../fixtures/loginTest';
 import {messageBoardsPagesTest} from '../../../fixtures/messageBoardsTest';
+import {objectPagesTest} from '../../../fixtures/objectPagesTest';
 import {userPersonalBarPagesTest} from '../../../fixtures/userPersonalBarPagesTest';
 import {workflowPagesTest} from '../../../fixtures/workflowPagesTest';
 import {getRandomInt} from '../../../utils/getRandomInt';
@@ -20,19 +22,21 @@ import performLogin, {
 	performUserSwitch,
 	userData,
 } from '../../../utils/performLogin';
+import {PORTLET_URLS} from '../../../utils/portletUrls';
+import getBasicWebContentStructureId from '../../../utils/structured-content/getBasicWebContentStructureId';
 import {blogsPagesTest} from '../../blogs-web/main/fixtures/blogsPagesTest';
-import getPageDefinition from '../../layout-content-page-editor-web/main/utils/getPageDefinition';
-import getWidgetDefinition from '../../layout-content-page-editor-web/main/utils/getWidgetDefinition';
 
 export const test = mergeTests(
 	apiHelpersTest,
 	blogsPagesTest,
+	dataApiHelpersTest,
 	featureFlagsTest({
 		'LPS-178052': {enabled: true},
 	}),
 	isolatedSiteTest,
 	loginTest(),
 	messageBoardsPagesTest,
+	objectPagesTest,
 	userPersonalBarPagesTest,
 	workflowPagesTest
 );
@@ -201,11 +205,8 @@ test('logged user must be able to see workflow task at least from a read-only pe
 	apiHelpers,
 	configurationTabPage,
 	diagramViewPage,
-	messageBoardsEditThreadPage,
-	messageBoardsWidgetPage,
 	page,
 	processBuilderPage,
-	site,
 	userPersonalBarPage,
 	workflowTaskDetailsPage,
 	workflowTasksPage,
@@ -222,19 +223,17 @@ test('logged user must be able to see workflow task at least from a read-only pe
 			'test@liferay.com'
 		);
 
-	const messageBoardWidget = getWidgetDefinition({
-		id: getRandomString(),
-		widgetName: 'com_liferay_message_boards_web_portlet_MBPortlet',
-	});
+	const objectDefinition =
+		await apiHelpers.objectAdmin.postRandomObjectDefinition({
+			scope: 'site',
+			status: {code: 0},
+			titleObjectFieldName: 'textField',
+		});
 
-	await apiHelpers.headlessDelivery.createSitePage({
-		pageDefinition: getPageDefinition([messageBoardWidget]),
-		siteId: site.id,
-		title: getRandomString(),
+	apiHelpers.data.push({
+		id: objectDefinition.id,
+		type: 'objectDefinition',
 	});
-
-	const messageBoardPage =
-		await messageBoardsWidgetPage.addMessageBoardsPortlet(site);
 
 	workflowDefinitionName = 'MBWorkflowDefinition' + getRandomInt();
 	workflowXMLDefinition = readFileSync(
@@ -263,29 +262,28 @@ test('logged user must be able to see workflow task at least from a read-only pe
 
 	await configurationTabPage.assignWorkflowToAssetType(
 		workflowDefinitionName,
-		'Message Boards Message'
+		objectDefinition.name
 	);
 
 	await performUserSwitch(page, user.alternateName);
 
-	const threadTitle = 'ThreadTitle' + getRandomInt();
+	const objectEntryValue = getRandomString();
 
-	await page.goto(
-		`/web${site.friendlyUrlPath}${messageBoardPage.friendlyURL}`
-	);
+	const applicationName = 'c/' + objectDefinition.name.toLowerCase() + 's';
 
-	await messageBoardsEditThreadPage.publishNewThreadForWorkflow(
-		threadTitle,
-		'ThreadContent' + getRandomInt()
+	await apiHelpers.objectEntry.postObjectEntry(
+		{textField: objectEntryValue},
+		applicationName,
+		'Guest'
 	);
 
 	await performUserSwitch(page, defaultUser.alternateName);
 
 	await workflowTasksPage.goToAssignedToMyRoles();
 
-	await workflowTasksPage.assignToMe(threadTitle);
+	await workflowTasksPage.assignToMe(objectEntryValue);
 
-	await workflowTasksPage.reject(threadTitle);
+	await workflowTasksPage.reject(objectEntryValue);
 
 	await performUserSwitch(page, user.alternateName);
 
@@ -304,10 +302,14 @@ test('logged user must be able to see workflow task at least from a read-only pe
 
 	await performUserSwitch(page, defaultUser.alternateName);
 
-	await workflowTasksPage.goto();
+	await page.getByTitle('User Profile Menu').click();
+
+	await page.getByRole('menuitem', {name: 'My Workflow Tasks'}).click();
+
+	await page.waitForLoadState('networkidle');
 
 	await workflowTaskDetailsPage.writeTaskComment(
-		threadTitle,
+		objectEntryValue,
 		getRandomString()
 	);
 
@@ -317,11 +319,15 @@ test('logged user must be able to see workflow task at least from a read-only pe
 
 	await page
 		.getByRole('link', {
-			name: `${defaultUser.name} added a new comment to ${threadTitle}.`,
+			name: `${defaultUser.name} added a new comment to ${objectEntryValue}.`,
 		})
 		.click();
 
-	await expect(workflowTaskDetailsPage.previewMessageBoards).toBeVisible();
+	await expect(page.getByLabel('textField').first()).toBeVisible();
+
+	await expect(page.getByLabel('textField').last()).toHaveValue(
+		objectEntryValue
+	);
 	await expect(workflowTaskDetailsPage.reviewActionMenu).toBeHidden();
 
 	await performUserSwitch(page, defaultUser.alternateName);
@@ -368,8 +374,6 @@ test('approve or reject modal appear even after doing a comment on the comments 
 
 	await workflowTaskDetailsPage.addComment('This is a comment');
 
-	await page.waitForLoadState('networkidle');
-
 	await workflowTaskDetailsPage.reviewActionMenu.click();
 
 	await workflowTaskDetailsPage.approveMenuItem.click();
@@ -383,4 +387,85 @@ test('approve or reject modal appear even after doing a comment on the comments 
 	await workflowTaskDetailsPage.rejectMenuItem.click();
 
 	await expect(page.getByRole('heading', {name: 'Reject'})).toBeVisible();
+});
+
+test('verify that the user can order the results inside Assigned to My Roles by Due Date', async ({
+	apiHelpers,
+	page,
+	site,
+	workflowTasksPage,
+}) => {
+	await test.step('assign the "Single Approver" workflow to Web Content Article', async () => {
+		await page.goto(
+			`/group${site.friendlyUrlPath}${PORTLET_URLS.workflow}`
+		);
+
+		await page.waitForLoadState('networkidle');
+
+		await page
+			.getByRole('row', {name: 'Web Content Article'})
+			.getByRole('button', {name: 'Edit'})
+			.click();
+
+		await page.getByRole('combobox').selectOption('Single Approver@1');
+
+		await page.getByRole('button', {name: 'Save'}).click();
+	});
+
+	let webContent1;
+	let webContent2;
+
+	await test.step('create web contents', async () => {
+		const basicWebContentStructureId =
+			await getBasicWebContentStructureId(apiHelpers);
+
+		webContent1 = await apiHelpers.jsonWebServicesJournal.addWebContent({
+			ddmStructureId: basicWebContentStructureId,
+			groupId: site.id,
+			titleMap: {en_US: 'Web content 1'},
+		});
+
+		apiHelpers.data.push({
+			id: `${site.id}_${webContent1.articleId}`,
+			type: 'webContent',
+		});
+
+		webContent2 = await apiHelpers.jsonWebServicesJournal.addWebContent({
+			ddmStructureId: basicWebContentStructureId,
+			groupId: site.id,
+			titleMap: {en_US: 'Web content 2'},
+		});
+
+		apiHelpers.data.push({
+			id: `${site.id}_${webContent2.articleId}`,
+			type: 'webContent',
+		});
+	});
+
+	await test.step('update web content due dates and verify that entries are correctly ordered by date', async () => {
+		await workflowTasksPage.goToAssignedToMyRoles();
+
+		await workflowTasksPage.updateDueDate(webContent1.title, '10/02');
+
+		await workflowTasksPage.updateDueDate(webContent2.title, '09/01');
+
+		await page.getByLabel('Order').click();
+
+		await page.getByRole('menuitem', {name: 'Due Date'}).click();
+
+		await page.waitForLoadState('networkidle');
+
+		const rowWebContent1 = page.getByRole('row', {name: webContent1.title});
+
+		const rowWebContent2 = page.getByRole('row', {name: webContent2.title});
+
+		const webContent1Index = await rowWebContent1.evaluate((row) =>
+			Array.from(row.parentElement!.children).indexOf(row)
+		);
+		const webContent2Index = await rowWebContent2.evaluate((row) =>
+			Array.from(row.parentElement!.children).indexOf(row)
+		);
+
+		expect(webContent2Index).toBeLessThan(webContent1Index);
+	});
 });

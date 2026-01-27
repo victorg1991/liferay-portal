@@ -203,6 +203,31 @@ public class GeneralConfiguration implements Cloneable, Serializable {
 
 	protected String languageId;
 
+	public Boolean getLegacyAssetCollectionProvider() {
+		return legacyAssetCollectionProvider;
+	}
+
+	public void setLegacyAssetCollectionProvider(
+		Boolean legacyAssetCollectionProvider) {
+
+		this.legacyAssetCollectionProvider = legacyAssetCollectionProvider;
+	}
+
+	public void setLegacyAssetCollectionProvider(
+		UnsafeSupplier<Boolean, Exception>
+			legacyAssetCollectionProviderUnsafeSupplier) {
+
+		try {
+			legacyAssetCollectionProvider =
+				legacyAssetCollectionProviderUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean legacyAssetCollectionProvider;
+
 	public String getQueryString() {
 		return queryString;
 	}
@@ -223,6 +248,27 @@ public class GeneralConfiguration implements Cloneable, Serializable {
 	}
 
 	protected String queryString;
+
+	public String[] getScope() {
+		return scope;
+	}
+
+	public void setScope(String[] scope) {
+		this.scope = scope;
+	}
+
+	public void setScope(
+		UnsafeSupplier<String[], Exception> scopeUnsafeSupplier) {
+
+		try {
+			scope = scopeUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected String[] scope;
 
 	public String[] getSearchableAssetTypes() {
 		return searchableAssetTypes;

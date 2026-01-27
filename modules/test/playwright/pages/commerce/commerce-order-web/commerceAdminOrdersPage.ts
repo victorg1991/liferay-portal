@@ -42,6 +42,7 @@ export class CommerceAdminOrdersPage extends CommerceDNDTablePage {
 	readonly orderActionsButton: Locator;
 	readonly orderStatusLink: (orderStatus: string) => Locator;
 	readonly page: Page;
+	readonly quoteProcessedButton: Locator;
 
 	constructor(page: Page) {
 		super(
@@ -90,7 +91,7 @@ export class CommerceAdminOrdersPage extends CommerceDNDTablePage {
 			throw new Error(`Cannot locate row with rowValue: ${rowValue}`);
 		};
 		this.applicationsMenuPage = new ApplicationsMenuPage(page);
-		this.backLink = page.getByRole('link', {exact: true, name: 'Back'});
+		this.backLink = page.locator('span[title="Back"]');
 		this.deleteItemMenuItem = page.getByRole('menuitem', {
 			exact: true,
 			name: 'Delete',
@@ -129,6 +130,9 @@ export class CommerceAdminOrdersPage extends CommerceDNDTablePage {
 		this.orderStatusLink = (orderStatus: string) =>
 			page.getByRole('link', {exact: true, name: orderStatus});
 		this.page = page;
+		this.quoteProcessedButton = page.getByRole('link', {
+			name: 'Quote Processed',
+		});
 	}
 
 	async goto() {

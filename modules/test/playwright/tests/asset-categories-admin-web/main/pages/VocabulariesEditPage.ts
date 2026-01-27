@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, Page} from '@playwright/test';
+import {Locator, Page, expect} from '@playwright/test';
 
 import {clickAndExpectToBeVisible} from '../../../../utils/clickAndExpectToBeVisible';
 import {waitForAlert} from '../../../../utils/waitForAlert';
@@ -13,9 +13,11 @@ export class VocabulariesEditPage {
 	readonly assetTypeSelect: Locator;
 	readonly deleteButton: Locator;
 	readonly descriptionInput: Locator;
+	readonly externalReferenceCodeInput: Locator;
 	readonly nameInput: Locator;
 	readonly page: Page;
 	readonly removeRowButton: Locator;
+	readonly requiredToggle: Locator;
 	readonly saveButton: Locator;
 
 	constructor(page: Page) {
@@ -24,11 +26,15 @@ export class VocabulariesEditPage {
 		});
 		this.deleteButton = page.getByRole('button', {name: 'Delete'});
 		this.descriptionInput = page.getByPlaceholder('Description');
+		this.externalReferenceCodeInput = page.getByPlaceholder(
+			'External Reference Code'
+		);
 		this.nameInput = page.getByPlaceholder('Name');
 		this.page = page;
 		this.removeRowButton = page.getByRole('button', {
 			name: 'Remove',
 		});
+		this.requiredToggle = page.getByLabel('Required', {exact: true});
 		this.saveButton = page.getByRole('button', {
 			name: 'Save',
 		});
@@ -37,13 +43,19 @@ export class VocabulariesEditPage {
 	async add({
 		assetTypes,
 		description,
+		externalReferenceCode,
 		name,
 	}: {
 		assetTypes?: string[];
 		description?: string;
+		externalReferenceCode?: string;
 		name: string;
 	}) {
 		await this.fillName(name);
+
+		if (externalReferenceCode) {
+			await this.externalReferenceCodeInput.fill(externalReferenceCode);
+		}
 
 		if (description) {
 			await this.descriptionInput.fill(description);
@@ -95,6 +107,10 @@ export class VocabulariesEditPage {
 		await this.deleteButton.click();
 	}
 
+	async fillExternalReferenceCode(externalReferenceCode: string) {
+		await this.externalReferenceCodeInput.fill(externalReferenceCode);
+	}
+
 	async fillName(name: string) {
 		await this.nameInput.fill(name);
 	}
@@ -107,5 +123,18 @@ export class VocabulariesEditPage {
 				.getByRole('heading', {name})
 				.getByLabel('Show Actions'),
 		});
+	}
+
+	async toggleRequired() {
+		await expect(async () => {
+			if (await this.page.getByLabel('Asset Types').isHidden()) {
+				await this.expandPanel('Associated Asset Types');
+			}
+
+			await this.requiredToggle.click({timeout: 1000});
+		}).toPass();
+		await this.saveButton.click();
+
+		await waitForAlert(this.page);
 	}
 }

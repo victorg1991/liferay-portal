@@ -4,12 +4,17 @@
  */
 
 import ClayAutocomplete from '@clayui/autocomplete';
+import {ClayButtonWithIcon} from '@clayui/button';
 import {FetchPolicy, useResource} from '@clayui/data-provider';
 import {ClayInput} from '@clayui/form';
+import {useModal} from '@clayui/modal';
 import ClayMultiSelect from '@clayui/multi-select';
 import {InternalDispatch, useControlledState} from '@clayui/shared';
-import {fetch} from 'frontend-js-web';
-import React, {useCallback, useEffect, useState} from 'react';
+import {ClayTooltipProvider} from '@clayui/tooltip';
+import {fetch, getObjectValueFromPath} from 'frontend-js-web';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+
+import ItemSelectorModal, {IItemSelectorModalProps} from './ItemSelectorModal';
 
 const NETWORK_STATUS_UNUSED = 4;
 
@@ -22,16 +27,85 @@ const getNextPageURL = ({apiURL, page}: {apiURL: string; page: number}) => {
 	return url.toString();
 };
 
-type ChildrenFunction<T, P> =
-	P extends Array<unknown>
-		? (item: T, ...args: P) => React.ReactElement
-		: (item: T, index?: number) => React.ReactElement;
+type ChildrenFunction<T, P> = P extends unknown[]
+	? (item: T, ...args: P) => React.ReactElement
+	: (item: T, index?: number) => React.ReactElement;
 
-export interface IProps<T>
-	extends Omit<
-		React.HTMLAttributes<HTMLInputElement>,
-		'onChange' | 'children'
-	> {
+interface HeadlessPage<T = unknown> {
+	items: T[];
+	lastPage: number;
+	page: number;
+}
+
+type IInternalItemSelectorModalProps<T> = Omit<
+	IItemSelectorModalProps<T>,
+	| 'apiURL'
+	| 'items'
+	| 'locator'
+	| 'multiSelect'
+	| 'observer'
+	| 'onItemsChange'
+	| 'onOpenChange'
+	| 'open'
+>;
+
+interface IItemSelectorModalTriggerProps<T extends Record<string, any>> {
+	apiURL: string;
+	itemSelectorModalProps: IInternalItemSelectorModalProps<T>;
+	items: T[];
+	locator: {
+		id: string;
+		label: string;
+		value: string;
+	};
+	multiSelect?: boolean;
+	onItemsChange: InternalDispatch<T[]>;
+}
+
+function ItemSelectorModalTrigger<T extends Record<string, any>>({
+	apiURL,
+	itemSelectorModalProps,
+	items,
+	locator,
+	multiSelect = false,
+	onItemsChange,
+}: IItemSelectorModalTriggerProps<T>) {
+	const {observer, onOpenChange, open} = useModal();
+
+	return (
+		<>
+			<ClayInput.GroupItem shrink>
+				<ClayTooltipProvider>
+					<span
+						data-tooltip-align="top"
+						title={Liferay.Language.get('open-full-list')}
+					>
+						<ClayButtonWithIcon
+							aria-label={Liferay.Language.get('select-items')}
+							displayType="secondary"
+							onClick={() => onOpenChange(true)}
+							symbol="search-experiences"
+						/>
+					</span>
+				</ClayTooltipProvider>
+			</ClayInput.GroupItem>
+
+			<ItemSelectorModal
+				{...itemSelectorModalProps}
+				apiURL={apiURL}
+				items={items}
+				locator={locator}
+				multiSelect={multiSelect}
+				observer={observer}
+				onItemsChange={onItemsChange}
+				onOpenChange={onOpenChange}
+				open={open}
+			/>
+		</>
+	);
+}
+
+export interface IBaseItemSelectorProps<T> {
 
 	/**
 	 * The URL that will be fetched to return the items.
@@ -54,7 +128,7 @@ export interface IProps<T>
 	/**
 	 * Set the default selected items (uncontrolled).
 	 */
-	defaultItems?: Array<T>;
+	defaultItems?: T[];
 
 	/**
 	 * Property to set the default value (uncontrolled).
@@ -69,12 +143,19 @@ export interface IProps<T>
 	displaySelectedItems?: boolean;
 
 	/**
+	 * Props passed to the ItemSelectorModal component.
+	 */
+
+	itemSelectorModalProps?: IInternalItemSelectorModalProps<T>;
+
+	/**
 	 * Items that are currently selected (controlled).
 	 */
-	items?: Array<T>;
+	items?: T[];
 
 	/**
 	 * A string key used to locate the id, label, or value within each item.
+	 * Can be used as a period separated path (e.g.: 'embedded.id').
 	 */
 	locator?: {
 		id: string;
@@ -96,13 +177,38 @@ export interface IProps<T>
 	/**
 	 * Callback for when items are added or removed (controlled).
 	 */
-	onItemsChange?: InternalDispatch<Array<T>>;
+	onItemsChange?: InternalDispatch<T[]>;
+
+	/**
+	 * A flag to refetch the data when the menu is active.
+	 */
+	refetchOnActive?: boolean;
 
 	/**
 	 * The current value of the input (controlled).
 	 */
 	value?: string;
 }
+
+interface IMultiSelect<T>
+	extends IBaseItemSelectorProps<T>,
+		Omit<
+			React.ComponentProps<typeof ClayMultiSelect>,
+			keyof IBaseItemSelectorProps<T>
+		> {
+	multiSelect: true;
+}
+
+interface IAutocomplete<T>
+	extends IBaseItemSelectorProps<T>,
+		Omit<
+			React.ComponentProps<typeof ClayAutocomplete>,
+			keyof IBaseItemSelectorProps<T>
+		> {
+	multiSelect?: false;
+}
+
+export type IItemSelectorProps<T> = IMultiSelect<T> | IAutocomplete<T>;
 
 function ItemSelector<T extends Record<string, any>>({
 	apiURL,
@@ -113,6 +219,7 @@ function ItemSelector<T extends Record<string, any>>({
 		value: 'id',
 	},
 	value: externalValue,
+	itemSelectorModalProps,
 	onChange,
 	onItemsChange,
 	multiSelect = false,
@@ -120,8 +227,9 @@ function ItemSelector<T extends Record<string, any>>({
 	defaultValue,
 	defaultItems,
 	displaySelectedItems = true,
+	refetchOnActive = false,
 	...otherProps
-}: IProps<T>) {
+}: IItemSelectorProps<T>) {
 	useEffect(() => {
 		if (!displaySelectedItems && !multiSelect) {
 			console.warn(
@@ -152,7 +260,11 @@ function ItemSelector<T extends Record<string, any>>({
 
 	const [networkStatus, setNetworkStatus] = useState(NETWORK_STATUS_UNUSED);
 
-	const {loadMore, resource: sourceItems = []} = useResource({
+	const {
+		loadMore,
+		refetch,
+		resource: sourceItems = [],
+	} = useResource({
 		fetch: async (link) => {
 			const result = await fetch(link);
 
@@ -176,25 +288,36 @@ function ItemSelector<T extends Record<string, any>>({
 				return json;
 			}
 
-			const {items, lastPage, page} = json;
+			const {items, lastPage, page} = json as HeadlessPage<T>;
 
-			return {
-				cursor:
-					page < lastPage
-						? getNextPageURL({apiURL, page: page + 1})
-						: null,
-				items,
-			} as {
-				cursor: string | null;
-				items: T[];
-			};
+			const cursor =
+				page < lastPage
+					? getNextPageURL({apiURL, page: page + 1})
+					: null;
+
+			return {cursor, items};
 		},
 		fetchDelay: 500,
-		fetchPolicy: 'cache-first' as FetchPolicy.CacheFirst,
+		fetchPolicy: refetchOnActive
+			? ('cache-and-network' as FetchPolicy.CacheAndNetwork)
+			: ('cache-first' as FetchPolicy.CacheFirst),
 		link: getNextPageURL({apiURL, page: 1}),
 		onNetworkStatusChange: setNetworkStatus,
 		variables: {search: value},
 	});
+
+	const selectedKeys = useMemo(() => {
+		return (
+			items?.map((item) =>
+				String(
+					getObjectValueFromPath({
+						object: item,
+						path: locator.value,
+					})
+				)
+			) ?? []
+		);
+	}, [items, locator.value]);
 
 	const memoizedChildren = useCallback(
 		(item: T) => {
@@ -234,12 +357,63 @@ function ItemSelector<T extends Record<string, any>>({
 		[children, items, multiSelect, setItems, setValue]
 	);
 
+	let itemSelectorComponent;
+
+	const handleActiveChange = (newActive: boolean) => {
+		if (newActive && refetchOnActive && newActive !== active) {
+			refetch();
+		}
+
+		setActive(newActive);
+	};
+
 	if (multiSelect && displaySelectedItems) {
-		return (
+		itemSelectorComponent = (
 			<ClayMultiSelect
-				{...otherProps}
+				{...(otherProps as any)}
+				active={active}
+				allowsCustomLabel={false}
 				items={items}
-				locator={locator ? {...locator} : undefined}
+				locator={{
+					id: (item: T) => {
+						return getObjectValueFromPath({
+							object: item,
+							path: locator.id,
+						});
+					},
+					label: (item: T) => {
+						return getObjectValueFromPath({
+							object: item,
+							path: locator.label,
+						});
+					},
+					value: (item: T) => {
+						return getObjectValueFromPath({
+							object: item,
+							path: locator.value,
+						});
+					},
+				}}
+				messages={{
+					hotkeys: Liferay.Language.get(
+						'press-backspace-to-delete-the-current-row'
+					),
+					labelAdded: Liferay.Language.get(
+						'label-x-was-added-to-the-list'
+					),
+					labelRemoved: Liferay.Language.get(
+						'label-x-was-removed-from-the-list'
+					),
+					listCount: Liferay.Language.get(
+						'there-is-x-option-available'
+					),
+					listCountPlural: Liferay.Language.get(
+						'there-are-x-options-available'
+					),
+					loading: Liferay.Language.get('loading...'),
+					notFound: Liferay.Language.get('no-results-found'),
+				}}
+				onActiveChange={handleActiveChange}
 				onChange={setValue}
 				onItemsChange={setItems}
 				onLoadMore={async () => loadMore()}
@@ -250,28 +424,88 @@ function ItemSelector<T extends Record<string, any>>({
 			</ClayMultiSelect>
 		);
 	}
+	else {
+		itemSelectorComponent = (
+			<ClayAutocomplete<T>
+				{...otherProps}
+				active={active}
+				filterKey={(item: T) => {
+					return getObjectValueFromPath({
+						object: item,
+						path: locator.label,
+					});
+				}}
+				items={sourceItems}
+				loadingState={networkStatus}
+				menuTrigger="focus"
+				messages={{
+					infiniteScrollInitialLoad: Liferay.Language.get(
+						'x-item-loaded-reach-the-last-item-to-load-more'
+					),
+					infiniteScrollInitialLoadPlural: Liferay.Language.get(
+						'x-items-loaded-reach-the-last-item-to-load-more'
+					),
+					infiniteScrollOnLoad:
+						Liferay.Language.get('loading-more-items'),
+					infiniteScrollOnLoaded:
+						Liferay.Language.get('x-item-loaded'),
+					infiniteScrollOnLoadedPlural:
+						Liferay.Language.get('x-items-loaded'),
+					listCount: Liferay.Language.get('x-list-option'),
+					listCountPlural: Liferay.Language.get('x-list-options'),
+					loading: Liferay.Language.get('loading...'),
+					notFound: Liferay.Language.get('no-results-found'),
+				}}
+				onActiveChange={handleActiveChange}
+				onChange={(value: string) => {
+					if (!value.length) {
+						setItems([]);
+					}
 
-	return (
-		<ClayAutocomplete<T>
-			{...otherProps}
-			active={active}
-			filterKey={locator.label}
-			items={sourceItems}
-			loadingState={networkStatus}
-			menuTrigger="focus"
-			onActiveChange={setActive}
-			onChange={(value: string) => {
-				if (!value.length) {
-					setItems([]);
-				}
+					setValue(value);
+				}}
+				onLoadMore={async () => loadMore()}
+				selectedKeys={selectedKeys}
+				value={value}
+			>
+				{memoizedChildren}
+			</ClayAutocomplete>
+		);
+	}
 
-				setValue(value);
-			}}
-			onLoadMore={async () => loadMore()}
-			value={value}
-		>
-			{memoizedChildren}
-		</ClayAutocomplete>
+	return itemSelectorModalProps ? (
+		<ClayInput.Group>
+			<ClayInput.GroupItem>{itemSelectorComponent}</ClayInput.GroupItem>
+
+			<ItemSelectorModalTrigger
+				apiURL={apiURL}
+				itemSelectorModalProps={itemSelectorModalProps}
+				items={items}
+				locator={locator}
+				multiSelect={multiSelect}
+				onItemsChange={(items: T[]) => {
+					setItems(items);
+
+					if (multiSelect) {
+						return;
+					}
+
+					if (items.length) {
+						const firstItemLabel = getObjectValueFromPath({
+							object: items[0],
+							path: locator.label,
+						});
+
+						setValue(firstItemLabel);
+					}
+					else {
+						setValue('');
+					}
+				}}
+			/>
+		</ClayInput.Group>
+	) : (
+		itemSelectorComponent
 	);
 }
 

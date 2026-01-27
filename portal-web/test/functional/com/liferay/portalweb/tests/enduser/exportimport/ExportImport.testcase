@@ -1,6 +1,7 @@
 @component-name = "portal-headless"
 definition {
 
+	property browser.chrome.version = "139.0";
 	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
@@ -26,45 +27,6 @@ definition {
 			PagesAdmin.tearDownCP();
 
 			Site.tearDownCP();
-		}
-	}
-
-	@description = "This is a use case for LPS-123156. Verify if information about staging system settings are present."
-	@priority = 3
-	test AssertStagingSystemSettingsInfo {
-		property test.liferay.virtual.instance = "false";
-		property test.run.type = "single";
-
-		task ("When: User open the Web Content configuration in System settings") {
-			SystemSettings.openSystemSettingsAdmin();
-
-			SystemSettings.gotoConfiguration(
-				configurationCategory = "Web Content",
-				configurationName = "Web Content",
-				configurationScope = "Virtual Instance Scope");
-		}
-
-		task ("Then: The correct labels will be visible") {
-			SystemSettings.viewTextLabel(fieldLabel = "Single Asset Publish Process Includes Version History");
-
-			SystemSettings.viewSettingsText(settingsText = "Specify characters that are not allowed in web content folder names.");
-
-			SystemSettings.openSystemSettingsAdmin();
-		}
-
-		task ("And: In the Staging configuration in System settings User can see the correct labels for LAR export / import") {
-			SystemSettings.gotoConfiguration(
-				configurationCategory = "Infrastructure",
-				configurationName = "Staging",
-				configurationScope = "Virtual Instance Scope");
-
-			SystemSettings.viewTextLabel(fieldLabel = "Delete temporary LAR during a failed staging publish process.");
-
-			SystemSettings.viewSettingsText(settingsText = "Uncheck to avoid deleting the temporary LAR during a failed staging publish process. In remote staging contexts, this only applies for the staging environment.");
-
-			SystemSettings.viewTextLabel(fieldLabel = "Delete temporary LAR during a successful staging publish process.");
-
-			SystemSettings.viewSettingsText(settingsText = "Uncheck to avoid deleting the temporary LAR during a successful staging publish process. In remote staging contexts, this only applies for the staging environment.");
 		}
 	}
 

@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, Page} from '@playwright/test';
+import {Locator, Page, expect} from '@playwright/test';
 
 import {ApplicationsMenuPage} from '../../../../pages/product-navigation-applications-menu/ApplicationsMenuPage';
+import {readCSVFile} from '../../../../utils/fileReader';
+import {PORTLET_URLS} from '../../../../utils/portletUrls';
 import {getTempDir} from '../../../../utils/temp';
 import {unzipFile} from '../../../../utils/zip';
 
@@ -19,6 +21,7 @@ export class DataMigrationCenterPage {
 	readonly exportFileFormatSelector: Locator;
 	readonly exportButton: Locator;
 	readonly downloadButton: Locator;
+	readonly downloadSampleButton: Locator;
 	readonly attributeCodeCheckBox: Locator;
 	readonly importStrategySelector: Locator;
 	readonly fileSelector: Locator;
@@ -43,6 +46,7 @@ export class DataMigrationCenterPage {
 		});
 		this.exportButton = page.getByRole('button', {name: 'Export'});
 		this.downloadButton = page.getByRole('button', {name: 'Download'});
+		this.downloadSampleButton = page.getByRole('link', {name: 'Download'});
 		this.attributeCodeCheckBox = page
 			.getByRole('row', {name: 'Attribute Code'})
 			.getByLabel('');
@@ -51,7 +55,7 @@ export class DataMigrationCenterPage {
 			'#_com_liferay_batch_planner_web_internal_portlet_BatchPlannerPortlet_importFile'
 		);
 		this.nextButton = page.getByRole('button', {name: 'Next'});
-		this.scopeSelector = page.getByLabel('Scope');
+		this.scopeSelector = page.getByLabel('Scope', {exact: true});
 		this.updateStrategySelector = page.getByLabel('Update Strategy');
 		this.startImportButton = async (): Promise<Locator> => {
 			await this.page.waitForSelector(
@@ -63,6 +67,12 @@ export class DataMigrationCenterPage {
 
 			return button;
 		};
+	}
+
+	async gotoPage(siteUrl?: Site['friendlyUrlPath']) {
+		await this.page.goto(
+			`/group${siteUrl || '/guest'}${PORTLET_URLS.batchExportImport}`
+		);
 	}
 
 	async goto() {
@@ -77,6 +87,29 @@ export class DataMigrationCenterPage {
 	async goToExportFile() {
 		await this.newButton.click();
 		await this.exportFileMenuItem.click();
+	}
+
+	async downloadSampleFile(entitType: string) {
+		await this.selectEntityType(entitType);
+
+		const downloadPromise = this.page.waitForEvent('download');
+		await this.downloadSampleButton.click();
+		const download = await downloadPromise;
+		const filePath = getTempDir() + download.suggestedFilename();
+		await download.saveAs(filePath);
+
+		return readCSVFile(filePath);
+	}
+
+	async assertSampleFileDownload(entityType: string) {
+		await this.selectEntityType(entityType);
+
+		const downloadPromise = this.page.waitForEvent('download');
+		await this.downloadSampleButton.click();
+		const download = await downloadPromise;
+		await expect(download).toBeTruthy();
+		await expect(download.failure()).resolves.toBeNull();
+		expect(download.suggestedFilename()).toBeTruthy();
 	}
 
 	async importFile(

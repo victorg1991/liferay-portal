@@ -6,6 +6,7 @@
 package com.liferay.portal.upgrade.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.osgi.util.BundleUtil;
 import com.liferay.petra.concurrent.DCLSingleton;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.events.StartupHelperUtil;
@@ -17,12 +18,15 @@ import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.PropsValuesTestUtil;
+import com.liferay.portal.kernel.util.LoggingTimer;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
+import com.liferay.portal.lpkg.deployer.LPKGDeployer;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
@@ -33,7 +37,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -43,6 +49,13 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.service.component.runtime.ServiceComponentRuntime;
+import org.osgi.service.component.runtime.dto.ComponentDescriptionDTO;
+import org.osgi.util.promise.Promise;
 
 /**
  * @author Luis Ortiz
@@ -100,23 +113,24 @@ public class DBUpgraderTest {
 
 		try (Connection connection = DataAccess.getConnection();
 			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select schemaVersion from Release_ where releaseId = " +
-					ReleaseConstants.DEFAULT_ID);
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+				"select schemaVersion from Release_ where releaseId = ?")) {
 
-			resultSet.next();
+			preparedStatement.setLong(1, ReleaseConstants.DEFAULT_ID);
 
-			currentSchemaVersion = resultSet.getString(1);
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				resultSet.next();
+
+				currentSchemaVersion = resultSet.getString(1);
+			}
 		}
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				DataCleanupPreupgradeProcessSuite.class.getName(),
-				LoggerTestUtil.INFO);
+				LoggingTimer.class.getName(), LoggerTestUtil.INFO);
 			SafeCloseable safeCloseable =
 				PropsValuesTestUtil.swapWithSafeCloseable(
 					"UPGRADE_DATABASE_PREUPGRADE_VERIFY_ENABLED", false)) {
 
-			_updatePortalSchemaVersion(currentSchemaVersion + ".0");
+			_updatePortalSchemaVersion(Integer.MAX_VALUE + ".0.0");
 
 			DBUpgrader.upgradePortal();
 
@@ -124,17 +138,19 @@ public class DBUpgraderTest {
 
 			LogEntry logEntry = logEntries.get(0);
 
-			Assert.assertEquals(
-				"Starting " + DataCleanupPreupgradeProcessSuite.class.getName(),
-				logEntry.getMessage());
+			String logMessage = logEntry.getMessage();
+
+			Assert.assertTrue(
+				logMessage.contains(
+					"Starting " +
+						DataCleanupPreupgradeProcessSuite.class.getName()));
 		}
 		finally {
 			_updatePortalSchemaVersion(currentSchemaVersion);
 		}
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
-				DataCleanupPreupgradeProcessSuite.class.getName(),
-				LoggerTestUtil.INFO);
+				LoggingTimer.class.getName(), LoggerTestUtil.INFO);
 			SafeCloseable safeCloseable1 =
 				PropsValuesTestUtil.swapWithSafeCloseable(
 					"UPGRADE_DATABASE_PREUPGRADE_DATA_CLEANUP_ENABLED", false);
@@ -142,13 +158,18 @@ public class DBUpgraderTest {
 				PropsValuesTestUtil.swapWithSafeCloseable(
 					"UPGRADE_DATABASE_PREUPGRADE_VERIFY_ENABLED", false)) {
 
-			_updatePortalSchemaVersion(currentSchemaVersion + ".0");
+			_updatePortalSchemaVersion(Integer.MAX_VALUE + ".0.0");
 
 			DBUpgrader.upgradePortal();
 
-			List<LogEntry> logEntries = logCapture.getLogEntries();
+			List<String> messages = logCapture.getMessages();
 
-			Assert.assertEquals(logEntries.toString(), 0, logEntries.size());
+			for (String message : messages) {
+				Assert.assertFalse(
+					message.contains(
+						"Starting " +
+							DataCleanupPreupgradeProcessSuite.class.getName()));
+			}
 		}
 		finally {
 			_updatePortalSchemaVersion(currentSchemaVersion);
@@ -193,12 +214,117 @@ public class DBUpgraderTest {
 			ReleaseConstants.STATE_GOOD);
 
 		try {
-			StartupHelperUtil.setUpgrading(true);
+			_startUpgrade();
 
 			DBUpgrader.upgradePortal();
 		}
 		finally {
-			StartupHelperUtil.setUpgrading(false);
+			_stopUpgrade();
+		}
+	}
+
+	@Test
+	public void testUpgradeModuleDoesNotGenerateUpgradeReportWhenDataCleanupModuleIsAvailable()
+		throws Exception {
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.upgrade.internal.report.UpgradeReport",
+				LoggerTestUtil.INFO)) {
+
+			_startUpgrade();
+
+			DBUpgrader.upgradeModules();
+
+			List<String> messages = logCapture.getMessages();
+
+			Assert.assertTrue(messages.isEmpty());
+		}
+		finally {
+			_stopUpgrade();
+		}
+	}
+
+	@Test
+	public void testUpgradeModuleGeneratesUpgradeReportWhenDataCleanupModuleIsNotAvailable()
+		throws Exception {
+
+		Bundle bundle = _uninstallBundle(_getBundle());
+
+		try (LogCapture logCapture1 = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.upgrade.internal.report.UpgradeReport",
+				LoggerTestUtil.INFO);
+			LogCapture logCapture2 = LoggerTestUtil.configureLog4JLogger(
+				DBUpgrader.class.getName(), LoggerTestUtil.WARN)) {
+
+			_startUpgrade();
+
+			DBUpgrader.upgradeModules();
+
+			List<String> messages = logCapture1.getMessages();
+
+			Assert.assertFalse(messages.isEmpty());
+
+			messages = logCapture2.getMessages();
+
+			Assert.assertTrue(
+				messages.toString(),
+				messages.contains(
+					_CLASS_NAME +
+						" did not activate successfully. The verify process " +
+							"will not be executed."));
+		}
+		finally {
+			_stopUpgrade();
+
+			if (bundle != null) {
+				_installBundle(bundle);
+			}
+		}
+	}
+
+	@Test
+	public void testUpgradeModuleGeneratesUpgradeReportWhenPostUpgradeDataCleanupVerifyProcessServiceIsNotAvailable()
+		throws Exception {
+
+		ComponentDescriptionDTO componentDescriptionDTO =
+			_serviceComponentRuntime.getComponentDescriptionDTO(
+				_getBundle(), _CLASS_NAME);
+
+		Promise<Void> voidPromise = _serviceComponentRuntime.disableComponent(
+			componentDescriptionDTO);
+
+		voidPromise.getValue();
+
+		try (LogCapture logCapture1 = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.upgrade.internal.report.UpgradeReport",
+				LoggerTestUtil.INFO);
+			LogCapture logCapture2 = LoggerTestUtil.configureLog4JLogger(
+				DBUpgrader.class.getName(), LoggerTestUtil.WARN)) {
+
+			_startUpgrade();
+
+			DBUpgrader.upgradeModules();
+
+			List<String> messages = logCapture1.getMessages();
+
+			Assert.assertFalse(messages.isEmpty());
+
+			messages = logCapture2.getMessages();
+
+			Assert.assertTrue(
+				messages.toString(),
+				messages.contains(
+					_CLASS_NAME +
+						" did not activate successfully. The verify process " +
+							"will not be executed."));
+		}
+		finally {
+			_stopUpgrade();
+
+			voidPromise = _serviceComponentRuntime.enableComponent(
+				componentDescriptionDTO);
+
+			voidPromise.getValue();
 		}
 	}
 
@@ -217,11 +343,7 @@ public class DBUpgraderTest {
 		try {
 			PropsUtil.set(PropsKeys.UPGRADE_DATABASE_AUTO_RUN, "false");
 
-			StartupHelperUtil.setUpgrading(true);
-
-			DBUpgrader.upgradeModules(
-				() -> {
-				});
+			_startUpgrade();
 
 			DBInspector dbInspector = new DBInspector(_connection);
 
@@ -229,18 +351,14 @@ public class DBUpgraderTest {
 
 			PropsUtil.set(PropsKeys.UPGRADE_DATABASE_AUTO_RUN, "true");
 
-			DBUpgrader.upgradeModules(
-				() -> {
-				});
+			DBUpgrader.upgradeModules();
 
 			Assert.assertTrue(dbInspector.hasIndex("Lock_", "IX_TEST"));
 
 			ReflectionTestUtil.setFieldValue(
 				StartupHelperUtil.class, "_newRelease", true);
 
-			DBUpgrader.upgradeModules(
-				() -> {
-				});
+			DBUpgrader.upgradeModules();
 
 			Assert.assertFalse(dbInspector.hasIndex("Lock_", "IX_TEST"));
 		}
@@ -251,7 +369,7 @@ public class DBUpgraderTest {
 			ReflectionTestUtil.setFieldValue(
 				StartupHelperUtil.class, "_newRelease", newRelease);
 
-			StartupHelperUtil.setUpgrading(false);
+			_stopUpgrade();
 		}
 	}
 
@@ -262,7 +380,7 @@ public class DBUpgraderTest {
 			ReleaseConstants.STATE_UPGRADE_FAILURE);
 
 		try {
-			StartupHelperUtil.setUpgrading(true);
+			_startUpgrade();
 
 			DBUpgrader.upgradePortal();
 
@@ -271,7 +389,7 @@ public class DBUpgraderTest {
 		catch (IllegalStateException illegalStateException) {
 		}
 		finally {
-			StartupHelperUtil.setUpgrading(false);
+			_stopUpgrade();
 		}
 	}
 
@@ -282,13 +400,69 @@ public class DBUpgraderTest {
 			ReleaseConstants.STATE_UPGRADE_FAILURE);
 
 		try {
-			StartupHelperUtil.setUpgrading(true);
+			_startUpgrade();
 
 			DBUpgrader.upgradePortal();
 		}
 		finally {
-			StartupHelperUtil.setUpgrading(false);
+			_stopUpgrade();
 		}
+	}
+
+	private Bundle _getBundle() throws Exception {
+		Bundle currentBundle = FrameworkUtil.getBundle(DBUpgraderTest.class);
+
+		BundleContext bundleContext = currentBundle.getBundleContext();
+
+		for (Bundle bundle : bundleContext.getBundles()) {
+			if (Objects.equals(
+					bundle.getSymbolicName(),
+					"com.liferay.data.cleanup.impl")) {
+
+				return bundle;
+			}
+		}
+
+		return null;
+	}
+
+	private void _installBundle(Bundle bundle) throws Exception {
+		Bundle currentBundle = FrameworkUtil.getBundle(DBUpgraderTest.class);
+
+		BundleContext bundleContext = currentBundle.getBundleContext();
+
+		BundleUtil.installBundle(
+			bundleContext, _lpkgDeployer, bundle.getLocation(), 1);
+
+		BundleUtil.refreshBundles(
+			bundleContext, Collections.singletonList(bundle));
+	}
+
+	private void _startUpgrade() {
+		StartupHelperUtil.setUpgrading(true);
+
+		DBUpgrader.startUpgradeLogAppender();
+	}
+
+	private void _stopUpgrade() {
+		StartupHelperUtil.setUpgrading(false);
+
+		DBUpgrader.stopUpgradeLogAppender();
+	}
+
+	private Bundle _uninstallBundle(Bundle bundle) throws Exception {
+		if ((bundle != null) && (bundle.getState() == Bundle.ACTIVE)) {
+			bundle.uninstall();
+
+			Bundle currentBundle = FrameworkUtil.getBundle(
+				DBUpgraderTest.class);
+
+			BundleUtil.refreshBundles(
+				currentBundle.getBundleContext(),
+				Collections.singletonList(bundle));
+		}
+
+		return bundle;
 	}
 
 	private void _updatePortalRelease(int buildNumber, int state)
@@ -331,11 +505,22 @@ public class DBUpgraderTest {
 		dclSingleton.destroy(null);
 	}
 
+	private static final String _CLASS_NAME =
+		"com.liferay.data.cleanup.internal.verify." +
+			"PostUpgradeDataCleanupVerifyProcess";
+
 	private static Connection _connection;
 	private static int _currentBuildNumber;
 	private static int _currentState;
 	private static String _moduleServiceLifecyclePortalInitialized;
 	private static String _moduleServiceLifecyclePortletsInitialized;
+
+	@Inject
+	private static ServiceComponentRuntime _serviceComponentRuntime;
+
 	private static boolean _upgrading;
+
+	@Inject
+	private LPKGDeployer _lpkgDeployer;
 
 }

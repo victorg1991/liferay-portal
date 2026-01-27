@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {ApiHelpers} from './ApiHelpers';
+import {ApiHelpers, DataApiHelpers} from './ApiHelpers';
 
 export class HeadlessAssetLibraryApiHelper {
 	apiHelpers: ApiHelpers;
@@ -14,11 +14,50 @@ export class HeadlessAssetLibraryApiHelper {
 		this.basePath = 'headless-asset-library/v1.0';
 	}
 
-	async getAssetLibrariesPage() {
+	async createAssetLibrary({
+		description,
+		name,
+		settings = {},
+		type = 'Space',
+	}: {
+		description?: string;
+		name: string;
+		settings: any;
+		type: string;
+	}) {
+		const data = JSON.stringify({
+			description,
+			name,
+			settings,
+			type,
+		});
+
+		const assetLibrary = await this.apiHelpers.post(
+			`${this.apiHelpers.baseUrl}${this.basePath}/asset-libraries`,
+			{data}
+		);
+
+		if (this.apiHelpers instanceof DataApiHelpers) {
+			this.apiHelpers.data.push({
+				id: assetLibrary.externalReferenceCode,
+				type: 'assetLibrary',
+			});
+		}
+
+		return assetLibrary;
+	}
+
+	async getAssetLibrariesPage(filter?: string) {
 		const response = await this.apiHelpers.get(
-			`${this.apiHelpers.baseUrl}${this.basePath}/asset-libraries`
+			`${this.apiHelpers.baseUrl}${this.basePath}/asset-libraries${filter ? `?filter=${encodeURIComponent(filter)}` : ''}`
 		);
 
 		return response?.items;
+	}
+
+	async deleteAssetLibrary(externalReferenceCode: string) {
+		return this.apiHelpers.delete(
+			`${this.apiHelpers.baseUrl}${this.basePath}/asset-libraries/${externalReferenceCode}`
+		);
 	}
 }

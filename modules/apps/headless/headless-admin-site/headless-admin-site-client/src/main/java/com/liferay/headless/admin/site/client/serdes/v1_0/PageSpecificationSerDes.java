@@ -6,6 +6,8 @@
 package com.liferay.headless.admin.site.client.serdes.v1_0;
 
 import com.liferay.headless.admin.site.client.dto.v1_0.ContentPageSpecification;
+import com.liferay.headless.admin.site.client.dto.v1_0.LinkToURLPageSpecification;
+import com.liferay.headless.admin.site.client.dto.v1_0.PageSetPageSpecification;
 import com.liferay.headless.admin.site.client.dto.v1_0.PageSpecification;
 import com.liferay.headless.admin.site.client.dto.v1_0.WidgetPageSpecification;
 import com.liferay.headless.admin.site.client.json.BaseJSONParser;
@@ -54,6 +56,16 @@ public class PageSpecificationSerDes {
 					(ContentPageSpecification)pageSpecification);
 			}
 
+			if (typeString.equals("LinkToURLPageSpecification")) {
+				return LinkToURLPageSpecificationSerDes.toJSON(
+					(LinkToURLPageSpecification)pageSpecification);
+			}
+
+			if (typeString.equals("PageSetPageSpecification")) {
+				return PageSetPageSpecificationSerDes.toJSON(
+					(PageSetPageSpecification)pageSpecification);
+			}
+
 			if (typeString.equals("WidgetPageSpecification")) {
 				return WidgetPageSpecificationSerDes.toJSON(
 					(WidgetPageSpecification)pageSpecification);
@@ -82,6 +94,15 @@ public class PageSpecificationSerDes {
 
 		Map<String, String> map = new TreeMap<>();
 
+		if (pageSpecification.getCustomFields() == null) {
+			map.put("customFields", null);
+		}
+		else {
+			map.put(
+				"customFields",
+				String.valueOf(pageSpecification.getCustomFields()));
+		}
+
 		if (pageSpecification.getExternalReferenceCode() == null) {
 			map.put("externalReferenceCode", null);
 		}
@@ -89,28 +110,6 @@ public class PageSpecificationSerDes {
 			map.put(
 				"externalReferenceCode",
 				String.valueOf(pageSpecification.getExternalReferenceCode()));
-		}
-
-		if (pageSpecification.getSettings() == null) {
-			map.put("settings", null);
-		}
-		else {
-			map.put(
-				"settings", String.valueOf(pageSpecification.getSettings()));
-		}
-
-		if (pageSpecification.
-				getSiteTemplatePageSpecificationExternalReferenceCode() ==
-					null) {
-
-			map.put("siteTemplatePageSpecificationExternalReferenceCode", null);
-		}
-		else {
-			map.put(
-				"siteTemplatePageSpecificationExternalReferenceCode",
-				String.valueOf(
-					pageSpecification.
-						getSiteTemplatePageSpecificationExternalReferenceCode()));
 		}
 
 		if (pageSpecification.getStatus() == null) {
@@ -145,15 +144,11 @@ public class PageSpecificationSerDes {
 
 		@Override
 		protected boolean parseMaps(String jsonParserFieldName) {
-			if (Objects.equals(jsonParserFieldName, "externalReferenceCode")) {
-				return false;
-			}
-			else if (Objects.equals(jsonParserFieldName, "settings")) {
+			if (Objects.equals(jsonParserFieldName, "customFields")) {
 				return false;
 			}
 			else if (Objects.equals(
-						jsonParserFieldName,
-						"siteTemplatePageSpecificationExternalReferenceCode")) {
+						jsonParserFieldName, "externalReferenceCode")) {
 
 				return false;
 			}
@@ -180,6 +175,14 @@ public class PageSpecificationSerDes {
 					return ContentPageSpecification.toDTO(json);
 				}
 
+				if (typeString.equals("LinkToURLPageSpecification")) {
+					return LinkToURLPageSpecification.toDTO(json);
+				}
+
+				if (typeString.equals("PageSetPageSpecification")) {
+					return PageSetPageSpecification.toDTO(json);
+				}
+
 				if (typeString.equals("WidgetPageSpecification")) {
 					return WidgetPageSpecification.toDTO(json);
 				}
@@ -197,26 +200,32 @@ public class PageSpecificationSerDes {
 			PageSpecification pageSpecification, String jsonParserFieldName,
 			Object jsonParserFieldValue) {
 
-			if (Objects.equals(jsonParserFieldName, "externalReferenceCode")) {
+			if (Objects.equals(jsonParserFieldName, "customFields")) {
 				if (jsonParserFieldValue != null) {
-					pageSpecification.setExternalReferenceCode(
-						(String)jsonParserFieldValue);
-				}
-			}
-			else if (Objects.equals(jsonParserFieldName, "settings")) {
-				if (jsonParserFieldValue != null) {
-					pageSpecification.setSettings(
-						SettingsSerDes.toDTO((String)jsonParserFieldValue));
+					Object[] jsonParserFieldValues =
+						(Object[])jsonParserFieldValue;
+
+					com.liferay.headless.admin.site.client.custom.field.
+						CustomField[] customFieldsArray = new
+						com.liferay.headless.admin.site.client.custom.field.
+							CustomField[jsonParserFieldValues.length];
+
+					for (int i = 0; i < customFieldsArray.length; i++) {
+						customFieldsArray[i] =
+							com.liferay.headless.admin.site.client.custom.field.
+								CustomField.toDTO(
+									(String)jsonParserFieldValues[i]);
+					}
+
+					pageSpecification.setCustomFields(customFieldsArray);
 				}
 			}
 			else if (Objects.equals(
-						jsonParserFieldName,
-						"siteTemplatePageSpecificationExternalReferenceCode")) {
+						jsonParserFieldName, "externalReferenceCode")) {
 
 				if (jsonParserFieldValue != null) {
-					pageSpecification.
-						setSiteTemplatePageSpecificationExternalReferenceCode(
-							(String)jsonParserFieldValue);
+					pageSpecification.setExternalReferenceCode(
+						(String)jsonParserFieldValue);
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "status")) {

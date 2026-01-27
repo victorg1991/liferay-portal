@@ -18,6 +18,7 @@ import {DynamicDataMappingApiHelper} from './DynamicDataMappingApiHelper';
 import {FeatureFlagApiHelper} from './FeatureFlagApiHelper';
 import {HeadlessAdminAddressApiHelper} from './HeadlessAdminAddressApiHelper';
 import {HeadlessAdminContentApiHelper} from './HeadlessAdminContentApiHelper';
+import {HeadlessAdminSiteApiHelper} from './HeadlessAdminSiteApiHelper';
 import {HeadlessAdminTaxonomyApiHelper} from './HeadlessAdminTaxonomyApiHelper';
 import {HeadlessAdminUserApiHelper} from './HeadlessAdminUserApiHelper';
 import {HeadlessAdminWorkflowApiHelper} from './HeadlessAdminWorkflowApiHelper';
@@ -36,6 +37,8 @@ import {HeadlessCommerceDeliveryCartApiHelper} from './HeadlessCommerceDeliveryC
 import {HeadlessCommerceDeliveryCatalogApiHelper} from './HeadlessCommerceDeliveryCatalogApiHelper';
 import {HeadlessCommerceReturnApiHelper} from './HeadlessCommerceReturnApiHelper';
 import {HeadlessDeliveryApiHelper} from './HeadlessDeliveryApiHelper';
+import {HeadlessDigitalSalesRoomApiHelper} from './HeadlessDigitalSalesRoomApiHelper';
+import {HeadlessPortalInstanceApiHelper} from './HeadlessPortalInstanceApiHelper';
 import {HeadlessSiteApiHelper} from './HeadlessSiteApiHelper';
 import {ListTypeAdminApiHelper} from './ListTypeAdminApiHelper';
 import {NotificationApiHelper} from './NotificationApiHelper';
@@ -73,6 +76,7 @@ import {JSONWebServicesSiteNavigationMenuApiHelper} from './json-web-services/JS
 import {JSONWebServicesStagingApiHelper} from './json-web-services/JSONWebServicesStagingApiHelper';
 import {JSONWebServicesTeamApiHelper} from './json-web-services/JSONWebServicesTeamApiHelper';
 import {JSONWebServicesUserApiHelper} from './json-web-services/JSONWebServicesUserApiHelper';
+import {JSONWebServicesUserGroupApiHelper} from './json-web-services/JSONWebServicesUserGroupApiHelper';
 
 type ContentType = 'application/json' | 'application/x-www-form-urlencoded';
 
@@ -118,6 +122,7 @@ export class ApiHelpers {
 	readonly dynamicDataMapping: DynamicDataMappingApiHelper;
 	readonly headlessAdminAddress: HeadlessAdminAddressApiHelper;
 	readonly headlessAdminContent: HeadlessAdminContentApiHelper;
+	readonly headlessAdminSite: HeadlessAdminSiteApiHelper;
 	readonly headlessAdminTaxonomy: HeadlessAdminTaxonomyApiHelper;
 	readonly headlessAdminUser: HeadlessAdminUserApiHelper;
 	readonly headlessAdminWorkflow: HeadlessAdminWorkflowApiHelper;
@@ -136,7 +141,9 @@ export class ApiHelpers {
 	readonly headlessCommerceDeliveryCart: HeadlessCommerceDeliveryCartApiHelper;
 	readonly headlessCommerceReturn: HeadlessCommerceReturnApiHelper;
 	readonly headlessDelivery: HeadlessDeliveryApiHelper;
+	readonly headlessDigitalSalesRoom: HeadlessDigitalSalesRoomApiHelper;
 	readonly headlessSite: HeadlessSiteApiHelper;
+	readonly headlessPortalInstance: HeadlessPortalInstanceApiHelper;
 	readonly jsonWebServicesAnnouncementsEntryApiHelper: JSONWebServicesAnnouncementsEntryApiHelper;
 	readonly jsonWebServicesAssetDisplayPageEntry: JSONWebServicesAssetDisplayPageEntryApiHelper;
 	readonly jsonWebServicesAssetListEntry: JSONWebServicesAssetListEntryApiHelper;
@@ -166,6 +173,7 @@ export class ApiHelpers {
 	readonly jsonWebServicesStaging: JSONWebServicesStagingApiHelper;
 	readonly jsonWebServicesTeam: JSONWebServicesTeamApiHelper;
 	readonly jsonWebServicesUser: JSONWebServicesUserApiHelper;
+	readonly jsonWebServicesUserGroup: JSONWebServicesUserGroupApiHelper;
 	readonly listTypeAdmin: ListTypeAdminApiHelper;
 	readonly notification: NotificationApiHelper;
 	readonly objectAdmin: ObjectAdminApiHelper;
@@ -189,6 +197,7 @@ export class ApiHelpers {
 		this.dynamicDataMapping = new DynamicDataMappingApiHelper(this);
 		this.headlessAdminAddress = new HeadlessAdminAddressApiHelper(this);
 		this.headlessAdminContent = new HeadlessAdminContentApiHelper(this);
+		this.headlessAdminSite = new HeadlessAdminSiteApiHelper(this);
 		this.headlessAdminTaxonomy = new HeadlessAdminTaxonomyApiHelper(this);
 		this.headlessAdminUser = new HeadlessAdminUserApiHelper(this);
 		this.headlessAdminWorkflow = new HeadlessAdminWorkflowApiHelper(this);
@@ -217,7 +226,11 @@ export class ApiHelpers {
 			new HeadlessCommerceDeliveryCartApiHelper(this);
 		this.headlessCommerceReturn = new HeadlessCommerceReturnApiHelper(this);
 		this.headlessDelivery = new HeadlessDeliveryApiHelper(this);
+		this.headlessDigitalSalesRoom = new HeadlessDigitalSalesRoomApiHelper(
+			this
+		);
 		this.headlessSite = new HeadlessSiteApiHelper(this);
+		this.headlessPortalInstance = new HeadlessPortalInstanceApiHelper(this);
 		this.jsonWebServicesAnnouncementsEntryApiHelper =
 			new JSONWebServicesAnnouncementsEntryApiHelper(this);
 		this.jsonWebServicesAssetDisplayPageEntry =
@@ -266,6 +279,9 @@ export class ApiHelpers {
 		this.jsonWebServicesStaging = new JSONWebServicesStagingApiHelper(this);
 		this.jsonWebServicesTeam = new JSONWebServicesTeamApiHelper(this);
 		this.jsonWebServicesUser = new JSONWebServicesUserApiHelper(this);
+		this.jsonWebServicesUserGroup = new JSONWebServicesUserGroupApiHelper(
+			this
+		);
 		this.listTypeAdmin = new ListTypeAdminApiHelper(this);
 		this.notification = new NotificationApiHelper(this);
 		this.objectAdmin = new ObjectAdminApiHelper(this);
@@ -464,6 +480,9 @@ export class DataApiHelpers extends ApiHelpers {
 			else if (item.type === 'apiApplication') {
 				await this.apiBuilder.deleteApiApplication(item.id);
 			}
+			else if (item.type === 'assetLibrary') {
+				await this.headlessAssetLibrary.deleteAssetLibrary(item.id);
+			}
 			else if (item.type === 'catalog') {
 				await this.headlessCommerceAdminCatalog.deleteCatalog(item.id);
 			}
@@ -475,6 +494,9 @@ export class DataApiHelpers extends ApiHelpers {
 			}
 			else if (item.type === 'ctCollection') {
 				await this.headlessChangeTracking.deleteCTCollection(item.id);
+			}
+			else if (item.type === 'currency') {
+				await this.headlessCommerceAdminCatalog.deleteCurrency(item.id);
 			}
 			else if (item.type === 'discount') {
 				await this.headlessCommerceAdminPricing.deleteDiscount(item.id);
@@ -635,6 +657,11 @@ export class DataApiHelpers extends ApiHelpers {
 				await this.headlessAdminUser.deleteUserGroupUsers(
 					userGroupId,
 					userIds
+				);
+			}
+			else if (item.type === 'virtual-instance') {
+				await this.headlessPortalInstance.deleteVirtualInstance(
+					item.id
 				);
 			}
 			else if (item.type === 'warehouse') {

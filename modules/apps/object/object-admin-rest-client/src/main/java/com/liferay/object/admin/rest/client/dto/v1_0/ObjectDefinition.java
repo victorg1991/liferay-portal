@@ -265,6 +265,27 @@ public class ObjectDefinition implements Cloneable, Serializable {
 
 	protected Boolean enableComments;
 
+	public Boolean getEnableFormContainer() {
+		return enableFormContainer;
+	}
+
+	public void setEnableFormContainer(Boolean enableFormContainer) {
+		this.enableFormContainer = enableFormContainer;
+	}
+
+	public void setEnableFormContainer(
+		UnsafeSupplier<Boolean, Exception> enableFormContainerUnsafeSupplier) {
+
+		try {
+			enableFormContainer = enableFormContainerUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean enableFormContainer;
+
 	public Boolean getEnableFriendlyURLCustomization() {
 		return enableFriendlyURLCustomization;
 	}
@@ -401,6 +422,31 @@ public class ObjectDefinition implements Cloneable, Serializable {
 	}
 
 	protected Boolean enableObjectEntrySchedule;
+
+	public Boolean getEnableObjectEntrySubscription() {
+		return enableObjectEntrySubscription;
+	}
+
+	public void setEnableObjectEntrySubscription(
+		Boolean enableObjectEntrySubscription) {
+
+		this.enableObjectEntrySubscription = enableObjectEntrySubscription;
+	}
+
+	public void setEnableObjectEntrySubscription(
+		UnsafeSupplier<Boolean, Exception>
+			enableObjectEntrySubscriptionUnsafeSupplier) {
+
+		try {
+			enableObjectEntrySubscription =
+				enableObjectEntrySubscriptionUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Boolean enableObjectEntrySubscription;
 
 	public Boolean getEnableObjectEntryVersioning() {
 		return enableObjectEntryVersioning;
@@ -795,6 +841,35 @@ public class ObjectDefinition implements Cloneable, Serializable {
 
 	protected Boolean parameterRequired;
 
+	public com.liferay.object.admin.rest.client.permission.Permission[]
+		getPermissions() {
+
+		return permissions;
+	}
+
+	public void setPermissions(
+		com.liferay.object.admin.rest.client.permission.Permission[]
+			permissions) {
+
+		this.permissions = permissions;
+	}
+
+	public void setPermissions(
+		UnsafeSupplier
+			<com.liferay.object.admin.rest.client.permission.Permission[],
+			 Exception> permissionsUnsafeSupplier) {
+
+		try {
+			permissions = permissionsUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected com.liferay.object.admin.rest.client.permission.Permission[]
+		permissions;
+
 	public Map<String, String> getPluralLabel() {
 		return pluralLabel;
 	}
@@ -989,6 +1064,31 @@ public class ObjectDefinition implements Cloneable, Serializable {
 	}
 
 	protected String titleObjectFieldName;
+
+	public WorkflowDefinitionLink[] getWorkflowDefinitionLinks() {
+		return workflowDefinitionLinks;
+	}
+
+	public void setWorkflowDefinitionLinks(
+		WorkflowDefinitionLink[] workflowDefinitionLinks) {
+
+		this.workflowDefinitionLinks = workflowDefinitionLinks;
+	}
+
+	public void setWorkflowDefinitionLinks(
+		UnsafeSupplier<WorkflowDefinitionLink[], Exception>
+			workflowDefinitionLinksUnsafeSupplier) {
+
+		try {
+			workflowDefinitionLinks =
+				workflowDefinitionLinksUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected WorkflowDefinitionLink[] workflowDefinitionLinks;
 
 	@Override
 	public ObjectDefinition clone() throws CloneNotSupportedException {

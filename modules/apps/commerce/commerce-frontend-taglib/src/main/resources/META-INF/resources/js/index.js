@@ -9,7 +9,6 @@ import {
 	DropdownMenu,
 	MiniCart,
 	Price,
-	RequestQuote,
 	StepTracker,
 	accountSelector,
 	compareCheckbox,
@@ -154,34 +153,6 @@ export function addToCart({
 	});
 }
 
-export function requestQuote({
-	accountId,
-	channel,
-	cpDefinitionId,
-	cpInstance,
-	disabled,
-	namespace,
-	orderDetailURL,
-	requestQuoteElementId,
-}) {
-	if (cpInstance.skuOptions && typeof cpInstance.skuOptions === 'string') {
-		try {
-			cpInstance.skuOptions = JSON.parse(cpInstance.skuOptions);
-		}
-		catch (event) {}
-	}
-
-	RequestQuote(requestQuoteElementId, requestQuoteElementId, {
-		accountId: Number(accountId),
-		channel,
-		cpDefinitionId,
-		cpInstance,
-		disabled,
-		namespace,
-		orderDetailURL,
-	});
-}
-
 export function cart({
 	accountId,
 	baseOrderDetailURL,
@@ -204,7 +175,9 @@ export function cart({
 	requestQuoteEnabled,
 	signInURL,
 	siteDefaultURL,
+	slowConnectionOrderFlowEnabled,
 	toggleable,
+	undoCartItemDeletionDisabled,
 }) {
 	const props = {
 		accountId: Number(accountId),
@@ -229,7 +202,9 @@ export function cart({
 		itemsQuantity: Number(itemsQuantity),
 		orderId: Number(orderId),
 		requestQuoteEnabled,
+		slowConnectionOrderFlowEnabled,
 		toggleable,
+		undoCartItemDeletionDisabled,
 	};
 
 	const customCartViews = Object.entries(cartViews);

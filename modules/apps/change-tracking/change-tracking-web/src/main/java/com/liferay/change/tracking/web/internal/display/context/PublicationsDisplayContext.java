@@ -34,9 +34,9 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.util.PropsValues;
 
 import jakarta.portlet.ActionRequest;
 import jakarta.portlet.RenderRequest;
@@ -90,7 +90,8 @@ public class PublicationsDisplayContext {
 		return StringBundler.concat(
 			"/o/change-tracking-rest/v1.0/ct-collections?status=",
 			WorkflowConstants.STATUS_DRAFT, "&status=",
-			WorkflowConstants.STATUS_EXPIRED);
+			WorkflowConstants.STATUS_EXPIRED, "&status=",
+			WorkflowConstants.STATUS_INCOMPLETE);
 	}
 
 	public Map<String, Object> getCollaboratorsReactData(
@@ -284,7 +285,7 @@ public class PublicationsDisplayContext {
 			"sharePublicationLink",
 			() -> _publicationHelper.getShareURL(ctCollectionId, _renderRequest)
 		).put(
-			"showShareLinkTab", true
+			"showShareLinkTab", !publicationTemplate
 		).put(
 			"spritemap", _themeDisplay.getPathThemeSpritemap()
 		).put(
@@ -498,6 +499,9 @@ public class PublicationsDisplayContext {
 		}
 		else if (status == WorkflowConstants.STATUS_DENIED) {
 			return "failed";
+		}
+		else if (status == WorkflowConstants.STATUS_INCOMPLETE) {
+			return "pending-approval";
 		}
 		else if (status == WorkflowConstants.STATUS_SCHEDULED) {
 			return "scheduled";

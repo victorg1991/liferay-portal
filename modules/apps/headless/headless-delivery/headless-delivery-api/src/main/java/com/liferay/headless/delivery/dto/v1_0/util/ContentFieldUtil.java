@@ -33,10 +33,12 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.repository.model.FileEntry;
-import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
@@ -58,7 +60,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.SortedMap;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 /**
  * @author Javier Gamarra
@@ -69,7 +73,7 @@ public class ContentFieldUtil {
 		DDMFormFieldValue ddmFormFieldValue, DLAppService dlAppService,
 		DLURLHelper dlURLHelper, DTOConverterContext dtoConverterContext,
 		JournalArticleService journalArticleService,
-		LayoutLocalService layoutLocalService) {
+		LayoutService layoutService) {
 
 		DDMFormField ddmFormField = ddmFormFieldValue.getDDMFormField();
 
@@ -85,7 +89,7 @@ public class ContentFieldUtil {
 					() -> _toContentFieldValue(
 						ddmFormField, dlAppService, dlURLHelper,
 						dtoConverterContext, journalArticleService,
-						layoutLocalService, dtoConverterContext.getLocale(),
+						layoutService, dtoConverterContext.getLocale(),
 						ddmFormFieldValue.getValue()));
 				setContentFieldValue_i18n(
 					() -> {
@@ -113,7 +117,7 @@ public class ContentFieldUtil {
 								_getContentFieldValue(
 									ddmFormField, dlAppService, dlURLHelper,
 									dtoConverterContext, journalArticleService,
-									layoutLocalService, defaultLocale,
+									layoutService, defaultLocale,
 									String.valueOf(
 										value.getString(defaultLocale))));
 						}
@@ -128,14 +132,14 @@ public class ContentFieldUtil {
 								_getContentFieldValue(
 									ddmFormField, dlAppService, dlURLHelper,
 									dtoConverterContext, journalArticleService,
-									layoutLocalService, locale,
-									entry.getValue()));
+									layoutService, locale, entry.getValue()));
 						}
 
 						return map;
 					});
 				setDataType(
 					() -> ContentStructureUtil.toDataType(ddmFormField));
+				setFieldReference(ddmFormField::getFieldReference);
 				setInputControl(
 					() -> ContentStructureUtil.toInputControl(ddmFormField));
 				setLabel(
@@ -145,14 +149,14 @@ public class ContentFieldUtil {
 					() -> LocalizedMapUtil.getI18nMap(
 						dtoConverterContext.isAcceptAllLanguages(),
 						localizedValue.getValues()));
-				setName(ddmFormField::getFieldReference);
+				setName(ddmFormField::getName);
 				setNestedContentFields(
 					() -> TransformUtil.transformToArray(
 						ddmFormFieldValue.getNestedDDMFormFieldValues(),
 						value -> toContentField(
 							value, dlAppService, dlURLHelper,
 							dtoConverterContext, journalArticleService,
-							layoutLocalService),
+							layoutService),
 						ContentField.class));
 				setRepeatable(ddmFormField::isRepeatable);
 			}
@@ -163,8 +167,7 @@ public class ContentFieldUtil {
 		DDMFormField ddmFormField, DLAppService dlAppService,
 		DLURLHelper dlURLHelper, DTOConverterContext dtoConverterContext,
 		JournalArticleService journalArticleService,
-		LayoutLocalService layoutLocalService, Locale locale,
-		String valueString) {
+		LayoutService layoutService, Locale locale, String valueString) {
 
 		try {
 			UriInfo uriInfo = dtoConverterContext.getUriInfo();
@@ -317,21 +320,22 @@ public class ContentFieldUtil {
 						 DDMFormFieldTypeConstants.IMAGE,
 						 ddmFormField.getType())) {
 
-				JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
-					valueString);
+				FileEntry fileEntry = _getFileEntry(dlAppService, valueString);
 
-				long fileEntryId = jsonObject.getLong("fileEntryId");
-
-				if (fileEntryId == 0) {
+				if (fileEntry == null) {
 					return new ContentFieldValue();
 				}
+
+				JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
+					valueString);
 
 				return new ContentFieldValue() {
 					{
 						setImage(
 							() -> _toImage(
-								dlURLHelper, dlAppService, fileEntryId, uriInfo,
-								jsonObject, locale));
+								dlURLHelper, dlAppService,
+								fileEntry.getFileEntryId(), uriInfo, jsonObject,
+								locale));
 					}
 				};
 			}
@@ -394,7 +398,7 @@ public class ContentFieldUtil {
 				long groupId = jsonObject.getLong("groupId");
 				boolean privateLayout = jsonObject.getBoolean("privateLayout");
 
-				Layout layoutByUuidAndGroupId = layoutLocalService.getLayout(
+				Layout layoutByUuidAndGroupId = layoutService.getLayout(
 					groupId, privateLayout, layoutId);
 
 				return new ContentFieldValue() {
@@ -410,47 +414,42 @@ public class ContentFieldUtil {
 						 ddmFormField.getType(),
 						 DDMFormFieldTypeConstants.CHECKBOX_MULTIPLE)) {
 
-				DDMFormFieldOptions ddmFormFieldOptions =
-					ddmFormField.getDDMFormFieldOptions();
+				ObjectValuePair<List<String>, List<String>> objectValuePair =
+					_getDisplayNamesOptionReferencesObjectValuePair(
+						GetterUtil.getBoolean(
+							ddmFormField.getProperty("alphabeticalOrder")),
+						ddmFormField.getDDMFormFieldOptions(), locale,
+						JSONUtil.toStringList(
+							JSONFactoryUtil.createJSONArray(valueString)));
 
-				List<String> values = new ArrayList<>();
-
-				List<String> list = TransformUtil.transform(
-					JSONUtil.toStringList(
-						JSONFactoryUtil.createJSONArray(valueString)),
-					value -> {
-						LocalizedValue localizedValue =
-							ddmFormFieldOptions.getOptionLabels(value);
-
-						values.add(
-							ddmFormFieldOptions.getOptionReference(value));
-
-						return localizedValue.getString(locale);
-					});
+				List<String> displayNames = objectValuePair.getKey();
+				List<String> optionReferences = objectValuePair.getValue();
 
 				return new ContentFieldValue() {
 					{
 						setData(
 							() -> {
 								if (!ddmFormField.isMultiple() &&
-									(list.size() == 1)) {
+									(displayNames.size() == 1)) {
 
-									return list.get(0);
+									return displayNames.get(0);
 								}
 
 								return String.valueOf(
-									JSONFactoryUtil.createJSONArray(list));
+									JSONFactoryUtil.createJSONArray(
+										displayNames));
 							});
 						setValue(
 							() -> {
 								if (!ddmFormField.isMultiple() &&
-									(values.size() == 1)) {
+									(optionReferences.size() == 1)) {
 
-									return values.get(0);
+									return optionReferences.get(0);
 								}
 
 								return String.valueOf(
-									JSONFactoryUtil.createJSONArray(values));
+									JSONFactoryUtil.createJSONArray(
+										optionReferences));
 							});
 					}
 				};
@@ -496,6 +495,45 @@ public class ContentFieldUtil {
 		}
 	}
 
+	private static ObjectValuePair<List<String>, List<String>>
+		_getDisplayNamesOptionReferencesObjectValuePair(
+			boolean alphabeticalOrder, DDMFormFieldOptions ddmFormFieldOptions,
+			Locale locale, List<String> values) {
+
+		if (alphabeticalOrder) {
+			SortedMap<String, String> sortedMap = new TreeMap<>();
+
+			for (String value : values) {
+				LocalizedValue localizedValue =
+					ddmFormFieldOptions.getOptionLabels(value);
+
+				sortedMap.put(
+					localizedValue.getString(locale),
+					ddmFormFieldOptions.getOptionReference(value));
+			}
+
+			return new ObjectValuePair(
+				ListUtil.fromCollection(sortedMap.keySet()),
+				ListUtil.fromCollection(sortedMap.values()));
+		}
+
+		List<String> optionReferences = new ArrayList<>();
+
+		List<String> displayNames = TransformUtil.transform(
+			values,
+			value -> {
+				optionReferences.add(
+					ddmFormFieldOptions.getOptionReference(value));
+
+				LocalizedValue localizedValue =
+					ddmFormFieldOptions.getOptionLabels(value);
+
+				return localizedValue.getString(locale);
+			});
+
+		return new ObjectValuePair<>(displayNames, optionReferences);
+	}
+
 	private static FileEntry _getFileEntry(
 			DLAppService dlAppService, String valueString)
 		throws Exception {
@@ -506,6 +544,18 @@ public class ContentFieldUtil {
 
 		if (classPK != 0) {
 			return dlAppService.getFileEntry(classPK);
+		}
+
+		long fileEntryId = jsonObject.getLong("fileEntryId");
+
+		if (fileEntryId != 0) {
+			return dlAppService.getFileEntry(fileEntryId);
+		}
+
+		long id = jsonObject.getLong("id");
+
+		if (id != 0) {
+			return dlAppService.getFileEntry(id);
 		}
 
 		long groupId = jsonObject.getLong("groupId");
@@ -522,7 +572,7 @@ public class ContentFieldUtil {
 		DDMFormField ddmFormField, DLAppService dlAppService,
 		DLURLHelper dlURLHelper, DTOConverterContext dtoConverterContext,
 		JournalArticleService journalArticleService,
-		LayoutLocalService layoutLocalService, Locale locale, Value value) {
+		LayoutService layoutService, Locale locale, Value value) {
 
 		if (value == null) {
 			return new ContentFieldValue();
@@ -532,7 +582,7 @@ public class ContentFieldUtil {
 
 		return _getContentFieldValue(
 			ddmFormField, dlAppService, dlURLHelper, dtoConverterContext,
-			journalArticleService, layoutLocalService, locale, valueString);
+			journalArticleService, layoutService, locale, valueString);
 	}
 
 	private static String _toDateString(Locale locale, String valueString) {

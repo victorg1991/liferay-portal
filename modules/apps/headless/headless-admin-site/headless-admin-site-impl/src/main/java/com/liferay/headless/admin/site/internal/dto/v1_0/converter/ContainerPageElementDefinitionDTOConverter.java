@@ -8,16 +8,24 @@ package com.liferay.headless.admin.site.internal.dto.v1_0.converter;
 import com.liferay.headless.admin.site.dto.v1_0.ContainerPageElementDefinition;
 import com.liferay.headless.admin.site.dto.v1_0.HtmlProperties;
 import com.liferay.headless.admin.site.dto.v1_0.PageElementDefinition;
+import com.liferay.headless.admin.site.internal.dto.v1_0.util.ContainerLayoutUtil;
+import com.liferay.headless.admin.site.internal.dto.v1_0.util.FragmentLinkUtil;
+import com.liferay.headless.admin.site.internal.dto.v1_0.util.FragmentViewportUtil;
+import com.liferay.info.item.InfoItemServiceRegistry;
+import com.liferay.layout.converter.ContentVisibilityConverter;
 import com.liferay.layout.util.structure.ContainerStyledLayoutStructureItem;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Eudaldo Alonso
@@ -42,27 +50,58 @@ public class ContainerPageElementDefinitionDTOConverter
 				containerStyledLayoutStructureItem)
 		throws Exception {
 
+		Long companyId = (Long)dtoConverterContext.getAttribute("companyId");
+		Long scopeGroupId = (Long)dtoConverterContext.getAttribute(
+			"scopeGroupId");
+
+		if ((companyId == null) || (scopeGroupId == null)) {
+			throw new UnsupportedOperationException();
+		}
+
 		return new ContainerPageElementDefinition() {
 			{
 				setContentVisibility(
-					containerStyledLayoutStructureItem::getContentVisibility);
-				setCssClasses(
 					() -> {
-						if (SetUtil.isEmpty(
-								containerStyledLayoutStructureItem.
-									getCssClasses())) {
+						String contentVisibility =
+							containerStyledLayoutStructureItem.
+								getContentVisibility();
 
+						if (Validator.isNull(contentVisibility)) {
 							return null;
 						}
 
-						return ArrayUtil.toStringArray(
-							containerStyledLayoutStructureItem.getCssClasses());
+						return ContentVisibility.create(
+							ContentVisibilityConverter.convertToExternalValue(
+								contentVisibility));
 					});
-				setCustomCSS(containerStyledLayoutStructureItem::getCustomCSS);
+				setCssClasses(
+					() -> {
+						Set<String> cssClasses =
+							containerStyledLayoutStructureItem.getCssClasses();
+
+						if (SetUtil.isEmpty(cssClasses)) {
+							return null;
+						}
+
+						return ArrayUtil.toStringArray(cssClasses);
+					});
+				setFragmentLink(
+					() -> FragmentLinkUtil.toFragmentLink(
+						companyId, _infoItemServiceRegistry,
+						containerStyledLayoutStructureItem.getLinkJSONObject(),
+						scopeGroupId));
+				setFragmentViewports(
+					() -> FragmentViewportUtil.toFragmentViewports(
+						containerStyledLayoutStructureItem.
+							getItemConfigJSONObject()));
 				setHtmlProperties(
 					() -> _toHtmlProperties(
 						containerStyledLayoutStructureItem));
 				setIndexed(containerStyledLayoutStructureItem::isIndexed);
+				setLayout(
+					() -> ContainerLayoutUtil.toLayout(
+						containerStyledLayoutStructureItem.
+							getItemConfigJSONObject()));
 				setName(containerStyledLayoutStructureItem::getName);
 				setType(PageElementDefinition.Type.CONTAINER);
 			}
@@ -71,6 +110,10 @@ public class ContainerPageElementDefinitionDTOConverter
 
 	private HtmlProperties _toHtmlProperties(
 		ContainerStyledLayoutStructureItem containerStyledLayoutStructureItem) {
+
+		if (Validator.isNull(containerStyledLayoutStructureItem.getHtmlTag())) {
+			return null;
+		}
 
 		return new HtmlProperties() {
 			{
@@ -97,5 +140,8 @@ public class ContainerPageElementDefinitionDTOConverter
 		).put(
 			"section", HtmlProperties.HtmlTag.SECTION
 		).build();
+
+	@Reference
+	private InfoItemServiceRegistry _infoItemServiceRegistry;
 
 }

@@ -16,6 +16,10 @@
 			).put(
 				"isOpen", open
 			).put(
+				"manageNotesPermission", manageNotesPermission
+			).put(
+				"manageRestrictedNotesPermission", manageRestrictedNotesPermission
+			).put(
 				"orderId", commerceOrderId
 			).put(
 				"orderSummaryURL", orderSummaryURL
@@ -43,7 +47,7 @@
 	/>
 </div>
 
-<c:if test='<%= FeatureFlagManagerUtil.isEnabled("LPD-10562") && Validator.isNotNull(viewReturnableOrderItemsURL) %>'>
+<c:if test='<%= FeatureFlagManagerUtil.isEnabled(company.getCompanyId(), "LPD-10562") && Validator.isNotNull(viewReturnableOrderItemsURL) %>'>
 	<liferay-frontend:component
 		context='<%=
 			HashMapBuilder.<String, Object>put(

@@ -37,6 +37,7 @@ import com.liferay.portal.configuration.module.configuration.ConfigurationProvid
 import com.liferay.portal.kernel.exception.NoSuchGroupException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutSetBranchConstants;
@@ -48,6 +49,7 @@ import com.liferay.portal.kernel.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.persistence.GroupUtil;
+import com.liferay.portal.kernel.servlet.ServletResponseConstants;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.rule.Sync;
@@ -68,6 +70,7 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
+import com.liferay.portal.kernel.zip.ZipReader;
 import com.liferay.portal.kernel.zip.ZipReaderFactory;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -80,6 +83,8 @@ import jakarta.portlet.PortletPreferences;
 
 import java.io.File;
 import java.io.Serializable;
+
+import java.net.ConnectException;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -186,6 +191,20 @@ public class StagingImplTest {
 			"No Group exists with the primary key " +
 				(_remoteLiveGroup.getGroupId() + 1),
 			caughtThrowable.getMessage());
+	}
+
+	@Test
+	public void testGetExceptionMessagesJSONObject() throws Exception {
+		Exception exception = new Exception(new ConnectException());
+
+		JSONObject jsonObject = StagingUtil.getExceptionMessagesJSONObject(
+			LocaleUtil.getDefault(), exception, null);
+
+		Assert.assertEquals(
+			exception.getLocalizedMessage(), jsonObject.getString("message"));
+		Assert.assertEquals(
+			ServletResponseConstants.SC_FILE_CUSTOM_EXCEPTION,
+			jsonObject.getInt("status"));
 	}
 
 	@Test
@@ -505,42 +524,47 @@ public class StagingImplTest {
 
 		File larFile = new File(larFileNames.get(larFileNames.size() - 1));
 
-		PortletDataContext portletDataContext =
-			PortletDataContextFactoryUtil.createImportPortletDataContext(
-				_group.getCompanyId(), _group.getGroupId(), parameterMap,
-				userIdStrategy, _zipReaderFactory.getZipReader(larFile));
+		try (ZipReader zipReader = _zipReaderFactory.getZipReader(larFile)) {
+			PortletDataContext portletDataContext =
+				PortletDataContextFactoryUtil.createImportPortletDataContext(
+					_group.getCompanyId(), _group.getGroupId(), parameterMap,
+					userIdStrategy, zipReader);
 
-		String journalPortletPath = ExportImportPathUtil.getPortletPath(
-			portletDataContext, JournalPortletKeys.JOURNAL);
+			String journalPortletPath = ExportImportPathUtil.getPortletPath(
+				portletDataContext, JournalPortletKeys.JOURNAL);
 
-		String portletData = portletDataContext.getZipEntryAsString(
-			StringBundler.concat(
-				journalPortletPath, StringPool.SLASH, _group.getGroupId(),
-				"/portlet-data.xml"));
-
-		if (portletData == null) {
-			String changesetPortletPath = ExportImportPathUtil.getPortletPath(
-				portletDataContext, ChangesetPortletKeys.CHANGESET);
-
-			portletData = portletDataContext.getZipEntryAsString(
+			String portletData = portletDataContext.getZipEntryAsString(
 				StringBundler.concat(
-					changesetPortletPath, StringPool.SLASH, _group.getGroupId(),
+					journalPortletPath, StringPool.SLASH, _group.getGroupId(),
 					"/portlet-data.xml"));
+
+			if (portletData == null) {
+				String changesetPortletPath =
+					ExportImportPathUtil.getPortletPath(
+						portletDataContext, ChangesetPortletKeys.CHANGESET);
+
+				portletData = portletDataContext.getZipEntryAsString(
+					StringBundler.concat(
+						changesetPortletPath, StringPool.SLASH,
+						_group.getGroupId(), "/portlet-data.xml"));
+			}
+
+			Document document = SAXReaderUtil.read(portletData);
+
+			portletDataContext.setImportDataRootElement(
+				document.getRootElement());
+
+			Element journalElement =
+				portletDataContext.getImportDataGroupElement(
+					JournalArticle.class);
+
+			List<Element> journalStagedModelElements = journalElement.elements(
+				"staged-model");
+
+			Assert.assertEquals(
+				journalStagedModelElements.toString(), 0,
+				journalStagedModelElements.size());
 		}
-
-		Document document = SAXReaderUtil.read(portletData);
-
-		portletDataContext.setImportDataRootElement(document.getRootElement());
-
-		Element journalElement = portletDataContext.getImportDataGroupElement(
-			JournalArticle.class);
-
-		List<Element> journalStagedModelElements = journalElement.elements(
-			"staged-model");
-
-		Assert.assertEquals(
-			journalStagedModelElements.toString(), 0,
-			journalStagedModelElements.size());
 	}
 
 	protected void enableLocalStaging(boolean branching) throws Exception {
@@ -759,8 +783,8 @@ public class StagingImplTest {
 		}
 
 		return AssetCategoryLocalServiceUtil.updateCategory(
-			TestPropsValues.getUserId(), category.getCategoryId(),
-			category.getParentCategoryId(), titleMap,
+			category.getExternalReferenceCode(), TestPropsValues.getUserId(),
+			category.getCategoryId(), category.getParentCategoryId(), titleMap,
 			category.getDescriptionMap(), category.getVocabularyId(), null,
 			ServiceContextTestUtil.getServiceContext());
 	}

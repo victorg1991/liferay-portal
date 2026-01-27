@@ -323,7 +323,7 @@ test(
 			title,
 		});
 
-		await page.getByLabel('Current').selectOption('category-1');
+		await page.getByLabel('In Use').selectOption('category-1');
 		await page.getByLabel('Reorder Down').click();
 		await page.getByLabel('Reorder Down').click();
 
@@ -387,7 +387,7 @@ test(
 		});
 
 		await page.getByLabel('Remove category-1').click();
-		await page.getByLabel('Current').selectOption('category-2');
+		await page.getByLabel('In Use').selectOption('category-2');
 		await page.getByLabel('Reorder Down').click();
 
 		const expectedCategoriesPartialURL = 'category-3/category-2';
@@ -465,5 +465,38 @@ test(
 		const topValue = JSON.parse(coverImageCropRegionValue).y;
 
 		expect(topValue).toBeGreaterThan(20);
+	}
+);
+
+test(
+	'Validate viewEntryURL at entry_cover_image_caption jsp page',
+	{
+		tag: '@LPD-64234',
+	},
+	async ({page}) => {
+		const html = `
+            <html>
+              <body>
+                <form action="http://localhost:8080/o/blogs-web/blogs/entry_cover_image_caption.jsp"
+                      method="POST" enctype="multipart/form-data">
+                  <input type="hidden" name="coverImageCaption" value="x" />
+                  <input type="hidden" name="coverImageURL" value="https://wwww.liferay.com" />
+                  <input type="hidden" name="viewEntryURL" value="javascript:alert(document.domain)" />
+                  <input type="submit" value="Submit request" />
+                </form>
+                <script>
+                  document.forms[0].submit();
+                </script>
+              </body>
+            </html>
+          `;
+
+		await page.setContent(html);
+
+		await page.waitForLoadState('networkidle');
+
+		const links = await page.locator('a[href]');
+
+		await expect(links).toHaveCount(0);
 	}
 );

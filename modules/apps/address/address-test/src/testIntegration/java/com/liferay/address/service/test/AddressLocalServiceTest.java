@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.service.CountryLocalService;
 import com.liferay.portal.kernel.service.ListTypeLocalService;
 import com.liferay.portal.kernel.service.PhoneLocalService;
 import com.liferay.portal.kernel.service.RegionLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -53,6 +54,7 @@ import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -130,7 +132,9 @@ public class AddressLocalServiceTest {
 
 		ListTypeDefinition listTypeDefinition =
 			_listTypeDefinitionLocalService.addListTypeDefinition(
-				null, user.getUserId(), true);
+				RandomTestUtil.randomString(), TestPropsValues.getUserId(),
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				false, Collections.emptyList(), new ServiceContext());
 
 		ListTypeEntry listTypeEntry =
 			_listTypeEntryLocalService.addListTypeEntry(
@@ -166,13 +170,13 @@ public class AddressLocalServiceTest {
 	}
 
 	@Test
-	public void testGetOrAddIncompleteAddress() throws Exception {
+	public void testGetOrAddEmptyAddress() throws Exception {
 		User user = TestPropsValues.getUser();
 
 		// Lazy referencing disabled
 
 		try {
-			_addressLocalService.getOrAddIncompleteAddress(
+			_addressLocalService.getOrAddEmptyAddress(
 				RandomTestUtil.randomString(), TestPropsValues.getCompanyId(),
 				TestPropsValues.getUserId(), Contact.class.getName(),
 				user.getContactId());
@@ -188,13 +192,13 @@ public class AddressLocalServiceTest {
 		try (SafeCloseable safeCloseable =
 				LazyReferencingThreadLocal.setEnabledWithSafeCloseable(true)) {
 
-			Address address = _addressLocalService.getOrAddIncompleteAddress(
+			Address address = _addressLocalService.getOrAddEmptyAddress(
 				RandomTestUtil.randomString(), TestPropsValues.getCompanyId(),
 				TestPropsValues.getUserId(), Contact.class.getName(),
 				user.getContactId());
 
 			Assert.assertEquals(
-				WorkflowConstants.STATUS_INCOMPLETE, address.getStatus());
+				WorkflowConstants.STATUS_EMPTY, address.getStatus());
 		}
 	}
 
@@ -416,13 +420,13 @@ public class AddressLocalServiceTest {
 		try (SafeCloseable safeCloseable =
 				LazyReferencingThreadLocal.setEnabledWithSafeCloseable(true)) {
 
-			Address address = _addressLocalService.getOrAddIncompleteAddress(
+			Address address = _addressLocalService.getOrAddEmptyAddress(
 				RandomTestUtil.randomString(), TestPropsValues.getCompanyId(),
 				TestPropsValues.getUserId(), Contact.class.getName(),
 				user.getContactId());
 
 			Assert.assertEquals(
-				WorkflowConstants.STATUS_INCOMPLETE, address.getStatus());
+				WorkflowConstants.STATUS_EMPTY, address.getStatus());
 
 			address = _addressLocalService.updateAddress(
 				address.getExternalReferenceCode(), address.getAddressId(),

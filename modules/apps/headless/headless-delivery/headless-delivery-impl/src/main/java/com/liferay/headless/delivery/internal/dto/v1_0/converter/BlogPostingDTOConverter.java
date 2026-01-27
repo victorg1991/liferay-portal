@@ -30,14 +30,14 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateEntryService;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.comment.CommentManager;
 import com.liferay.portal.kernel.repository.model.FileEntry;
-import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.vulcan.custom.field.CustomFieldsUtil;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
@@ -141,7 +141,7 @@ public class BlogPostingDTOConverter
 						BlogsEntry.class.getName(), blogsEntry.getEntryId(), 0,
 						dtoConverterContext, blogsEntry.getGroupId(),
 						blogsEntry, _infoItemServiceRegistry,
-						_layoutDisplayPageProviderRegistry, _layoutLocalService,
+						_layoutDisplayPageProviderRegistry, _layoutService,
 						_layoutPageTemplateEntryService,
 						"getBlogPostingRenderedContentByDisplayPageDisplay" +
 							"PageKey"));
@@ -177,7 +177,7 @@ public class BlogPostingDTOConverter
 				setCaption(blogsEntry::getCoverImageCaption);
 				setContentUrl(
 					() -> _dlURLHelper.getPreviewURL(
-						fileEntry, fileEntry.getFileVersion(), null, "", false,
+						fileEntry, fileEntry.getFileVersion(), null, "", true,
 						false));
 				setContentValue(
 					() -> ContentValueUtil.toContentValue(
@@ -220,10 +220,10 @@ public class BlogPostingDTOConverter
 		_layoutDisplayPageProviderRegistry;
 
 	@Reference
-	private LayoutLocalService _layoutLocalService;
+	private LayoutPageTemplateEntryService _layoutPageTemplateEntryService;
 
 	@Reference
-	private LayoutPageTemplateEntryService _layoutPageTemplateEntryService;
+	private LayoutService _layoutService;
 
 	@Reference
 	private Portal _portal;

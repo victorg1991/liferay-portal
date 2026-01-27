@@ -48,9 +48,7 @@ export interface WebContentField<T = unknown> {
  */
 
 export function getAllFieldsetsFromName(name: string) {
-	const pattern = /Fieldset\d+/g;
-
-	return name.match(pattern) || [];
+	return [...name.matchAll(/(?:\$|#)([^$#]+)\$/g)].map((match) => match[1]);
 }
 
 /**
@@ -184,4 +182,18 @@ export function getFilteredPage({
 			}),
 		};
 	});
+}
+
+/**
+ * Returns message for all non localized field cases.
+ */
+
+export function getNonLocalizableFieldMessage(
+	isLocalizationSupported: boolean | undefined
+) {
+	return isLocalizationSupported === undefined
+		? Liferay.Language.get('this-field-cannot-be-localized')
+		: isLocalizationSupported
+			? Liferay.Language.get('translation-is-disabled-for-this-field')
+			: Liferay.Language.get('this-field-does-not-support-translations');
 }

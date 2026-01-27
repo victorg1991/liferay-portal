@@ -14,6 +14,8 @@ import aQute.bnd.osgi.Resource;
 
 import aQute.lib.io.IO;
 
+import com.liferay.petra.function.UnsafeRunnable;
+
 import java.io.InputStream;
 
 import java.net.URL;
@@ -33,6 +35,23 @@ import org.junit.Test;
  * @author Gregory Amerson
  */
 public class JspAnalyzerPluginTest {
+
+	@Test
+	public void testAddTaglibRequirements() throws Exception {
+		List<String> expectedTaglibURIs = Arrays.asList(
+			"http://java.sun.com/portlet_2_0", "http://liferay.com/tld/aui",
+			"http://liferay.com/tld/portlet", "http://liferay.com/tld/security",
+			"http://liferay.com/tld/theme", "http://liferay.com/tld/ui",
+			"http://liferay.com/tld/util");
+
+		_testAddTaglibRequirements(
+			expectedTaglibURIs, "dependencies/imports_without_comments.jsp",
+			"jakarta.tags.core");
+		_testAddTaglibRequirements(
+			expectedTaglibURIs,
+			"dependencies/imports_without_comments_with_javax.jsp",
+			"http://java.sun.com/jsp/jstl/core");
+	}
 
 	@Test
 	public void testGetTaglibURIsWithComments() throws Exception {
@@ -80,11 +99,37 @@ public class JspAnalyzerPluginTest {
 			"javax.servlet", "javax.servlet.http");
 
 		_testImplicitImports(
-			"dependencies/imports_without_comments_with_javax.jsp", javaxFQNs,
+			"dependencies/imports_without_comments.jsp", null, jakartaFQNs,
+			javaxFQNs);
+		_testImplicitImports(
+			"dependencies/imports_without_comments_with_javax.jsp", null,
+			javaxFQNs, jakartaFQNs);
+		_testImplicitImports(
+			"dependencies/imports_without_javaee_packages.jsp", "jakarta",
+			jakartaFQNs, javaxFQNs);
+		_testImplicitImports(
+			"dependencies/imports_without_javaee_packages.jsp", "javax",
+			javaxFQNs, jakartaFQNs);
+		_testImplicitImports(
+			"dependencies/imports_without_packages.jsp", "jakarta", jakartaFQNs,
+			javaxFQNs);
+		_testImplicitImports(
+			"dependencies/imports_without_packages.jsp", "javax", javaxFQNs,
 			jakartaFQNs);
 		_testImplicitImports(
-			"dependencies/imports_without_comments.jsp", jakartaFQNs,
+			"dependencies/imports_without_packages.jsp", null, jakartaFQNs,
 			javaxFQNs);
+
+		_assertThrows(
+			IllegalArgumentException.class, "Invalid value was provided for",
+			() -> _testImplicitImports(
+				"dependencies/imports_without_javaee_packages.jsp", "test",
+				null, null));
+		_assertThrows(
+			IllegalArgumentException.class, "Invalid value was provided for",
+			() -> _testImplicitImports(
+				"dependencies/imports_without_packages.jsp", "test", null,
+				null));
 	}
 
 	@Test
@@ -186,8 +231,59 @@ public class JspAnalyzerPluginTest {
 		return clazz.getResource(path);
 	}
 
+	private void _assertThrows(
+		Class<? extends Exception> exceptionClass,
+		String expectedMessageContains, UnsafeRunnable<Exception> runnable) {
+
+		try {
+			runnable.run();
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+			Assert.assertEquals(exceptionClass, exception.getClass());
+
+			String message = exception.getMessage();
+
+			Assert.assertTrue(
+				"Unexpected exception message: " + message,
+				message.contains(expectedMessageContains));
+		}
+	}
+
+	private void _testAddTaglibRequirements(
+			List<String> expectedURIs, String jspPath, String unexpectedURI)
+		throws Exception {
+
+		JspAnalyzerPlugin jspAnalyzerPlugin = new JspAnalyzerPlugin();
+
+		Builder builder = new Builder();
+
+		builder.build();
+
+		URL url = getResource(jspPath);
+
+		String content = null;
+
+		try (InputStream inputStream = url.openStream()) {
+			content = IO.collect(inputStream);
+		}
+
+		jspAnalyzerPlugin.addTaglibRequirements(
+			builder, content, new HashSet<>());
+
+		String requireCapability = builder.getProperty(
+			Constants.REQUIRE_CAPABILITY);
+
+		for (String expectedURI : expectedURIs) {
+			Assert.assertTrue(requireCapability.contains(expectedURI));
+		}
+
+		Assert.assertFalse(requireCapability.contains(unexpectedURI));
+	}
+
 	private void _testImplicitImports(
-			String jspPath, List<String> expectedFQNs,
+			String jspPath, String javaeePackage, List<String> expectedFQNs,
 			List<String> notExpectedFQNs)
 		throws Exception {
 
@@ -206,6 +302,12 @@ public class JspAnalyzerPluginTest {
 			builder.setJar(jar);
 
 			builder.setProperty("-jsp", "*.jsp");
+
+			if (javaeePackage != null) {
+				builder.setProperty(
+					"-antbnd.jspanalyzer.fallback-javaee-package",
+					javaeePackage);
+			}
 
 			JspAnalyzerPlugin jspAnalyzerPlugin = new JspAnalyzerPlugin();
 

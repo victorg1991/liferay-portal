@@ -16,11 +16,11 @@ import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +29,8 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.osgi.framework.BundleContext;
@@ -161,7 +163,9 @@ public class PreupgradeVerifyStoreFileSystemStructure
 				companyIdPath)) {
 
 			for (Path repositoryIdPath : directoryStream) {
-				if (_isSystemCompanyRepositoryIdPath(repositoryIdPath)) {
+				if (_isExcludedPath(repositoryIdPath) ||
+					_isSystemCompanyRepositoryIdPath(repositoryIdPath)) {
+
 					continue;
 				}
 
@@ -192,6 +196,10 @@ public class PreupgradeVerifyStoreFileSystemStructure
 				repositoryIdPath)) {
 
 			for (Path fileNamePath : directoryStream) {
+				if (_isExcludedPath(fileNamePath)) {
+					continue;
+				}
+
 				if (!Files.isDirectory(fileNamePath)) {
 					_log.error(
 						"Unexpected file " + fileNamePath +
@@ -233,7 +241,9 @@ public class PreupgradeVerifyStoreFileSystemStructure
 				companyIdPath)) {
 
 			for (Path repositoryIdPath : directoryStream) {
-				if (_isSystemCompanyRepositoryIdPath(repositoryIdPath)) {
+				if (_isExcludedPath(repositoryIdPath) ||
+					_isSystemCompanyRepositoryIdPath(repositoryIdPath)) {
+
 					continue;
 				}
 
@@ -259,10 +269,9 @@ public class PreupgradeVerifyStoreFileSystemStructure
 	private boolean _hasFileSystemStructureFileNamePath(Path fileNamePath)
 		throws IOException {
 
-		if (StringUtil.contains(
-				String.valueOf(fileNamePath.getFileName()), StringPool.PERIOD,
-				StringPool.BLANK)) {
+		String fileName = String.valueOf(fileNamePath.getFileName());
 
+		if (fileName.contains(StringPool.PERIOD)) {
 			_log.error(
 				StringBundler.concat(
 					"Unexpected file name directory ", fileNamePath.toString(),
@@ -275,14 +284,16 @@ public class PreupgradeVerifyStoreFileSystemStructure
 				fileNamePath)) {
 
 			for (Path versionLabelPath : directoryStream) {
-				if (Files.isDirectory(versionLabelPath)) {
+				if (_isExcludedPath(versionLabelPath) ||
+					Files.isDirectory(versionLabelPath)) {
+
 					continue;
 				}
 
 				String versionLabel = String.valueOf(
 					versionLabelPath.getFileName());
 
-				if (StringUtil.equals(
+				if (StringUtil.startsWith(
 						versionLabel,
 						DLFileEntryConstants.PRIVATE_WORKING_COPY_VERSION)) {
 
@@ -310,6 +321,10 @@ public class PreupgradeVerifyStoreFileSystemStructure
 				repositoryIdPath)) {
 
 			for (Path fileNamePath : directoryStream) {
+				if (_isExcludedPath(fileNamePath)) {
+					continue;
+				}
+
 				if (!Files.isDirectory(fileNamePath)) {
 					_log.error(
 						"Unexpected file " + fileNamePath +
@@ -327,6 +342,10 @@ public class PreupgradeVerifyStoreFileSystemStructure
 		}
 	}
 
+	private boolean _isExcludedPath(Path path) {
+		return _excludedFileNames.contains(String.valueOf(path.getFileName()));
+	}
+
 	private boolean _isSystemCompanyRepositoryIdPath(Path repositoryIdPath) {
 		return StringUtil.equals(
 			String.valueOf(repositoryIdPath.getFileName()),
@@ -335,5 +354,8 @@ public class PreupgradeVerifyStoreFileSystemStructure
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		PreupgradeVerifyStoreFileSystemStructure.class);
+
+	private static final Set<String> _excludedFileNames = new HashSet<>(
+		Arrays.asList(".DS_Store"));
 
 }

@@ -6,18 +6,15 @@
 import ClayButton from '@clayui/button';
 import DropDown from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
-import {
-	Link,
-	Outlet,
-	useNavigate,
-	useOutletContext,
-	useParams,
-} from 'react-router-dom';
+import {ReactNode} from 'react';
+import {Outlet, useOutletContext, useParams} from 'react-router-dom';
 
+import BackLink from '../../../../../components/BackLink';
 import Navbar, {NavbarProps} from '../../../../../components/Navbar';
 import {PageRenderer} from '../../../../../components/Page';
 import {MarketplaceDeliveryProduct} from '../../../../../entity/MarketplaceDeliveryProduct';
 import {OrderTypes, OrderWorkflowStatusCode} from '../../../../../enums/Order';
+import {ProductSupportSpecificationKey} from '../../../../../enums/Product';
 import useGetProductByOrderId from '../../../../../hooks/useGetProductByOrderId';
 import i18n from '../../../../../i18n';
 import {getProductPriceModel} from '../../../../../utils/productUtils';
@@ -31,19 +28,22 @@ type ProductAndOrderPayload = NonNullable<
 >;
 
 type BaseOutletProps = {
+	actionButtons?: ReactNode | ((data: ProductAndOrderPayload) => ReactNode);
 	backTitle: string;
 	backURL?: string;
 	routes:
 		| NavbarProps['routes']
 		| ((data: ProductAndOrderPayload) => NavbarProps['routes']);
+	showActions?: boolean;
 };
 
 const BaseOutlet: React.FC<BaseOutletProps> = ({
+	actionButtons,
 	backTitle,
 	backURL = '..',
 	routes,
+	showActions = true,
 }) => {
-	const navigate = useNavigate();
 	const {orderId} = useParams();
 	const outletContext = useOutletContext();
 	const {data, error, isLoading} = useGetProductByOrderId(orderId as string);
@@ -57,15 +57,7 @@ const BaseOutlet: React.FC<BaseOutletProps> = ({
 			error={error}
 			isLoading={isLoading}
 		>
-			<Link
-				className="align-items-center d-flex text-dark"
-				onClick={() => navigate('..')}
-				to={backURL}
-			>
-				<ClayIcon className="mr-2" symbol="order-arrow-left" />
-
-				<span className="h5 mt-1">{backTitle}</span>
-			</Link>
+			<BackLink path={backURL}>{backTitle}</BackLink>
 
 			<div className="d-flex justify-content-between">
 				<OrderDetailsHeader
@@ -77,23 +69,35 @@ const BaseOutlet: React.FC<BaseOutletProps> = ({
 					productOwner={productCreatorAccountName}
 				/>
 
-				<DropDown
-					className="align-items-center cursor-pointer d-flex h-100"
-					trigger={
-						<ClayButton displayType="secondary">
-							{i18n.translate('manage-app')}
+				{actionButtons && (
+					<div id="solution-action-buttons">
+						{typeof actionButtons === 'function'
+							? actionButtons(data as ProductAndOrderPayload)
+							: actionButtons}
+					</div>
+				)}
 
-							<ClayIcon
-								className="ml-2"
-								symbol="angle-down-small"
+				{showActions && (
+					<DropDown
+						className="align-items-center cursor-pointer d-flex h-100"
+						trigger={
+							<ClayButton displayType="secondary">
+								{i18n.translate('manage-app')}
+
+								<ClayIcon
+									className="ml-2"
+									symbol="angle-down-small"
+								/>
+							</ClayButton>
+						}
+					>
+						{data?.placedOrder && (
+							<AppDropdownActions
+								placedOrder={data.placedOrder}
 							/>
-						</ClayButton>
-					}
-				>
-					{data?.placedOrder && (
-						<AppDropdownActions placedOrder={data.placedOrder} />
-					)}
-				</DropDown>
+						)}
+					</DropDown>
+				)}
 			</div>
 
 			<Navbar
@@ -121,12 +125,22 @@ const AppOutlet = () => (
 				product
 			);
 
+			const orderCompleted =
+				placedOrder.orderStatusInfo.code ===
+				OrderWorkflowStatusCode.COMPLETED;
+
 			const isCompletedOrderWithVirtualItems =
-				placedOrder.workflowStatusInfo.code ===
-					OrderWorkflowStatusCode.COMPLETED &&
+				orderCompleted &&
 				placedOrder.placedOrderItems.some(
 					(item: PlacedOrderItems) => item.virtualItems?.length
 				);
+
+			const hasSupportDetails = product.productSpecifications.some(
+				(specification: DeliveryProductSpecification) =>
+					Object?.values(ProductSupportSpecificationKey).includes(
+						specification.specificationKey as ProductSupportSpecificationKey
+					)
+			);
 
 			const tabs = [
 				{
@@ -145,16 +159,30 @@ const AppOutlet = () => (
 				{
 					name: i18n.translate('app-provisioning'),
 					path: 'cloud-provisioning',
-					visible:
-						placedOrder.orderTypeExternalReferenceCode ===
-						OrderTypes.CLOUDAPP,
+					visible: [
+						OrderTypes.CLIENT_EXTENSION,
+						OrderTypes.CLOUD_APP,
+					].includes(
+						placedOrder.orderTypeExternalReferenceCode as OrderTypes
+					),
 				},
 				{
 					name: i18n.translate('licenses'),
 					path: 'licenses',
 					visible:
-						placedOrder.orderTypeExternalReferenceCode ===
-							OrderTypes.DXPAPP && isPaidApp,
+						isPaidApp &&
+						orderCompleted &&
+						[
+							OrderTypes.CLIENT_EXTENSION,
+							OrderTypes.DXP_APP,
+						].includes(
+							placedOrder.orderTypeExternalReferenceCode as OrderTypes
+						),
+				},
+				{
+					name: i18n.translate('support'),
+					path: 'support',
+					visible: hasSupportDetails,
 				},
 			];
 

@@ -39,7 +39,6 @@ test('LPD-44010 Check no delete dropdown in order admin page without delete perm
 	apiHelpers.data.push({id: site.id, type: 'site'});
 
 	const channel = await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: getRandomString(),
 		siteGroupId: site.id,
 	});
 
@@ -837,6 +836,19 @@ test(
 				site.id,
 				user.id
 			);
+		});
+
+		await test.step('Verify note label in an order created via the account selector ', async () => {
+			await page.goto(`/web/${site.name}`);
+
+			await commerceLayoutsPage
+				.accountSelectorButton(account.name)
+				.click();
+			await commerceLayoutsPage.createNewOrderButton.click();
+
+			await expect(
+				pendingOrdersPage.questionAndAnswersText
+			).toBeVisible();
 		});
 
 		await test.step('Verify inactive order type is not assigned to an order created via the account selector ', async () => {

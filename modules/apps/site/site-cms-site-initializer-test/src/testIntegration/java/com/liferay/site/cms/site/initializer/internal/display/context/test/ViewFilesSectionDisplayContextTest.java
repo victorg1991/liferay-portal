@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
@@ -43,6 +44,7 @@ import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,7 +63,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 @RunWith(Arquillian.class)
 @Sync
 public class ViewFilesSectionDisplayContextTest
-	extends BaseSectionDisplayContextTestCase {
+	extends BaseFilesSectionDisplayContextTestCase {
 
 	@ClassRule
 	@Rule
@@ -69,6 +71,17 @@ public class ViewFilesSectionDisplayContextTest
 		new AggregateTestRule(
 			new LiferayIntegrationTestRule(),
 			PermissionCheckerMethodTestRule.INSTANCE);
+
+	@Override
+	public HashMap<String, Object> getBaseAdditionalProps()
+		throws PortalException {
+
+		return new HashMapBuilder<>().putAll(
+			super.getBaseAdditionalProps()
+		).put(
+			"galleryViewEnabled", true
+		).build();
+	}
 
 	@Test
 	public void testGetCreationMenuWithAddEntryPermission() throws Exception {
@@ -96,7 +109,7 @@ public class ViewFilesSectionDisplayContextTest
 				(List<DropdownItem>)creationMenu.get("primaryItems");
 
 			Assert.assertEquals(
-				primaryItems.toString(), 1, primaryItems.size());
+				primaryItems.toString(), 0, primaryItems.size());
 
 			Role role = _roleLocalService.getRole(
 				TestPropsValues.getCompanyId(), RoleConstants.USER);
@@ -112,7 +125,8 @@ public class ViewFilesSectionDisplayContextTest
 
 			primaryItems = (List<DropdownItem>)creationMenu.get("primaryItems");
 
-			Assert.assertTrue(primaryItems.size() > 1);
+			Assert.assertEquals(
+				primaryItems.toString(), 4, primaryItems.size());
 		}
 		finally {
 			PermissionThreadLocal.setPermissionChecker(
@@ -124,14 +138,14 @@ public class ViewFilesSectionDisplayContextTest
 	protected Map<String, String> getExpectedCreationMenuItems()
 		throws PortalException {
 
-		return HashMapBuilder.put(
-			"Basic Document", getRedirect("L_BASIC_DOCUMENT")
+		return LinkedHashMapBuilder.put(
+			"single-file", getRedirect("L_CMS_BASIC_DOCUMENT")
 		).put(
-			"External Video", getRedirect("L_EXTERNAL_VIDEO")
+			"multiple-files", StringPool.BLANK
 		).put(
 			"folder", StringPool.BLANK
 		).put(
-			"multiple-files", StringPool.BLANK
+			"external-video", getRedirect("L_CMS_EXTERNAL_VIDEO")
 		).build();
 	}
 

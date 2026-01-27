@@ -3,12 +3,16 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {render, screen} from '@testing-library/react';
 import React from 'react';
 
 import SpacesDisplay from '../../../../src/main/resources/META-INF/resources/js/common/components/SpacesDisplay';
 import {Space} from '../../../../src/main/resources/META-INF/resources/js/common/types/Space';
+
+jest.mock('frontend-js-web', () => ({
+	sub: (str: string, arg: string) => str.replace('{0}', arg),
+}));
 
 const mockLiferayLanguageGet = jest.fn((key: string) => {
 	if (key === 'available-in-spaces-x') {
@@ -18,16 +22,9 @@ const mockLiferayLanguageGet = jest.fn((key: string) => {
 	return key;
 });
 
-const mockLiferayUtilSub = jest.fn((message, args) => {
-	return message.replace('{0}', args);
-});
-
 (global as any).Liferay = {
 	Language: {
 		get: mockLiferayLanguageGet,
-	},
-	Util: {
-		sub: mockLiferayUtilSub,
 	},
 };
 
@@ -59,6 +56,10 @@ const allSpaces = [
 ] as Space[];
 
 describe('SpacesDisplay', () => {
+	afterEach(() => {
+		jest.clearAllMocks();
+	});
+
 	it('renders all spaces when no spaces are provided', () => {
 		render(<SpacesDisplay spaces={[]} />);
 
@@ -88,10 +89,6 @@ describe('SpacesDisplay', () => {
 	});
 
 	describe('When multiple spaces are provided', () => {
-		beforeEach(() => {
-			mockLiferayLanguageGet.mockClear();
-		});
-
 		it('renders the first letter and the name for the first space', () => {
 			render(<SpacesDisplay spaces={spaces} />);
 

@@ -7,9 +7,7 @@ package com.liferay.object.service.impl;
 
 import com.liferay.account.constants.AccountConstants;
 import com.liferay.account.model.AccountEntry;
-import com.liferay.account.model.AccountEntryOrganizationRel;
 import com.liferay.account.service.AccountEntryLocalService;
-import com.liferay.account.service.AccountEntryOrganizationRelLocalService;
 import com.liferay.object.configuration.ObjectConfiguration;
 import com.liferay.object.constants.ObjectActionKeys;
 import com.liferay.object.constants.ObjectEntryFolderConstants;
@@ -17,20 +15,19 @@ import com.liferay.object.definition.security.permission.resource.ObjectDefiniti
 import com.liferay.object.entry.util.ObjectEntryThreadLocal;
 import com.liferay.object.exception.ObjectDefinitionAccountEntryRestrictedException;
 import com.liferay.object.exception.ObjectEntryCountException;
+import com.liferay.object.internal.security.permission.util.ObjectEntryPermissionUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.model.ObjectEntryFolder;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectRelationship;
+import com.liferay.object.service.ObjectEntryFolderService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.service.base.ObjectEntryServiceBaseImpl;
 import com.liferay.object.service.persistence.ObjectDefinitionPersistence;
-import com.liferay.object.tree.Edge;
-import com.liferay.object.tree.Node;
-import com.liferay.object.tree.ObjectDefinitionTreeFactory;
-import com.liferay.object.tree.Tree;
 import com.liferay.petra.reflect.ReflectionUtil;
+import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
@@ -42,14 +39,14 @@ import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
-import com.liferay.portal.kernel.model.Group;
-import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.lazy.referencing.LazyReferencingThreadLocal;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
 import com.liferay.portal.kernel.model.UserNotificationEvent;
 import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
+import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
@@ -79,6 +76,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -128,8 +126,8 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		ObjectEntry objectEntry = objectEntryPersistence.fetchByERC_C_ODI(
-			externalReferenceCode, serviceContext.getCompanyId(),
+		ObjectEntry objectEntry = objectEntryPersistence.fetchByERC_G_C_ODI(
+			externalReferenceCode, groupId, serviceContext.getCompanyId(),
 			objectDefinitionId);
 
 		if (objectEntry == null) {
@@ -159,6 +157,40 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 	}
 
 	@Override
+	public ObjectEntry copyObjectEntry(
+			long objectEntryId, long objectEntryFolderId,
+			Map<String, Serializable> values, ServiceContext serviceContext)
+		throws PortalException {
+
+		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
+			objectEntryId);
+
+		checkModelResourcePermission(
+			objectEntry.getObjectDefinitionId(), objectEntry.getObjectEntryId(),
+			ActionKeys.UPDATE);
+
+		if (objectEntryFolderId !=
+				ObjectEntryFolderConstants.
+					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT) {
+
+			PermissionChecker permissionChecker = getPermissionChecker();
+
+			ObjectEntryFolder objectEntryFolder =
+				_objectEntryFolderService.getObjectEntryFolder(
+					objectEntryFolderId);
+
+			ModelResourcePermissionUtil.check(
+				_objectEntryFolderModelResourcePermission, permissionChecker,
+				objectEntryFolder.getGroupId(), objectEntryFolderId,
+				ActionKeys.ADD_ENTRY);
+		}
+
+		return objectEntryLocalService.copyObjectEntry(
+			getUserId(), objectEntryId, objectEntryFolderId, values,
+			serviceContext);
+	}
+
+	@Override
 	public ObjectEntry deleteObjectEntry(long objectEntryId)
 		throws PortalException {
 
@@ -173,23 +205,8 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 	}
 
 	@Override
-	public ObjectEntry deleteObjectEntry(
-			String externalReferenceCode, long companyId, long groupId)
-		throws PortalException {
-
-		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
-			externalReferenceCode, companyId, groupId);
-
-		_checkPermission(
-			ActionKeys.DELETE, objectEntry.getObjectDefinitionId(),
-			objectEntry);
-
-		return objectEntryLocalService.deleteObjectEntry(objectEntry);
-	}
-
-	@Override
 	public ObjectEntry expireObjectEntry(
-			long userId, long objectEntryId, ServiceContext serviceContext)
+			long objectEntryId, ServiceContext serviceContext)
 		throws PortalException {
 
 		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
@@ -200,7 +217,7 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 			ActionKeys.UPDATE);
 
 		return objectEntryLocalService.expireObjectEntry(
-			userId, objectEntryId, serviceContext);
+			getUserId(), objectEntryId, serviceContext);
 	}
 
 	@Override
@@ -231,6 +248,25 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 			objectEntryId);
 
 		if (objectEntry != null) {
+			_checkPermission(
+				ActionKeys.VIEW, objectEntry.getObjectDefinitionId(),
+				objectEntry);
+		}
+
+		return objectEntry;
+	}
+
+	@Override
+	public ObjectEntry fetchObjectEntry(
+			String externalReferenceCode, long groupId, long objectDefinitionId)
+		throws PortalException {
+
+		ObjectEntry objectEntry = objectEntryLocalService.fetchObjectEntry(
+			externalReferenceCode, groupId, objectDefinitionId);
+
+		if ((objectEntry != null) &&
+			!ObjectEntryThreadLocal.isSkipObjectEntryResourcePermission()) {
+
 			_checkPermission(
 				ActionKeys.VIEW, objectEntry.getObjectDefinitionId(),
 				objectEntry);
@@ -280,11 +316,6 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 		ObjectDefinition objectDefinition =
 			_objectDefinitionPersistence.findByPrimaryKey(objectDefinitionId);
 
-		if (objectDefinition.isRootDescendantNode()) {
-			objectDefinition = _objectDefinitionPersistence.findByPrimaryKey(
-				objectDefinition.getRootObjectDefinitionId());
-		}
-
 		return ModelResourcePermissionRegistryUtil.getModelResourcePermission(
 			objectDefinition.getClassName());
 	}
@@ -307,28 +338,11 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 
 	@Override
 	public ObjectEntry getObjectEntry(
-			String externalReferenceCode, long objectDefinitionId)
+			String externalReferenceCode, long groupId, long objectDefinitionId)
 		throws PortalException {
 
 		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
-			externalReferenceCode, objectDefinitionId);
-
-		if (!ObjectEntryThreadLocal.isSkipObjectEntryResourcePermission()) {
-			_checkPermission(
-				ActionKeys.VIEW, objectEntry.getObjectDefinitionId(),
-				objectEntry);
-		}
-
-		return objectEntry;
-	}
-
-	@Override
-	public ObjectEntry getObjectEntry(
-			String externalReferenceCode, long companyId, long groupId)
-		throws PortalException {
-
-		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
-			externalReferenceCode, companyId, groupId);
+			externalReferenceCode, groupId, objectDefinitionId);
 
 		if (!ObjectEntryThreadLocal.isSkipObjectEntryResourcePermission()) {
 			_checkPermission(
@@ -341,14 +355,15 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 
 	@Override
 	public List<ObjectEntry> getOneToManyObjectEntries(
-			long groupId, long objectRelationshipId, long primaryKey,
-			boolean related, String search, int start, int end)
+			long groupId, long objectRelationshipId, Predicate predicate,
+			boolean preferApproved, long primaryKey, boolean related,
+			String search, int start, int end, Sort[] sorts)
 		throws PortalException {
 
 		List<ObjectEntry> objectEntries =
 			objectEntryLocalService.getOneToManyObjectEntries(
-				groupId, objectRelationshipId, primaryKey, related, search,
-				start, end);
+				groupId, objectRelationshipId, predicate, preferApproved,
+				primaryKey, related, search, start, end, sorts);
 
 		if (!ObjectEntryThreadLocal.isSkipObjectEntryResourcePermission()) {
 			for (ObjectEntry objectEntry : objectEntries) {
@@ -363,12 +378,36 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 
 	@Override
 	public int getOneToManyObjectEntriesCount(
-			long groupId, long objectRelationshipId, long primaryKey,
-			boolean related, String search)
+			long groupId, long objectRelationshipId, Predicate predicate,
+			long primaryKey, boolean related, String search)
 		throws PortalException {
 
 		return objectEntryLocalService.getOneToManyObjectEntriesCount(
-			groupId, objectRelationshipId, primaryKey, related, search);
+			groupId, objectRelationshipId, predicate, primaryKey, related,
+			search);
+	}
+
+	@Override
+	public ObjectEntry getOrAddEmptyObjectEntry(
+			String externalReferenceCode, long groupId, long objectDefinitionId)
+		throws PortalException {
+
+		ObjectEntry objectEntry = objectEntryService.fetchObjectEntry(
+			externalReferenceCode, groupId, objectDefinitionId);
+
+		if (objectEntry != null) {
+			return objectEntry;
+		}
+
+		if (!ObjectEntryThreadLocal.isSkipObjectEntryResourcePermission()) {
+			_checkAddObjectEntryPortletResourcePermission(
+				groupId, objectDefinitionId, 0L, new HashMap<>());
+		}
+
+		_validateSubmissionLimit(objectDefinitionId, getUser());
+
+		return objectEntryLocalService.getOrAddEmptyObjectEntry(
+			externalReferenceCode, groupId, getUserId(), objectDefinitionId);
 	}
 
 	@Override
@@ -415,17 +454,68 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 			long groupId, long objectDefinitionId, String actionId)
 		throws PortalException {
 
+		ObjectDefinition objectDefinition =
+			_objectDefinitionPersistence.findByPrimaryKey(objectDefinitionId);
+
 		PortletResourcePermission portletResourcePermission =
-			_getPortletResourcePermission(objectDefinitionId);
+			ObjectDefinitionPortletResourcePermissionRegistryUtil.getService(
+				objectDefinition.getResourceName());
 
 		return portletResourcePermission.contains(
 			getPermissionChecker(), groupId, actionId);
 	}
 
 	@Override
+	public ObjectEntry moveObjectEntry(
+			long objectEntryId, long objectEntryFolderId,
+			Map<String, Serializable> values, ServiceContext serviceContext)
+		throws PortalException {
+
+		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
+			objectEntryId);
+
+		checkModelResourcePermission(
+			objectEntry.getObjectDefinitionId(), objectEntry.getObjectEntryId(),
+			ActionKeys.UPDATE);
+
+		if (objectEntryFolderId !=
+				ObjectEntryFolderConstants.
+					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT) {
+
+			PermissionChecker permissionChecker = getPermissionChecker();
+
+			ObjectEntryFolder objectEntryFolder =
+				_objectEntryFolderService.getObjectEntryFolder(
+					objectEntryFolderId);
+
+			ModelResourcePermissionUtil.check(
+				_objectEntryFolderModelResourcePermission, permissionChecker,
+				objectEntryFolder.getGroupId(), objectEntryFolderId,
+				ActionKeys.ADD_ENTRY);
+		}
+
+		return objectEntryLocalService.moveObjectEntry(
+			getUserId(), objectEntryId, objectEntryFolderId, values,
+			serviceContext);
+	}
+
+	@Override
+	public ObjectEntry moveObjectEntryToTrash(
+			ObjectEntry objectEntry, ServiceContext serviceContext)
+		throws PortalException {
+
+		_checkPermission(
+			ActionKeys.DELETE, objectEntry.getObjectDefinitionId(),
+			objectEntry);
+
+		return objectEntryLocalService.moveObjectEntryToTrash(
+			getUserId(), objectEntry, serviceContext);
+	}
+
+	@Override
 	public ObjectEntry partialUpdateObjectEntry(
-			long objectEntryId, Map<String, Serializable> values,
-			ServiceContext serviceContext)
+			long objectEntryId, long objectEntryFolderId,
+			Map<String, Serializable> values, ServiceContext serviceContext)
 		throws PortalException {
 
 		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
@@ -438,13 +528,57 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 		}
 
 		return objectEntryLocalService.partialUpdateObjectEntry(
-			getUserId(), objectEntryId, values, serviceContext);
+			getUserId(), objectEntryId, objectEntryFolderId, values,
+			serviceContext);
+	}
+
+	@Override
+	public ObjectEntry restoreObjectEntryFromTrash(
+			ObjectEntry objectEntry, ServiceContext serviceContext)
+		throws PortalException {
+
+		_checkPermission(
+			ActionKeys.DELETE, objectEntry.getObjectDefinitionId(),
+			objectEntry);
+
+		return objectEntryLocalService.restoreObjectEntryFromTrash(
+			getUserId(), objectEntry, serviceContext);
+	}
+
+	@Override
+	public void subscribeObjectEntry(long groupId, long objectEntryId)
+		throws PortalException {
+
+		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
+			objectEntryId);
+
+		checkModelResourcePermission(
+			objectEntry.getObjectDefinitionId(), objectEntry.getObjectEntryId(),
+			ActionKeys.SUBSCRIBE);
+
+		objectEntryLocalService.subscribeObjectEntry(
+			getUserId(), groupId, objectEntryId);
+	}
+
+	@Override
+	public void unsubscribeObjectEntry(long objectEntryId)
+		throws PortalException {
+
+		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
+			objectEntryId);
+
+		checkModelResourcePermission(
+			objectEntry.getObjectDefinitionId(), objectEntry.getObjectEntryId(),
+			ActionKeys.SUBSCRIBE);
+
+		objectEntryLocalService.unsubscribeObjectEntry(
+			getUserId(), objectEntryId);
 	}
 
 	@Override
 	public ObjectEntry updateObjectEntry(
-			long objectEntryId, Map<String, Serializable> values,
-			ServiceContext serviceContext)
+			long objectEntryId, long objectEntryFolderId,
+			Map<String, Serializable> values, ServiceContext serviceContext)
 		throws PortalException {
 
 		ObjectEntry objectEntry = objectEntryLocalService.getObjectEntry(
@@ -457,7 +591,8 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 		}
 
 		return objectEntryLocalService.updateObjectEntry(
-			getUserId(), objectEntryId, values, serviceContext);
+			getUserId(), objectEntryId, objectEntryFolderId, values,
+			serviceContext);
 	}
 
 	@Override
@@ -488,67 +623,63 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 			Map<String, Serializable> values)
 		throws PortalException {
 
-		if (FeatureFlagManagerUtil.isEnabled("LPD-17564") &&
-			(objectEntryFolderId !=
-				ObjectEntryFolderConstants.
-					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT)) {
-
-			ModelResourcePermissionUtil.check(
-				_objectEntryFolderModelResourcePermission,
-				getPermissionChecker(), groupId, objectEntryFolderId,
-				ActionKeys.ADD_ENTRY);
-		}
-
-		PortletResourcePermission portletResourcePermission =
-			_getPortletResourcePermission(objectDefinitionId);
-
 		PermissionChecker permissionChecker = getPermissionChecker();
 
 		ObjectDefinition objectDefinition =
 			_objectDefinitionPersistence.findByPrimaryKey(objectDefinitionId);
 
-		try {
-			portletResourcePermission.check(
-				permissionChecker, groupId, ObjectActionKeys.ADD_OBJECT_ENTRY);
-		}
-		catch (PortalException portalException1) {
-			if (objectDefinition.isRootDescendantNode()) {
-				try {
-					_checkPermission(
-						ActionKeys.UPDATE, objectDefinitionId,
-						_getRootObjectEntry(objectDefinition, values));
+		if (FeatureFlagManagerUtil.isEnabled(
+				objectDefinition.getCompanyId(), "LPD-17564") &&
+			(objectEntryFolderId !=
+				ObjectEntryFolderConstants.
+					PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT)) {
 
-					return;
-				}
-				catch (PortalException portalException2) {
-					portalException1.addSuppressed(portalException2);
-				}
+			ModelResourcePermissionUtil.check(
+				_objectEntryFolderModelResourcePermission, permissionChecker,
+				groupId, objectEntryFolderId, ActionKeys.ADD_ENTRY);
+		}
+
+		ObjectEntry rootObjectEntry = _getRootObjectEntry(
+			objectDefinition, values);
+
+		if (rootObjectEntry != null) {
+			objectDefinition = _objectDefinitionPersistence.findByPrimaryKey(
+				rootObjectEntry.getObjectDefinitionId());
+
+			ModelResourcePermission<ObjectEntry> modelResourcePermission =
+				getModelResourcePermission(
+					rootObjectEntry.getObjectDefinitionId());
+
+			if (modelResourcePermission.contains(
+					permissionChecker, rootObjectEntry, ActionKeys.UPDATE)) {
+
+				return;
 			}
-
-			throw portalException1;
 		}
 
-		if (permissionChecker.hasPermission(
+		PortletResourcePermission portletResourcePermission =
+			ObjectDefinitionPortletResourcePermissionRegistryUtil.getService(
+				objectDefinition.getResourceName());
+
+		portletResourcePermission.check(
+			permissionChecker, groupId, ObjectActionKeys.ADD_OBJECT_ENTRY);
+
+		if (LazyReferencingThreadLocal.isEnabled() ||
+			permissionChecker.hasPermission(
 				groupId, portletResourcePermission.getResourceName(), 0,
 				ObjectActionKeys.ADD_OBJECT_ENTRY)) {
 
 			return;
 		}
 
-		long accountEntryId = 0;
+		ObjectField objectField = _objectFieldLocalService.getObjectField(
+			objectDefinition.getAccountEntryRestrictedObjectFieldId());
 
-		if (objectDefinition.isRootDescendantNode()) {
-			accountEntryId = _getRootObjectEntryAccountEntryId(
-				objectDefinition, values);
+		long accountEntryId = MapUtil.getLong(values, objectField.getName());
 
-			objectDefinition = _objectDefinitionPersistence.findByPrimaryKey(
-				objectDefinition.getRootObjectDefinitionId());
-		}
-		else {
-			ObjectField objectField = _objectFieldLocalService.getObjectField(
-				objectDefinition.getAccountEntryRestrictedObjectFieldId());
-
-			accountEntryId = MapUtil.getLong(values, objectField.getName());
+		if (rootObjectEntry != null) {
+			accountEntryId = MapUtil.getLong(
+				rootObjectEntry.getValues(), objectField.getName());
 		}
 
 		long[] accountEntryIds = ListUtil.toLongArray(
@@ -567,43 +698,12 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 					" does not have access to account entry ", accountEntryId));
 		}
 
-		AccountEntry accountEntry = _accountEntryLocalService.getAccountEntry(
-			accountEntryId);
-
-		if (_hasAddObjectEntryPermission(
-				accountEntry.getAccountEntryGroup(), objectDefinition,
-				permissionChecker, values)) {
+		if (ObjectEntryPermissionUtil.hasAccountEntryPermission(
+				_accountEntryLocalService.getAccountEntry(accountEntryId),
+				ObjectActionKeys.ADD_OBJECT_ENTRY,
+				objectDefinition.getResourceName(), permissionChecker)) {
 
 			return;
-		}
-
-		List<AccountEntryOrganizationRel> accountEntryOrganizationRels =
-			_accountEntryOrganizationRelLocalService.
-				getAccountEntryOrganizationRels(accountEntryId);
-
-		for (AccountEntryOrganizationRel accountEntryOrganizationRel :
-				accountEntryOrganizationRels) {
-
-			Organization organization =
-				accountEntryOrganizationRel.getOrganization();
-
-			if (_hasAddObjectEntryPermission(
-					organization.getGroup(), objectDefinition,
-					permissionChecker, values)) {
-
-				return;
-			}
-
-			for (Organization ancestorOrganization :
-					organization.getAncestors()) {
-
-				if (_hasAddObjectEntryPermission(
-						ancestorOrganization.getGroup(), objectDefinition,
-						permissionChecker, values)) {
-
-					return;
-				}
-			}
 		}
 
 		throw new PrincipalException.MustHavePermission(
@@ -618,96 +718,51 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 		ModelResourcePermission<ObjectEntry> modelResourcePermission =
 			getModelResourcePermission(objectDefinitionId);
 
-		try {
-			modelResourcePermission.check(
-				getPermissionChecker(), objectEntry, actionId);
-		}
-		catch (PortalException portalException1) {
-			if ((objectEntry.getRootObjectEntryId() != 0) &&
-				(objectEntry.getRootObjectEntryId() !=
-					objectEntry.getObjectEntryId()) &&
-				(actionId.equals(ActionKeys.DELETE) ||
-				 actionId.equals(ActionKeys.UPDATE) ||
-				 actionId.equals(ActionKeys.VIEW))) {
+		if (objectEntry.isRootDescendantNode() &&
+			(actionId.equals(ActionKeys.DELETE) ||
+			 actionId.equals(ActionKeys.VIEW)) &&
+			modelResourcePermission.contains(
+				getPermissionChecker(), objectEntry, ActionKeys.UPDATE)) {
 
-				try {
-					modelResourcePermission.check(
-						getPermissionChecker(), objectEntry, ActionKeys.UPDATE);
-
-					return;
-				}
-				catch (PortalException portalException2) {
-					portalException1.addSuppressed(portalException2);
-				}
-			}
-
-			throw portalException1;
-		}
-	}
-
-	private PortletResourcePermission _getPortletResourcePermission(
-			long objectDefinitionId)
-		throws PortalException {
-
-		ObjectDefinition objectDefinition =
-			_objectDefinitionPersistence.findByPrimaryKey(objectDefinitionId);
-
-		if (objectDefinition.isRootDescendantNode()) {
-			objectDefinition = _objectDefinitionPersistence.findByPrimaryKey(
-				objectDefinition.getRootObjectDefinitionId());
+			return;
 		}
 
-		return ObjectDefinitionPortletResourcePermissionRegistryUtil.getService(
-			objectDefinition.getResourceName());
+		modelResourcePermission.check(
+			getPermissionChecker(), objectEntry, actionId);
 	}
 
 	private ObjectEntry _getRootObjectEntry(
 			ObjectDefinition objectDefinition, Map<String, Serializable> values)
 		throws PortalException {
 
-		ObjectDefinitionTreeFactory objectDefinitionTreeFactory =
-			new ObjectDefinitionTreeFactory(
-				_objectDefinitionPersistence, _objectRelationshipLocalService);
+		long parentObjectEntryId = 0;
 
-		Tree tree = objectDefinitionTreeFactory.create(
-			objectDefinition.getRootObjectDefinitionId());
+		List<ObjectRelationship> objectRelationships =
+			_objectRelationshipLocalService.
+				getObjectRelationshipsByObjectDefinitionId2(
+					objectDefinition.getObjectDefinitionId(), true);
 
-		Node node = tree.getNode(objectDefinition.getObjectDefinitionId());
+		for (ObjectRelationship objectRelationship : objectRelationships) {
+			ObjectField objectField2 = _objectFieldLocalService.getObjectField(
+				objectRelationship.getObjectFieldId2());
 
-		Edge edge = node.getEdge();
+			parentObjectEntryId = MapUtil.getLong(
+				values, objectField2.getName());
 
-		ObjectRelationship objectRelationship =
-			_objectRelationshipLocalService.getObjectRelationship(
-				edge.getObjectRelationshipId());
+			if (parentObjectEntryId != 0) {
+				break;
+			}
+		}
 
-		ObjectField objectField2 = _objectFieldLocalService.getObjectField(
-			objectRelationship.getObjectFieldId2());
+		if (parentObjectEntryId == 0) {
+			return null;
+		}
 
 		ObjectEntry parentObjectEntry = objectEntryLocalService.getObjectEntry(
-			MapUtil.getLong(values, objectField2.getName()));
+			parentObjectEntryId);
 
 		return objectEntryLocalService.getObjectEntry(
 			parentObjectEntry.getRootObjectEntryId());
-	}
-
-	private long _getRootObjectEntryAccountEntryId(
-			ObjectDefinition objectDefinition, Map<String, Serializable> values)
-		throws PortalException {
-
-		ObjectEntry rootObjectEntry = _getRootObjectEntry(
-			objectDefinition, values);
-
-		ObjectDefinition rootObjectDefinition =
-			_objectDefinitionPersistence.findByPrimaryKey(
-				objectDefinition.getRootObjectDefinitionId());
-
-		ObjectField accountEntryRestrictedObjectField =
-			_objectFieldLocalService.getObjectField(
-				rootObjectDefinition.getAccountEntryRestrictedObjectFieldId());
-
-		return MapUtil.getLong(
-			rootObjectEntry.getValues(),
-			accountEntryRestrictedObjectField.getName());
 	}
 
 	private Date _getStartDate() {
@@ -720,33 +775,6 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 			).atStartOfDay(
 				ZoneId.systemDefault()
 			).toInstant());
-	}
-
-	private boolean _hasAddObjectEntryPermission(
-			Group group, ObjectDefinition objectDefinition,
-			PermissionChecker permissionChecker,
-			Map<String, Serializable> values)
-		throws PortalException {
-
-		if (permissionChecker.hasPermission(
-				group.getGroupId(), objectDefinition.getResourceName(), 0,
-				ObjectActionKeys.ADD_OBJECT_ENTRY)) {
-
-			return true;
-		}
-
-		if (objectDefinition.isRootDescendantNode()) {
-			ObjectEntry objectEntry = _getRootObjectEntry(
-				objectDefinition, values);
-
-			ModelResourcePermission<ObjectEntry> modelResourcePermission =
-				getModelResourcePermission(objectEntry.getObjectDefinitionId());
-
-			return modelResourcePermission.contains(
-				permissionChecker, objectEntry, ActionKeys.UPDATE);
-		}
-
-		return false;
 	}
 
 	private void _sendUserNotificationEvents(
@@ -895,10 +923,6 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 	private AccountEntryLocalService _accountEntryLocalService;
 
 	@Reference
-	private AccountEntryOrganizationRelLocalService
-		_accountEntryOrganizationRelLocalService;
-
-	@Reference
 	private ConfigurationProvider _configurationProvider;
 
 	@Reference
@@ -914,6 +938,9 @@ public class ObjectEntryServiceImpl extends ObjectEntryServiceBaseImpl {
 	)
 	private ModelResourcePermission<ObjectEntryFolder>
 		_objectEntryFolderModelResourcePermission;
+
+	@Reference
+	private ObjectEntryFolderService _objectEntryFolderService;
 
 	@Reference
 	private ObjectFieldLocalService _objectFieldLocalService;

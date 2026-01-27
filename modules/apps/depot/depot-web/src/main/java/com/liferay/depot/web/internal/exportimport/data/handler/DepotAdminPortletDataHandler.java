@@ -6,9 +6,9 @@
 package com.liferay.depot.web.internal.exportimport.data.handler;
 
 import com.liferay.depot.constants.DepotConstants;
+import com.liferay.depot.constants.DepotPortletKeys;
 import com.liferay.depot.model.DepotEntryGroupRel;
 import com.liferay.depot.service.DepotEntryGroupRelLocalService;
-import com.liferay.depot.web.internal.constants.DepotPortletKeys;
 import com.liferay.exportimport.kernel.lar.BasePortletDataHandler;
 import com.liferay.exportimport.kernel.lar.ExportImportDateUtil;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
@@ -73,12 +73,13 @@ public class DepotAdminPortletDataHandler extends BasePortletDataHandler {
 		setDataAlwaysStaged(true);
 		setDeletionSystemEventStagedModelTypes(
 			new StagedModelType(DepotEntryGroupRel.class));
-		setExportControls(
+		setExportPortletDataHandlerControls(
 			new PortletDataHandlerBoolean(
 				getNamespace(), "site-connections", true, true, null,
 				DepotEntryGroupRel.class.getName()));
 		setPublishToLiveByDefault(true);
-		setStagingControls(getExportControls());
+		setStagingPortletDataHandlerControls(
+			getExportPortletDataHandlerControls());
 	}
 
 	@Override

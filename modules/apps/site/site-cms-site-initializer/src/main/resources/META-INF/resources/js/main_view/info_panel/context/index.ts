@@ -6,22 +6,26 @@
 import React from 'react';
 
 import {
-	IAssetInformation,
 	IAssetObjectEntry,
-} from '../../../structure_builder/types/AssetType';
+	ISearchAssetObjectEntry,
+} from '../../../common/types/AssetType';
 
-export interface IAssetTypeInfoPanelContext extends IAssetInformation {
-	objectEntries?: IAssetObjectEntry[];
+export interface IAssetTypeInfoPanelContext {
+	actions: ISearchAssetObjectEntry['actions'];
+	asset: IAssetObjectEntry;
+	assetLibrary?: {
+		externalReferenceCode: string;
+		groupId: number;
+		name: string;
+	};
+	cmsGroupId: number | string;
+	commentsProps: any;
+	selectedAssets: ISearchAssetObjectEntry[];
+	type: string;
 }
 
-const BASE_CONTEXT: IAssetTypeInfoPanelContext = {
-	externalReferenceCode: null,
-	icon: null,
-	id: null,
-	objectEntries: [],
-	title: null,
-	title_i18n: null,
-	type: null,
-};
+export const AssetTypeInfoPanelContext = React.createContext(
+	{} as IAssetTypeInfoPanelContext
+);
 
-export const AssetTypeInfoPanelContext = React.createContext(BASE_CONTEXT);
+AssetTypeInfoPanelContext.displayName = 'AssetTypeInfoPanelContext';

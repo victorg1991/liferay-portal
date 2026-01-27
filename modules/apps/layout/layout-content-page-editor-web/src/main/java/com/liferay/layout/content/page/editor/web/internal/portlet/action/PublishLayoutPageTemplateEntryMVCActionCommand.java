@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.kernel.servlet.MultiSessionMessages;
 import com.liferay.portal.kernel.servlet.SessionMessages;
@@ -63,7 +64,8 @@ public class PublishLayoutPageTemplateEntryMVCActionCommand
 			themeDisplay.getPermissionChecker(), layout, ActionKeys.UPDATE);
 
 		LayoutPageTemplateEntry layoutPageTemplateEntry =
-			_publishLayoutPageTemplateEntry(draftLayout, layout);
+			_publishLayoutPageTemplateEntry(
+				draftLayout, layout, themeDisplay.getUserId());
 
 		String portletId = _portal.getPortletId(actionRequest);
 
@@ -109,16 +111,16 @@ public class PublishLayoutPageTemplateEntryMVCActionCommand
 	}
 
 	private LayoutPageTemplateEntry _publishLayoutPageTemplateEntry(
-			Layout draftLayout, Layout layout)
+			Layout draftLayout, Layout layout, long userId)
 		throws Exception {
 
 		UnicodeProperties previousLayouTypeSettingsUnicodeProperties =
 			layout.getTypeSettingsProperties();
 
-		_layoutLocalService.copyLayoutContent(draftLayout, layout);
+		_layoutService.copyLayoutContent(draftLayout, layout);
 
 		LayoutStructureUtil.deleteMarkedForDeletionItems(
-			draftLayout.getGroupId(), draftLayout.getPlid());
+			draftLayout.getGroupId(), draftLayout.getPlid(), userId);
 
 		draftLayout = _layoutLocalService.fetchLayout(draftLayout.getPlid());
 
@@ -151,8 +153,8 @@ public class PublishLayoutPageTemplateEntryMVCActionCommand
 
 		layout = _layoutLocalService.updateLayout(layout);
 
-		_layoutLocalService.updateLayout(
-			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),
+		_layoutLocalService.updateTypeSettings(
+			layout,
 			_copySEOTypeSettingsUnicodeProperties(
 				previousLayouTypeSettingsUnicodeProperties,
 				layout.getTypeSettingsProperties()));
@@ -169,6 +171,9 @@ public class PublishLayoutPageTemplateEntryMVCActionCommand
 
 	@Reference
 	private LayoutPageTemplateEntryService _layoutPageTemplateEntryService;
+
+	@Reference
+	private LayoutService _layoutService;
 
 	@Reference
 	private Portal _portal;

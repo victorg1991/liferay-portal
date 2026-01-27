@@ -59,7 +59,7 @@ modules/apps/click-to-chat/    @liferay-site-management
 modules/apps/client-extension/    @liferay-frontend
 modules/apps/comment/    @liferay-content-management
 modules/apps/commerce/    @liferay-commerce
-modules/apps/company/
+modules/apps/company/    @liferay-database-infra
 modules/apps/configuration-admin/    @liferay-platform-experience
 modules/apps/connected-app/    @liferay-content-management
 modules/apps/contacts/    @liferay-commerce
@@ -71,7 +71,7 @@ modules/apps/counter/counter-test/    @liferay-core-infra
 modules/apps/data-cleanup/    @liferay-database-infra
 modules/apps/data-engine/    @liferay-bpm
 modules/apps/depot/    @liferay-content-management
-modules/apps/diff/
+modules/apps/diff/    @liferay-content-management
 modules/apps/digital-signature/    @liferay-bpm
 modules/apps/dispatch/    @liferay-headless
 modules/apps/document-library/    @liferay-content-management
@@ -92,6 +92,8 @@ modules/apps/frontend-data-set/    @liferay-frontend
 modules/apps/frontend-editor/    @liferay-frontend
 modules/apps/frontend-icons/    @liferay-frontend
 modules/apps/frontend-js/    @liferay-frontend
+modules/apps/frontend-js/frontend-js-item-selector-sample-web/    @liferay-platform-experience
+modules/apps/frontend-js/frontend-js-item-selector-web/    @liferay-platform-experience
 modules/apps/frontend-taglib/    @liferay-frontend
 modules/apps/frontend-theme/    @liferay-platform-experience
 modules/apps/frontend-theme/frontend-theme-favicon-servlet/
@@ -188,6 +190,7 @@ modules/apps/login/    @liferay-appsec
 modules/apps/mail/
 modules/apps/map    @liferay-frontend
 modules/apps/marketplace/    @liferay-commerce
+modules/apps/mcp/    @liferay-headless
 modules/apps/mentions/    @liferay-content-management
 modules/apps/message-boards/    @liferay-content-management
 modules/apps/microblogs/    @liferay-content-management
@@ -238,12 +241,12 @@ modules/apps/portal/portal-fragment-bundle-watcher/    @liferay-core-infra
 modules/apps/portal/portal-fragment-bundle-watcher-test/    @liferay-core-infra
 modules/apps/portal/portal-http-impl/    @liferay-core-infra
 modules/apps/portal/portal-init-servlet-filter/    @liferay-core-infra
-modules/apps/portal/portal-instance-lifecycle-api/    @liferay-core-infra
-modules/apps/portal/portal-instance-lifecycle-impl/    @liferay-core-infra
+modules/apps/portal/portal-instance-lifecycle-api/    @liferay-database-infra
+modules/apps/portal/portal-instance-lifecycle-impl/    @liferay-database-infra
 modules/apps/portal/portal-jmx/    @liferay-core-infra
 modules/apps/portal/portal-jmx-api/    @liferay-core-infra
 modules/apps/portal/portal-jmx-test/    @liferay-core-infra
-modules/apps/portal/portal-kernel-instance-test/    @liferay-core-infra
+modules/apps/portal/portal-kernel-instance-test/    @liferay-database-infra
 modules/apps/portal/portal-license-deployer/    @liferay-core-infra
 modules/apps/portal/portal-log4j-test/    @liferay-core-infra
 modules/apps/portal/portal-messaging/    @liferay-core-infra
@@ -408,10 +411,9 @@ modules/dxp/apps/commerce-punchout/    @liferay-commerce
 modules/dxp/apps/document-library-opener/    @liferay-content-management
 modules/dxp/apps/enterprise-product-notification/
 modules/dxp/apps/frontend-theme/    @liferay-platform-experience
-modules/dxp/apps/multi-factor-authentication/
+modules/dxp/apps/multi-factor-authentication/    @liferay-appsec
 modules/dxp/apps/osb/osb-faro/    @liferay-ac
 modules/dxp/apps/osb/osb-site-initializer/    @liferay-site-management
-modules/dxp/apps/osb/osb-spring-boot/
 modules/dxp/apps/osb/osb-testray/
 modules/dxp/apps/portal/
 modules/dxp/apps/portal/portal-dao-db    @liferay-database-infra
@@ -478,6 +480,7 @@ modules/test/playwright/tests/export-import-web    @liferay-headless
 modules/test/playwright/tests/headless-builder-impl    @liferay-headless
 modules/test/playwright/tests/headless-builder-web    @liferay-headless
 modules/test/playwright/tests/layout-set-prototype-web    @liferay-headless
+modules/test/playwright/tests/portal-impl/portlet    @liferay-frontend
 modules/test/playwright/tests/portal-tools-rest-builder-test-impl    @liferay-headless
 modules/test/playwright/tests/staging-configuration-web    @liferay-headless
 modules/third-party/
@@ -508,5 +511,21 @@ modules/util/portal-tools-service-builder-test-test/    @liferay-core-infra
 modules/util/portal-tools-service-builder-test-uad/    @liferay-core-infra
 modules/util/release-util/    @liferay-devtools
 modules/util/source-formatter/    @liferay-devtools
+portal-impl/src/com/liferay/portal/dao/db/    @liferay-database-infra
+portal-impl/src/com/liferay/portal/db/    @liferay-database-infra
+portal-impl/src/com/liferay/portal/tools/DBUpgrader.java    @liferay-database-infra
+portal-impl/src/com/liferay/portal/upgrade/    @liferay-database-infra
+portal-impl/src/com/liferay/portal/verify/    @liferay-database-infra
+portal-impl/test/unit/com/liferay/portal/dao/db/    @liferay-database-infra
+portal-impl/test/unit/com/liferay/portal/db/    @liferay-database-infra
+portal-impl/test/unit/com/liferay/portal/upgrade/    @liferay-database-infra
+portal-impl/test/unit/com/liferay/portal/verify/    @liferay-database-infra
+portal-kernel/src/com/liferay/portal/kernel/dao/db/    @liferay-database-infra
+portal-kernel/src/com/liferay/portal/kernel/db/    @liferay-database-infra
+portal-kernel/src/com/liferay/portal/kernel/instance/    @liferay-database-infra
+portal-kernel/src/com/liferay/portal/kernel/upgrade/    @liferay-database-infra
+portal-kernel/src/com/liferay/portal/kernel/verify/    @liferay-database-infra
+portal-kernel/test/unit/com/liferay/portal/kernel/dao/db/    @liferay-database-infra
+portal-kernel/test/unit/com/liferay/portal/kernel/upgrade/    @liferay-database-infra
 util-taglib/    @liferay-frontend
 workspaces/liferay-marketplace-workspace/    @liferay-commerce

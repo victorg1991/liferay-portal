@@ -20,7 +20,7 @@ const DefaultComponent = props => (
 	<Provider store={mockStore()}>
 		<StaticRouter>
 			<DndProvider backend={HTML5Backend}>
-				<Edit groupId='23' {...props} />
+				<Edit groupId='23' type='BATCH' {...props} />
 			</DndProvider>
 		</StaticRouter>
 	</Provider>
@@ -81,23 +81,13 @@ describe('Edit', () => {
 		);
 
 		const {container, getByText} = render(
-			<DefaultComponent type={SegmentTypes.Dynamic} />
+			<DefaultComponent type={SegmentTypes.Batch} />
 		);
 
 		jest.runAllTimers();
 
 		await waitForLoadingToBeRemoved(container);
 
-		expect(getByText('Dynamic Segment')).toBeTruthy();
-	});
-
-	it('should render a static segment', () => {
-		const {getByText} = render(
-			<DefaultComponent type={SegmentTypes.Static} />
-		);
-
-		jest.runAllTimers();
-
-		expect(getByText('Static Segment')).toBeTruthy();
+		expect(getByText('Batch Segment')).toBeTruthy();
 	});
 });

@@ -174,6 +174,16 @@ public class SharedAssetSerDes {
 			sb.append("\"");
 		}
 
+		if (sharedAsset.getFile() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"file\": ");
+
+			sb.append(String.valueOf(sharedAsset.getFile()));
+		}
+
 		if (sharedAsset.getFileTypeIcon() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -248,6 +258,16 @@ public class SharedAssetSerDes {
 			sb.append(_escape(sharedAsset.getTitle()));
 
 			sb.append("\"");
+		}
+
+		if (sharedAsset.getVisible() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"visible\": ");
+
+			sb.append(sharedAsset.getVisible());
 		}
 
 		sb.append("}");
@@ -341,6 +361,13 @@ public class SharedAssetSerDes {
 				String.valueOf(sharedAsset.getExternalReferenceCode()));
 		}
 
+		if (sharedAsset.getFile() == null) {
+			map.put("file", null);
+		}
+		else {
+			map.put("file", String.valueOf(sharedAsset.getFile()));
+		}
+
 		if (sharedAsset.getFileTypeIcon() == null) {
 			map.put("fileTypeIcon", null);
 		}
@@ -384,6 +411,13 @@ public class SharedAssetSerDes {
 		}
 		else {
 			map.put("title", String.valueOf(sharedAsset.getTitle()));
+		}
+
+		if (sharedAsset.getVisible() == null) {
+			map.put("visible", null);
+		}
+		else {
+			map.put("visible", String.valueOf(sharedAsset.getVisible()));
 		}
 
 		return map;
@@ -433,6 +467,9 @@ public class SharedAssetSerDes {
 
 				return false;
 			}
+			else if (Objects.equals(jsonParserFieldName, "file")) {
+				return false;
+			}
 			else if (Objects.equals(jsonParserFieldName, "fileTypeIcon")) {
 				return false;
 			}
@@ -449,6 +486,9 @@ public class SharedAssetSerDes {
 				return false;
 			}
 			else if (Objects.equals(jsonParserFieldName, "title")) {
+				return false;
+			}
+			else if (Objects.equals(jsonParserFieldName, "visible")) {
 				return false;
 			}
 
@@ -514,6 +554,12 @@ public class SharedAssetSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "file")) {
+				if (jsonParserFieldValue != null) {
+					sharedAsset.setFile(
+						FileEntrySerDes.toDTO((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "fileTypeIcon")) {
 				if (jsonParserFieldValue != null) {
 					sharedAsset.setFileTypeIcon((String)jsonParserFieldValue);
@@ -544,6 +590,11 @@ public class SharedAssetSerDes {
 			else if (Objects.equals(jsonParserFieldName, "title")) {
 				if (jsonParserFieldValue != null) {
 					sharedAsset.setTitle((String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "visible")) {
+				if (jsonParserFieldValue != null) {
+					sharedAsset.setVisible((Boolean)jsonParserFieldValue);
 				}
 			}
 		}

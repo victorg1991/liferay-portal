@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
+import {TrendClassification} from '@liferay/analytics-reports-js-components-web';
 import {
 	render,
 	screen,
@@ -11,10 +12,8 @@ import {
 } from '@testing-library/react';
 import React from 'react';
 
-import {
-	IMetricsProps,
-	TrendClassification,
-} from '../../../../src/main/resources/META-INF/resources/js/main_view/dashboard/components/ContentAndFilesCard';
+import ApiHelper from '../../../../src/main/resources/META-INF/resources/js/common/services/ApiHelper';
+import {IMetricsProps} from '../../../../src/main/resources/META-INF/resources/js/main_view/dashboard/components/ContentAndFilesCard';
 import {FilesCard} from '../../../../src/main/resources/META-INF/resources/js/main_view/dashboard/components/FilesCard';
 
 describe('[CMS Dashboard] Components: FilesCard', () => {
@@ -30,9 +29,9 @@ describe('[CMS Dashboard] Components: FilesCard', () => {
 			vocabulariesCount: 10,
 		};
 
-		global.fetch = jest.fn().mockResolvedValue({
-			json: () => Promise.resolve(mockedResponse),
-			ok: true,
+		jest.spyOn(ApiHelper, 'get').mockResolvedValue({
+			data: mockedResponse,
+			error: null,
 		});
 	});
 
@@ -51,18 +50,10 @@ describe('[CMS Dashboard] Components: FilesCard', () => {
 		);
 		expect(Description).toBeInTheDocument();
 
-		const [RangeSelectorDropdown, ActionMenu] =
-			screen.getAllByRole('button');
+		const [RangeSelectorDropdown] = screen.getAllByRole('button');
 
 		expect(RangeSelectorDropdown).toBeInTheDocument();
 		expect(RangeSelectorDropdown).toHaveTextContent('last-7-days');
-
-		expect(ActionMenu).toBeInTheDocument();
-
-		const viewAllFilesElement = screen.getByText('view-all-files');
-
-		expect(viewAllFilesElement).toBeInTheDocument();
-		expect(viewAllFilesElement).toHaveAttribute('href', '/files');
 
 		await waitForElementToBeRemoved(
 			screen.getByTestId('loading-animation')

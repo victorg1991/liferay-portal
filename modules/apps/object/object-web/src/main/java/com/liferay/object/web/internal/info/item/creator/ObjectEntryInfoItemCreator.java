@@ -23,8 +23,11 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
+
+import java.text.DateFormat;
 
 import java.util.Map;
 
@@ -55,8 +58,12 @@ public class ObjectEntryInfoItemCreator
 		throws InfoFormException {
 
 		try {
+			DateFormat dateFormat = DateFormatFactoryUtil.getSimpleDateFormat(
+				"yyyy-MM-dd HH:mm");
+
 			ObjectEntryManager objectEntryManager =
 				_objectEntryManagerRegistry.getObjectEntryManager(
+					_objectDefinition.getCompanyId(),
 					_objectDefinition.getStorageType());
 
 			ServiceContext serviceContext =
@@ -64,8 +71,8 @@ public class ObjectEntryInfoItemCreator
 
 			ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
 
-			Map<String, Object> curProperties = ObjectEntryUtil.toProperties(
-				themeDisplay.getCompanyId(), infoItemFieldValues);
+			Map<String, Object> curProperties = _getProperties(
+				infoItemFieldValues, themeDisplay);
 
 			com.liferay.object.rest.dto.v1_0.ObjectEntry objectEntry =
 				objectEntryManager.addObjectEntry(
@@ -75,6 +82,14 @@ public class ObjectEntryInfoItemCreator
 					_objectDefinition,
 					new com.liferay.object.rest.dto.v1_0.ObjectEntry() {
 						{
+							setDisplayDate(
+								() -> GetterUtil.getDate(
+									curProperties.get("displayDate"),
+									dateFormat, null));
+							setExpirationDate(
+								() -> GetterUtil.getDate(
+									curProperties.get("expirationDate"),
+									dateFormat, null));
 							setFriendlyUrlPath(
 								() -> GetterUtil.getString(
 									curProperties.get("objectEntryFriendlyURL"),
@@ -84,6 +99,10 @@ public class ObjectEntryInfoItemCreator
 									"objectEntryFriendlyURL_i18n"));
 							setKeywords(serviceContext::getAssetTagNames);
 							setProperties(() -> curProperties);
+							setReviewDate(
+								() -> GetterUtil.getDate(
+									curProperties.get("reviewDate"), dateFormat,
+									null));
 							setStatus(
 								() -> new Status() {
 									{
@@ -116,6 +135,13 @@ public class ObjectEntryInfoItemCreator
 		}
 
 		return null;
+	}
+
+	private Map<String, Object> _getProperties(
+		InfoItemFieldValues infoItemFieldValues, ThemeDisplay themeDisplay) {
+
+		return ObjectEntryUtil.toProperties(
+			themeDisplay.getCompanyId(), infoItemFieldValues, null);
 	}
 
 	private final InfoItemFormProvider<ObjectEntry> _infoItemFormProvider;

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import {fireEvent, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 
@@ -45,10 +45,12 @@ describe('ImportStructureModalContent', () => {
 		renderComponent();
 
 		expect(
-			screen.getByText('import-and-override-structure')
+			screen.getByText('import-and-override-content-structure')
 		).toBeInTheDocument();
 		expect(
-			screen.getByText('import-and-override-structure-warning-message')
+			screen.getByText(
+				'import-and-override-content-structure-warning-message'
+			)
 		).toBeInTheDocument();
 	});
 

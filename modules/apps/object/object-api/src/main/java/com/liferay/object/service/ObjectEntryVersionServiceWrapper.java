@@ -41,21 +41,21 @@ public class ObjectEntryVersionServiceWrapper
 	public com.liferay.object.model.ObjectEntryVersion expireObjectEntryVersion(
 			com.liferay.object.model.ObjectEntry objectEntry,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext,
-			long userId, int version)
+			int version)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectEntryVersionService.expireObjectEntryVersion(
-			objectEntry, serviceContext, userId, version);
+			objectEntry, serviceContext, version);
 	}
 
 	@Override
 	public void expireObjectEntryVersions(
-			long userId, com.liferay.object.model.ObjectEntry objectEntry,
+			com.liferay.object.model.ObjectEntry objectEntry,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws Exception {
 
 		_objectEntryVersionService.expireObjectEntryVersions(
-			userId, objectEntry, serviceContext);
+			objectEntry, serviceContext);
 	}
 
 	@Override
@@ -74,6 +74,19 @@ public class ObjectEntryVersionServiceWrapper
 
 		return _objectEntryVersionService.getObjectEntryVersions(
 			objectEntryId, start, end);
+	}
+
+	@Override
+	public java.util.List<com.liferay.object.model.ObjectEntryVersion>
+			getObjectEntryVersions(
+				long objectEntryId, int start, int end,
+				com.liferay.portal.kernel.util.OrderByComparator
+					<com.liferay.object.model.ObjectEntryVersion>
+						orderByComparator)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryVersionService.getObjectEntryVersions(
+			objectEntryId, start, end, orderByComparator);
 	}
 
 	@Override

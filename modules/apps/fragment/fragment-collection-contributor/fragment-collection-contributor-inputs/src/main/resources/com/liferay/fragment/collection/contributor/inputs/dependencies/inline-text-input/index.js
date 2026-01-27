@@ -1,19 +1,19 @@
 const currentLength = document.getElementById(
-	`${fragmentNamespace}-current-length`
+	`${fragmentElementId}-current-length`
+);
+const error = document.getElementById(
+	`${fragmentElementId}-inline-text-input-error`
 );
 const errorMessage = document.getElementById(
-	`${fragmentNamespace}-inline-text-input-error-message`
+	`${fragmentElementId}-inline-text-input-error-message`
 );
-const formGroup = document.getElementById(`${fragmentNamespace}-form-group`);
+const formGroup = document.getElementById(`${fragmentElementId}-form-group`);
 const inputElement = document.getElementById(
-	`${fragmentNamespace}-inline-text-input`
+	`${fragmentElementId}-inline-text-input`
 );
-const lengthInfo = document.getElementById(`${fragmentNamespace}-length-info`);
-const lengthWarning = document.getElementById(
-	`${fragmentNamespace}-length-warning`
-);
-const lengthWarningText = document.getElementById(
-	`${fragmentNamespace}-length-warning-text`
+const lengthInfo = document.getElementById(`${fragmentElementId}-length-info`);
+const localizedText = document.getElementById(
+	`${fragmentElementId}-localized-text`
 );
 
 function main() {
@@ -23,37 +23,55 @@ function main() {
 	else {
 		import('@liferay/fragment-impl/api').then(
 			({
+				focusInput,
 				handleInputLengthError,
-				hideLengthError,
 				registerLocalizedInput,
 				registerUnlocalizedInput,
+				showInputError,
 			}) => {
+				if (input.required) {
+					inputElement.addEventListener('invalid', (event) => {
+						event.preventDefault();
+
+						focusInput(inputElement);
+
+						showInputError({
+							errorContainer: error,
+							errorMessageContainer: errorMessage,
+							errorType: 'required',
+							formGroup,
+						});
+					});
+				}
+
+				const hasError = formGroup.classList.contains('has-error');
+
+				if (hasError) {
+					focusInput(inputElement);
+				}
+
 				currentLength.innerText = inputElement.value.length;
 
 				if (
-					!errorMessage &&
+					!hasError &&
 					inputElement.value.length > input.attributes.maxLength
 				) {
-					hideLengthError({
-						configuration,
+					showInputError({
+						errorType: 'length',
 						formGroup,
-						lengthInfo,
-						lengthWarning,
-						lengthWarningText,
+						lengthInfoContainer: lengthInfo,
 					});
 				}
 
 				const onKeyup = (event) =>
 					handleInputLengthError({
-						configuration,
 						currentLength,
-						errorMessage,
+						errorContainer: error,
+						errorMessageContainer: errorMessage,
 						event,
 						formGroup,
 						input,
-						lengthInfo,
-						lengthWarning,
-						lengthWarningText,
+						lengthInfoContainer: lengthInfo,
 					});
 
 				inputElement.addEventListener('keyup', onKeyup);
@@ -61,17 +79,22 @@ function main() {
 				const defaultLanguageId = themeDisplay.getDefaultLanguageId();
 
 				if (input.localizable) {
-					const {onChange} = registerLocalizedInput({
+					const {onBlur, onChange} = registerLocalizedInput({
 						defaultLanguageId,
 						initialValues: input.valueI18n,
 						inputElement,
 						inputName: input.name,
 						localizationInputsContainer: inputElement.parentNode,
-						namespace: fragmentNamespace,
+						localizedTextContainer: localizedText,
+						namespace: fragmentElementId,
 					});
 
 					inputElement.addEventListener('change', (event) => {
 						onChange(event.target.value);
+					});
+
+					inputElement.addEventListener('blur', (event) => {
+						onBlur(event.target.value);
 					});
 				}
 				else {
@@ -79,12 +102,15 @@ function main() {
 						defaultLanguageId,
 						inputElement,
 						readOnlyInputLabel: document.getElementById(
-							`${fragmentNamespace}-inline-text-input-readonly`
+							`${fragmentElementId}-inline-text-input-readonly`
 						),
 						unlocalizedFieldsState:
 							input.attributes.unlocalizedFieldsState,
+						unlocalizedLabelTextContainer: document.getElementById(
+							`${fragmentElementId}-unlocalized-label-text`
+						),
 						unlocalizedMessageContainer: document.getElementById(
-							`${fragmentNamespace}-unlocalized-info`
+							`${fragmentElementId}-unlocalized-info`
 						),
 					});
 				}

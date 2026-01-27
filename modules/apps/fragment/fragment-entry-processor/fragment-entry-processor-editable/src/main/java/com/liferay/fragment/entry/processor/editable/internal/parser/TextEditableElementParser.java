@@ -7,8 +7,10 @@ package com.liferay.fragment.entry.processor.editable.internal.parser;
 
 import com.liferay.fragment.entry.processor.editable.parser.EditableElementParser;
 import com.liferay.fragment.exception.FragmentEntryContentException;
+import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -16,6 +18,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -73,7 +76,14 @@ public class TextEditableElementParser extends BaseEditableElementParser {
 			element.addClass(textStyleValue);
 		}
 
-		element.html(value);
+		if (value.indexOf(CharPool.LESS_THAN) == -1) {
+			element.empty();
+
+			element.appendChild(new TextNode(HtmlUtil.unescape(value)));
+		}
+		else {
+			element.html(value);
+		}
 	}
 
 	@Override

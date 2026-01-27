@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {buildQueryString} from '@liferay/analytics-reports-js-components-web';
 import React, {useContext, useState} from 'react';
 
 import ApiHelper from '../../../common/services/ApiHelper';
+import getLocalizedValue from '../../../common/utils/getLocalizedValue';
 import {ViewDashboardContext} from '../ViewDashboardContext';
-import {buildQueryString} from '../utils/buildQueryString';
 import {FilterDropdown, Item} from './FilterDropdown';
 import {IAllFiltersDropdown, initialFilters} from './InventoryAnalysisCard';
 
@@ -39,8 +40,8 @@ const AllStructureTypesDropdown: React.FC<IAllFiltersDropdown> = ({
 		if (data) {
 			return data.items.map(({id, label}) => ({
 				label:
-					label[Liferay.ThemeDisplay.getDefaultLanguageId()] ||
-					label['en_US'],
+					getLocalizedValue(label) ||
+					getLocalizedValue(label, 'en_US'),
 				value: String(id),
 			}));
 		}
@@ -60,7 +61,7 @@ const AllStructureTypesDropdown: React.FC<IAllFiltersDropdown> = ({
 			icon="edit-layout"
 			items={structures}
 			loading={loading}
-			onActiveChange={() => setDropdownActive(!dropdownActive)}
+			onActiveChange={() => setDropdownActive((prevState) => !prevState)}
 			onSearch={async (value) => {
 				setLoading(true);
 
@@ -89,7 +90,7 @@ const AllStructureTypesDropdown: React.FC<IAllFiltersDropdown> = ({
 				setLoading(false);
 			}}
 			selectedItem={item}
-			title={Liferay.Language.get('filter-by-structure-type')}
+			title={Liferay.Language.get('filter-by-content-structure-type')}
 		/>
 	);
 };

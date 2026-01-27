@@ -79,6 +79,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -264,7 +265,7 @@ public class SitemapManagerTest {
 
 		LayoutSet layoutSet = group.getPublicLayoutSet();
 
-		TreeMap<String, String> originalVirtualHostnames =
+		NavigableMap<String, String> originalVirtualHostnames =
 			layoutSet.getVirtualHostnames();
 
 		try {
@@ -280,7 +281,8 @@ public class SitemapManagerTest {
 		}
 		finally {
 			_layoutSetLocalService.updateVirtualHosts(
-				group.getGroupId(), false, originalVirtualHostnames);
+				group.getGroupId(), false,
+				new TreeMap<>(originalVirtualHostnames));
 		}
 	}
 
@@ -417,7 +419,7 @@ public class SitemapManagerTest {
 			_setUpAssetCategoryDisplayPage();
 
 			_assertSitemap(
-				_group.getGroupId(), _layout.getUuid(),
+				true, _group.getGroupId(), _layout.getUuid(),
 				_getExpectedAssetCategoryUrls());
 		}
 	}
@@ -449,9 +451,8 @@ public class SitemapManagerTest {
 		typeSettingsUnicodeProperties.setProperty(
 			"sitemap-include-child-layouts", "false");
 
-		_layoutLocalService.updateLayout(
-			childLayout.getGroupId(), false, childLayout.getLayoutId(),
-			typeSettingsUnicodeProperties.toString());
+		_layoutLocalService.updateTypeSettings(
+			childLayout, typeSettingsUnicodeProperties.toString());
 
 		_testSitemapIncludePagesCompanyEnabledGroupEnabled(
 			childLayout.getUuid(), childLayoutCanonicalURL);
@@ -464,14 +465,59 @@ public class SitemapManagerTest {
 		typeSettingsUnicodeProperties.setProperty(
 			"sitemap-include-child-layouts", "false");
 
-		_layoutLocalService.updateLayout(
-			_layout.getGroupId(), false, _layout.getLayoutId(),
-			typeSettingsUnicodeProperties.toString());
+		_layoutLocalService.updateTypeSettings(
+			_layout, typeSettingsUnicodeProperties.toString());
 
 		_testEmptySitemapIncludePagesCompanyEnabledGroupEnabled(
 			childLayout.getUuid());
 		_testEmptySitemapIncludePagesCompanyEnabledGroupEnabled(
 			grandChildLayout.getUuid());
+	}
+
+	@Test
+	public void testSitemapIncludeLayoutPageTemplateEntryWithXMLSitemapIndexEnabled()
+		throws Exception {
+
+		try (CompanyConfigurationTemporarySwapper
+				companyConfigurationTemporarySwapper =
+					new CompanyConfigurationTemporarySwapper(
+						TestPropsValues.getCompanyId(),
+						_PID_SITEMAP_COMPANY_CONFIGURATION,
+						HashMapDictionaryBuilder.<String, Object>put(
+							"xmlSitemapIndexEnabled", true
+						).build());
+			GroupConfigurationTemporarySwapper
+				groupConfigurationTemporarySwapper =
+					new GroupConfigurationTemporarySwapper(
+						_group.getGroupId(), _PID_SITEMAP_GROUP_CONFIGURATION,
+						HashMapDictionaryBuilder.<String, Object>put(
+							"xmlSitemapIndexEnabled", true
+						).build())) {
+
+			LayoutPageTemplateEntry layoutPageTemplateEntry =
+				DisplayPageTemplateTestUtil.addDisplayPageTemplate(
+					_group.getGroupId(),
+					_portal.getClassNameId(JournalArticle.class.getName()), 0,
+					true, WorkflowConstants.STATUS_APPROVED);
+
+			Layout layout = _layoutLocalService.getLayout(
+				layoutPageTemplateEntry.getPlid());
+
+			String[] urls = {
+				StringBundler.concat(
+					_themeDisplay.getPortalURL(), _portal.getPathContext(),
+					"/sitemap.xml?p_l_id=", _layout.getPlid(), "&layoutUuid=",
+					_layout.getUuid(), "&groupId=", _group.getGroupId(),
+					"&privateLayout=", _layout.isPrivateLayout()),
+				StringBundler.concat(
+					_themeDisplay.getPortalURL(), _portal.getPathContext(),
+					"/sitemap.xml?p_l_id=", layout.getPlid(), "&layoutUuid=",
+					layout.getUuid(), "&groupId=", _group.getGroupId(),
+					"&privateLayout=", layout.isPrivateLayout())
+			};
+
+			_assertSitemap(false, _group.getGroupId(), StringPool.BLANK, urls);
+		}
 	}
 
 	@Test
@@ -738,7 +784,7 @@ public class SitemapManagerTest {
 				assetDisplayPageEntry.getPlid());
 
 			_assertSitemap(
-				_group.getGroupId(), layout.getUuid(),
+				true, _group.getGroupId(), layout.getUuid(),
 				_portal.getCanonicalURL(
 					StringBundler.concat(
 						_portal.getGroupFriendlyURL(
@@ -803,7 +849,8 @@ public class SitemapManagerTest {
 				uuid, _group.getGroupId(), false, _themeDisplay));
 	}
 
-	private void _assertSitemap(long groupId, String uuid, String... urls)
+	private void _assertSitemap(
+			boolean encodeURL, long groupId, String uuid, String... urls)
 		throws Exception {
 
 		String xml = _sitemapManager.getSitemap(
@@ -818,8 +865,11 @@ public class SitemapManagerTest {
 		Assert.assertEquals(elements.toString(), urls.length, elements.size());
 
 		for (String url : urls) {
-			Assert.assertNotNull(
-				_getLocElement(elements, _sitemapManager.encodeXML(url)));
+			if (encodeURL) {
+				url = _sitemapManager.encodeXML(url);
+			}
+
+			Assert.assertNotNull(_getLocElement(elements, url));
 		}
 	}
 
@@ -888,7 +938,9 @@ public class SitemapManagerTest {
 
 	private Element _getLocElement(List<Element> elements, String url) {
 		for (Element element : elements) {
-			if (!Objects.equals(element.getName(), "url")) {
+			if (!Objects.equals(element.getName(), "sitemap") &&
+				!Objects.equals(element.getName(), "url")) {
+
 				continue;
 			}
 
@@ -1024,7 +1076,7 @@ public class SitemapManagerTest {
 							"includeWebContent", false
 						).build())) {
 
-			_assertSitemap(guestGroupId, null, urls);
+			_assertSitemap(true, guestGroupId, null, urls);
 		}
 	}
 
@@ -1124,7 +1176,7 @@ public class SitemapManagerTest {
 							"includeWebContent", false
 						).build())) {
 
-			_assertSitemap(groupId, uuid, urls);
+			_assertSitemap(true, groupId, uuid, urls);
 		}
 	}
 

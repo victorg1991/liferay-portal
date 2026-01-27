@@ -5,9 +5,9 @@
 
 package com.liferay.change.tracking.web.internal.portlet.action;
 
+import com.liferay.change.tracking.configuration.helper.CTSettingsConfigurationHelper;
 import com.liferay.change.tracking.constants.CTPortletKeys;
 import com.liferay.change.tracking.model.CTCollection;
-import com.liferay.change.tracking.web.internal.configuration.helper.CTSettingsConfigurationHelper;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -55,26 +55,30 @@ public class UpdatePermissionsMVCActionCommand extends BaseMVCActionCommand {
 			(Map<String, List<String>>)_jsonFactory.looseDeserialize(
 				ParamUtil.getString(actionRequest, "permissions"));
 
+		if (permissions.isEmpty()) {
+			return;
+		}
+
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		_ctSettingsConfigurationHelper.save(
-			themeDisplay.getCompanyId(),
-			HashMapBuilder.<String, Object>put(
-				"defaultOwnerActionIds",
-				() -> {
-					Role role = _roleLocalService.getRole(
-						themeDisplay.getCompanyId(), RoleConstants.OWNER);
-
-					List<String> ownerActionIds = permissions.remove(
-						String.valueOf(role.getRoleId()));
-
-					return ArrayUtil.toStringArray(ownerActionIds);
-				}
-			).build());
-
 		try (SafeCloseable safeCloseable =
 				CTCollectionThreadLocal.setProductionModeWithSafeCloseable()) {
+
+			_ctSettingsConfigurationHelper.save(
+				themeDisplay.getCompanyId(),
+				HashMapBuilder.<String, Object>put(
+					"defaultOwnerActionIds",
+					() -> {
+						Role role = _roleLocalService.getRole(
+							themeDisplay.getCompanyId(), RoleConstants.OWNER);
+
+						List<String> ownerActionIds = permissions.remove(
+							String.valueOf(role.getRoleId()));
+
+						return ArrayUtil.toStringArray(ownerActionIds);
+					}
+				).build());
 
 			for (Map.Entry<String, List<String>> entry :
 					permissions.entrySet()) {

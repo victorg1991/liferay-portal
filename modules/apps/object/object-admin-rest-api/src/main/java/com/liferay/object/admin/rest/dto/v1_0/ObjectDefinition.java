@@ -515,6 +515,47 @@ public class ObjectDefinition implements Serializable {
 	private Supplier<Boolean> _enableCommentsSupplier;
 
 	@io.swagger.v3.oas.annotations.media.Schema
+	public Boolean getEnableFormContainer() {
+		if (_enableFormContainerSupplier != null) {
+			enableFormContainer = _enableFormContainerSupplier.get();
+
+			_enableFormContainerSupplier = null;
+		}
+
+		return enableFormContainer;
+	}
+
+	public void setEnableFormContainer(Boolean enableFormContainer) {
+		this.enableFormContainer = enableFormContainer;
+
+		_enableFormContainerSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setEnableFormContainer(
+		UnsafeSupplier<Boolean, Exception> enableFormContainerUnsafeSupplier) {
+
+		_enableFormContainerSupplier = () -> {
+			try {
+				return enableFormContainerUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean enableFormContainer;
+
+	@JsonIgnore
+	private Supplier<Boolean> _enableFormContainerSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema
 	public Boolean getEnableFriendlyURLCustomization() {
 		if (_enableFriendlyURLCustomizationSupplier != null) {
 			enableFriendlyURLCustomization =
@@ -635,7 +676,7 @@ public class ObjectDefinition implements Serializable {
 	}
 
 	@GraphQLField
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected Boolean enableLocalization;
 
 	@JsonIgnore
@@ -769,6 +810,51 @@ public class ObjectDefinition implements Serializable {
 
 	@JsonIgnore
 	private Supplier<Boolean> _enableObjectEntryScheduleSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema
+	public Boolean getEnableObjectEntrySubscription() {
+		if (_enableObjectEntrySubscriptionSupplier != null) {
+			enableObjectEntrySubscription =
+				_enableObjectEntrySubscriptionSupplier.get();
+
+			_enableObjectEntrySubscriptionSupplier = null;
+		}
+
+		return enableObjectEntrySubscription;
+	}
+
+	public void setEnableObjectEntrySubscription(
+		Boolean enableObjectEntrySubscription) {
+
+		this.enableObjectEntrySubscription = enableObjectEntrySubscription;
+
+		_enableObjectEntrySubscriptionSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setEnableObjectEntrySubscription(
+		UnsafeSupplier<Boolean, Exception>
+			enableObjectEntrySubscriptionUnsafeSupplier) {
+
+		_enableObjectEntrySubscriptionSupplier = () -> {
+			try {
+				return enableObjectEntrySubscriptionUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Boolean enableObjectEntrySubscription;
+
+	@JsonIgnore
+	private Supplier<Boolean> _enableObjectEntrySubscriptionSupplier;
 
 	@io.swagger.v3.oas.annotations.media.Schema
 	public Boolean getEnableObjectEntryVersioning() {
@@ -1533,6 +1619,53 @@ public class ObjectDefinition implements Serializable {
 
 	@io.swagger.v3.oas.annotations.media.Schema
 	@Valid
+	public com.liferay.portal.vulcan.permission.Permission[] getPermissions() {
+		if (_permissionsSupplier != null) {
+			permissions = _permissionsSupplier.get();
+
+			_permissionsSupplier = null;
+		}
+
+		return permissions;
+	}
+
+	public void setPermissions(
+		com.liferay.portal.vulcan.permission.Permission[] permissions) {
+
+		this.permissions = permissions;
+
+		_permissionsSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setPermissions(
+		UnsafeSupplier
+			<com.liferay.portal.vulcan.permission.Permission[], Exception>
+				permissionsUnsafeSupplier) {
+
+		_permissionsSupplier = () -> {
+			try {
+				return permissionsUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected com.liferay.portal.vulcan.permission.Permission[] permissions;
+
+	@JsonIgnore
+	private Supplier<com.liferay.portal.vulcan.permission.Permission[]>
+		_permissionsSupplier;
+
+	@io.swagger.v3.oas.annotations.media.Schema
+	@Valid
 	public Map<String, String> getPluralLabel() {
 		if (_pluralLabelSupplier != null) {
 			pluralLabel = _pluralLabelSupplier.get();
@@ -1909,6 +2042,51 @@ public class ObjectDefinition implements Serializable {
 	@JsonIgnore
 	private Supplier<String> _titleObjectFieldNameSupplier;
 
+	@io.swagger.v3.oas.annotations.media.Schema
+	@Valid
+	public WorkflowDefinitionLink[] getWorkflowDefinitionLinks() {
+		if (_workflowDefinitionLinksSupplier != null) {
+			workflowDefinitionLinks = _workflowDefinitionLinksSupplier.get();
+
+			_workflowDefinitionLinksSupplier = null;
+		}
+
+		return workflowDefinitionLinks;
+	}
+
+	public void setWorkflowDefinitionLinks(
+		WorkflowDefinitionLink[] workflowDefinitionLinks) {
+
+		this.workflowDefinitionLinks = workflowDefinitionLinks;
+
+		_workflowDefinitionLinksSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setWorkflowDefinitionLinks(
+		UnsafeSupplier<WorkflowDefinitionLink[], Exception>
+			workflowDefinitionLinksUnsafeSupplier) {
+
+		_workflowDefinitionLinksSupplier = () -> {
+			try {
+				return workflowDefinitionLinksUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected WorkflowDefinitionLink[] workflowDefinitionLinks;
+
+	@JsonIgnore
+	private Supplier<WorkflowDefinitionLink[]> _workflowDefinitionLinksSupplier;
+
 	@Override
 	public boolean equals(Object object) {
 		if (this == object) {
@@ -2092,6 +2270,18 @@ public class ObjectDefinition implements Serializable {
 			sb.append(enableComments);
 		}
 
+		Boolean enableFormContainer = getEnableFormContainer();
+
+		if (enableFormContainer != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"enableFormContainer\": ");
+
+			sb.append(enableFormContainer);
+		}
+
 		Boolean enableFriendlyURLCustomization =
 			getEnableFriendlyURLCustomization();
 
@@ -2163,6 +2353,19 @@ public class ObjectDefinition implements Serializable {
 			sb.append("\"enableObjectEntrySchedule\": ");
 
 			sb.append(enableObjectEntrySchedule);
+		}
+
+		Boolean enableObjectEntrySubscription =
+			getEnableObjectEntrySubscription();
+
+		if (enableObjectEntrySubscription != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"enableObjectEntrySubscription\": ");
+
+			sb.append(enableObjectEntrySubscription);
 		}
 
 		Boolean enableObjectEntryVersioning = getEnableObjectEntryVersioning();
@@ -2478,6 +2681,29 @@ public class ObjectDefinition implements Serializable {
 			sb.append(parameterRequired);
 		}
 
+		com.liferay.portal.vulcan.permission.Permission[] permissions =
+			getPermissions();
+
+		if (permissions != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"permissions\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < permissions.length; i++) {
+				sb.append(permissions[i]);
+
+				if ((i + 1) < permissions.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		Map<String, String> pluralLabel = getPluralLabel();
 
 		if (pluralLabel != null) {
@@ -2605,6 +2831,29 @@ public class ObjectDefinition implements Serializable {
 			sb.append(_escape(titleObjectFieldName));
 
 			sb.append("\"");
+		}
+
+		WorkflowDefinitionLink[] workflowDefinitionLinks =
+			getWorkflowDefinitionLinks();
+
+		if (workflowDefinitionLinks != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"workflowDefinitionLinks\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < workflowDefinitionLinks.length; i++) {
+				sb.append(String.valueOf(workflowDefinitionLinks[i]));
+
+				if ((i + 1) < workflowDefinitionLinks.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
 		}
 
 		sb.append("}");

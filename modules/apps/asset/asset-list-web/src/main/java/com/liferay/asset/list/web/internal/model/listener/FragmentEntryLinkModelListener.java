@@ -65,7 +65,7 @@ public class FragmentEntryLinkModelListener
 
 	private void _addAssetListEntryUsage(
 		long classNameId, long fragmentEntryLinkId, long groupId, String key,
-		long plid) {
+		long plid, long userId) {
 
 		ServiceContext serviceContext =
 			ServiceContextThreadLocal.getServiceContext();
@@ -76,7 +76,7 @@ public class FragmentEntryLinkModelListener
 
 		try {
 			_assetListEntryUsageLocalService.addAssetListEntryUsage(
-				serviceContext.getUserId(), groupId, classNameId,
+				userId, groupId, classNameId,
 				String.valueOf(fragmentEntryLinkId),
 				_portal.getClassNameId(FragmentEntryLink.class.getName()), key,
 				plid, serviceContext);
@@ -92,7 +92,7 @@ public class FragmentEntryLinkModelListener
 
 		return ListUtil.filter(
 			_fragmentEntryConfigurationParser.getFragmentConfigurationFields(
-				fragmentEntryLink.getConfiguration()),
+				fragmentEntryLink.getConfigurationJSONObject()),
 			fragmentConfigurationField -> Objects.equals(
 				fragmentConfigurationField.getType(), "collectionSelector"));
 	}
@@ -113,8 +113,8 @@ public class FragmentEntryLinkModelListener
 				fragmentConfigurationFields) {
 
 			Object fieldValue = _fragmentEntryConfigurationParser.getFieldValue(
-				fragmentEntryLink.getConfiguration(),
-				fragmentEntryLink.getEditableValues(),
+				fragmentEntryLink.getConfigurationJSONObject(),
+				fragmentEntryLink.getEditableValuesJSONObject(),
 				LocaleUtil.getMostRelevantLocale(),
 				fragmentConfigurationField.getName());
 
@@ -131,7 +131,7 @@ public class FragmentEntryLinkModelListener
 					fragmentEntryLink.getFragmentEntryLinkId(),
 					fragmentEntryLink.getGroupId(),
 					fieldValueJSONObject.getString("key"),
-					fragmentEntryLink.getPlid());
+					fragmentEntryLink.getPlid(), fragmentEntryLink.getUserId());
 			}
 
 			if (fieldValueJSONObject.has("classPK")) {
@@ -140,7 +140,7 @@ public class FragmentEntryLinkModelListener
 					fragmentEntryLink.getFragmentEntryLinkId(),
 					fragmentEntryLink.getGroupId(),
 					fieldValueJSONObject.getString("classPK"),
-					fragmentEntryLink.getPlid());
+					fragmentEntryLink.getPlid(), fragmentEntryLink.getUserId());
 			}
 		}
 	}

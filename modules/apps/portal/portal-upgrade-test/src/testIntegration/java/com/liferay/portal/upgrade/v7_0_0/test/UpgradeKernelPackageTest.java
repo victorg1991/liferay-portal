@@ -96,9 +96,9 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 
 			// Test WildcardMode.LEADING
 
-			_insertData(1, _PREFIX_CLASS_NAME_OLD, "");
-			_insertData(2, _POSTFIX_CLASS_NAME_OLD, "");
-			_insertData(3, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
+			_insert(1, _PREFIX_CLASS_NAME_OLD, "");
+			_insert(2, _POSTFIX_CLASS_NAME_OLD, "");
+			_insert(3, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
 
 			upgradeTable(
 				"UpgradeKernelPackageTest", "data", _TEST_CLASS_NAMES,
@@ -110,9 +110,9 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 
 			// Test WildcardMode.TRAILING
 
-			_insertData(4, _PREFIX_CLASS_NAME_OLD, "");
-			_insertData(5, _POSTFIX_CLASS_NAME_OLD, "");
-			_insertData(6, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
+			_insert(4, _PREFIX_CLASS_NAME_OLD, "");
+			_insert(5, _POSTFIX_CLASS_NAME_OLD, "");
+			_insert(6, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
 
 			upgradeTable(
 				"UpgradeKernelPackageTest", "data", _TEST_CLASS_NAMES,
@@ -124,9 +124,9 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 
 			// Test WildcardMode.SURROUND
 
-			_insertData(7, _PREFIX_CLASS_NAME_OLD, "");
-			_insertData(8, _POSTFIX_CLASS_NAME_OLD, "");
-			_insertData(9, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
+			_insert(7, _PREFIX_CLASS_NAME_OLD, "");
+			_insert(8, _POSTFIX_CLASS_NAME_OLD, "");
+			_insert(9, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
 
 			upgradeTable(
 				"UpgradeKernelPackageTest", "data", _TEST_CLASS_NAMES,
@@ -140,9 +140,9 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 
 			runSQL("delete from UpgradeKernelPackageTest");
 
-			_insertData(10, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
-			_insertData(11, _PREFIX_POSTFIX_CLASS_NAME_NEW, "");
-			_insertData(12, _PREFIX_POSTFIX_CLASS_NAME_NEW, "uniqueTextData");
+			_insert(10, _PREFIX_POSTFIX_CLASS_NAME_OLD, "");
+			_insert(11, _PREFIX_POSTFIX_CLASS_NAME_NEW, "");
+			_insert(12, _PREFIX_POSTFIX_CLASS_NAME_NEW, "uniqueTextData");
 
 			try {
 				upgradeTable(
@@ -194,22 +194,25 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 
 		try (PreparedStatement preparedStatement = connection.prepareStatement(
 				SQLTransformer.transform(
-					StringBundler.concat(
-						"select ", columnName,
-						" from UpgradeKernelPackageTest where id =", id)));
-			ResultSet resultSet = preparedStatement.executeQuery()) {
+					"select " + columnName +
+						" from UpgradeKernelPackageTest where id = ?"))) {
 
-			if (expectedValue == null) {
-				Assert.assertFalse(
-					"Entry with id " + id + "should not exsit",
-					resultSet.next());
-			}
-			else {
-				Assert.assertTrue(
-					"Entry with id " + id + " should exist", resultSet.next());
+			preparedStatement.setLong(1, id);
 
-				Assert.assertEquals(
-					expectedValue, resultSet.getString(columnName));
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				if (expectedValue == null) {
+					Assert.assertFalse(
+						"Entry with id " + id + "should not exsit",
+						resultSet.next());
+				}
+				else {
+					Assert.assertTrue(
+						"Entry with id " + id + " should exist",
+						resultSet.next());
+
+					Assert.assertEquals(
+						expectedValue, resultSet.getString(columnName));
+				}
 			}
 		}
 	}
@@ -231,7 +234,7 @@ public class UpgradeKernelPackageTest extends UpgradeKernelPackage {
 		}
 	}
 
-	private void _insertData(long id, String data, String textData)
+	private void _insert(long id, String data, String textData)
 		throws Exception {
 
 		runSQL(

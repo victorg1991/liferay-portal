@@ -5,11 +5,11 @@
 
 import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
-import {useIsMounted} from '@clayui/core/lib/hooks';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClayModal, {useModal} from '@clayui/modal';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
 import {fetch, navigate, sub} from 'frontend-js-web';
 import React, {useRef, useState} from 'react';
 
@@ -99,7 +99,11 @@ function CreationModal({
 
 	return (
 		<ClayModal className="m-0" observer={observer}>
-			<ClayModal.Header>{heading}</ClayModal.Header>
+			<ClayModal.Header
+				closeButtonAriaLabel={Liferay.Language.get('close')}
+			>
+				{heading}
+			</ClayModal.Header>
 
 			<ClayModal.Body className="m-0">
 				<ClayForm

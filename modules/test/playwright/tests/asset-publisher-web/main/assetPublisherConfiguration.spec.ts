@@ -115,7 +115,7 @@ test(
 
 		await assetPublisherPage.changeAssetSelection('Dynamic');
 
-		await page.getByLabel('close', {exact: true}).click();
+		await page.locator('.modal').getByLabel('Close', {exact: true}).click();
 
 		await page
 			.locator('.portlet-topper', {hasText: 'Asset Publisher'})
@@ -185,5 +185,64 @@ test(
 		await collectionsPage.goto(site.friendlyUrlPath);
 
 		await expect(page.getByText(collectionName)).toBeVisible();
+	}
+);
+
+test(
+	'Check Asset Publisher configuration, elements are visible and active',
+	{
+		tag: '@LPD-70684',
+	},
+	async ({apiHelpers, assetPublisherPage, page, pageEditorPage, site}) => {
+		const widgetId = getRandomString();
+
+		const widgetDefinition = getWidgetDefinition({
+			id: widgetId,
+			widgetName:
+				'com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet',
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([widgetDefinition]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await pageEditorPage.goto(layout, site.friendlyUrlPath);
+
+		await pageEditorPage.goToWidgetConfiguration(widgetId);
+
+		const configurationFrame = page.frameLocator(
+			'iframe[title="Configuration"]'
+		);
+
+		await configurationFrame
+			.getByRole('link', {name: 'Communication'})
+			.click();
+
+		await assetPublisherPage.assertCommunicationEnabled();
+
+		await configurationFrame
+			.getByRole('checkbox', {name: 'lfr-prp-ignore-p_r_p_category'})
+			.check();
+
+		await assetPublisherPage.assertCommunicationEnabled(
+			['categoryId'],
+			false
+		);
+
+		await configurationFrame
+			.getByRole('checkbox', {name: 'lfr-prp-ignore-p_r_p_reset-cur'})
+			.check();
+
+		await assetPublisherPage.assertCommunicationEnabled(
+			['resetCur'],
+			false
+		);
+
+		await assetPublisherPage.assertCommunicationEnabled(
+			['assetEntryId', 'tags', 'tag'],
+			true
+		);
 	}
 );

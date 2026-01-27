@@ -151,104 +151,6 @@ public class SitePage implements Serializable {
 	private Supplier<Creator> _creatorSupplier;
 
 	@io.swagger.v3.oas.annotations.media.Schema(
-		description = "The page's creator external reference code."
-	)
-	public String getCreatorExternalReferenceCode() {
-		if (_creatorExternalReferenceCodeSupplier != null) {
-			creatorExternalReferenceCode =
-				_creatorExternalReferenceCodeSupplier.get();
-
-			_creatorExternalReferenceCodeSupplier = null;
-		}
-
-		return creatorExternalReferenceCode;
-	}
-
-	public void setCreatorExternalReferenceCode(
-		String creatorExternalReferenceCode) {
-
-		this.creatorExternalReferenceCode = creatorExternalReferenceCode;
-
-		_creatorExternalReferenceCodeSupplier = null;
-	}
-
-	@JsonIgnore
-	public void setCreatorExternalReferenceCode(
-		UnsafeSupplier<String, Exception>
-			creatorExternalReferenceCodeUnsafeSupplier) {
-
-		_creatorExternalReferenceCodeSupplier = () -> {
-			try {
-				return creatorExternalReferenceCodeUnsafeSupplier.get();
-			}
-			catch (RuntimeException runtimeException) {
-				throw runtimeException;
-			}
-			catch (Exception exception) {
-				throw new RuntimeException(exception);
-			}
-		};
-	}
-
-	@GraphQLField(description = "The page's creator external reference code.")
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected String creatorExternalReferenceCode;
-
-	@JsonIgnore
-	private Supplier<String> _creatorExternalReferenceCodeSupplier;
-
-	@io.swagger.v3.oas.annotations.media.Schema(
-		description = "Custom fields associated with the page."
-	)
-	@Valid
-	public com.liferay.portal.vulcan.custom.field.CustomField[]
-		getCustomFields() {
-
-		if (_customFieldsSupplier != null) {
-			customFields = _customFieldsSupplier.get();
-
-			_customFieldsSupplier = null;
-		}
-
-		return customFields;
-	}
-
-	public void setCustomFields(
-		com.liferay.portal.vulcan.custom.field.CustomField[] customFields) {
-
-		this.customFields = customFields;
-
-		_customFieldsSupplier = null;
-	}
-
-	@JsonIgnore
-	public void setCustomFields(
-		UnsafeSupplier
-			<com.liferay.portal.vulcan.custom.field.CustomField[], Exception>
-				customFieldsUnsafeSupplier) {
-
-		_customFieldsSupplier = () -> {
-			try {
-				return customFieldsUnsafeSupplier.get();
-			}
-			catch (RuntimeException runtimeException) {
-				throw runtimeException;
-			}
-			catch (Exception exception) {
-				throw new RuntimeException(exception);
-			}
-		};
-	}
-
-	@GraphQLField(description = "Custom fields associated with the page.")
-	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected com.liferay.portal.vulcan.custom.field.CustomField[] customFields;
-
-	@JsonIgnore
-	private Supplier<com.liferay.portal.vulcan.custom.field.CustomField[]>
-		_customFieldsSupplier;
-
-	@io.swagger.v3.oas.annotations.media.Schema(
 		description = "The page's creation date."
 	)
 	public Date getDateCreated() {
@@ -749,6 +651,53 @@ public class SitePage implements Serializable {
 	@JsonIgnore
 	private Supplier<String> _parentSitePageExternalReferenceCodeSupplier;
 
+	@io.swagger.v3.oas.annotations.media.Schema
+	@Valid
+	public com.liferay.portal.vulcan.permission.Permission[] getPermissions() {
+		if (_permissionsSupplier != null) {
+			permissions = _permissionsSupplier.get();
+
+			_permissionsSupplier = null;
+		}
+
+		return permissions;
+	}
+
+	public void setPermissions(
+		com.liferay.portal.vulcan.permission.Permission[] permissions) {
+
+		this.permissions = permissions;
+
+		_permissionsSupplier = null;
+	}
+
+	@JsonIgnore
+	public void setPermissions(
+		UnsafeSupplier
+			<com.liferay.portal.vulcan.permission.Permission[], Exception>
+				permissionsUnsafeSupplier) {
+
+		_permissionsSupplier = () -> {
+			try {
+				return permissionsUnsafeSupplier.get();
+			}
+			catch (RuntimeException runtimeException) {
+				throw runtimeException;
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		};
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected com.liferay.portal.vulcan.permission.Permission[] permissions;
+
+	@JsonIgnore
+	private Supplier<com.liferay.portal.vulcan.permission.Permission[]>
+		_permissionsSupplier;
+
 	@io.swagger.v3.oas.annotations.media.Schema(
 		description = "The external references to the associated categories."
 	)
@@ -1023,45 +972,6 @@ public class SitePage implements Serializable {
 			sb.append(creator);
 		}
 
-		String creatorExternalReferenceCode = getCreatorExternalReferenceCode();
-
-		if (creatorExternalReferenceCode != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"creatorExternalReferenceCode\": ");
-
-			sb.append("\"");
-
-			sb.append(_escape(creatorExternalReferenceCode));
-
-			sb.append("\"");
-		}
-
-		com.liferay.portal.vulcan.custom.field.CustomField[] customFields =
-			getCustomFields();
-
-		if (customFields != null) {
-			if (sb.length() > 1) {
-				sb.append(", ");
-			}
-
-			sb.append("\"customFields\": ");
-
-			sb.append("[");
-
-			for (int i = 0; i < customFields.length; i++) {
-				sb.append(customFields[i]);
-
-				if ((i + 1) < customFields.length) {
-					sb.append(", ");
-				}
-			}
-
-			sb.append("]");
-		}
-
 		Date dateCreated = getDateCreated();
 
 		if (dateCreated != null) {
@@ -1239,6 +1149,29 @@ public class SitePage implements Serializable {
 			sb.append("\"");
 		}
 
+		com.liferay.portal.vulcan.permission.Permission[] permissions =
+			getPermissions();
+
+		if (permissions != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"permissions\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < permissions.length; i++) {
+				sb.append(permissions[i]);
+
+				if ((i + 1) < permissions.length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
+		}
+
 		ItemExternalReference[] taxonomyCategoryItemExternalReferences =
 			getTaxonomyCategoryItemExternalReferences();
 
@@ -1275,9 +1208,7 @@ public class SitePage implements Serializable {
 			sb.append("\"type\": ");
 
 			sb.append("\"");
-
 			sb.append(type);
-
 			sb.append("\"");
 		}
 
@@ -1307,9 +1238,7 @@ public class SitePage implements Serializable {
 			sb.append("\"viewableBy\": ");
 
 			sb.append("\"");
-
 			sb.append(viewableBy);
-
 			sb.append("\"");
 		}
 
@@ -1328,7 +1257,8 @@ public class SitePage implements Serializable {
 	@GraphQLName("Type")
 	public static enum Type {
 
-		CONTENT_PAGE("ContentPage"), WIDGET_PAGE("WidgetPage");
+		CONTENT_PAGE("ContentPage"), LINK_TO_URL_PAGE("LinkToURLPage"),
+		PAGE_SET_PAGE("PageSetPage"), WIDGET_PAGE("WidgetPage");
 
 		@JsonCreator
 		public static Type create(String value) {

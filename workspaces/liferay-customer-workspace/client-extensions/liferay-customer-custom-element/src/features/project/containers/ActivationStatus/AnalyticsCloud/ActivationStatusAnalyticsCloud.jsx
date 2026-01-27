@@ -13,10 +13,10 @@ import i18n from '~/utils/I18n';
 import {Button, ButtonDropDown} from '~/components';
 import {useAppPropertiesContext} from '~/contexts/AppPropertiesContext';
 import {AnalyticsIcon} from '~/assets/NavigationMenu';
+import {patchAccountSubscriptionGroups} from '~/services/liferay/graphql/account-subscription-groups/queries/patchAccountSubscriptionGroups';
 import {
 	getAccountSubscriptionGroups,
 	getCommerceOrderItems,
-	updateAccountSubscriptionGroups,
 } from '~/services/liferay/graphql/queries';
 import getActivationStatusDateRange from '~/utils/getActivationStatusDateRange';
 import {ALERT_UPDATE_ANALYTICS_CLOUD_STATUS} from '~/features/project/containers/ActivationKeysTable/utils/constants/alertUpdateAnalyticsCloudStatus';
@@ -118,7 +118,8 @@ const ActivationStatusAnalyticsCloud = () => {
 					customDropDownButton={
 						<ButtonWithIcon
 							aria-label={i18n.translate('set-to-active')}
-							displayType="null"
+							className="text-secondary"
+    						displayType="unstyled"
 							small
 							spritemap={Liferay.Icons.spritemap}
 							symbol="caret-bottom"
@@ -195,7 +196,7 @@ const ActivationStatusAnalyticsCloud = () => {
 				displaySuccess: false,
 				type: 'liferay-rest',
 			},
-			mutation: updateAccountSubscriptionGroups,
+			mutation: patchAccountSubscriptionGroups,
 			variables: {
 				accountSubscriptionGroup: {
 					accountKey: project.accountKey,

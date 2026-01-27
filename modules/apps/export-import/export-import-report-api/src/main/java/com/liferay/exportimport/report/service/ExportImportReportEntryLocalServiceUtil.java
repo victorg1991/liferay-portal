@@ -36,14 +36,26 @@ public class ExportImportReportEntryLocalServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.exportimport.report.service.impl.ExportImportReportEntryLocalServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
+	public static ExportImportReportEntry addEmptyExportImportReportEntry(
+		long groupId, long companyId, String classExternalReferenceCode,
+		long classNameId, long exportImportConfigurationId,
+		String modelNameLanguageKey) {
+
+		return getService().addEmptyExportImportReportEntry(
+			groupId, companyId, classExternalReferenceCode, classNameId,
+			exportImportConfigurationId, modelNameLanguageKey);
+	}
+
 	public static ExportImportReportEntry addErrorExportImportReportEntry(
 		long groupId, long companyId, String classExternalReferenceCode,
-		long classNameId, long exportImportConfigurationId, String error,
-		String errorStacktrace) {
+		long classNameId, long classPK, long exportImportConfigurationId,
+		String errorMessage, String errorStacktrace,
+		String modelNameLanguageKey) {
 
 		return getService().addErrorExportImportReportEntry(
 			groupId, companyId, classExternalReferenceCode, classNameId,
-			exportImportConfigurationId, error, errorStacktrace);
+			classPK, exportImportConfigurationId, errorMessage, errorStacktrace,
+			modelNameLanguageKey);
 	}
 
 	/**
@@ -60,15 +72,6 @@ public class ExportImportReportEntryLocalServiceUtil {
 		ExportImportReportEntry exportImportReportEntry) {
 
 		return getService().addExportImportReportEntry(exportImportReportEntry);
-	}
-
-	public static ExportImportReportEntry addIncompleteExportImportReportEntry(
-		long groupId, long companyId, String classExternalReferenceCode,
-		long classNameId, long exportImportConfigurationId) {
-
-		return getService().addIncompleteExportImportReportEntry(
-			groupId, companyId, classExternalReferenceCode, classNameId,
-			exportImportConfigurationId);
 	}
 
 	/**

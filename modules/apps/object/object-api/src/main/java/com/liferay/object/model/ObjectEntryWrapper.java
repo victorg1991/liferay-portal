@@ -46,6 +46,7 @@ public class ObjectEntryWrapper
 		attributes.put("userName", getUserName());
 		attributes.put("createDate", getCreateDate());
 		attributes.put("modifiedDate", getModifiedDate());
+		attributes.put("headObjectEntryId", getHeadObjectEntryId());
 		attributes.put("objectDefinitionId", getObjectDefinitionId());
 		attributes.put("objectEntryFolderId", getObjectEntryFolderId());
 		attributes.put("rootObjectEntryId", getRootObjectEntryId());
@@ -125,6 +126,12 @@ public class ObjectEntryWrapper
 
 		if (modifiedDate != null) {
 			setModifiedDate(modifiedDate);
+		}
+
+		Long headObjectEntryId = (Long)attributes.get("headObjectEntryId");
+
+		if (headObjectEntryId != null) {
+			setHeadObjectEntryId(headObjectEntryId);
 		}
 
 		Long objectDefinitionId = (Long)attributes.get("objectDefinitionId");
@@ -295,6 +302,21 @@ public class ObjectEntryWrapper
 	}
 
 	/**
+	 * Returns the head object entry ID of this object entry.
+	 *
+	 * @return the head object entry ID of this object entry
+	 */
+	@Override
+	public long getHeadObjectEntryId() {
+		return model.getHeadObjectEntryId();
+	}
+
+	@Override
+	public Map<String, Serializable> getIndexedValues() {
+		return model.getIndexedValues();
+	}
+
+	/**
 	 * Returns the last publish date of this object entry.
 	 *
 	 * @return the last publish date of this object entry
@@ -334,6 +356,11 @@ public class ObjectEntryWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return model.getNonzeroGroupId();
+	}
+
+	@Override
+	public ObjectDefinition getObjectDefinition() {
+		return model.getObjectDefinition();
 	}
 
 	/**
@@ -475,6 +502,16 @@ public class ObjectEntryWrapper
 	}
 
 	/**
+	 * Returns the class primary key of the trash entry for this object entry.
+	 *
+	 * @return the class primary key of the trash entry for this object entry
+	 */
+	@Override
+	public long getTrashEntryClassPK() {
+		return model.getTrashEntryClassPK();
+	}
+
+	/**
 	 * Returns the tree path of this object entry.
 	 *
 	 * @return the tree path of this object entry
@@ -589,6 +626,11 @@ public class ObjectEntryWrapper
 		return model.isExpired();
 	}
 
+	@Override
+	public boolean isHead() {
+		return model.isHead();
+	}
+
 	/**
 	 * Returns <code>true</code> if this object entry is inactive.
 	 *
@@ -610,6 +652,16 @@ public class ObjectEntryWrapper
 	}
 
 	/**
+	 * Returns <code>true</code> if this object entry is in the Recycle Bin.
+	 *
+	 * @return <code>true</code> if this object entry is in the Recycle Bin; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isInTrash() {
+		return model.isInTrash();
+	}
+
+	/**
 	 * Returns <code>true</code> if this object entry is pending.
 	 *
 	 * @return <code>true</code> if this object entry is pending; <code>false</code> otherwise
@@ -617,6 +669,11 @@ public class ObjectEntryWrapper
 	@Override
 	public boolean isPending() {
 		return model.isPending();
+	}
+
+	@Override
+	public boolean isRootDescendantNode() {
+		return model.isRootDescendantNode();
 	}
 
 	/**
@@ -705,6 +762,16 @@ public class ObjectEntryWrapper
 	}
 
 	/**
+	 * Sets the head object entry ID of this object entry.
+	 *
+	 * @param headObjectEntryId the head object entry ID of this object entry
+	 */
+	@Override
+	public void setHeadObjectEntryId(long headObjectEntryId) {
+		model.setHeadObjectEntryId(headObjectEntryId);
+	}
+
+	/**
 	 * Sets the last publish date of this object entry.
 	 *
 	 * @param lastPublishDate the last publish date of this object entry
@@ -732,6 +799,11 @@ public class ObjectEntryWrapper
 	@Override
 	public void setMvccVersion(long mvccVersion) {
 		model.setMvccVersion(mvccVersion);
+	}
+
+	@Override
+	public void setObjectDefinition(ObjectDefinition objectDefinition) {
+		model.setObjectDefinition(objectDefinition);
 	}
 
 	/**

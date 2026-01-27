@@ -49,7 +49,6 @@ import java.io.Serializable;
 
 import java.lang.reflect.InvocationHandler;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -575,6 +574,15 @@ public class AccountRolePersistenceImpl
 			return findByCompanyId(companyId, start, end, orderByComparator);
 		}
 
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByCompanyId(
+					companyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator));
+		}
+
 		StringBundler sb = null;
 
 		if (orderByComparator != null) {
@@ -924,6 +932,14 @@ public class AccountRolePersistenceImpl
 	public int filterCountByCompanyId(long companyId) {
 		if (!InlineSQLHelperUtil.isEnabled(companyId, 0)) {
 			return countByCompanyId(companyId);
+		}
+
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<AccountRole> accountRoles = findByCompanyId(companyId);
+
+			accountRoles = InlineSQLHelperUtil.filter(accountRoles);
+
+			return accountRoles.size();
 		}
 
 		StringBundler sb = new StringBundler(2);
@@ -1452,6 +1468,15 @@ public class AccountRolePersistenceImpl
 				accountEntryId, start, end, orderByComparator);
 		}
 
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByAccountEntryId(
+					accountEntryId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator));
+		}
+
 		StringBundler sb = null;
 
 		if (orderByComparator != null) {
@@ -1781,6 +1806,15 @@ public class AccountRolePersistenceImpl
 		if (!InlineSQLHelperUtil.isEnabled()) {
 			return findByAccountEntryId(
 				accountEntryIds, start, end, orderByComparator);
+		}
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByAccountEntryId(
+					accountEntryIds, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+					orderByComparator));
 		}
 
 		if (accountEntryIds == null) {
@@ -2194,6 +2228,15 @@ public class AccountRolePersistenceImpl
 			return countByAccountEntryId(accountEntryId);
 		}
 
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<AccountRole> accountRoles = findByAccountEntryId(
+				accountEntryId);
+
+			accountRoles = InlineSQLHelperUtil.filter(accountRoles);
+
+			return accountRoles.size();
+		}
+
 		StringBundler sb = new StringBundler(2);
 
 		sb.append(_FILTER_SQL_COUNT_ACCOUNTROLE_WHERE);
@@ -2240,6 +2283,13 @@ public class AccountRolePersistenceImpl
 	public int filterCountByAccountEntryId(long[] accountEntryIds) {
 		if (!InlineSQLHelperUtil.isEnabled()) {
 			return countByAccountEntryId(accountEntryIds);
+		}
+
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<AccountRole> accountRoles = InlineSQLHelperUtil.filter(
+				findByAccountEntryId(accountEntryIds));
+
+			return accountRoles.size();
 		}
 
 		if (accountEntryIds == null) {
@@ -2403,21 +2453,6 @@ public class AccountRolePersistenceImpl
 					}
 				}
 				else {
-					if (list.size() > 1) {
-						Collections.sort(list, Collections.reverseOrder());
-
-						if (_log.isWarnEnabled()) {
-							if (!useFinderCache) {
-								finderArgs = new Object[] {roleId};
-							}
-
-							_log.warn(
-								"AccountRolePersistenceImpl.fetchByRoleId(long, boolean) with parameters (" +
-									StringUtil.merge(finderArgs) +
-										") yields a result set with more than 1 result. This violates the logical unique restriction. There is no order guarantee on which result is returned by this finder.");
-						}
-					}
-
 					AccountRole accountRole = list.get(0);
 
 					result = accountRole;
@@ -2998,6 +3033,15 @@ public class AccountRolePersistenceImpl
 				companyId, accountEntryId, start, end, orderByComparator);
 		}
 
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByC_A(
+					companyId, accountEntryId, QueryUtil.ALL_POS,
+					QueryUtil.ALL_POS, orderByComparator));
+		}
+
 		StringBundler sb = null;
 
 		if (orderByComparator != null) {
@@ -3343,6 +3387,15 @@ public class AccountRolePersistenceImpl
 		if (!InlineSQLHelperUtil.isEnabled(companyId, 0)) {
 			return findByC_A(
 				companyId, accountEntryIds, start, end, orderByComparator);
+		}
+
+		if ((start == QueryUtil.ALL_POS) && (end == QueryUtil.ALL_POS) &&
+			isPermissionsInMemoryFilterEnabled()) {
+
+			return InlineSQLHelperUtil.filter(
+				findByC_A(
+					companyId, accountEntryIds, QueryUtil.ALL_POS,
+					QueryUtil.ALL_POS, orderByComparator));
 		}
 
 		if (accountEntryIds == null) {
@@ -3790,6 +3843,15 @@ public class AccountRolePersistenceImpl
 			return countByC_A(companyId, accountEntryId);
 		}
 
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<AccountRole> accountRoles = findByC_A(
+				companyId, accountEntryId);
+
+			accountRoles = InlineSQLHelperUtil.filter(accountRoles);
+
+			return accountRoles.size();
+		}
+
 		StringBundler sb = new StringBundler(3);
 
 		sb.append(_FILTER_SQL_COUNT_ACCOUNTROLE_WHERE);
@@ -3841,6 +3903,13 @@ public class AccountRolePersistenceImpl
 	public int filterCountByC_A(long companyId, long[] accountEntryIds) {
 		if (!InlineSQLHelperUtil.isEnabled(companyId, 0)) {
 			return countByC_A(companyId, accountEntryIds);
+		}
+
+		if (isPermissionsInMemoryFilterEnabled()) {
+			List<AccountRole> accountRoles = InlineSQLHelperUtil.filter(
+				findByC_A(companyId, accountEntryIds));
+
+			return accountRoles.size();
 		}
 
 		if (accountEntryIds == null) {

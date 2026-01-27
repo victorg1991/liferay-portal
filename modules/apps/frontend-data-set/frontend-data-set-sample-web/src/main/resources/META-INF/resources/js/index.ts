@@ -4,19 +4,27 @@
  */
 
 import AdvancedPropsTransformer from './AdvancedPropsTransformer';
+import ContentRenderersFrontendDataSet from './ContentRenderersFrontendDataSet';
 import ControlledFrontendDataSet from './ControlledFrontendDataSet';
 import CustomAuthorTableCell from './CustomAuthorTableCell';
 import CustomInternalViewPropsTransformer from './CustomInternalViewPropsTransformer';
+import EmptyPropsTransformer from './EmptyPropsTransformer';
 import GreenCheckColorTableCell from './GreenCheckColorTableCell';
 import ReactFrontendDataSet from './ReactFrontendDataSet';
 import SingleSelectionPropsTransformer from './SingleSelectionPropsTransformer';
+import Filters from './fragments/Filters';
+import Search from './fragments/Search';
 
 export {
 	AdvancedPropsTransformer,
+	ContentRenderersFrontendDataSet,
 	ControlledFrontendDataSet,
 	CustomAuthorTableCell,
 	CustomInternalViewPropsTransformer,
+	EmptyPropsTransformer,
+	Filters,
 	GreenCheckColorTableCell,
 	ReactFrontendDataSet,
 	SingleSelectionPropsTransformer,
+	Search,
 };

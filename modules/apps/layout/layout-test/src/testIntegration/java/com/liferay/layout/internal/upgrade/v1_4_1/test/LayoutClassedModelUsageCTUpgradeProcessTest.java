@@ -21,9 +21,11 @@ import com.liferay.layout.service.LayoutClassedModelUsageLocalService;
 import com.liferay.layout.test.util.ContentLayoutTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.lang.SafeCloseable;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
+import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -49,6 +51,9 @@ import com.liferay.portal.upgrade.registry.UpgradeStepRegistrator;
 import com.liferay.portal.upgrade.test.util.UpgradeTestUtil;
 import com.liferay.segments.service.SegmentsExperienceLocalService;
 
+import java.sql.Connection;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Assert;
@@ -101,13 +106,20 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 
 		_deleteLayoutClassedModelUsage(_journalArticle.getResourcePrimKey());
 
-		_updateFragmentEntryLinkInNewCTCollection(
-			fragmentEntryLink, _journalArticle);
+		List<CTCollection> ctCollections = new ArrayList<>();
 
-		_updateFragmentEntryLinkInNewCTCollection(
-			fragmentEntryLink, _journalArticle);
+		ctCollections.add(
+			_updateFragmentEntryLinkInNewCTCollection(
+				fragmentEntryLink, _journalArticle));
+		ctCollections.add(
+			_updateFragmentEntryLinkInNewCTCollection(
+				fragmentEntryLink, _journalArticle));
 
 		runUpgrade();
+
+		for (CTCollection ctCollection : ctCollections) {
+			_ctCollectionLocalService.deleteCTCollection(ctCollection);
+		}
 	}
 
 	@Test
@@ -180,7 +192,7 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 
 		return _layoutClassedModelUsageLocalService.
 			fetchLayoutClassedModelUsage(
-				_group.getGroupId(), StringPool.BLANK,
+				_group.getGroupId(), _journalArticle.getExternalReferenceCode(),
 				_journalArticleClassNameId,
 				_journalArticle.getResourcePrimKey(),
 				String.valueOf(fragmentEntryLink.getFragmentEntryLinkId()),
@@ -197,10 +209,17 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
 				_CLASS_NAME, LoggerTestUtil.OFF)) {
 
+			_renameColumn(
+				"classExternalReferenceCode", "cmExternalReferenceCode");
+
 			UpgradeProcess upgradeProcess = UpgradeTestUtil.getUpgradeStep(
 				_upgradeStepRegistrator, _CLASS_NAME);
 
 			upgradeProcess.upgrade();
+		}
+		finally {
+			_renameColumn(
+				"cmExternalReferenceCode", "classExternalReferenceCode");
 
 			_multiVMPool.clear();
 		}
@@ -218,8 +237,11 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 		_fragmentEntryLinkLocalService.updateFragmentEntryLink(
 			fragmentEntryLink);
 
-		return _layoutClassedModelUsageLocalService.
-			updateLayoutClassedModelUsage(layoutClassedModelUsage);
+		List<LayoutClassedModelUsage> layoutClassedModelUsages =
+			_layoutClassedModelUsageLocalService.
+				getLayoutClassedModelUsagesByPlid(_draftLayout.getPlid());
+
+		return layoutClassedModelUsages.get(0);
 	}
 
 	private FragmentEntryLink _addFragmentEntryLink(
@@ -243,6 +265,9 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 								"classPK",
 								String.valueOf(
 									journalArticle.getResourcePrimKey())
+							).put(
+								"externalReferenceCode",
+								_journalArticle.getExternalReferenceCode()
 							));
 					}
 
@@ -265,7 +290,8 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 
 		LayoutClassedModelUsage layoutClassedModelUsage =
 			_layoutClassedModelUsageLocalService.fetchLayoutClassedModelUsage(
-				fragmentEntryLink.getGroupId(), StringPool.BLANK,
+				fragmentEntryLink.getGroupId(),
+				_journalArticle.getExternalReferenceCode(),
 				_journalArticleClassNameId, classPK,
 				String.valueOf(fragmentEntryLink.getFragmentEntryLinkId()),
 				_fragmentEntryLinkClassNameId, fragmentEntryLink.getPlid());
@@ -303,7 +329,19 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 		}
 	}
 
-	private void _updateFragmentEntryLinkInNewCTCollection(
+	private void _renameColumn(String columnName, String newColumnName)
+		throws Exception {
+
+		try (Connection connection = DataAccess.getConnection()) {
+			DB db = DBManagerUtil.getDB();
+
+			db.alterColumnName(
+				connection, "LayoutClassedModelUsage", columnName,
+				newColumnName + " VARCHAR(75) null");
+		}
+	}
+
+	private CTCollection _updateFragmentEntryLinkInNewCTCollection(
 			FragmentEntryLink fragmentEntryLink, JournalArticle journalArticle)
 		throws Exception {
 
@@ -319,6 +357,8 @@ public class LayoutClassedModelUsageCTUpgradeProcessTest
 				fragmentEntryLink);
 			_deleteLayoutClassedModelUsage(journalArticle.getResourcePrimKey());
 		}
+
+		return ctCollection;
 	}
 
 	private static final String _CLASS_NAME =

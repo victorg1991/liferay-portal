@@ -15,7 +15,6 @@ import ClayNavigationBar from '@clayui/navigation-bar';
 import ClayTable from '@clayui/table';
 import classNames from 'classnames';
 import {
-	FeatureIndicator,
 	openConfirmModal,
 	openSimpleInputModal,
 	openToast,
@@ -765,9 +764,20 @@ export default function ChangeTrackingRenderView({
 	};
 
 	const navigate = (editURL, checkoutURL, confirmationMessage) => {
-		const editPortletURL = createPortletURL(editURL, {
-			redirect: window.location.pathname + window.location.search,
-		});
+		const url = new URL(editURL);
+
+		let editPortletURL;
+
+		if (url.searchParams.has('p_l_back_url')) {
+			url.searchParams.set('p_l_back_url', window.location.href);
+
+			editPortletURL = url.toString();
+		}
+		else {
+			editPortletURL = createPortletURL(editURL, {
+				redirect: window.location.pathname + window.location.search,
+			});
+		}
 
 		if (!checkoutURL) {
 			navigateUtil(editPortletURL);
@@ -821,15 +831,7 @@ export default function ChangeTrackingRenderView({
 
 		if (moveChangesURL !== null) {
 			dropdownItems.push({
-				label: (
-					<>
-						{Liferay.Language.get('move-changes')}
-
-						<div className="float-right">
-							<FeatureIndicator type="beta" />
-						</div>
-					</>
-				),
+				label: Liferay.Language.get('move-changes'),
 				onClick: () => navigateUtil(moveChangesURL),
 				symbolLeft: 'move-folder',
 			});
@@ -884,7 +886,7 @@ export default function ChangeTrackingRenderView({
 							mainFieldName: 'comment',
 							mainFieldPlaceholder:
 								Liferay.Language.get('comment'),
-							namespace,
+							namespace: workflowAction.namespace,
 							onFormSuccess: () =>
 								setTimeout(
 									() => setShowWorkflowSuccessMessage(true),
@@ -1239,7 +1241,10 @@ export default function ChangeTrackingRenderView({
 					state.contentType === CONTENT_TYPE_PARENTS ||
 					state.contentType === CONTENT_TYPE_CHILDREN
 				}
-				striped={state.contentType !== CONTENT_TYPE_WORKFLOW}
+				striped={
+					state.contentType !== CONTENT_TYPE_WORKFLOW &&
+					state.view !== VIEW_SPLIT
+				}
 			>
 				<ClayTable.Head>{renderToolbar()}</ClayTable.Head>
 

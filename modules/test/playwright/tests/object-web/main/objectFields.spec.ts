@@ -6,9 +6,9 @@
 import {
 	ObjectDefinition,
 	ObjectDefinitionAPI,
+	ObjectField,
 	ObjectFieldAPI,
-	ObjectFolder,
-	ObjectFolderAPI,
+	ObjectRelationshipAPI,
 	ObjectValidationRuleAPI,
 } from '@liferay/object-admin-rest-client-js';
 import {Locator, Page, expect, mergeTests} from '@playwright/test';
@@ -22,81 +22,22 @@ import {getRandomInt} from '../../../utils/getRandomInt';
 import getRandomString from '../../../utils/getRandomString';
 import {waitForAlert} from '../../../utils/waitForAlert';
 import {AsyncArray} from './utils/AsyncArray';
-import {createObjectFields, mockObjectFields} from './utils/mockObjectFields';
+import {generateObjectFields} from './utils/generateObjectFields';
+import {postListTypeDefinitionListTypeEntries} from './utils/postListTypeDefinitionListTypeEntries';
 
-export const test = mergeTests(
+const test = mergeTests(
 	apiHelpersTest,
 	dataApiHelpersTest,
-	featureFlagsTest({
-		'LPD-32050': {enabled: true},
-	}),
 	loginTest(),
 	objectPagesTest
 );
 
-const createdEntities = {
-	listTypeDefinitionIds: [],
-	objectDefinitions: [],
-	objectFolders: [],
-} as {
-	listTypeDefinitionIds: number[];
-	objectDefinitions: ObjectDefinition[];
-	objectFolders: ObjectFolder[];
-};
-
-test.beforeEach(async ({apiHelpers}) => {
-	const newObjectDefinition =
-		await apiHelpers.objectAdmin.postRandomObjectDefinition({
-			objectFolderExternalReferenceCode: 'default',
-			status: {code: 0},
-		});
-
-	createdEntities.objectDefinitions.push(newObjectDefinition);
-});
-
-test.afterEach(async ({apiHelpers}) => {
-	const asyncArray = new AsyncArray<
-		ObjectDefinition | ObjectFolder | number,
-		void
-	>();
-
-	const objectDefinitionAPIClient =
-		await apiHelpers.buildRestClient(ObjectDefinitionAPI);
-
-	await asyncArray.map({
-		array: createdEntities.objectDefinitions,
-		predicate: async (objectDefinition: ObjectDefinition) => {
-			await objectDefinitionAPIClient.deleteObjectDefinition(
-				objectDefinition.id
-			);
-		},
-	});
-
-	createdEntities.objectDefinitions = [];
-
-	const objectFolderAPIClient =
-		await apiHelpers.buildRestClient(ObjectFolderAPI);
-
-	await asyncArray.map({
-		array: createdEntities.objectFolders,
-		predicate: async (objectFolder: ObjectFolder) => {
-			await objectFolderAPIClient.deleteObjectFolder(objectFolder.id);
-		},
-	});
-
-	createdEntities.objectDefinitions = [];
-
-	await asyncArray.map({
-		array: createdEntities.listTypeDefinitionIds,
-		predicate: async (listTypeDefinitionId: number) => {
-			await apiHelpers.listTypeAdmin.deleteListTypeDefinition(
-				listTypeDefinitionId
-			);
-		},
-	});
-
-	createdEntities.listTypeDefinitionIds = [];
-});
+const defaultValueTest = mergeTests(
+	test,
+	featureFlagsTest({
+		'LPD-46451': {enabled: true},
+	})
+);
 
 test.describe('Manage object fields through Model Builder', () => {
 	test.beforeEach(({page}) => {
@@ -109,9 +50,15 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderLeftSidebarPage,
 		modelBuilderObjectDefinitionNodePage,
 	}) => {
-		const {listTypeDefinitionIds, objectDefinitions} = createdEntities;
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
 
-		const [objectDefinition] = objectDefinitions;
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		const existingListTypeDefinitions = (
 			await apiHelpers.listTypeAdmin.getListTypeDefinitions()
@@ -129,7 +76,10 @@ test.describe('Manage object fields through Model Builder', () => {
 		);
 
 		allListTypeDefinitions.forEach(({id}) =>
-			listTypeDefinitionIds.push(id)
+			apiHelpers.data.push({
+				id,
+				type: 'listTypeDefinition',
+			})
 		);
 
 		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
@@ -165,14 +115,21 @@ test.describe('Manage object fields through Model Builder', () => {
 	});
 
 	test('assert that field entry translation is disabled by default', async ({
+		apiHelpers,
 		modelBuilderDiagramPage,
 		modelBuilderLeftSidebarPage,
 		modelBuilderObjectDefinitionNodePage,
 		page,
 	}) => {
-		const {objectDefinitions} = createdEntities;
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
 
-		const [objectDefinition] = objectDefinitions;
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
 
@@ -204,19 +161,27 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderDiagramPage,
 		modelBuilderLeftSidebarPage,
 		modelBuilderObjectDefinitionNodePage,
-		page,
 		viewObjectDefinitionsPage,
 	}) => {
-		const {listTypeDefinitionIds, objectDefinitions} = createdEntities;
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
 
-		const [objectDefinition] = objectDefinitions;
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
-		await page.goto('/');
+		const {listTypeDefinition} =
+			await postListTypeDefinitionListTypeEntries({
+				apiHelpers,
+			});
 
-		const listTypeDefinition =
-			await apiHelpers.listTypeAdmin.postRandomListTypeDefinition();
-
-		listTypeDefinitionIds.push(listTypeDefinition.id);
+		apiHelpers.data.push({
+			id: listTypeDefinition.id,
+			type: 'listTypeDefinition',
+		});
 
 		await viewObjectDefinitionsPage.goto();
 
@@ -254,30 +219,20 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderObjectDefinitionNodePage,
 		modelBuilderRightSidebarPage,
 	}) => {
-		const [objectDefinition] = createdEntities.objectDefinitions;
+		const objectFields = generateObjectFields({
+			objectFieldBusinessTypes: ['Integer', 'Text'],
+		});
 
-		const objectFieldAPIClient =
-			await apiHelpers.buildRestClient(ObjectFieldAPI);
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				objectFields,
+				status: {code: 0},
+			});
 
-		await objectFieldAPIClient.postObjectDefinitionByExternalReferenceCodeObjectField(
-			objectDefinition.externalReferenceCode,
-			{
-				DBType: 'Integer',
-				label: {
-					en_US: 'intField',
-				},
-
-				listTypeDefinitionId: 0,
-				localized: false,
-				name: 'intField',
-				objectFieldSettings: [],
-				readOnly: 'false',
-				readOnlyConditionExpression: '',
-				required: false,
-				state: false,
-				system: false,
-			}
-		);
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
 
@@ -302,7 +257,7 @@ test.describe('Manage object fields through Model Builder', () => {
 		await expect(
 			modelBuilderDiagramPage.objectDefinitionNodes
 				.filter({hasText: objectDefinition.name})
-				.getByText('intField')
+				.getByText('Integer', {exact: true})
 		).toBeHidden();
 	});
 
@@ -313,47 +268,32 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderObjectDefinitionNodePage,
 		page,
 	}) => {
-		const {listTypeDefinitionIds} = createdEntities;
+		const {listTypeDefinition} =
+			await postListTypeDefinitionListTypeEntries({
+				apiHelpers,
+			});
+
+		const objectFields: Partial<ObjectField>[] = generateObjectFields({
+			listTypeDefinitionExternalReferenceCode:
+				listTypeDefinition.externalReferenceCode,
+			objectFieldBusinessTypes: ['Picklist'],
+		});
+
+		apiHelpers.data.push({
+			id: listTypeDefinition.id,
+			type: 'listTypeDefinition',
+		});
 
 		const draftObjectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
+				objectFields,
 				status: {code: 2},
 			});
 
-		createdEntities.objectDefinitions.push(draftObjectDefinition);
-
-		const listTypeDefinition =
-			await apiHelpers.listTypeAdmin.postRandomListTypeDefinition();
-
-		listTypeDefinitionIds.push(listTypeDefinition.id);
-
-		let picklistFieldName = 'picklistField' + getRandomInt();
-
-		const objectFieldAPIClient =
-			await apiHelpers.buildRestClient(ObjectFieldAPI);
-
-		await objectFieldAPIClient.postObjectDefinitionByExternalReferenceCodeObjectField(
-			draftObjectDefinition.externalReferenceCode,
-			{
-				DBType: 'String',
-				businessType: 'Picklist',
-				externalReferenceCode: picklistFieldName,
-				indexed: true,
-				indexedAsKeyword: false,
-				indexedLanguageId: '',
-				label: {en_US: picklistFieldName},
-				listTypeDefinitionExternalReferenceCode:
-					listTypeDefinition.externalReferenceCode,
-				listTypeDefinitionId: listTypeDefinition.id,
-				localized: false,
-				name: picklistFieldName,
-				readOnly: 'false',
-				required: false,
-				state: false,
-				system: false,
-			}
-		);
+		apiHelpers.data.push({
+			id: draftObjectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
 
@@ -366,9 +306,11 @@ test.describe('Manage object fields through Model Builder', () => {
 			modelBuilderDiagramPage.objectDefinitionNodes
 		);
 
-		await page.getByText(picklistFieldName).click();
+		await page
+			.getByText(objectFields[0].label['en_US'], {exact: true})
+			.click();
 
-		picklistFieldName = 'picklistField' + getRandomInt();
+		const picklistFieldName = 'picklistField' + getRandomInt();
 
 		await page
 			.getByPlaceholder('Text to translate...')
@@ -378,7 +320,9 @@ test.describe('Manage object fields through Model Builder', () => {
 			draftObjectDefinition.label['en_US']
 		);
 
-		await expect(page.getByText(picklistFieldName)).toBeVisible();
+		await expect(
+			page.getByText(picklistFieldName, {exact: true})
+		).toBeVisible();
 	});
 
 	test('can navigate to picklist portlet through manage picklist button', async ({
@@ -389,30 +333,32 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderRightSidebarPage,
 		page,
 	}) => {
-		const {listTypeDefinitionIds, objectDefinitions} = createdEntities;
+		const {listTypeDefinition} =
+			await postListTypeDefinitionListTypeEntries({
+				apiHelpers,
+			});
 
-		const [objectDefinition] = objectDefinitions;
+		const objectFields: Partial<ObjectField>[] = generateObjectFields({
+			listTypeDefinitionExternalReferenceCode:
+				listTypeDefinition.externalReferenceCode,
+			objectFieldBusinessTypes: ['Picklist'],
+		});
 
-		const listTypeDefinition =
-			await apiHelpers.listTypeAdmin.postRandomListTypeDefinition();
+		apiHelpers.data.push({
+			id: listTypeDefinition.id,
+			type: 'listTypeDefinition',
+		});
 
-		listTypeDefinitionIds.push(listTypeDefinition.id);
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				objectFields,
+				status: {code: 0},
+			});
 
-		const objectFieldAPIClient =
-			await apiHelpers.buildRestClient(ObjectFieldAPI);
-
-		await objectFieldAPIClient.postObjectDefinitionByExternalReferenceCodeObjectField(
-			objectDefinition.externalReferenceCode,
-			createObjectFields(
-				'picklist',
-				[{label: 'picklistField', name: 'picklistField'}],
-				{
-					listTypeDefinitionExternalReferenceCode:
-						listTypeDefinition.externalReferenceCode,
-					listTypeDefinitionId: listTypeDefinition.id,
-				}
-			)[0]
-		);
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
 
@@ -425,7 +371,9 @@ test.describe('Manage object fields through Model Builder', () => {
 			modelBuilderDiagramPage.objectDefinitionNodes
 		);
 
-		await page.getByText('picklistField').click();
+		await page
+			.getByText(objectFields[0].label['en_US'], {exact: true})
+			.click();
 
 		const newTabPagePromise = new Promise<Page>((resolve) =>
 			page.once('popup', resolve)
@@ -445,31 +393,38 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderDiagramPage,
 		page,
 	}) => {
-		const {listTypeDefinitionIds, objectDefinitions, objectFolders} =
-			createdEntities;
 		const objectFolder =
 			await apiHelpers.objectAdmin.postRandomObjectFolder();
 
-		objectFolders.push(objectFolder);
+		apiHelpers.data.push({id: objectFolder.id, type: 'objectFolder'});
 
-		const {listTypeDefinition, objectFields} = await mockObjectFields({
-			apiHelpers,
+		const {listTypeDefinition} =
+			await postListTypeDefinitionListTypeEntries({
+				apiHelpers,
+			});
+
+		const objectFields = generateObjectFields({
+			listTypeDefinitionExternalReferenceCode:
+				listTypeDefinition.externalReferenceCode,
 			objectFieldBusinessTypes: [
-				'attachment',
-				'boolean',
-				'date',
-				'decimal',
-				'integer',
-				'longInteger',
-				'longText',
-				'picklist',
-				'precisionDecimal',
-				'richText',
-				'text',
+				'Attachment',
+				'Boolean',
+				'Date',
+				'Decimal',
+				'Integer',
+				'LongInteger',
+				'LongText',
+				'Picklist',
+				'PrecisionDecimal',
+				'RichText',
+				'Text',
 			],
 		});
 
-		listTypeDefinitionIds.push(listTypeDefinition.id);
+		apiHelpers.data.push({
+			id: listTypeDefinition.id,
+			type: 'listTypeDefinition',
+		});
 
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
@@ -479,7 +434,10 @@ test.describe('Manage object fields through Model Builder', () => {
 				status: {code: 1},
 			});
 
-		objectDefinitions.push(objectDefinition);
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		await apiHelpers.objectAdmin.postObjectDefinitionObjectFieldBatch(
 			objectDefinition.id,
@@ -511,17 +469,17 @@ test.describe('Manage object fields through Model Builder', () => {
 
 		const objectFieldBusinessTypeNameLabel = {
 			Attachment: 'Anexo',
-			Boolean: 'Verdadeiro/falso',
+			Boolean: 'Boolean',
 			Date: 'Data',
 			DateTime: 'Data/Hora',
 			Decimal: 'Decimal',
 			Integer: 'Inteiro',
 			LongInteger: 'Número inteiro longo',
-			LongText: 'Texto Longo',
+			LongText: 'Texto longo',
 			Picklist: 'Lista de seleção',
 			PrecisionDecimal: 'Casa decimal',
 			RichText: 'Rich Text',
-			Text: 'Campo de texto',
+			Text: 'Texto',
 		};
 
 		const asyncArray = new AsyncArray<Locator, boolean>();
@@ -557,7 +515,15 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderObjectDefinitionNodePage,
 		page,
 	}) => {
-		const [objectDefinition] = createdEntities.objectDefinitions;
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		const dateFieldName = 'dateField' + getRandomInt();
 		const integerFieldName = 'integerField' + getRandomInt();
@@ -639,7 +605,15 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderRightSidebarPage,
 		page,
 	}) => {
-		const [objectDefinition] = createdEntities.objectDefinitions;
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		const integerFieldName = 'integerField' + getRandomInt();
 
@@ -725,13 +699,22 @@ test.describe('Manage object fields through Model Builder', () => {
 	});
 
 	test('cannot delete only custom object field of an published object definition', async ({
+		apiHelpers,
 		modelBuilderDiagramPage,
 		modelBuilderLeftSidebarPage,
 		modelBuilderObjectDefinitionNodePage,
 		modelBuilderRightSidebarPage,
 		page,
 	}) => {
-		const [objectDefinition] = createdEntities.objectDefinitions;
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
 
 		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
 
@@ -763,15 +746,13 @@ test.describe('Manage object fields through Model Builder', () => {
 		modelBuilderObjectDefinitionNodePage,
 		page,
 	}) => {
-		const {objectFields} = await mockObjectFields({
-			apiHelpers,
-			objectFieldBusinessTypes: ['encrypted'],
+		const objectFields = generateObjectFields({
+			objectFieldBusinessTypes: ['Encrypted'],
 		});
 
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
 				objectFields,
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -795,9 +776,7 @@ test.describe('Manage object fields through Model Builder', () => {
 
 		const pagePromise = page.waitForEvent('popup');
 
-		await page
-			.getByRole('link', {name: 'Learn more. (Opens a new window)'})
-			.click();
+		await page.getByRole('link', {name: 'Learn more.'}).click();
 
 		const newPage = await pagePromise;
 
@@ -805,6 +784,51 @@ test.describe('Manage object fields through Model Builder', () => {
 			newPage.getByRole('heading', {
 				name: 'Localizing Object Definitions',
 			})
+		).toBeVisible();
+	});
+
+	test('read only configuration is displayed in the fields advanced tab', async ({
+		apiHelpers,
+		modelBuilderDiagramPage,
+		modelBuilderLeftSidebarPage,
+		modelBuilderObjectDefinitionNodePage,
+		modelBuilderRightSidebarPage,
+		page,
+	}) => {
+		const objectFields = generateObjectFields({
+			objectFieldBusinessTypes: ['Text'],
+		});
+
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				objectFields,
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
+
+		await modelBuilderDiagramPage.goto({objectFolderName: 'Default'});
+
+		await modelBuilderLeftSidebarPage.sidebarItems
+			.filter({hasText: objectDefinition.label['en_US']})
+			.click();
+
+		await modelBuilderObjectDefinitionNodePage.clickShowAllFieldsButton(
+			objectDefinition.label['en_US'],
+			modelBuilderDiagramPage.objectDefinitionNodes
+		);
+
+		await page
+			.getByText(objectFields[0].label.en_US, {exact: true})
+			.click();
+
+		await modelBuilderRightSidebarPage.advancedTab.click();
+
+		await expect(
+			page.getByRole('button', {name: 'Read Only'})
 		).toBeVisible();
 	});
 });
@@ -883,33 +907,81 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		await objectFieldsPage.deleteObjectField(true, -1);
 	});
 
-	test('can create object fields of multiple types (except AutoIncrement, Date and Time, Encrypted and Aggregation)', async ({
+	test('can create object fields of all types', async ({
 		apiHelpers,
 		objectFieldsPage,
 		page,
 	}) => {
-		const {listTypeDefinitionIds, objectDefinitions} = createdEntities;
-
-		const objectDefinition =
+		const objectDefinition1 =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
 				objectFields: [],
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 1},
 			});
 
-		objectDefinitions.push(objectDefinition);
+		const objectDefinition2 =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 1},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition1.id,
+			type: 'objectDefinition',
+		});
+
+		apiHelpers.data.push({
+			id: objectDefinition2.id,
+			type: 'objectDefinition',
+		});
+
+		const objectRelationshipAPIClient = await apiHelpers.buildRestClient(
+			ObjectRelationshipAPI
+		);
+
+		const {body: objectRelationship} =
+			await objectRelationshipAPIClient.postObjectDefinitionObjectRelationship(
+				objectDefinition1.id,
+				{
+					label: {
+						en_US: 'objectRelationshipLabel' + getRandomInt(),
+					},
+					name:
+						'objectRelationshipName' +
+						Math.floor(Math.random() * 99),
+					objectDefinitionExternalReferenceCode1:
+						objectDefinition1.externalReferenceCode,
+					objectDefinitionExternalReferenceCode2:
+						objectDefinition2.externalReferenceCode,
+					type: 'oneToMany',
+				}
+			);
+
+		apiHelpers.data.push({
+			id: objectRelationship.id,
+			type: 'objectRelationship',
+		});
 
 		const listTypeDefinition =
 			await apiHelpers.listTypeAdmin.postRandomListTypeDefinition();
 
-		listTypeDefinitionIds.push(listTypeDefinition.id);
+		apiHelpers.data.push({
+			id: listTypeDefinition.id,
+			type: 'listTypeDefinition',
+		});
 
-		await objectFieldsPage.goto(objectDefinition.label['en_US']);
+		await objectFieldsPage.goto(objectDefinition1.label['en_US']);
 
 		const objectFieldsMock = [
 			{
+				objectFieldBusinessType: 'Aggregation',
+				objectFieldLabel: `aggregation${getRandomInt()}`,
+			},
+			{
 				objectFieldBusinessType: 'Attachment',
 				objectFieldLabel: `attachment${getRandomInt()}`,
+			},
+			{
+				objectFieldBusinessType: 'Auto Increment',
+				objectFieldLabel: `autoIncrement${getRandomInt()}`,
 			},
 			{
 				objectFieldBusinessType: 'Boolean',
@@ -920,8 +992,16 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 				objectFieldLabel: `date${getRandomInt()}`,
 			},
 			{
+				objectFieldBusinessType: 'Date Time',
+				objectFieldLabel: `dateTime${getRandomInt()}`,
+			},
+			{
 				objectFieldBusinessType: 'Decimal',
 				objectFieldLabel: `decimal${getRandomInt()}`,
+			},
+			{
+				objectFieldBusinessType: 'Encrypted',
+				objectFieldLabel: `encrypted${getRandomInt()}`,
 			},
 			{
 				objectFieldBusinessType: 'Integer',
@@ -963,10 +1043,41 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		for (const objectField of objectFieldsMock) {
 			const {objectFieldBusinessType, objectFieldLabel} = objectField;
 
+			if (objectFieldBusinessType === 'Aggregation') {
+				await objectFieldsPage.addObjectField({
+					aggregationFieldFunction: 'count',
+					aggregationFieldRelationship:
+						objectRelationship.label['en_US'],
+					objectFieldBusinessType,
+					objectFieldLabel,
+				});
+
+				continue;
+			}
+
 			if (objectFieldBusinessType === 'Attachment') {
 				await objectFieldsPage.addObjectField({
 					attachmentSource: 'Upload Directly from the User',
 					objectFieldBusinessType,
+					objectFieldLabel,
+				});
+
+				continue;
+			}
+
+			if (objectFieldBusinessType === 'Auto Increment') {
+				await objectFieldsPage.addObjectField({
+					autoIncrementInitialValue: '1',
+					objectFieldBusinessType,
+					objectFieldLabel,
+				});
+
+				continue;
+			}
+
+			if (objectFieldBusinessType === 'Date Time') {
+				await objectFieldsPage.addObjectField({
+					objectFieldBusinessType: 'Date and Time',
 					objectFieldLabel,
 				});
 
@@ -992,9 +1103,12 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 			});
 		}
 
+		await page.getByLabel('Items Per Page').click();
+		await page.getByRole('option', {name: '40 Items'}).click();
+
 		while (
 			(await page.locator('tbody > tr').all()).length !==
-			objectDefinition.objectFields.length + objectFieldsMock.length
+			objectDefinition1.objectFields.length + objectFieldsMock.length
 		) {
 			await page.waitForTimeout(1000);
 		}
@@ -1031,6 +1145,116 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		}
 	});
 
+	test(
+		'can delete created custom fields in a System Object',
+		{tag: ['@LPD-53450']},
+		async ({apiHelpers, objectFieldsPage, page}) => {
+			const objectDefinitionField =
+				await apiHelpers.buildRestClient(ObjectFieldAPI);
+
+			const fieldName = 'Custom Field';
+
+			const {items} =
+				await apiHelpers.objectAdmin.getAllObjectDefinitions();
+
+			const systemObjectDefinition = items.find(
+				(item: ObjectDefinition) => {
+					return item.system === true;
+				}
+			);
+
+			await objectDefinitionField.postObjectDefinitionObjectField(
+				systemObjectDefinition.id,
+				{
+					DBType: 'String',
+					businessType: 'Text',
+					indexed: true,
+					label: {en_US: fieldName},
+					localized: false,
+					name: 'customField',
+					readOnly: 'false',
+					required: false,
+					state: false,
+				}
+			);
+
+			await objectFieldsPage.goto(systemObjectDefinition.label.en_US);
+
+			await page
+				.getByRole('row')
+				.filter({hasText: fieldName})
+				.getByRole('button', {name: 'Actions'})
+				.click();
+
+			await objectFieldsPage.deleteObjectFieldOption.click();
+
+			await page.getByRole('button', {name: 'Delete'}).click();
+
+			await expect(page.locator('.alert-success')).toBeVisible();
+
+			await expect(
+				page.getByRole('row').filter({hasText: fieldName})
+			).toHaveCount(0);
+		}
+	);
+
+	test('can only edit external reference code of custom fields through the UI', async ({
+		apiHelpers,
+		objectFieldsPage,
+		page,
+	}) => {
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
+
+		await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+		await objectFieldsPage.openObjectField(
+			objectDefinition.objectFields[0].label['en_US']
+		);
+
+		await expect(
+			objectFieldsPage.externalReferenceCodeField
+		).toBeDisabled();
+
+		const field = objectDefinition.objectFields.find((item) => {
+			return !item.system;
+		});
+
+		await objectFieldsPage.openObjectField(field.label['en_US']);
+
+		await objectFieldsPage.externalReferenceCodeField.click();
+
+		const ERCValue = getRandomString();
+
+		await objectFieldsPage.externalReferenceCodeField.fill(ERCValue);
+
+		await objectFieldsPage.editFieldSaveButton.click();
+
+		await waitForAlert(
+			page,
+			'Success:The object field was updated successfully.'
+		);
+
+		await objectFieldsPage.openObjectField(field.label['en_US']);
+
+		await page
+			.frameLocator('iframe')
+			.getByText('Field')
+			.first()
+			.waitFor({state: 'visible'});
+
+		expect(objectFieldsPage.externalReferenceCodeField).toHaveValue(
+			ERCValue
+		);
+	});
+
 	test('cannot create localized object fields in unmodifiable system object definition', async ({
 		objectFieldsPage,
 	}) => {
@@ -1051,12 +1275,83 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		).toBeDisabled();
 	});
 
+	test('cannot delete a custom object relationship field from a system object', async ({
+		apiHelpers,
+		objectFieldsPage,
+		page,
+	}) => {
+		const objectDefinition1 =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition1.id,
+			type: 'objectDefinition',
+		});
+
+		const objectDefinitionAPIClient =
+			await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+		const {body: objectDefinition2} =
+			await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+				'L_USER'
+			);
+
+		const objectRelationshipAPIClient = await apiHelpers.buildRestClient(
+			ObjectRelationshipAPI
+		);
+
+		const {body: objectRelationship} =
+			await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
+				objectDefinition1.externalReferenceCode,
+				{
+					label: {
+						en_US: 'objectRelationshipLabel' + getRandomInt(),
+					},
+					name:
+						'objectRelationshipName' +
+						Math.floor(Math.random() * 99),
+					objectDefinitionExternalReferenceCode1:
+						objectDefinition1.externalReferenceCode,
+					objectDefinitionExternalReferenceCode2:
+						objectDefinition2.externalReferenceCode,
+					objectDefinitionId1: objectDefinition1.id,
+					objectDefinitionId2: objectDefinition2.id,
+					objectDefinitionName2: objectDefinition2.name,
+					type: 'oneToMany',
+				}
+			);
+
+		apiHelpers.data.push({
+			id: objectRelationship.id,
+			type: 'objectRelationship',
+		});
+
+		await objectFieldsPage.goto('User');
+
+		await expect(
+			page
+				.getByRole('row', {name: objectRelationship.label.en_US})
+				.getByRole('button', {name: 'Actions'})
+		).toBeHidden();
+	});
+
 	test('cannot delete an objectField that belongs to a unique composite key validation through Objects Admin UI', async ({
 		apiHelpers,
 		objectFieldsPage,
 		page,
 	}) => {
-		const [objectDefinition] = createdEntities.objectDefinitions;
+		const objectDefinition =
+			await apiHelpers.objectAdmin.postRandomObjectDefinition({
+				status: {code: 0},
+			});
+
+		apiHelpers.data.push({
+			id: objectDefinition.id,
+			type: 'objectDefinition',
+		});
+
 		const integerFieldName = 'integerField' + getRandomInt();
 
 		const objectFieldAPIClient =
@@ -1129,112 +1424,34 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		).toBeVisible();
 	});
 
-	test('can only edit external reference code of custom fields through the UI', async ({
+	test('cannot delete system fields of system objects', async ({
 		apiHelpers,
 		objectFieldsPage,
 		page,
 	}) => {
-		const objectDefinition =
-			await apiHelpers.objectAdmin.postRandomObjectDefinition({
-				objectFolderExternalReferenceCode: 'default',
-				status: {code: 0},
-			});
+		await objectFieldsPage.goto('User');
 
-		apiHelpers.data.push({
-			id: objectDefinition.id,
-			type: 'objectDefinition',
-		});
+		const objectDefinitionAPIClient =
+			await apiHelpers.buildRestClient(ObjectDefinitionAPI);
 
-		await objectFieldsPage.goto(objectDefinition.label['en_US']);
+		const {body: objectDefinition} =
+			await objectDefinitionAPIClient.getObjectDefinitionByExternalReferenceCode(
+				'L_USER'
+			);
 
-		await objectFieldsPage.openObjectField(
-			objectDefinition.objectFields[0].label['en_US']
-		);
-
-		await expect(
-			objectFieldsPage.externalReferenceCodeField
-		).toBeDisabled();
-
-		const field = objectDefinition.objectFields.find((item) => {
-			return !item.system;
-		});
-
-		await objectFieldsPage.openObjectField(field.label['en_US']);
-
-		await objectFieldsPage.externalReferenceCodeField.click();
-
-		const ERCValue = getRandomString();
-
-		await objectFieldsPage.externalReferenceCodeField.fill(ERCValue);
-
-		await objectFieldsPage.editFieldSaveButton.click();
-
-		await waitForAlert(
-			page,
-			'Success:The object field was updated successfully.'
-		);
-
-		await objectFieldsPage.openObjectField(field.label['en_US']);
-
-		await page
-			.frameLocator('iframe')
-			.getByText('Field')
-			.first()
-			.waitFor({state: 'visible'});
-
-		expect(objectFieldsPage.externalReferenceCodeField).toHaveValue(
-			ERCValue
-		);
-	});
-
-	test('LPD-53450 can delete created custom fields in a System Object', async ({
-		apiHelpers,
-		objectFieldsPage,
-		page,
-	}) => {
-		const objectDefinitionField =
-			await apiHelpers.buildRestClient(ObjectFieldAPI);
-
-		const fieldName = 'Custom Field';
-
-		const {items} = await apiHelpers.objectAdmin.getAllObjectDefinitions();
-
-		const systemObjectDefinition = items.find((item: ObjectDefinition) => {
-			return item.system === true;
-		});
-
-		await objectDefinitionField.postObjectDefinitionObjectField(
-			systemObjectDefinition.id,
-			{
-				DBType: 'String',
-				businessType: 'Text',
-				indexed: true,
-				label: {en_US: fieldName},
-				localized: false,
-				name: 'customField',
-				readOnly: 'false',
-				required: false,
-				state: false,
+		const systemFields = objectDefinition.objectFields.filter((item) => {
+			if (item.system) {
+				return item;
 			}
-		);
+		});
 
-		await objectFieldsPage.goto(systemObjectDefinition.label.en_US);
-
-		await page
-			.getByRole('row')
-			.filter({hasText: fieldName})
-			.getByRole('button', {name: 'Actions'})
-			.click();
-
-		await objectFieldsPage.deleteObjectFieldOption.click();
-
-		await page.getByRole('button', {name: 'Delete'}).click();
-
-		await expect(page.locator('.alert-success')).toBeVisible();
-
-		await expect(
-			page.getByRole('row').filter({hasText: fieldName})
-		).toHaveCount(0);
+		for (const item of systemFields) {
+			await expect(
+				page
+					.getByRole('row', {name: item.label.en_US})
+					.getByRole('button', {name: 'Actions'})
+			).toBeHidden();
+		}
 	});
 
 	test('navigates to documentation from the "unsupported translations" alert link', async ({
@@ -1242,15 +1459,13 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		objectFieldsPage,
 		page,
 	}) => {
-		const {objectFields} = await mockObjectFields({
-			apiHelpers,
-			objectFieldBusinessTypes: ['encrypted'],
+		const objectFields = generateObjectFields({
+			objectFieldBusinessTypes: ['Encrypted'],
 		});
 
 		const objectDefinition =
 			await apiHelpers.objectAdmin.postRandomObjectDefinition({
 				objectFields,
-				objectFolderExternalReferenceCode: 'default',
 				status: {code: 0},
 			});
 
@@ -1267,7 +1482,7 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 
 		await page
 			.frameLocator('iframe')
-			.getByRole('link', {name: 'Learn more. (Opens a new window)'})
+			.getByRole('link', {name: 'Learn more.'})
 			.click();
 
 		const newPage = await pagePromise;
@@ -1279,3 +1494,844 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		).toBeVisible();
 	});
 });
+
+defaultValueTest.describe(
+	'Manage object fields default value properties',
+	() => {
+		defaultValueTest(
+			'can create, update, and delete default value for boolean field through Model Builder',
+			{tag: ['@LPD-70980']},
+			async ({
+				apiHelpers,
+				modelBuilderDiagramPage,
+				modelBuilderLeftSidebarPage,
+				modelBuilderObjectDefinitionNodePage,
+				modelBuilderRightSidebarPage,
+				page,
+				viewObjectEntriesPage,
+			}) => {
+				let booleanFieldName: string;
+
+				let objectClassName: string;
+
+				let objectName: string;
+
+				await test.step('create object with boolean field', async () => {
+					const objectFields = generateObjectFields({
+						objectFieldBusinessTypes: ['Boolean'],
+					});
+
+					booleanFieldName = objectFields[0].label['en_US'];
+
+					const objectDefinition =
+						await apiHelpers.objectAdmin.postRandomObjectDefinition(
+							{
+								objectFields,
+								status: {code: 0},
+							}
+						);
+
+					objectClassName = objectDefinition.className;
+
+					objectName = objectDefinition.name;
+
+					apiHelpers.data.push({
+						id: objectDefinition.id,
+						type: 'objectDefinition',
+					});
+				});
+
+				await test.step('set default value to false for boolean field and check in object entry', async () => {
+					await modelBuilderDiagramPage.goto({
+						objectFolderName: 'Default',
+					});
+
+					await modelBuilderLeftSidebarPage.sidebarItems
+						.filter({hasText: objectName})
+						.click();
+
+					await modelBuilderObjectDefinitionNodePage.clickShowAllFieldsButton(
+						objectName,
+						modelBuilderDiagramPage.objectDefinitionNodes
+					);
+
+					await modelBuilderDiagramPage.objectDefinitionNodes
+						.filter({hasText: objectName})
+						.getByText('Boolean', {exact: true})
+						.click();
+
+					await modelBuilderRightSidebarPage.setDefaultValue(
+						'Boolean',
+						'False'
+					);
+
+					await viewObjectEntriesPage.goto(objectClassName);
+
+					await viewObjectEntriesPage.clickAddObjectEntry(objectName);
+
+					await expect(
+						page.getByLabel(booleanFieldName)
+					).not.toBeChecked();
+				});
+
+				await test.step('set default value to true for boolean field and check in object entry', async () => {
+					await modelBuilderDiagramPage.goto({
+						objectFolderName: 'Default',
+					});
+
+					await modelBuilderLeftSidebarPage.sidebarItems
+						.filter({hasText: objectName})
+						.click();
+
+					await modelBuilderObjectDefinitionNodePage.clickShowAllFieldsButton(
+						objectName,
+						modelBuilderDiagramPage.objectDefinitionNodes
+					);
+
+					await modelBuilderDiagramPage.objectDefinitionNodes
+						.filter({hasText: objectName})
+						.getByText('Boolean', {exact: true})
+						.click();
+
+					await modelBuilderRightSidebarPage.setDefaultValue(
+						'Boolean',
+						'True'
+					);
+
+					await viewObjectEntriesPage.goto(objectClassName);
+
+					await viewObjectEntriesPage.clickAddObjectEntry(objectName);
+
+					await expect(
+						page.getByLabel(booleanFieldName)
+					).toBeChecked();
+				});
+
+				await test.step('untoggle default value for boolean field and check in object entry', async () => {
+					await modelBuilderDiagramPage.goto({
+						objectFolderName: 'Default',
+					});
+
+					await modelBuilderLeftSidebarPage.sidebarItems
+						.filter({hasText: objectName})
+						.click();
+
+					await modelBuilderObjectDefinitionNodePage.clickShowAllFieldsButton(
+						objectName,
+						modelBuilderDiagramPage.objectDefinitionNodes
+					);
+
+					await modelBuilderDiagramPage.objectDefinitionNodes
+						.filter({hasText: objectName})
+						.getByText('Boolean', {exact: true})
+						.click();
+
+					await modelBuilderRightSidebarPage.advancedTab.click();
+
+					await modelBuilderRightSidebarPage.useDefaultValueToggle.uncheck();
+
+					await viewObjectEntriesPage.goto(objectClassName);
+
+					await viewObjectEntriesPage.clickAddObjectEntry(objectName);
+
+					await expect(
+						page.getByLabel(booleanFieldName)
+					).not.toBeChecked();
+				});
+			}
+		);
+
+		defaultValueTest(
+			'can create, update, and delete default value for boolean field through Object Admin',
+			{tag: ['@LPD-49587']},
+			async ({
+				apiHelpers,
+				objectFieldsPage,
+				page,
+				viewObjectEntriesPage,
+			}) => {
+				let objectDefinition: Partial<ObjectDefinition>;
+
+				let booleanField: Partial<ObjectField>[];
+
+				let booleanFieldName: string;
+
+				let objectClassName: string;
+
+				await test.step('create object with boolean field', async () => {
+					booleanField = generateObjectFields({
+						objectFieldBusinessTypes: ['Boolean'],
+					});
+
+					booleanFieldName = booleanField[0].label['en_US'];
+
+					objectDefinition =
+						await apiHelpers.objectAdmin.postRandomObjectDefinition(
+							{
+								objectFields: booleanField,
+								status: {code: 0},
+							}
+						);
+
+					objectClassName = objectDefinition.className;
+
+					apiHelpers.data.push({
+						id: objectDefinition.id,
+						type: 'objectDefinition',
+					});
+				});
+
+				await test.step('set default value to false for boolean field and check in object entry', async () => {
+					await objectFieldsPage.goto(
+						objectDefinition.label['en_US']
+					);
+
+					await objectFieldsPage.setDefaultValue({
+						defaultValue: 'False',
+						objectFieldBusinessType: 'Boolean',
+						objectFieldName: booleanFieldName,
+					});
+
+					await viewObjectEntriesPage.goto(objectClassName);
+
+					await viewObjectEntriesPage.clickAddObjectEntry(
+						objectDefinition.name
+					);
+
+					await expect(
+						page.getByLabel(booleanFieldName)
+					).not.toBeChecked();
+				});
+
+				await test.step('set default value to true for boolean field and check in object entry', async () => {
+					await objectFieldsPage.goto(
+						objectDefinition.label['en_US']
+					);
+
+					await objectFieldsPage.setDefaultValue({
+						defaultValue: 'True',
+						objectFieldBusinessType: 'Boolean',
+						objectFieldName: booleanFieldName,
+					});
+
+					await viewObjectEntriesPage.goto(objectClassName);
+
+					await viewObjectEntriesPage.clickAddObjectEntry(
+						objectDefinition.name
+					);
+
+					await expect(
+						page.getByLabel(booleanFieldName)
+					).toBeChecked();
+				});
+
+				await test.step('untoggle default value for boolean field and check in object entry', async () => {
+					await objectFieldsPage.goto(objectDefinition.name);
+
+					await objectFieldsPage.disableDefaultValue(
+						booleanFieldName
+					);
+
+					await viewObjectEntriesPage.goto(objectClassName);
+
+					await viewObjectEntriesPage.clickAddObjectEntry(
+						objectDefinition.name
+					);
+
+					await expect(
+						page.getByLabel(booleanFieldName)
+					).not.toBeChecked();
+				});
+			}
+		);
+
+		defaultValueTest(
+			'can create, read, update and delete the default value of date and dateTime fields',
+			{tag: ['@LPD-48612']},
+			async ({
+				apiHelpers,
+				objectFieldsPage,
+				page,
+				viewObjectEntriesPage,
+			}) => {
+				const FIELDS: Array<{
+					businessType: 'Date' | 'DateTime';
+					editedValue: string;
+					initialValue: string;
+					initialValueUI: string;
+					label?: string;
+				}> = [
+					{
+						businessType: 'Date',
+						editedValue: '12/10/2030',
+						initialValue: '2025-12-10',
+						initialValueUI: '12/10/2025',
+					},
+					{
+						businessType: 'DateTime',
+						editedValue: '12/10/2030 03:00 PM',
+						initialValue: '2025-12-10 15:00',
+						initialValueUI: '12/10/2025 03:00 PM',
+					},
+				];
+
+				const objectFields = generateObjectFields({
+					objectFieldBusinessTypes: FIELDS.map(
+						({businessType, initialValue}) => ({
+							businessType,
+							objectFieldSettings: [
+								{
+									name: 'defaultValueType',
+									value: 'inputAsValue',
+								},
+								{name: 'defaultValue', value: initialValue},
+							],
+						})
+					),
+				});
+
+				const objectDefinition =
+					await apiHelpers.objectAdmin.postRandomObjectDefinition({
+						objectFields,
+						status: {code: 0},
+					});
+
+				apiHelpers.data.push({
+					id: objectDefinition.id,
+					type: 'objectDefinition',
+				});
+
+				FIELDS.forEach((field, index) => {
+					field.label = objectFields[index].label['en_US'];
+				});
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {initialValueUI, label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue(
+						initialValueUI
+					);
+				}
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				for (const {businessType, editedValue, label} of FIELDS) {
+					await objectFieldsPage.setDefaultValue({
+						defaultValue: editedValue,
+						objectFieldBusinessType: businessType,
+						objectFieldName: label,
+					});
+				}
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {editedValue, label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue(
+						editedValue
+					);
+				}
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				for (const {label} of FIELDS) {
+					await objectFieldsPage.disableDefaultValue(label);
+				}
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue('');
+				}
+			}
+		);
+
+		defaultValueTest(
+			'can create, read, update and delete the default value of decimal, integer, longInteger, and precisionDecimal fields',
+			{tag: ['@LPD-49589']},
+			async ({
+				apiHelpers,
+				objectFieldsPage,
+				page,
+				viewObjectEntriesPage,
+			}) => {
+				const FIELDS: Array<{
+					businessType:
+						| 'Decimal'
+						| 'Integer'
+						| 'LongInteger'
+						| 'PrecisionDecimal';
+					editedValue: string;
+					initialValue: string;
+					label?: string;
+				}> = [
+					{
+						businessType: 'Decimal',
+						editedValue: '456.456',
+						initialValue: '123.123',
+					},
+					{
+						businessType: 'Integer',
+						editedValue: '456',
+						initialValue: '123',
+					},
+					{
+						businessType: 'LongInteger',
+						editedValue: '456',
+						initialValue: '123',
+					},
+					{
+						businessType: 'PrecisionDecimal',
+						editedValue: '456.456',
+						initialValue: '123.123',
+					},
+				];
+
+				const objectFields = generateObjectFields({
+					objectFieldBusinessTypes: FIELDS.map(
+						({businessType, initialValue}) => ({
+							businessType,
+							objectFieldSettings: [
+								{
+									name: 'defaultValueType',
+									value: 'inputAsValue',
+								},
+								{name: 'defaultValue', value: initialValue},
+							],
+						})
+					),
+				});
+
+				const objectDefinition =
+					await apiHelpers.objectAdmin.postRandomObjectDefinition({
+						objectFields,
+						status: {code: 0},
+					});
+
+				apiHelpers.data.push({
+					id: objectDefinition.id,
+					type: 'objectDefinition',
+				});
+
+				FIELDS.forEach((field, index) => {
+					field.label = objectFields[index].label['en_US'];
+				});
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {initialValue, label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue(
+						initialValue
+					);
+				}
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				for (const {businessType, editedValue, label} of FIELDS) {
+					await objectFieldsPage.setDefaultValue({
+						defaultValue: editedValue,
+						objectFieldBusinessType: businessType,
+						objectFieldName: label,
+					});
+				}
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {editedValue, label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue(
+						editedValue
+					);
+				}
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				for (const {label} of FIELDS) {
+					await objectFieldsPage.disableDefaultValue(label);
+				}
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue('');
+				}
+			}
+		);
+
+		defaultValueTest(
+			'can create, read, update and delete the default value of long text and text fields',
+			{tag: ['@LPD-48612']},
+			async ({
+				apiHelpers,
+				objectFieldsPage,
+				page,
+				viewObjectEntriesPage,
+			}) => {
+				const FIELDS: Array<{
+					businessType: 'LongText' | 'Text';
+					editedValue: string;
+					initialValue: string;
+					label?: string;
+				}> = [
+					{
+						businessType: 'LongText',
+						editedValue: 'defaultValueLongTextEdited',
+						initialValue: 'defaultValueLongText',
+					},
+					{
+						businessType: 'Text',
+						editedValue: 'defaultValueTextEdited',
+						initialValue: 'defaultValueText',
+					},
+				];
+
+				const objectFields = generateObjectFields({
+					objectFieldBusinessTypes: FIELDS.map(
+						({businessType, initialValue}) => ({
+							businessType,
+							objectFieldSettings: [
+								{
+									name: 'defaultValueType',
+									value: 'inputAsValue',
+								},
+								{name: 'defaultValue', value: initialValue},
+							],
+						})
+					),
+				});
+
+				const objectDefinition =
+					await apiHelpers.objectAdmin.postRandomObjectDefinition({
+						objectFields,
+						status: {code: 0},
+					});
+
+				apiHelpers.data.push({
+					id: objectDefinition.id,
+					type: 'objectDefinition',
+				});
+
+				FIELDS.forEach((field, index) => {
+					field.label = objectFields[index].label['en_US'];
+				});
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {initialValue, label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue(
+						initialValue
+					);
+				}
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				for (const {businessType, editedValue, label} of FIELDS) {
+					await objectFieldsPage.setDefaultValue({
+						defaultValue: editedValue,
+						objectFieldBusinessType: businessType,
+						objectFieldName: label,
+					});
+				}
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {editedValue, label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue(
+						editedValue
+					);
+				}
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				for (const {label} of FIELDS) {
+					await objectFieldsPage.disableDefaultValue(label);
+				}
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				for (const {label} of FIELDS) {
+					await expect(page.getByLabel(label)).toHaveValue('');
+				}
+			}
+		);
+
+		defaultValueTest(
+			'can create, read, update and delete the default value of a richText field',
+			{tag: ['@LPD-48612']},
+			async ({
+				apiHelpers,
+				objectFieldsPage,
+				page,
+				viewObjectEntriesPage,
+			}) => {
+				const objectFields = generateObjectFields({
+					objectFieldBusinessTypes: [
+						{
+							businessType: 'RichText',
+							objectFieldSettings: [
+								{
+									name: 'defaultValueType',
+									value: 'inputAsValue',
+								},
+								{
+									name: 'defaultValue',
+									value: '<p>defaultValueRichText</p>',
+								},
+							],
+						},
+					],
+				});
+
+				const objectDefinition =
+					await apiHelpers.objectAdmin.postRandomObjectDefinition({
+						objectFields,
+						status: {code: 0},
+					});
+
+				apiHelpers.data.push({
+					id: objectDefinition.id,
+					type: 'objectDefinition',
+				});
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				const richTextEditor = page.frameLocator(
+					'iframe[title="editor"]'
+				);
+
+				await expect(richTextEditor.getByRole('paragraph')).toHaveText(
+					'defaultValueRichText'
+				);
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				const richTextLabel = objectFields[0].label['en_US'];
+
+				await objectFieldsPage.setDefaultValue({
+					defaultValue: 'defaultValueRichTextEdited',
+					objectFieldBusinessType: 'RichText',
+					objectFieldName: richTextLabel,
+				});
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				await expect(richTextEditor.getByRole('paragraph')).toHaveText(
+					'defaultValueRichTextEdited'
+				);
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				await objectFieldsPage.disableDefaultValue(richTextLabel);
+
+				await viewObjectEntriesPage.goto(objectDefinition.className);
+				await viewObjectEntriesPage.clickAddObjectEntry(
+					objectDefinition.label['en_US']
+				);
+
+				await expect(richTextEditor.getByRole('paragraph')).toHaveText(
+					''
+				);
+			}
+		);
+
+		defaultValueTest(
+			'can edit a default value input through Model Builder without throwing errors',
+			{tag: ['@LPD-70980']},
+			async ({
+				apiHelpers,
+				modelBuilderDiagramPage,
+				modelBuilderLeftSidebarPage,
+				modelBuilderObjectDefinitionNodePage,
+				modelBuilderRightSidebarPage,
+				page,
+			}) => {
+				const objectFields = generateObjectFields({
+					objectFieldBusinessTypes: ['Text'],
+				});
+
+				const objectDefinition =
+					await apiHelpers.objectAdmin.postRandomObjectDefinition({
+						objectFields,
+						status: {code: 0},
+					});
+
+				apiHelpers.data.push({
+					id: objectDefinition.id,
+					type: 'objectDefinition',
+				});
+
+				await modelBuilderDiagramPage.goto({
+					objectFolderName: 'Default',
+				});
+
+				await modelBuilderLeftSidebarPage.sidebarItems
+					.filter({hasText: objectDefinition.name})
+					.click();
+
+				await modelBuilderObjectDefinitionNodePage.clickShowAllFieldsButton(
+					objectDefinition.name,
+					modelBuilderDiagramPage.objectDefinitionNodes
+				);
+
+				await modelBuilderDiagramPage.objectDefinitionNodes
+					.filter({hasText: objectDefinition.name})
+					.getByText(objectFields[0].label.en_US, {exact: true})
+					.click();
+
+				await modelBuilderRightSidebarPage.setDefaultValue(
+					'Text',
+					'this is a text default value on model builder'
+				);
+
+				await expect(page.getByText('Error')).toHaveCount(0);
+			}
+		);
+
+		defaultValueTest(
+			'default value fields are required',
+			{tag: ['@LPD-48612']},
+			async ({apiHelpers, objectFieldsPage, page}) => {
+				const objectFields = generateObjectFields({
+					objectFieldBusinessTypes: [
+						'Boolean',
+						'Date',
+						'DateTime',
+						'Decimal',
+						'Integer',
+						'LongInteger',
+						'LongText',
+						'PrecisionDecimal',
+						'RichText',
+						'Text',
+					],
+				});
+
+				const objectDefinition =
+					await apiHelpers.objectAdmin.postRandomObjectDefinition({
+						objectFields,
+						status: {code: 0},
+					});
+
+				apiHelpers.data.push({
+					id: objectDefinition.id,
+					type: 'objectDefinition',
+				});
+
+				await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+				for (const {label} of objectFields) {
+					const fieldLabel = label.en_US;
+
+					await objectFieldsPage.openObjectField(fieldLabel);
+
+					await objectFieldsPage.advancedTab.click();
+
+					await objectFieldsPage.useDefaultValueToggle.check();
+
+					await objectFieldsPage.editFieldSaveButton.click();
+
+					await expect(page.getByText('required')).toBeVisible();
+
+					await waitForAlert(
+						page,
+						'Error:Please fill out all required fields.',
+						{type: 'danger'}
+					);
+				}
+			}
+		);
+
+		defaultValueTest(
+			'model builder rightSidebar width only increases if configuration is enabled',
+			{tag: ['@LPD-70980']},
+			async ({
+				apiHelpers,
+				modelBuilderDiagramPage,
+				modelBuilderLeftSidebarPage,
+				modelBuilderObjectDefinitionNodePage,
+				modelBuilderRightSidebarPage,
+				page,
+			}) => {
+				const objectFields = generateObjectFields({
+					objectFieldBusinessTypes: ['Text'],
+				});
+
+				const objectDefinition =
+					await apiHelpers.objectAdmin.postRandomObjectDefinition({
+						objectFields,
+						status: {code: 0},
+					});
+
+				apiHelpers.data.push({
+					id: objectDefinition.id,
+					type: 'objectDefinition',
+				});
+
+				await modelBuilderDiagramPage.goto({
+					objectFolderName: 'Default',
+				});
+
+				await modelBuilderLeftSidebarPage.sidebarItems
+					.filter({hasText: objectDefinition.name})
+					.click();
+
+				await modelBuilderObjectDefinitionNodePage.clickShowAllFieldsButton(
+					objectDefinition.name,
+					modelBuilderDiagramPage.objectDefinitionNodes
+				);
+
+				await modelBuilderDiagramPage.objectDefinitionNodes
+					.filter({hasText: objectDefinition.name})
+					.getByText(objectFields[0].label.en_US, {exact: true})
+					.click();
+
+				const rightSidebar = page.locator(
+					'.lfr__objects-custom-vertical-bar-content > .sidebar[id*="ModelBuilderRightSidebar"]'
+				);
+
+				await expect(rightSidebar).toHaveCSS('width', '320px');
+
+				await modelBuilderRightSidebarPage.advancedTab.click();
+
+				await modelBuilderRightSidebarPage.useDefaultValueToggle.check();
+
+				await expect(rightSidebar).toHaveCSS('width', '500px');
+
+				await modelBuilderRightSidebarPage.useDefaultValueToggle.uncheck();
+
+				await expect(rightSidebar).toHaveCSS('width', '320px');
+			}
+		);
+	}
+);

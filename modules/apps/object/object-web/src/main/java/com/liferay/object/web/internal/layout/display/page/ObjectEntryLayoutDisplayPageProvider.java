@@ -5,6 +5,11 @@
 
 package com.liferay.object.web.internal.layout.display.page;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.liferay.asset.util.AssetHelper;
 import com.liferay.friendly.url.info.item.provider.InfoItemFriendlyURLProvider;
 import com.liferay.info.item.ClassPKInfoItemIdentifier;
 import com.liferay.info.item.ERCInfoItemIdentifier;
@@ -12,23 +17,39 @@ import com.liferay.info.item.InfoItemIdentifier;
 import com.liferay.info.item.InfoItemReference;
 import com.liferay.layout.display.page.BaseLayoutDisplayPageProvider;
 import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
+import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
+import com.liferay.object.model.ObjectEntryVersion;
 import com.liferay.object.rest.manager.v1_0.ObjectEntryManager;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
+import com.liferay.object.service.ObjectEntryVersionLocalServiceUtil;
+import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.web.internal.util.ObjectEntryUtil;
 import com.liferay.petra.string.CharPool;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
+import com.liferay.portal.kernel.json.JSONException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
+
+import java.io.Serializable;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Guilherme Camacho
@@ -37,18 +58,23 @@ public class ObjectEntryLayoutDisplayPageProvider
 	extends BaseLayoutDisplayPageProvider<ObjectEntry> {
 
 	public ObjectEntryLayoutDisplayPageProvider(
+		AssetHelper assetHelper, GroupLocalService groupLocalService,
 		InfoItemFriendlyURLProvider<ObjectEntry> infoItemFriendlyURLProvider,
 		ObjectDefinition objectDefinition,
 		ObjectDefinitionLocalService objectDefinitionLocalService,
 		ObjectEntryLocalService objectEntryLocalService,
 		ObjectEntryManager objectEntryManager,
+		ObjectRelationshipLocalService objectRelationshipLocalService,
 		UserLocalService userLocalService) {
 
+		_assetHelper = assetHelper;
+		_groupLocalService = groupLocalService;
 		_infoItemFriendlyURLProvider = infoItemFriendlyURLProvider;
 		_objectDefinition = objectDefinition;
 		_objectDefinitionLocalService = objectDefinitionLocalService;
 		_objectEntryLocalService = objectEntryLocalService;
 		_objectEntryManager = objectEntryManager;
+		_objectRelationshipLocalService = objectRelationshipLocalService;
 		_userLocalService = userLocalService;
 	}
 
@@ -65,8 +91,35 @@ public class ObjectEntryLayoutDisplayPageProvider
 
 	@Override
 	public LayoutDisplayPageObjectProvider<ObjectEntry>
-		getLayoutDisplayPageObjectProvider(
-			InfoItemReference infoItemReference) {
+		getLayoutDisplayPageObjectProvider(long groupId, String urlTitle) {
+
+		ObjectEntry objectEntry = _objectEntryLocalService.fetchObjectEntry(
+			groupId, _objectDefinition, urlTitle);
+
+		if (objectEntry != null) {
+			return new ObjectEntryLayoutDisplayPageObjectProvider(
+				_assetHelper, _infoItemFriendlyURLProvider, _objectDefinition,
+				_objectDefinitionLocalService, objectEntry,
+				_objectEntryLocalService, _objectRelationshipLocalService);
+		}
+
+		if (!_objectDefinition.isDefaultStorageType()) {
+			return getLayoutDisplayPageObjectProvider(
+				new InfoItemReference(
+					ObjectEntry.class.getName(),
+					new ERCInfoItemIdentifier(urlTitle)));
+		}
+
+		return getLayoutDisplayPageObjectProvider(
+			new InfoItemReference(
+				ObjectEntry.class.getName(),
+				new ClassPKInfoItemIdentifier(GetterUtil.getLong(urlTitle))));
+	}
+
+	@Override
+	protected LayoutDisplayPageObjectProvider<ObjectEntry>
+		doGetLayoutDisplayPageObjectProvider(
+			long groupId, InfoItemReference infoItemReference) {
 
 		InfoItemIdentifier infoItemIdentifier =
 			infoItemReference.getInfoItemIdentifier();
@@ -88,12 +141,26 @@ public class ObjectEntryLayoutDisplayPageProvider
 				return null;
 			}
 
+			if (infoItemIdentifier.getVersion() != null) {
+				ObjectEntryVersion objectEntryVersion =
+					ObjectEntryVersionLocalServiceUtil.fetchObjectEntryVersion(
+						objectEntry.getObjectEntryId(),
+						GetterUtil.getInteger(infoItemIdentifier.getVersion()));
+
+				if (objectEntryVersion != null) {
+					_setObjectEntryVersionValues(
+						objectEntry, objectEntryVersion);
+				}
+			}
+
 			ObjectDefinition objectDefinition =
 				_objectDefinitionLocalService.fetchObjectDefinition(
 					objectEntry.getObjectDefinitionId());
 
 			return new ObjectEntryLayoutDisplayPageObjectProvider(
-				_infoItemFriendlyURLProvider, objectDefinition, objectEntry);
+				_assetHelper, _infoItemFriendlyURLProvider, objectDefinition,
+				_objectDefinitionLocalService, objectEntry,
+				_objectEntryLocalService, _objectRelationshipLocalService);
 		}
 
 		ERCInfoItemIdentifier ercInfoItemIdentifier =
@@ -113,6 +180,19 @@ public class ObjectEntryLayoutDisplayPageProvider
 				userId = PrincipalThreadLocal.getUserId();
 			}
 
+			String scopeKey =
+				ercInfoItemIdentifier.getScopeExternalReferenceCode();
+
+			if (Validator.isNull(scopeKey) &&
+				!Objects.equals(
+					_objectDefinition.getScope(),
+					ObjectDefinitionConstants.SCOPE_COMPANY)) {
+
+				Group group = _groupLocalService.getGroup(groupId);
+
+				scopeKey = group.getExternalReferenceCode();
+			}
+
 			com.liferay.object.rest.dto.v1_0.ObjectEntry objectEntry =
 				_objectEntryManager.getObjectEntry(
 					serviceContext.getCompanyId(),
@@ -121,14 +201,15 @@ public class ObjectEntryLayoutDisplayPageProvider
 						serviceContext.getLocale(), null,
 						_userLocalService.fetchUser(userId)),
 					ercInfoItemIdentifier.getExternalReferenceCode(),
-					_objectDefinition, null);
+					_objectDefinition, scopeKey);
 
 			if (objectEntry != null) {
 				return new ObjectEntryLayoutDisplayPageObjectProvider(
-					_infoItemFriendlyURLProvider, _objectDefinition,
+					_assetHelper, _infoItemFriendlyURLProvider,
+					_objectDefinition, _objectDefinitionLocalService,
 					ObjectEntryUtil.toObjectEntry(
-						_objectDefinition.getObjectDefinitionId(),
-						objectEntry));
+						_objectDefinition, objectEntry),
+					_objectEntryLocalService, _objectRelationshipLocalService);
 			}
 		}
 		catch (Exception exception) {
@@ -140,51 +221,74 @@ public class ObjectEntryLayoutDisplayPageProvider
 		return null;
 	}
 
-	@Override
-	public LayoutDisplayPageObjectProvider<ObjectEntry>
-		getLayoutDisplayPageObjectProvider(long groupId, String urlTitle) {
+	private JSONObject _getContentJSONObject(
+		ObjectEntryVersion objectEntryVersion) {
 
-		if (FeatureFlagManagerUtil.isEnabled("LPD-21926")) {
-			ObjectEntry objectEntry = _objectEntryLocalService.fetchObjectEntry(
-				groupId, _objectDefinition, urlTitle);
-
-			if (objectEntry != null) {
-				return new ObjectEntryLayoutDisplayPageObjectProvider(
-					_infoItemFriendlyURLProvider, _objectDefinition,
-					objectEntry);
+		try {
+			return JSONFactoryUtil.createJSONObject(
+				objectEntryVersion.getContent());
+		}
+		catch (JSONException jsonException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(jsonException);
 			}
 		}
 
-		if (!_objectDefinition.isDefaultStorageType()) {
-			return getLayoutDisplayPageObjectProvider(
-				new InfoItemReference(
-					ObjectEntry.class.getName(),
-					new ERCInfoItemIdentifier(urlTitle)));
-		}
-
-		return getLayoutDisplayPageObjectProvider(
-			new InfoItemReference(
-				ObjectEntry.class.getName(),
-				new ClassPKInfoItemIdentifier(GetterUtil.getLong(urlTitle))));
+		return JSONFactoryUtil.createJSONObject();
 	}
 
-	@Override
-	public LayoutDisplayPageObjectProvider<ObjectEntry>
-		getLayoutDisplayPageObjectProvider(ObjectEntry objectEntry) {
+	private Map<String, Serializable> _getValues(JSONObject jsonObject) {
+		try {
+			JSONObject propertiesJSONObject = jsonObject.getJSONObject(
+				"properties");
 
-		return new ObjectEntryLayoutDisplayPageObjectProvider(
-			_infoItemFriendlyURLProvider, _objectDefinition, objectEntry);
+			if (JSONUtil.isEmpty(propertiesJSONObject)) {
+				return Collections.emptyMap();
+			}
+
+			ObjectMapper objectMapper = new ObjectMapper();
+
+			return objectMapper.readValue(
+				propertiesJSONObject.toString(),
+				new TypeReference<Map<String, Serializable>>() {
+				});
+		}
+		catch (JsonProcessingException jsonProcessingException) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(jsonProcessingException);
+			}
+		}
+
+		return Collections.emptyMap();
+	}
+
+	private void _setObjectEntryVersionValues(
+		ObjectEntry objectEntry, ObjectEntryVersion objectEntryVersion) {
+
+		JSONObject contentJSONObject = _getContentJSONObject(
+			objectEntryVersion);
+
+		objectEntry.setUserId(objectEntryVersion.getUserId());
+		objectEntry.setObjectEntryFolderId(
+			contentJSONObject.getLong("objectEntryFolderId"));
+		objectEntry.setVersion(objectEntryVersion.getVersion());
+		objectEntry.setStatus(objectEntryVersion.getStatus());
+		objectEntry.setValues(_getValues(contentJSONObject));
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ObjectEntryLayoutDisplayPageProvider.class);
 
+	private final AssetHelper _assetHelper;
+	private final GroupLocalService _groupLocalService;
 	private final InfoItemFriendlyURLProvider<ObjectEntry>
 		_infoItemFriendlyURLProvider;
 	private final ObjectDefinition _objectDefinition;
 	private final ObjectDefinitionLocalService _objectDefinitionLocalService;
 	private final ObjectEntryLocalService _objectEntryLocalService;
 	private final ObjectEntryManager _objectEntryManager;
+	private final ObjectRelationshipLocalService
+		_objectRelationshipLocalService;
 	private final UserLocalService _userLocalService;
 
 }

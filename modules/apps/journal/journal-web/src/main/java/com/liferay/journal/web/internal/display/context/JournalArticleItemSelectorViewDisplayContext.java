@@ -29,7 +29,7 @@ import com.liferay.journal.util.comparator.FolderArticleModifiedDateComparator;
 import com.liferay.journal.util.comparator.FolderArticleTitleComparator;
 import com.liferay.journal.web.internal.asset.model.JournalArticleAssetRenderer;
 import com.liferay.journal.web.internal.configuration.JournalWebConfiguration;
-import com.liferay.journal.web.internal.dao.search.JournalRowChecker;
+import com.liferay.journal.web.internal.dao.search.JournalArticleRowChecker;
 import com.liferay.journal.web.internal.item.selector.JournalArticleItemSelectorView;
 import com.liferay.journal.web.internal.util.JournalSearcherUtil;
 import com.liferay.petra.function.transform.TransformUtil;
@@ -242,6 +242,24 @@ public class JournalArticleItemSelectorViewDisplayContext {
 				return group.getDescriptiveName(_themeDisplay.getLocale());
 			}
 		).put(
+			"scopeExternalReferenceCode",
+			() -> {
+				long scopeGroupId = _themeDisplay.getRefererGroupId();
+
+				if (scopeGroupId <= 0) {
+					scopeGroupId = _themeDisplay.getScopeGroupId();
+				}
+
+				if (assetEntry.getGroupId() == scopeGroupId) {
+					return null;
+				}
+
+				Group group = GroupLocalServiceUtil.getGroup(
+					assetEntry.getGroupId());
+
+				return group.getExternalReferenceCode();
+			}
+		).put(
 			"subtype", _getSubtype(ddmStructure)
 		).put(
 			"title", journalArticle.getTitle(_themeDisplay.getLocale(), true)
@@ -326,7 +344,7 @@ public class JournalArticleItemSelectorViewDisplayContext {
 			"scopeGroupType",
 			ParamUtil.getBoolean(_httpServletRequest, "scopeGroupType")
 		).setParameter(
-			"selectedTab", _getTitle(_httpServletRequest.getLocale())
+			"selectedTab", _getSelectedTab()
 		).buildPortletURL();
 	}
 
@@ -351,17 +369,19 @@ public class JournalArticleItemSelectorViewDisplayContext {
 			new SearchContainer<>(_portletRequest, portletURL, null, null);
 
 		if (_infoItemItemSelectorCriterion.isMultiSelection()) {
-			JournalRowChecker journalRowChecker = new JournalRowChecker(
-				JournalArticleLocalServiceUtil.fetchLatestArticle(
-					_infoItemItemSelectorCriterion.getRefererClassPK()),
-				_portletResponse);
+			JournalArticleRowChecker journalArticleRowChecker =
+				new JournalArticleRowChecker(
+					JournalArticleLocalServiceUtil.fetchLatestArticle(
+						_infoItemItemSelectorCriterion.getRefererClassPK()),
+					_portletResponse);
 
-			journalRowChecker.setRememberCheckBoxStateURLRegex(
+			journalArticleRowChecker.setRememberCheckBoxStateURLRegex(
 				StringBundler.concat(
 					"^(?!.*", _portletResponse.getNamespace(),
 					"redirect).*(folderId=", _getFolderId(), ")"));
 
-			articleAndFolderSearchContainer.setRowChecker(journalRowChecker);
+			articleAndFolderSearchContainer.setRowChecker(
+				journalArticleRowChecker);
 		}
 
 		articleAndFolderSearchContainer.setOrderByCol(_getOrderByCol());
@@ -657,6 +677,16 @@ public class JournalArticleItemSelectorViewDisplayContext {
 		return _scope;
 	}
 
+	private String _getSelectedTab() {
+		if (_selectedTab != null) {
+			return _selectedTab;
+		}
+
+		_selectedTab = ParamUtil.getString(_httpServletRequest, "selectedTab");
+
+		return _selectedTab;
+	}
+
 	private long _getStagingAwareGroupId() {
 		if (_groupId != null) {
 			return _groupId;
@@ -686,10 +716,6 @@ public class JournalArticleItemSelectorViewDisplayContext {
 			ddmStructure.getStructureId(), _themeDisplay.getLocale());
 
 		return classType.getName();
-	}
-
-	private String _getTitle(Locale locale) {
-		return _journalArticleItemSelectorView.getTitle(locale);
 	}
 
 	private boolean _isEverywhereScopeFilter() {
@@ -811,6 +837,7 @@ public class JournalArticleItemSelectorViewDisplayContext {
 	private String _scope;
 	private final boolean _search;
 	private Boolean _searchEverywhere;
+	private String _selectedTab;
 	private final StagingGroupHelper _stagingGroupHelper;
 	private final ThemeDisplay _themeDisplay;
 

@@ -175,6 +175,16 @@ public class GeneralConfigurationSerDes {
 			sb.append("\"");
 		}
 
+		if (generalConfiguration.getLegacyAssetCollectionProvider() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"legacyAssetCollectionProvider\": ");
+
+			sb.append(generalConfiguration.getLegacyAssetCollectionProvider());
+		}
+
 		if (generalConfiguration.getQueryString() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -187,6 +197,26 @@ public class GeneralConfigurationSerDes {
 			sb.append(_escape(generalConfiguration.getQueryString()));
 
 			sb.append("\"");
+		}
+
+		if (generalConfiguration.getScope() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"scope\": ");
+
+			sb.append("[");
+
+			for (int i = 0; i < generalConfiguration.getScope().length; i++) {
+				sb.append(_toJSON(generalConfiguration.getScope()[i]));
+
+				if ((i + 1) < generalConfiguration.getScope().length) {
+					sb.append(", ");
+				}
+			}
+
+			sb.append("]");
 		}
 
 		if (generalConfiguration.getSearchableAssetTypes() != null) {
@@ -325,6 +355,16 @@ public class GeneralConfigurationSerDes {
 				String.valueOf(generalConfiguration.getLanguageId()));
 		}
 
+		if (generalConfiguration.getLegacyAssetCollectionProvider() == null) {
+			map.put("legacyAssetCollectionProvider", null);
+		}
+		else {
+			map.put(
+				"legacyAssetCollectionProvider",
+				String.valueOf(
+					generalConfiguration.getLegacyAssetCollectionProvider()));
+		}
+
 		if (generalConfiguration.getQueryString() == null) {
 			map.put("queryString", null);
 		}
@@ -332,6 +372,13 @@ public class GeneralConfigurationSerDes {
 			map.put(
 				"queryString",
 				String.valueOf(generalConfiguration.getQueryString()));
+		}
+
+		if (generalConfiguration.getScope() == null) {
+			map.put("scope", null);
+		}
+		else {
+			map.put("scope", String.valueOf(generalConfiguration.getScope()));
 		}
 
 		if (generalConfiguration.getSearchableAssetTypes() == null) {
@@ -406,7 +453,15 @@ public class GeneralConfigurationSerDes {
 			else if (Objects.equals(jsonParserFieldName, "languageId")) {
 				return false;
 			}
+			else if (Objects.equals(
+						jsonParserFieldName, "legacyAssetCollectionProvider")) {
+
+				return false;
+			}
 			else if (Objects.equals(jsonParserFieldName, "queryString")) {
+				return false;
+			}
+			else if (Objects.equals(jsonParserFieldName, "scope")) {
 				return false;
 			}
 			else if (Objects.equals(
@@ -486,10 +541,24 @@ public class GeneralConfigurationSerDes {
 						(String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(
+						jsonParserFieldName, "legacyAssetCollectionProvider")) {
+
+				if (jsonParserFieldValue != null) {
+					generalConfiguration.setLegacyAssetCollectionProvider(
+						(Boolean)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "queryString")) {
 				if (jsonParserFieldValue != null) {
 					generalConfiguration.setQueryString(
 						(String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "scope")) {
+				if (jsonParserFieldValue != null) {
+					generalConfiguration.setScope(
+						toStrings((Object[])jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(

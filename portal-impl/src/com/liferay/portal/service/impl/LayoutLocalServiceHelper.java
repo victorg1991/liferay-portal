@@ -50,12 +50,12 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.comparator.LayoutPriorityComparator;
 import com.liferay.portal.model.impl.LayoutImpl;
 import com.liferay.portal.util.LayoutTypeControllerTracker;
-import com.liferay.portal.util.PropsValues;
 
 import java.util.HashMap;
 import java.util.List;
@@ -125,6 +125,11 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 				if (type == LayoutFriendlyURLException.DUPLICATE) {
 					friendlyURL = originalFriendlyURL + i;
 				}
+				else if (type ==
+							LayoutFriendlyURLException.POSSIBLE_DUPLICATE) {
+
+					friendlyURL = originalFriendlyURL + StringPool.DASH + i;
+				}
 				else {
 					friendlyURL = StringPool.SLASH + layoutId;
 
@@ -174,8 +179,8 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 	}
 
 	public int getNextPriority(
-		long groupId, boolean privateLayout, long parentLayoutId,
-		String sourcePrototypeLayoutUuid, int defaultPriority) {
+		long groupId, String layoutSetPrototypeLayoutERC, boolean privateLayout,
+		long parentLayoutId, int defaultPriority) {
 
 		int priority = defaultPriority;
 
@@ -192,7 +197,7 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 		}
 
 		if ((priority < _PRIORITY_BUFFER) &&
-			Validator.isNull(sourcePrototypeLayoutUuid)) {
+			Validator.isNull(layoutSetPrototypeLayoutERC)) {
 
 			LayoutSet layoutSet = layoutSetPersistence.fetchByG_P(
 				groupId, privateLayout);
@@ -293,7 +298,7 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 				groupId, privateLayout, parentLayoutId);
 
 			if (((layout == null) ||
-				 Validator.isNull(layout.getSourcePrototypeLayoutUuid())) &&
+				 Validator.isNull(layout.getLayoutSetPrototypeLayoutERC())) &&
 				!_isDraftLayout(classNameId, classPK, type) &&
 				((layout instanceof VirtualLayout) ||
 				 !parentLayout.isLayoutSortable())) {
@@ -644,7 +649,7 @@ public class LayoutLocalServiceHelper implements IdentifiableOSGiService {
 		// Layout cannot become a child of a layout that is not sortable because
 		// it is linked to a layout set prototype
 
-		if ((Validator.isNull(layout.getSourcePrototypeLayoutUuid()) &&
+		if ((Validator.isNull(layout.getLayoutSetPrototypeLayoutERC()) &&
 			 (layout instanceof VirtualLayout)) ||
 			!parentLayout.isLayoutSortable()) {
 

@@ -16,12 +16,19 @@ import React, {
 
 import PicklistService from '../../common/services/PicklistService';
 import SpaceService from '../../common/services/SpaceService';
+import {getWorkflowDefinitions} from '../../common/services/WorkflowService';
+import {ObjectDefinitions} from '../../common/types/ObjectDefinition';
 import {Picklist} from '../../common/types/Picklist';
 import {Space} from '../../common/types/Space';
+import {Workflow} from '../../common/types/Workflow';
 import ObjectDefinitionService from '../services/ObjectDefinitionService';
-import {ObjectDefinitions} from '../types/ObjectDefinition';
 
-export type CacheKey = 'object-definitions' | 'picklists' | 'spaces';
+export type CacheKey =
+	| 'object-definitions'
+	| 'picklists'
+	| 'spaces'
+	| 'workflows';
+
 export type CacheStatus = 'idle' | 'saving' | 'saved' | 'stale';
 
 export type Cache = {
@@ -40,6 +47,11 @@ export type Cache = {
 		fetcher: () => Promise<Space[]>;
 		status: CacheStatus;
 	};
+	'workflows': {
+		data: Workflow[];
+		fetcher: () => Promise<Workflow[]>;
+		status: CacheStatus;
+	};
 };
 
 type Promises = {
@@ -53,7 +65,7 @@ type InitialData = Partial<{
 function getInitialCache(initialData: InitialData = {}): Cache {
 	return {
 		'object-definitions': {
-			data: initialData['object-definitions'] ?? new Map(),
+			data: initialData['object-definitions'] ?? {},
 			fetcher: ObjectDefinitionService.getObjectDefinitions,
 			status: initialData['object-definitions'] ? 'saved' : 'idle',
 		},
@@ -66,6 +78,11 @@ function getInitialCache(initialData: InitialData = {}): Cache {
 			data: initialData['spaces'] ?? [],
 			fetcher: SpaceService.getSpaces,
 			status: initialData['spaces'] ? 'saved' : 'idle',
+		},
+		'workflows': {
+			data: initialData['workflows'] ?? [],
+			fetcher: getWorkflowDefinitions,
+			status: initialData['workflows'] ? 'saved' : 'idle',
 		},
 	};
 }

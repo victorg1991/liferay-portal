@@ -42,12 +42,12 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portal.util.PropsValues;
 
 import java.io.Serializable;
 
@@ -91,7 +91,8 @@ public class SystemObjectRelatedObjectEntriesTest {
 					ObjectFieldConstants.BUSINESS_TYPE_INTEGER,
 					ObjectFieldConstants.DB_TYPE_INTEGER, true, true, null,
 					RandomTestUtil.randomString(), _OBJECT_FIELD_NAME_2,
-					false)));
+					false)),
+			false);
 
 		_objectEntry = ObjectEntryTestUtil.addObjectEntry(
 			_objectDefinition, _OBJECT_FIELD_NAME_1, _OBJECT_FIELD_VALUE);
@@ -269,10 +270,9 @@ public class SystemObjectRelatedObjectEntriesTest {
 		_objectRelationships.add(objectRelationship);
 
 		_testGetManyToOneSystemObjectRelatedObjectEntries(
-			StringPool.BLANK, 0, objectRelationship, _user.getUserId());
+			null, 0, objectRelationship, _user.getUserId());
 		_testGetManyToOneSystemObjectRelatedObjectEntries(
-			StringPool.BLANK, 0, objectRelationship,
-			_userAccountJSONObject.getLong("id"));
+			null, 0, objectRelationship, _userAccountJSONObject.getLong("id"));
 
 		ObjectRelationshipTestUtil.relateObjectEntries(
 			_objectEntry.getObjectEntryId(), _user.getUserId(),

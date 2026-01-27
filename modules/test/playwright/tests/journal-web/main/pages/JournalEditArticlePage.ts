@@ -26,13 +26,14 @@ export class JournalEditArticlePage {
 	readonly friendlyURLInput: Locator;
 	readonly friendlyUrlToggle: Locator;
 	readonly historyButton: Locator;
+	readonly inputPermissionsViewRole: Locator;
 	readonly journalPage: JournalPage;
+	readonly previewButton: Locator;
 	readonly propertiesTab: Locator;
 	readonly publishDropdown: Locator;
 	readonly publishButton: Locator;
 	readonly redoButton: Locator;
 	readonly selectButton: Locator;
-	readonly selectAndConfirmPublishButton: Locator;
 	readonly titleInput: Locator;
 	readonly undoButton: Locator;
 	readonly alertErrorMessage: Locator;
@@ -60,20 +61,21 @@ export class JournalEditArticlePage {
 		);
 		this.friendlyUrlToggle = page.locator('a[href="#friendlyUrlContent"]');
 		this.historyButton = page.getByLabel('History');
+		this.inputPermissionsViewRole = page.locator(
+			'#_com_liferay_journal_web_portlet_JournalPortlet_inputPermissionsViewRole'
+		);
 		this.journalPage = new JournalPage(page);
+		this.previewButton = page.getByLabel('A draft will be saved before');
 		this.propertiesTab = page.getByRole('tab', {
 			name: /properties|propriétés/i,
 		});
 		this.publishDropdown = page.getByRole('button', {
-			name: /select and confirm publish settings|sélectionnez et confirmez les/i,
+			name: /publish options|options de publication/i,
 		});
-		this.publishButton = page.locator(
-			'#_com_liferay_journal_web_portlet_JournalPortlet_publishButton'
+		this.publishButton = page.getByTitle(
+			/publish article|submit article for workflow|publier article|envoyer article pour le flux de travail/i
 		);
 		this.redoButton = page.getByTitle('Redo', {exact: true});
-		this.selectAndConfirmPublishButton = page.getByLabel(
-			'Select and Confirm Publish Settings'
-		);
 		this.selectButton = page.getByRole('button', {
 			exact: true,
 			name: 'Select',
@@ -111,14 +113,7 @@ export class JournalEditArticlePage {
 					? 'Schedule Publication and Submit for Workflow'
 					: 'Schedule Publication',
 			}),
-			trigger: this.page.getByLabel(
-				workflow
-					? 'Select and Confirm Submit for Workflow Settings'
-					: 'Select and Confirm Publish Settings',
-				{
-					exact: true,
-				}
-			),
+			trigger: this.publishDropdown,
 		});
 
 		if (expirationDate) {
@@ -136,6 +131,12 @@ export class JournalEditArticlePage {
 				reviewDate
 			);
 		}
+	}
+
+	async changeDefaultLanguage(languageId: string) {
+		await this.page.getByRole('button', {name: 'Change'}).click();
+
+		await this.page.getByRole('menuitem', {name: languageId}).click();
 	}
 
 	async changeLanguage(languageId: string) {
@@ -161,6 +162,24 @@ export class JournalEditArticlePage {
 			.frameLocator(`iframe[title="Select ${assetType}"]`)
 			.getByRole('menuitem', {name: viewType})
 			.click();
+	}
+
+	async clearAllCategories(vocabulary: string) {
+		await this.openFieldSet('Categories', 'categorization');
+
+		await this.page
+			.getByRole('button', {name: `Select ${vocabulary}`})
+			.click();
+
+		const selectVocabularyIframe = this.page.frameLocator(
+			`iframe[title="Select ${vocabulary}"]`
+		);
+
+		await selectVocabularyIframe
+			.getByRole('button', {name: 'Clear All'})
+			.click();
+
+		await this.page.getByRole('button', {name: 'Done'}).click();
 	}
 
 	async createAndPublishBasicArticle(title?: string) {
@@ -346,13 +365,7 @@ export class JournalEditArticlePage {
 		viewableBy?: 'Site Members' | 'Owner'
 	) {
 		if (existingArticle) {
-			await clickAndExpectToBeVisible({
-				autoClick: true,
-				target: this.page.getByRole('menuitem', {
-					name: /publish|publier/i,
-				}),
-				trigger: this.publishDropdown,
-			});
+			await this.publishButton.click();
 
 			return;
 		}
@@ -386,19 +399,19 @@ export class JournalEditArticlePage {
 	async saveAsDraftWithPermissions(title: string) {
 		await this.fillTitle(title);
 
-		await this.page
-			.getByRole('button', {exact: true, name: 'Save as Draft'})
-			.click();
+		const draftButton = this.page
+			.getByLabel('Save as Draft With Permissions')
+			.getByRole('button', {name: 'Save as Draft'});
 
 		await expect(async () => {
-			const draftButton = await this.page
-				.getByLabel('Save as Draft With Permissions')
-				.getByRole('button', {name: 'Save as Draft'});
+			await this.page
+				.getByRole('button', {exact: true, name: 'Save as Draft'})
+				.click();
 
-			await draftButton.waitFor();
-
-			await draftButton.click();
+			await expect(draftButton).toBeVisible();
 		}).toPass();
+
+		await draftButton.click();
 
 		await expect(this.page.getByText('Version: 1.0 Draft')).toBeVisible();
 	}
@@ -434,14 +447,7 @@ export class JournalEditArticlePage {
 					? 'Schedule Publication and Submit for Workflow'
 					: 'Schedule Publication',
 			}),
-			trigger: this.page.getByLabel(
-				workflow
-					? 'Select and Confirm Submit for Workflow Settings'
-					: 'Select and Confirm Publish Settings',
-				{
-					exact: true,
-				}
-			),
+			trigger: this.publishDropdown,
 		});
 
 		await this.page.getByPlaceholder('YYYY-MM-DD HH:mm').fill(publishDate);
@@ -460,7 +466,13 @@ export class JournalEditArticlePage {
 				: `Success:${title} will be published on`
 		);
 
-		const row = await this.page
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: this.page.getByRole('menuitem', {name: 'list'}),
+			trigger: this.page.getByLabel('Select View, Currently Selected: '),
+		});
+
+		const row = this.page
 			.locator('.list-group-item')
 			.filter({hasText: title});
 
@@ -468,6 +480,53 @@ export class JournalEditArticlePage {
 			.locator('span.label')
 			.filter({hasText: workflow ? 'Pending' : 'Scheduled'})
 			.waitFor();
+	}
+
+	async selectFileFromDocumentsAndMedia(fileName: string) {
+		await this.page.getByLabel('File', {exact: true}).click();
+
+		const selectDocumentIframe = this.page.frameLocator(
+			'iframe[title="Select Document"]'
+		);
+
+		await selectDocumentIframe
+			.getByRole('link', {name: 'Sites and Libraries'})
+			.click();
+
+		await selectDocumentIframe
+			.getByRole('link', {name: 'Liferay DXP'})
+			.click();
+
+		await selectDocumentIframe
+			.getByRole('link', {name: 'Provided by Liferay'})
+			.click();
+
+		await expect(
+			selectDocumentIframe.getByLabel('Search for', {exact: true})
+		).toBeEnabled();
+
+		await selectDocumentIframe.getByText(fileName).dblclick();
+	}
+
+	async selectCategories(vocabulary: string, categories: string[]) {
+		await this.openFieldSet('Categories', 'categorization');
+
+		await this.page
+			.getByRole('button', {name: `Select ${vocabulary}`})
+			.click();
+
+		const selectVocabularyIframe = this.page.frameLocator(
+			`iframe[title="Select ${vocabulary}"]`
+		);
+
+		categories.forEach((category) => {
+			selectVocabularyIframe
+				.locator('li')
+				.filter({hasText: category})
+				.click();
+		});
+
+		await this.page.getByRole('button', {name: 'Done'}).click();
 	}
 
 	async selectSpecificDisplayPage(displayPageName: string) {
@@ -506,9 +565,7 @@ export class JournalEditArticlePage {
 				target: this.page.getByRole('menuitem', {
 					name: /submit for workflow with permissions/i,
 				}),
-				trigger: this.page.getByRole('button', {
-					name: /select and confirm submit for workflow settings/i,
-				}),
+				trigger: this.publishDropdown,
 			});
 
 			await expect(this.page.getByLabel('Viewable By')).toBeVisible({
@@ -528,7 +585,7 @@ export class JournalEditArticlePage {
 			.filter({hasText: title})
 			.waitFor();
 
-		const row = await this.page
+		const row = this.page
 			.locator('.list-group-item')
 			.filter({hasText: title});
 

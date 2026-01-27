@@ -25,6 +25,9 @@ import com.liferay.notification.exception.NotificationRecipientSettingValueExcep
 import com.liferay.notification.internal.type.email.provider.DefaultEmailProvider;
 import com.liferay.notification.internal.type.email.provider.EmailProvider;
 import com.liferay.notification.internal.type.email.provider.RoleEmailProvider;
+import com.liferay.notification.internal.type.email.provider.SubscribersEmailProvider;
+import com.liferay.notification.internal.type.email.provider.TermEmailProvider;
+import com.liferay.notification.internal.type.email.provider.UserGroupEmailProvider;
 import com.liferay.notification.model.NotificationQueueEntry;
 import com.liferay.notification.model.NotificationQueueEntryAttachment;
 import com.liferay.notification.model.NotificationRecipient;
@@ -35,14 +38,17 @@ import com.liferay.notification.type.BaseNotificationType;
 import com.liferay.notification.type.NotificationType;
 import com.liferay.notification.type.util.NotificationTypeUtil;
 import com.liferay.notification.util.NotificationRecipientSettingUtil;
-import com.liferay.object.action.util.ObjectActionThreadLocal;
 import com.liferay.object.service.ObjectDefinitionLocalService;
+import com.liferay.object.service.ObjectEntryFolderLocalService;
+import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
+import com.liferay.object.util.HttpServletRequestThreadLocal;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerList;
 import com.liferay.osgi.service.tracker.collections.list.ServiceTrackerListFactory;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -77,13 +83,14 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.KeyValuePair;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.security.auth.EmailAddressValidatorFactory;
 import com.liferay.portal.service.PersistedModelLocalServiceRegistryUtil;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.display.template.PortletDisplayTemplate;
+import com.liferay.subscription.service.SubscriptionLocalService;
 import com.liferay.template.transformer.TemplateNodeFactory;
 
 import jakarta.mail.internet.InternetAddress;
@@ -229,6 +236,9 @@ public class EmailNotificationType extends BaseNotificationType {
 	public void sendNotification(NotificationContext notificationContext)
 		throws PortalException {
 
+		NotificationTemplate notificationTemplate =
+			notificationContext.getNotificationTemplate();
+
 		long groupId = 0;
 
 		User user = userLocalService.getUser(notificationContext.getUserId());
@@ -256,9 +266,6 @@ public class EmailNotificationType extends BaseNotificationType {
 		}
 
 		notificationContext.setUserLocale(userLocale);
-
-		NotificationTemplate notificationTemplate =
-			notificationContext.getNotificationTemplate();
 
 		String body = _formatBody(
 			notificationTemplate.getBodyMap(), userGroup, notificationContext);
@@ -311,10 +318,14 @@ public class EmailNotificationType extends BaseNotificationType {
 				NotificationRecipientSettingConstants.NAME_TO));
 
 		if (Validator.isNull(validEmailAddresses) &&
-			Objects.equals(
+			(Objects.equals(
 				notificationRecipientSettings.get(
 					NotificationRecipientSettingConstants.NAME_TO_TYPE),
-				NotificationRecipientConstants.TYPE_ROLE)) {
+				NotificationRecipientConstants.TYPE_ROLE) ||
+			 Objects.equals(
+				 notificationRecipientSettings.get(
+					 NotificationRecipientSettingConstants.NAME_TO_TYPE),
+				 NotificationRecipientConstants.TYPE_USER_GROUP))) {
 
 			return;
 		}
@@ -348,6 +359,17 @@ public class EmailNotificationType extends BaseNotificationType {
 			if (emailAddressUser == null) {
 				emailAddressUser = userLocalService.getGuestUser(
 					CompanyThreadLocal.getCompanyId());
+			}
+
+			if (FeatureFlagManagerUtil.isEnabled(
+					notificationTemplate.getCompanyId(), "LPD-17564")) {
+
+				body = StringUtil.replace(
+					body, "[%EMAIL_RECIPIENT_ADDRESS%]",
+					emailAddressUser.getDisplayEmailAddress());
+				body = StringUtil.replace(
+					body, "[%EMAIL_RECIPIENT_NAME%]",
+					emailAddressUser.getFullName());
 			}
 
 			prepareNotificationContext(
@@ -478,16 +500,33 @@ public class EmailNotificationType extends BaseNotificationType {
 		_emailProviders.put(
 			NotificationRecipientConstants.TYPE_EMAIL,
 			new DefaultEmailProvider(notificationTermEvaluatorTracker));
+
+		RoleEmailProvider roleEmailProvider = new RoleEmailProvider(
+			_accountEntryLocalService, _accountEntryOrganizationRelLocalService,
+			_accountEntryUserRelLocalService, _groupLocalService,
+			_objectDefinitionLocalService, _objectFieldLocalService,
+			_organizationLocalService, _permissionCheckerFactory,
+			_resourcePermissionLocalService, _roleLocalService,
+			_userGroupRoleLocalService, _userLocalService);
+
 		_emailProviders.put(
-			NotificationRecipientConstants.TYPE_ROLE,
-			new RoleEmailProvider(
-				_accountEntryLocalService,
-				_accountEntryOrganizationRelLocalService,
-				_accountEntryUserRelLocalService, _groupLocalService,
-				_objectDefinitionLocalService, _objectFieldLocalService,
-				_organizationLocalService, _permissionCheckerFactory,
-				_resourcePermissionLocalService, _roleLocalService,
-				_userGroupRoleLocalService, _userLocalService));
+			NotificationRecipientConstants.TYPE_ROLE, roleEmailProvider);
+
+		_emailProviders.put(
+			NotificationRecipientConstants.TYPE_SUBSCRIBERS,
+			new SubscribersEmailProvider(
+				_objectEntryFolderLocalService, _objectEntryLocalService,
+				_subscriptionLocalService, _userLocalService));
+		_emailProviders.put(
+			NotificationRecipientConstants.TYPE_TERM,
+			new TermEmailProvider(
+				notificationTermEvaluatorTracker, _permissionCheckerFactory,
+				roleEmailProvider, _roleLocalService, _userLocalService));
+		_emailProviders.put(
+			NotificationRecipientConstants.TYPE_USER_GROUP,
+			new UserGroupEmailProvider(
+				_permissionCheckerFactory, userGroupLocalService,
+				_userLocalService));
 
 		_serviceTrackerList = ServiceTrackerListFactory.open(
 			bundleContext, TemplateContextContributor.class,
@@ -574,7 +613,7 @@ public class EmailNotificationType extends BaseNotificationType {
 					notificationContext.getClassName());
 
 		HttpServletRequest httpServletRequest =
-			ObjectActionThreadLocal.getHttpServletRequest();
+			HttpServletRequestThreadLocal.getHttpServletRequest();
 
 		ServiceContextThreadLocal.pushServiceContext(
 			_getServiceContext(
@@ -746,7 +785,11 @@ public class EmailNotificationType extends BaseNotificationType {
 				FromNameMustNotBeNull();
 		}
 
-		if (Validator.isNull(
+		if (!Objects.equals(
+				notificationRecipientSettingsMap.get(
+					NotificationRecipientSettingConstants.NAME_TO_TYPE),
+				NotificationRecipientConstants.TYPE_SUBSCRIBERS) &&
+			Validator.isNull(
 				notificationRecipientSettingsMap.get(
 					NotificationRecipientSettingConstants.NAME_TO))) {
 
@@ -787,6 +830,12 @@ public class EmailNotificationType extends BaseNotificationType {
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
 
 	@Reference
+	private ObjectEntryFolderLocalService _objectEntryFolderLocalService;
+
+	@Reference
+	private ObjectEntryLocalService _objectEntryLocalService;
+
+	@Reference
 	private ObjectFieldLocalService _objectFieldLocalService;
 
 	@Reference
@@ -806,6 +855,9 @@ public class EmailNotificationType extends BaseNotificationType {
 
 	private volatile ServiceTrackerList<TemplateContextContributor>
 		_serviceTrackerList;
+
+	@Reference
+	private SubscriptionLocalService _subscriptionLocalService;
 
 	@Reference
 	private TemplateNodeFactory _templateNodeFactory;

@@ -15,7 +15,6 @@ import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -34,6 +33,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.search.asset.AssetSubtypeIdentifier;
 import com.liferay.portal.search.asset.AssetSubtypeIdentifierBuilder;
+import com.liferay.search.experiences.constants.SXPBlueprintConstants;
 import com.liferay.search.experiences.exception.SXPBlueprintTitleException;
 import com.liferay.search.experiences.model.SXPBlueprint;
 import com.liferay.search.experiences.rest.dto.v1_0.Configuration;
@@ -214,10 +214,6 @@ public class SXPBlueprintLocalServiceImpl
 	private String _enhanceConfiguration(String configuration)
 		throws PortalException {
 
-		if (!FeatureFlagManagerUtil.isEnabled("LPS-129412")) {
-			return configuration;
-		}
-
 		try {
 			JSONObject configurationJSONObject = _jsonFactory.createJSONObject(
 				configuration);
@@ -233,7 +229,10 @@ public class SXPBlueprintLocalServiceImpl
 				(JSONArray)generalConfigurationJSONObject.get(
 					"searchableAssetTypes");
 
-			if (searchableAssetTypesJSONArray == null) {
+			if ((searchableAssetTypesJSONArray == null) ||
+				generalConfigurationJSONObject.getBoolean(
+					"legacyAssetCollectionProvider")) {
+
 				return _setCollectionProviderType(
 					configurationJSONObject, generalConfigurationJSONObject,
 					AssetEntry.class.getName());
@@ -313,7 +312,7 @@ public class SXPBlueprintLocalServiceImpl
 			return sxpBlueprint;
 		}
 
-		sxpBlueprint.setSchemaVersion("1.1");
+		sxpBlueprint.setSchemaVersion(SXPBlueprintConstants.SCHEMA_VERSION);
 
 		Configuration configuration = ConfigurationUtil.toConfiguration(
 			sxpBlueprint.getConfigurationJSON());

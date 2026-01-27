@@ -22,15 +22,6 @@ public class PlaywrightSegmentTestClassGroup extends SegmentTestClassGroup {
 	}
 
 	@Override
-	public String getSlaveLabel() {
-		if (_slaveLabel != null) {
-			return _slaveLabel;
-		}
-
-		return super.getSlaveLabel();
-	}
-
-	@Override
 	public String getTestCasePropertiesContent() {
 		StringBuilder sb = new StringBuilder();
 
@@ -90,12 +81,30 @@ public class PlaywrightSegmentTestClassGroup extends SegmentTestClassGroup {
 		return sb.toString();
 	}
 
-	public void setProjectName(String projectName) {
-		_projectName = projectName;
+	@Override
+	public boolean isTestAnalyticsCloud() {
+		if (_testAnalyticsCloud != null) {
+			return _testAnalyticsCloud;
+		}
+
+		for (AxisTestClassGroup axisTestClassGroup : getAxisTestClassGroups()) {
+			PlaywrightAxisTestClassGroup playwrightAxisTestClassGroup =
+				(PlaywrightAxisTestClassGroup)axisTestClassGroup;
+
+			if (playwrightAxisTestClassGroup.isAnalyticsCloudEnabled()) {
+				_testAnalyticsCloud = true;
+
+				break;
+			}
+
+			_testAnalyticsCloud = false;
+		}
+
+		return _testAnalyticsCloud;
 	}
 
-	public void setSlaveLabel(String slaveLabel) {
-		_slaveLabel = slaveLabel;
+	public void setProjectName(String projectName) {
+		_projectName = projectName;
 	}
 
 	protected PlaywrightSegmentTestClassGroup(
@@ -108,6 +117,19 @@ public class PlaywrightSegmentTestClassGroup extends SegmentTestClassGroup {
 		BatchTestClassGroup parentBatchTestClassGroup, JSONObject jsonObject) {
 
 		super(parentBatchTestClassGroup, jsonObject);
+	}
+
+	@Override
+	protected String getBaseSlaveLabel() {
+		if (_baseSlaveLabel != null) {
+			return _baseSlaveLabel;
+		}
+
+		return super.getBaseSlaveLabel();
+	}
+
+	protected void setBaseSlaveLabel(String baseSlaveLabel) {
+		_baseSlaveLabel = baseSlaveLabel;
 	}
 
 	private String _concatPropertyValues(
@@ -152,7 +174,8 @@ public class PlaywrightSegmentTestClassGroup extends SegmentTestClassGroup {
 		return filteredJobProperties;
 	}
 
+	private String _baseSlaveLabel;
 	private String _projectName;
-	private String _slaveLabel;
+	private Boolean _testAnalyticsCloud;
 
 }

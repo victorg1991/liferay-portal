@@ -22,12 +22,14 @@ jest.mock(
 
 const DATE_TIME_FIELD_UUID = getUuid();
 const TEXT_FIELD_UUID = getUuid();
+const TITLE_FIELD_UUID = getUuid();
 
 const DATE_TIME_FIELD: Field = {
 	erc: 'datetime-field',
 	indexableConfig: {indexed: false},
 	label: {en_US: 'Date and Time Field'},
 	localized: true,
+	locked: false,
 	name: 'datetimeField',
 	parent: getUuid(),
 	required: false,
@@ -47,12 +49,31 @@ const TEXT_FIELD: Field = {
 	},
 	label: {en_US: 'Text Field'},
 	localized: false,
+	locked: false,
 	name: 'textField',
 	parent: getUuid(),
 	required: true,
 	settings: {},
 	type: 'text',
 	uuid: TEXT_FIELD_UUID,
+};
+
+const TITLE_FIELD: Field = {
+	erc: 'title-field',
+	indexableConfig: {
+		indexed: true,
+		indexedAsKeyword: true,
+		indexedLanguageId: undefined,
+	},
+	label: {en_US: 'Title Field'},
+	localized: false,
+	locked: true,
+	name: 'titleField',
+	parent: getUuid(),
+	required: true,
+	settings: {},
+	type: 'text',
+	uuid: TITLE_FIELD_UUID,
 };
 
 function getChildren(fields: Field[]) {
@@ -66,22 +87,26 @@ function getChildren(fields: Field[]) {
 }
 
 describe('buildState', () => {
-	it('Builds state with two fields ', () => {
+	it('Builds state with two editable fields and one locked field', () => {
 		const structure: State['structure'] = {
 			children: new Map(),
 			erc: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			spaces: [],
 			status: 'draft',
+			system: false,
 			type: 'L_CMS_CONTENT_STRUCTURES',
 			uuid: getUuid(),
+			workflows: {},
 		};
 
 		const initialState: State = {
-			error: null,
-			history: {deletedChildren: false},
+			history: {
+				deletedChildren: false,
+				deletedGroupERCs: [],
+				modifiedNames: new Set(),
+			},
 			invalids: new Map(),
 			publishedChildren: new Set(),
 			selection: [],
@@ -90,9 +115,8 @@ describe('buildState', () => {
 		};
 
 		const objectDefinition = buildObjectDefinition({
-			children: getChildren([TEXT_FIELD, DATE_TIME_FIELD]),
+			children: getChildren([TEXT_FIELD, DATE_TIME_FIELD, TITLE_FIELD]),
 			erc: structure.erc,
-			id: structure.id,
 			label: structure.label,
 			name: structure.name,
 			spaces: structure.spaces,
@@ -100,7 +124,7 @@ describe('buildState', () => {
 
 		const result = buildState({
 			mainObjectDefinition: objectDefinition,
-			objectDefinitions: new Map(),
+			objectDefinitions: {},
 		});
 
 		const {children, uuid} = result!.structure;
@@ -121,18 +145,22 @@ describe('buildState', () => {
 		const structure: State['structure'] = {
 			children: new Map(),
 			erc: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			spaces: [],
 			status: 'published',
+			system: false,
 			type: 'L_CMS_CONTENT_STRUCTURES',
 			uuid: getUuid(),
+			workflows: {},
 		};
 
 		const initialState: State = {
-			error: null,
-			history: {deletedChildren: false},
+			history: {
+				deletedChildren: false,
+				deletedGroupERCs: [],
+				modifiedNames: new Set(),
+			},
 			invalids: new Map(),
 			publishedChildren: new Set(),
 			selection: [],
@@ -143,7 +171,6 @@ describe('buildState', () => {
 		const objectDefinition = buildObjectDefinition({
 			children: getChildren([TEXT_FIELD, DATE_TIME_FIELD]),
 			erc: structure.erc,
-			id: structure.id,
 			label: structure.label,
 			name: structure.name,
 			spaces: structure.spaces,
@@ -156,7 +183,7 @@ describe('buildState', () => {
 					code: 0,
 				},
 			},
-			objectDefinitions: new Map(),
+			objectDefinitions: {},
 		});
 
 		const {children, uuid} = result!.structure;
@@ -176,22 +203,29 @@ describe('buildState', () => {
 		expect(result).toEqual(nextState);
 	});
 
-	it('Takes into account spaces', () => {
+	it('Takes into account spaces and workflows', () => {
 		const structure: State['structure'] = {
 			children: new Map(),
 			erc: 'structureERC',
-			id: 1,
 			label: {en_US: 'Structure'},
 			name: 'myStructure',
 			spaces: ['space-1-erc', 'space-2-erc'],
 			status: 'published',
+			system: false,
 			type: 'L_CMS_CONTENT_STRUCTURES',
 			uuid: getUuid(),
+			workflows: {
+				'': 'Workflow 2',
+				'space-1-erc': 'Workflow 1',
+			},
 		};
 
 		const initialState: State = {
-			error: null,
-			history: {deletedChildren: false},
+			history: {
+				deletedChildren: false,
+				deletedGroupERCs: [],
+				modifiedNames: new Set(),
+			},
 			invalids: new Map(),
 			publishedChildren: new Set(),
 			selection: [],
@@ -202,10 +236,10 @@ describe('buildState', () => {
 		const objectDefinition = buildObjectDefinition({
 			children: getChildren([TEXT_FIELD, DATE_TIME_FIELD]),
 			erc: structure.erc,
-			id: structure.id,
 			label: structure.label,
 			name: structure.name,
 			spaces: structure.spaces,
+			workflows: structure.workflows,
 		});
 
 		const result = buildState({
@@ -215,7 +249,7 @@ describe('buildState', () => {
 					code: 0,
 				},
 			},
-			objectDefinitions: new Map(),
+			objectDefinitions: {},
 		});
 
 		const {children, uuid} = result!.structure;
@@ -237,10 +271,13 @@ describe('buildState', () => {
 
 	it('It works with Double fields ', () => {
 		const objectDefinition = {
+			enableComments: true,
 			enableFriendlyURLCustomization: true,
 			enableIndexSearch: true,
 			enableLocalization: true,
 			enableObjectEntryDraft: true,
+			enableObjectEntryHistory: true,
+			enableObjectEntrySchedule: true,
 			enableObjectEntryVersioning: true,
 			externalReferenceCode: 'ca7f96e2-3436-4aa4-9626-265d006bea87',
 			label: {
@@ -249,7 +286,7 @@ describe('buildState', () => {
 			objectFields: [
 				{
 					DBType: 'Double',
-					businessType: 'Decimal',
+					businessType: 'Decimal' as const,
 					externalReferenceCode: 'decimal-field',
 					indexed: true,
 					label: {
@@ -258,6 +295,7 @@ describe('buildState', () => {
 					localized: true,
 					name: 'decimal',
 					required: false,
+					system: false,
 					type: 'Double',
 				},
 			],
@@ -269,7 +307,7 @@ describe('buildState', () => {
 
 		const state = buildState({
 			mainObjectDefinition: objectDefinition,
-			objectDefinitions: new Map(),
+			objectDefinitions: {},
 		});
 
 		const [, field] = [...state!.structure.children][0];

@@ -32,11 +32,11 @@ import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
-import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.segments.configuration.provider.SegmentsConfigurationProvider;
 import com.liferay.segments.constants.SegmentsWebKeys;
 import com.liferay.segments.criteria.Criteria;
 import com.liferay.segments.criteria.CriteriaSerializer;
@@ -45,6 +45,8 @@ import com.liferay.segments.model.SegmentsEntry;
 import com.liferay.segments.service.SegmentsEntryLocalService;
 import com.liferay.segments.service.SegmentsEntryRoleLocalService;
 import com.liferay.segments.test.util.SegmentsTestUtil;
+
+import java.util.Dictionary;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -89,6 +91,8 @@ public class SegmentsEntryRoleContributorTest {
 			).put(
 				"segmentationEnabled", true
 			).build());
+
+		_segmentsConfigurationProvider.clearSegmentsCompanyConfigurations();
 
 		ServiceContext serviceContext =
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
@@ -293,7 +297,7 @@ public class SegmentsEntryRoleContributorTest {
 
 	@Test
 	public void testHasPermissionWithDisabledConfiguration() throws Exception {
-		HashMapDictionary<String, Object> properties =
+		Dictionary<String, Object> properties =
 			HashMapDictionaryBuilder.<String, Object>put(
 				"roleSegmentationEnabled", false
 			).build();
@@ -419,6 +423,9 @@ public class SegmentsEntryRoleContributorTest {
 
 	@Inject
 	private RoleLocalService _roleLocalService;
+
+	@Inject
+	private SegmentsConfigurationProvider _segmentsConfigurationProvider;
 
 	private SegmentsEntry _segmentsEntry;
 

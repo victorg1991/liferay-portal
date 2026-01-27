@@ -8,11 +8,15 @@ package com.liferay.journal.web.internal.portlet.action.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.data.engine.rest.dto.v2_0.DataDefinition;
 import com.liferay.data.engine.rest.dto.v2_0.DataDefinitionField;
+import com.liferay.dynamic.data.mapping.model.DDMFormField;
+import com.liferay.dynamic.data.mapping.model.DDMStructure;
+import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.test.portlet.MockLiferayPortletActionRequest;
 import com.liferay.portal.kernel.test.portlet.MockLiferayPortletActionResponse;
+import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
@@ -67,8 +71,17 @@ public class ImportDataDefinitionMVCActionCommandTest
 
 		String previousTextFieldName = "Text1";
 
-		Assert.assertNotEquals(
+		Assert.assertEquals(
 			previousTextFieldName, dataDefinitionFields[0].getName());
+
+		DDMStructure ddmStructure = _ddmStructureLocalService.getStructure(
+			dataDefinition.getId());
+
+		DDMFormField ddmFormField = ddmStructure.getDDMFormField(
+			dataDefinitionFields[0].getName());
+
+		Assert.assertEquals(
+			previousTextFieldName, ddmFormField.getFieldReference());
 	}
 
 	@Test
@@ -132,6 +145,50 @@ public class ImportDataDefinitionMVCActionCommandTest
 					"maximum row size of 12",
 				throwable.getMessage());
 		}
+	}
+
+	@Test
+	public void testProcessActionWithMultipleImportOfSameDataDefinition()
+		throws Exception {
+
+		MockLiferayPortletActionRequest mockLiferayPortletActionRequest =
+			createMockLiferayPortletActionRequest(
+				"data_definition_with_valid_fields.json", "Imported Structure");
+
+		setUpUploadPortletRequest(mockLiferayPortletActionRequest);
+
+		_mvcActionCommand.processAction(
+			mockLiferayPortletActionRequest,
+			new MockLiferayPortletActionResponse());
+
+		Assert.assertNotNull(
+			SessionMessages.get(
+				mockLiferayPortletActionRequest,
+				portal.getPortletId(mockLiferayPortletActionRequest) +
+					SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_SUCCESS_MESSAGE));
+		Assert.assertNotNull(
+			SessionMessages.get(
+				mockLiferayPortletActionRequest,
+				"importDataDefinitionSuccessMessage"));
+
+		mockLiferayPortletActionRequest = createMockLiferayPortletActionRequest(
+			"data_definition_with_valid_fields.json", "Imported Structure");
+
+		setUpUploadPortletRequest(mockLiferayPortletActionRequest);
+
+		_mvcActionCommand.processAction(
+			mockLiferayPortletActionRequest,
+			new MockLiferayPortletActionResponse());
+
+		Assert.assertNotNull(
+			SessionMessages.get(
+				mockLiferayPortletActionRequest,
+				portal.getPortletId(mockLiferayPortletActionRequest) +
+					SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_SUCCESS_MESSAGE));
+		Assert.assertNotNull(
+			SessionMessages.get(
+				mockLiferayPortletActionRequest,
+				"importDataDefinitionSuccessMessage"));
 	}
 
 	@Test
@@ -215,7 +272,13 @@ public class ImportDataDefinitionMVCActionCommandTest
 				"importDataDefinitionErrorMessage"));
 	}
 
+	@Inject
+	private DDMStructureLocalService _ddmStructureLocalService;
+
 	@Inject(filter = "mvc.command.name=/journal/import_data_definition")
 	private MVCActionCommand _mvcActionCommand;
+
+	@Inject
+	private Portal _portal;
 
 }

@@ -14,7 +14,7 @@ import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClass
  * @author Olivér Kecskeméty
  */
 @ExtendedObjectClassDefinition(
-	category = "content-security-policy", featureFlagKey = "LPS-134060",
+	category = "content-security-policy",
 	scope = ExtendedObjectClassDefinition.Scope.GROUP
 )
 @Meta.OCD(
@@ -27,6 +27,13 @@ public interface ContentSecurityPolicyConfiguration {
 	@Meta.AD(deflt = "false", name = "enabled", required = false)
 	public boolean enabled();
 
+	@Meta.AD(
+		deflt = "/api/,/combo,/documents/,/image/,/layouttpl/,/o/,/webdav/",
+		description = "content-security-policy-excluded-paths-help",
+		name = "excluded-paths", required = false
+	)
+	public String[] excludedPaths();
+
 	@ExtendedAttributeDefinition(descriptionArguments = "[$NONCE$]")
 	@Meta.AD(
 		description = "content-security-policy-help",
@@ -34,11 +41,7 @@ public interface ContentSecurityPolicyConfiguration {
 	)
 	public String policy();
 
-	@Meta.AD(
-		deflt = "/api/,/combo,/documents/,/image/,/layouttpl/,/o/,/webdav/",
-		description = "content-security-policy-excluded-paths-help",
-		name = "excluded-paths", required = false
-	)
-	public String[] excludedPaths();
+	@Meta.AD(deflt = "true", name = "report-only", required = false)
+	public boolean reportOnly();
 
 }

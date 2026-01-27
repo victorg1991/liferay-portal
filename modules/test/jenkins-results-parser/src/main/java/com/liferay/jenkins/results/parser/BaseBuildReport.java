@@ -10,7 +10,9 @@ import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,6 +50,28 @@ public abstract class BaseBuildReport implements BuildReport {
 		}
 
 		return Integer.parseInt(matcher.group("buildNumber"));
+	}
+
+	@Override
+	public Map<String, String> getBuildParameters() {
+		Map<String, String> buildParameters = new HashMap<>();
+
+		JSONObject buildReportJSONObject = getBuildReportJSONObject();
+
+		if ((buildReportJSONObject == null) ||
+			!buildReportJSONObject.has("buildParameters")) {
+
+			return buildParameters;
+		}
+
+		JSONObject buildParametersJSONObject =
+			buildReportJSONObject.getJSONObject("buildParameters");
+
+		for (String key : buildParametersJSONObject.keySet()) {
+			buildParameters.put(key, buildParametersJSONObject.getString(key));
+		}
+
+		return buildParameters;
 	}
 
 	@Override
@@ -116,7 +140,7 @@ public abstract class BaseBuildReport implements BuildReport {
 			return null;
 		}
 
-		return buildReportJSONObject.getString("result");
+		return buildReportJSONObject.optString("result");
 	}
 
 	@Override
@@ -211,7 +235,7 @@ public abstract class BaseBuildReport implements BuildReport {
 	}
 
 	private static final Pattern _buildURLPattern = Pattern.compile(
-		"(?<jobURL>https?://(?<masterHostname>test-\\d+-\\d+)" +
+		"(?<jobURL>https?://(?<masterHostname>test-\\d+-\\d+(-aws)?)" +
 			"(\\.liferay\\.com)?/job/(?<jobName>[^/]+))" +
 				"(/AXIS_VARIABLE=(?<axisVariable>\\d+))?/(?<buildNumber>\\d+)");
 

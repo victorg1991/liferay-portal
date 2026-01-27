@@ -6,7 +6,7 @@
 package com.liferay.portal.k8s.agent.internal;
 
 import com.liferay.osgi.util.configuration.ConfigurationFactoryUtil;
-import com.liferay.petra.string.CharPool;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
@@ -15,6 +15,7 @@ import com.liferay.portal.k8s.agent.PortalK8sConfigMapModifier;
 import com.liferay.portal.k8s.agent.configuration.PortalK8sAgentConfiguration;
 import com.liferay.portal.k8s.agent.custodian.VirtualInstanceCustodian;
 import com.liferay.portal.k8s.agent.internal.thread.local.AgentPortalK8sThreadLocal;
+import com.liferay.portal.k8s.agent.internal.util.ConfigurationUtil;
 import com.liferay.portal.k8s.agent.mutator.PortalK8sConfigurationPropertiesMutator;
 import com.liferay.portal.kernel.cluster.ClusterExecutor;
 import com.liferay.portal.kernel.cluster.ClusterMasterExecutor;
@@ -37,23 +38,21 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.SharedInformerEventListener;
 import io.fabric8.kubernetes.client.informers.SharedInformerFactory;
 
-import java.net.URL;
-
-import java.util.Collections;
 import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
-import org.apache.felix.configurator.impl.json.BinUtil;
-import org.apache.felix.configurator.impl.json.BinaryManager;
 import org.apache.felix.configurator.impl.json.JSONUtil;
 import org.apache.felix.configurator.impl.model.ConfigurationFile;
 
@@ -162,21 +161,30 @@ public class AgentPortalK8sConfigMapModifier
 	public Result modifyConfigMap(
 		Consumer<ConfigMapModel> configMapModelConsumer, String configMapName) {
 
-		Result result = _modifyConfigMap(configMapModelConsumer, configMapName);
-
-		if (_log.isInfoEnabled()) {
-			_log.info(
-				StringBundler.concat(
-					"Config map ", configMapName, " ", result));
+		if (_portalK8sAgentConfiguration.debounceDelayMillis() <= 0) {
+			return _modifyConfigMap(configMapModelConsumer, configMapName);
 		}
 
-		return result;
+		if (_log.isInfoEnabled()) {
+			_log.info("Schedule modify config map " + configMapName);
+		}
+
+		_configMapModelConsumers.merge(
+			configMapName, configMapModelConsumer, Consumer::andThen);
+
+		_scheduleModifyConfigMap(configMapName);
+
+		return Result.BUFFERED;
 	}
 
 	@Deactivate
 	protected void deactivate() {
 		if (_log.isInfoEnabled()) {
 			_log.info("Deactivating K8s agent");
+		}
+
+		for (String configMapName : _configMapModelConsumers.keySet()) {
+			_flushModifyConfigMap(configMapName);
 		}
 
 		_sharedIndexInformer.close();
@@ -235,57 +243,68 @@ public class AgentPortalK8sConfigMapModifier
 			return;
 		}
 
-		Configuration[] configurations = null;
+		try (SafeCloseable safeCloseable =
+				InMemoryOnlyConfigurationThreadLocal.
+					setInMemoryOnlyWithSafeCloseable(true)) {
 
-		try {
+			Configuration[] configurations = null;
+
 			ObjectMeta objectMeta = configMap.getMetadata();
 
-			configurations = _configurationAdmin.listConfigurations(
-				"(.k8s.config.uid=" + objectMeta.getUid() + ")");
-		}
-		catch (Exception exception) {
-			_log.error(exception);
-		}
-
-		if (configurations == null) {
-			return;
-		}
-
-		for (Configuration configuration : configurations) {
 			try {
-				configuration.delete();
+				configurations = _configurationAdmin.listConfigurations(
+					"(.k8s.config.uid=" + objectMeta.getUid() + ")");
 			}
 			catch (Exception exception) {
-				_log.error(exception);
+				_log.error(
+					"Unable to list configurations from config map " +
+						objectMeta.getUid(),
+					exception);
+			}
+
+			if (configurations == null) {
+				return;
+			}
+
+			for (Configuration configuration : configurations) {
+				try {
+					configuration.delete();
+				}
+				catch (Exception exception) {
+					_log.error(
+						"Unable to delete configuration " +
+							configuration.getPid(),
+						exception);
+				}
 			}
 		}
 	}
 
-	private Configuration _getConfiguration(String pid) throws Exception {
-		if (pid.endsWith(_FILE_EXTENSION)) {
-			pid = pid.substring(0, pid.length() - _FILE_EXTENSION.length());
+	private Result _flushModifyConfigMap(String configMapName) {
+		if (_log.isInfoEnabled()) {
+			_log.info("Flushing modify config map " + configMapName);
 		}
 
-		int index = pid.indexOf(CharPool.TILDE);
+		Consumer<ConfigMapModel> configMapModelConsumer =
+			_configMapModelConsumers.remove(configMapName);
 
-		if (index <= 0) {
-			index = pid.indexOf(CharPool.UNDERLINE);
+		if (configMapModelConsumer == null) {
+			_futures.remove(configMapName);
 
-			if (index <= 0) {
-				index = pid.indexOf(CharPool.DASH);
-			}
+			return Result.UNCHANGED;
 		}
 
-		if (index > 0) {
-			String name = pid.substring(index + 1);
+		Result result = _modifyConfigMap(configMapModelConsumer, configMapName);
 
-			pid = pid.substring(0, index);
+		_futures.remove(configMapName);
 
-			return _configurationAdmin.getFactoryConfiguration(
-				pid, name, StringPool.QUESTION);
+		if (_log.isInfoEnabled()) {
+			_log.info(
+				StringBundler.concat(
+					"Flushed config map ", configMapName, " ", result));
 		}
 
-		return _configurationAdmin.getConfiguration(pid, StringPool.QUESTION);
+		return result;
 	}
 
 	private Map<String, String> _getMap(Map<String, String> map) {
@@ -312,9 +331,11 @@ public class AgentPortalK8sConfigMapModifier
 	}
 
 	private Result _modifyConfigMap(
-		Consumer<PortalK8sConfigMapModifier.ConfigMapModel>
-			configMapModelConsumer,
-		String configMapName) {
+		Consumer<ConfigMapModel> configMapModelConsumer, String configMapName) {
+
+		if (_log.isInfoEnabled()) {
+			_log.info("Modify config map " + configMapName);
+		}
 
 		if (_clusterMasterExecutor.isEnabled()) {
 			if (_log.isDebugEnabled()) {
@@ -546,8 +567,9 @@ public class AgentPortalK8sConfigMapModifier
 		String virtualInstancePid = _getVirtualInstancePid(
 			config, virtualInstanceId);
 
-		try {
-			InMemoryOnlyConfigurationThreadLocal.setInMemoryOnly(true);
+		try (SafeCloseable safeCloseable =
+				InMemoryOnlyConfigurationThreadLocal.
+					setInMemoryOnlyWithSafeCloseable(true)) {
 
 			Configuration configuration = null;
 
@@ -576,7 +598,8 @@ public class AgentPortalK8sConfigMapModifier
 				}
 			}
 			else {
-				configuration = _getConfiguration(virtualInstancePid);
+				configuration = ConfigurationUtil.getConfiguration(
+					_configurationAdmin, virtualInstancePid);
 			}
 
 			Set<Configuration.ConfigurationAttribute> configurationAttributes =
@@ -617,52 +640,17 @@ public class AgentPortalK8sConfigMapModifier
 			configuration.addAttributes(
 				Configuration.ConfigurationAttribute.READ_ONLY);
 		}
-		finally {
-			InMemoryOnlyConfigurationThreadLocal.setInMemoryOnly(false);
-		}
 	}
 
 	private void _processConfigurations(
 			ConfigMap configMap, String fileName, String json)
 		throws Exception {
 
-		if (!fileName.endsWith(_FILE_EXTENSION)) {
-			throw new IllegalArgumentException("Invalid file " + fileName);
-		}
-
 		JSONUtil.Report report = new JSONUtil.Report();
 
-		BinaryManager binaryManager = new BinaryManager(
-			new BinUtil.ResourceProvider() {
-
-				@Override
-				public Enumeration<URL> findEntries(
-					String path, String pattern) {
-
-					return Collections.emptyEnumeration();
-				}
-
-				@Override
-				public long getBundleId() {
-					return _bundle.getBundleId();
-				}
-
-				@Override
-				public URL getEntry(String path) {
-					return null;
-				}
-
-				@Override
-				public String getIdentifier() {
-					return fileName;
-				}
-
-			},
-			report);
-
-		ConfigurationFile configurationFile = JSONUtil.readJSON(
-			binaryManager, fileName, new URL("file", null, fileName),
-			_bundle.getBundleId(), json, report);
+		ConfigurationFile configurationFile =
+			ConfigurationUtil.getConfigurationFile(
+				_bundle, fileName, json, report);
 
 		for (String error : report.errors) {
 			_log.error(error);
@@ -717,6 +705,42 @@ public class AgentPortalK8sConfigMapModifier
 			}
 
 			runnable.run();
+		}
+	}
+
+	private Future<Result> _scheduleModifyConfigMap(String configMapName) {
+		_lock.lock();
+
+		try {
+			Future<Result> future = _futures.remove(configMapName);
+
+			if (future != null) {
+				future.cancel(false);
+			}
+
+			future = _scheduledExecutorService.schedule(
+				() -> {
+					try {
+						return _flushModifyConfigMap(configMapName);
+					}
+					catch (Exception exception) {
+						_log.error(
+							"Unable to flush modify config map " +
+								configMapName,
+							exception);
+
+						return Result.UNCHANGED;
+					}
+				},
+				_portalK8sAgentConfiguration.debounceDelayMillis(),
+				TimeUnit.MILLISECONDS);
+
+			_futures.put(configMapName, future);
+
+			return future;
+		}
+		finally {
+			_lock.unlock();
 		}
 	}
 
@@ -952,17 +976,19 @@ public class AgentPortalK8sConfigMapModifier
 		"Configured service account does not have access. Service account " +
 			"may have been revoked.";
 
-	private static final String _FILE_EXTENSION =
-		".client-extension-config.json";
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		AgentPortalK8sConfigMapModifier.class);
 
 	private final Bundle _bundle;
 	private final ClusterExecutor _clusterExecutor;
 	private final ClusterMasterExecutor _clusterMasterExecutor;
+	private final Map<String, Consumer<ConfigMapModel>>
+		_configMapModelConsumers = new ConcurrentHashMap<>();
 	private final ConfigurationAdmin _configurationAdmin;
+	private final Map<String, Future<Result>> _futures =
+		new ConcurrentHashMap<>();
 	private final KubernetesClient _kubernetesClient;
+	private final Lock _lock = new ReentrantLock();
 	private final PortalK8sAgentConfiguration _portalK8sAgentConfiguration;
 	private final List<PortalK8sConfigurationPropertiesMutator>
 		_portalK8sConfigurationPropertiesMutators;

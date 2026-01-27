@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+import com.liferay.portal.workflow.constants.WorkflowDefinitionConstants;
 import com.liferay.portal.workflow.kaleo.definition.util.WorkflowDefinitionContentUtil;
 import com.liferay.portal.workflow.manager.WorkflowDefinitionManager;
 
@@ -40,6 +41,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -151,6 +153,13 @@ public class WorkflowDefinitionResourceTest
 		Assert.assertEquals(
 			workflowDefinition.getDateCreated(),
 			latestWorkflowDefinition.getDateCreated());
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLDeleteWorkflowDefinitionUndeploy() throws Exception {
+		super.testGraphQLDeleteWorkflowDefinitionUndeploy();
 	}
 
 	@Override
@@ -278,8 +287,8 @@ public class WorkflowDefinitionResourceTest
 	@Override
 	protected String[] getAdditionalAssertFieldNames() {
 		return new String[] {
-			"active", "name", "nodes", "title", "title_i18n", "transitions",
-			"version"
+			"active", "name", "nodes", "scope", "title", "title_i18n",
+			"transitions", "version"
 		};
 	}
 
@@ -324,6 +333,7 @@ public class WorkflowDefinitionResourceTest
 					}
 				}
 			});
+		workflowDefinition.setScope(WorkflowDefinitionConstants.SCOPE_ALL);
 		workflowDefinition.setTitle_i18n(
 			HashMapBuilder.put(
 				LanguageUtil.getLanguageId(LocaleUtil.US),
@@ -409,6 +419,22 @@ public class WorkflowDefinitionResourceTest
 		throws Exception {
 
 		return testGetWorkflowDefinition_addWorkflowDefinition();
+	}
+
+	@Override
+	protected WorkflowDefinition
+			testGraphQLWorkflowDefinition_addWorkflowDefinition(
+				WorkflowDefinition workflowDefinition)
+		throws Exception {
+
+		workflowDefinition =
+			workflowDefinitionResource.postWorkflowDefinitionDeploy(
+				workflowDefinition);
+
+		_workflowDefinitions.put(
+			workflowDefinition.getName(), workflowDefinition);
+
+		return workflowDefinition;
 	}
 
 	@Override

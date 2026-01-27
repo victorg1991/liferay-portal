@@ -5,9 +5,12 @@
 
 import {Body, Cell, Head, Row, Table, Text} from '@clayui/core';
 import {ClayPaginationBarWithBasicItems} from '@clayui/pagination-bar';
-import React, {useEffect, useMemo, useState} from 'react';
+import {sub} from 'frontend-js-web';
+import React, {useMemo} from 'react';
 
 import {InventoryAnalysisDataType} from './InventoryAnalysisCard';
+
+import type {WeightFont} from '@clayui/core/src/typography/Heading';
 
 type TableData = {
 	percentage: number;
@@ -15,9 +18,20 @@ type TableData = {
 	volume: JSX.Element;
 };
 
-const initialTableValues = {
-	delta: 10,
-	page: 1,
+const viewSpecs = {
+	chart: {
+		expandable: 'volume',
+		textWeight: 'semi-bold',
+		titleWidth: '200px',
+		volumeWidth: 'calc(100% - 340px)',
+	},
+	table: {
+		expandable: 'title',
+		percentageWidth: '140px',
+		textWeight: 'normal',
+		titleWidth: 'calc(100% - 340px',
+		volumeWidth: '200px',
+	},
 };
 
 const VolumeChart = ({
@@ -43,7 +57,10 @@ const VolumeChart = ({
 	);
 };
 
-const mapData = (data: InventoryAnalysisDataType): TableData[] => {
+const mapData = (
+	data: InventoryAnalysisDataType,
+	viewType: 'chart' | 'table'
+): TableData[] => {
 	return data.inventoryAnalysisItems.map(({count, title}) => {
 		const percentage = (count / data.totalCount) * 100;
 
@@ -52,52 +69,52 @@ const mapData = (data: InventoryAnalysisDataType): TableData[] => {
 		return {
 			percentage,
 			title,
-			volume: <VolumeChart percentage={percentage} volume={count} />,
+			volume:
+				viewType === 'chart' ? (
+					<VolumeChart percentage={percentage} volume={count} />
+				) : (
+					<Text size={3} weight="normal">
+						{count}
+					</Text>
+				),
 		};
 	});
 };
 
 interface IPaginatedTable {
 	currentStructureTypeLabel: string;
+	deltas: {label: number}[];
+	handleDeltaChange: (delta: number) => void;
+	handlePageChange: (page: number) => void;
 	inventoryAnalysisData: InventoryAnalysisDataType | undefined;
+	pagination: {
+		page: number;
+		pageSize: number;
+	};
+	viewType: 'chart' | 'table';
 }
 
 const PaginatedTable: React.FC<IPaginatedTable> = ({
 	currentStructureTypeLabel,
+	deltas,
+	handleDeltaChange,
+	handlePageChange,
 	inventoryAnalysisData,
+	pagination,
+	viewType,
 }) => {
-	const [delta, setDelta] = useState(initialTableValues.delta);
-	const [page, setPage] = useState(initialTableValues.page);
-	const [tableData, setTableData] = useState<TableData[]>([]);
-
-	const displayedItems = useMemo(() => {
-		const startIndex = (page - 1) * delta;
-		const endIndex = startIndex + delta;
-
-		return tableData.slice(startIndex, endIndex);
-	}, [page, delta, tableData]);
-
-	useEffect(() => {
+	const tableData = useMemo(() => {
 		if (inventoryAnalysisData) {
-			setTableData(mapData(inventoryAnalysisData));
-			setPage(initialTableValues.page);
-			setDelta(initialTableValues.delta);
+			return mapData(inventoryAnalysisData, viewType);
 		}
-	}, [inventoryAnalysisData]);
 
-	const handlePageChange = (newPage: number) => {
-		setPage(newPage);
-	};
-
-	const handleDeltaChange = (newDelta: number) => {
-		setDelta(newDelta);
-		setPage(1);
-	};
+		return [];
+	}, [inventoryAnalysisData, viewType]);
 
 	return (
 		<div>
 			<Table
-				borderless
+				borderless={viewType === 'chart'}
 				columnsVisibility={false}
 				hover={false}
 				striped={false}
@@ -105,25 +122,28 @@ const PaginatedTable: React.FC<IPaginatedTable> = ({
 				<Head
 					items={[
 						{
+							align: 'left',
 							id: 'title',
-							name: Liferay.Language.get('structure-label'),
-							width: '200px',
+							name: currentStructureTypeLabel,
+							width: viewSpecs[viewType].titleWidth,
 						},
 						{
+							align: viewType === 'chart' ? 'left' : 'right',
 							id: 'volume',
 							name: Liferay.Language.get('assets-volume'),
-							width: 'calc(100% - 310px)',
+							width: viewSpecs[viewType].volumeWidth,
 						},
 						{
+							align: 'right',
 							id: 'percentage',
 							name: Liferay.Language.get('%-of-assets'),
-							width: '110px',
+							width: '140px',
 						},
 					]}
 				>
 					{(column) => (
 						<Cell
-							expanded={column.id === 'volume'}
+							align={column.align as 'left' | 'right'}
 							key={column.id}
 							width={column.width}
 						>
@@ -132,22 +152,54 @@ const PaginatedTable: React.FC<IPaginatedTable> = ({
 					)}
 				</Head>
 
-				<Body items={displayedItems}>
+				<Body items={tableData}>
 					{(row) => (
 						<Row>
-							<Cell width="10%">
+							<Cell
+								className={
+									viewType === 'chart' ? 'border-0' : ''
+								}
+								expanded={
+									viewSpecs[viewType].expandable === 'volume'
+								}
+								width="10%"
+							>
 								<Text size={3} weight="semi-bold">
 									{row['title'] ||
-										`No ${currentStructureTypeLabel}`}
+										sub(
+											Liferay.Language.get('no-x'),
+											currentStructureTypeLabel
+										)}
 								</Text>
 							</Cell>
 
-							<Cell expanded width="80%">
+							<Cell
+								align="right"
+								className={
+									viewType === 'chart' ? 'border-0' : ''
+								}
+								expanded={
+									viewSpecs[viewType].expandable === 'volume'
+								}
+								width="80%"
+							>
 								{row['volume']}
 							</Cell>
 
-							<Cell align="left" width="10%">
-								<Text size={3} weight="semi-bold">
+							<Cell
+								align="right"
+								className={
+									viewType === 'chart' ? 'border-0' : ''
+								}
+								width="10%"
+							>
+								<Text
+									size={3}
+									weight={
+										viewSpecs[viewType]
+											.textWeight as WeightFont
+									}
+								>
 									{`${row['percentage'].toFixed(2)}%`}
 								</Text>
 							</Cell>
@@ -157,15 +209,17 @@ const PaginatedTable: React.FC<IPaginatedTable> = ({
 			</Table>
 
 			<ClayPaginationBarWithBasicItems
-				activeDelta={delta}
+				active={pagination.page}
+				activeDelta={pagination.pageSize}
 				className="mt-3"
+				deltas={deltas}
 				ellipsisBuffer={3}
 				ellipsisProps={{'aria-label': 'More', 'title': 'More'}}
-				onActiveChange={(newPage: number) => handlePageChange(newPage)}
-				onDeltaChange={(newDelta: number) =>
-					handleDeltaChange(newDelta)
+				onActiveChange={handlePageChange}
+				onDeltaChange={handleDeltaChange}
+				totalItems={
+					inventoryAnalysisData?.inventoryAnalysisItemsCount ?? 0
 				}
-				totalItems={tableData.length}
 			/>
 		</div>
 	);

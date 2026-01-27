@@ -20,6 +20,7 @@ import Commerce from '../ActivationKeys/Commerce';
 import EnterpriseSearch from '../ActivationKeys/EnterpriseSearch';
 import AnalyticsCloud from '../AnalyticsCloud';
 import Attachments from '../Attachments';
+import CloudNative from '../CloudNative';
 import DXP from '../DXP';
 import DXPCloud from '../DXPCloud';
 import LiferayExperienceCloud from '../LiferayExperienceCloud';
@@ -51,7 +52,7 @@ const ProjectRoutes = () => {
 
 	if (koroneikiAccount) {
 		const userId = Liferay.ThemeDisplay.getUserId();
-		
+
 		const cookieKey = `CP_LAST_VIEWED_PROJECT_${userId}`;
 		const cookieValue = encodeURIComponent(koroneikiAccount.accountKey);
 		const expires = new Date();
@@ -79,13 +80,25 @@ const ProjectRoutes = () => {
 	const loggedUserAccount = myUserAccountData?.myUserAccount;
 
 	const hasSaasSubscription = useMemo(
+		() => {
+			const allowedERCs = [
+				`${project?.externalReferenceCode}_liferay-cloud`,
+				`${project?.externalReferenceCode}_liferay-saas`
+			];
+
+			return subscriptionGroups?.some(({externalReferenceCode}) =>
+				allowedERCs.includes(externalReferenceCode)
+			);
+		},
+		[project?.externalReferenceCode, subscriptionGroups]
+	);
+
+	const hasSLASubscription = useMemo(
 		() =>
-			subscriptionGroups?.some(
-				(subscription) =>
-					subscription.externalReferenceCode ===
-					`${project?.externalReferenceCode}_liferay-saas`
-			),
-		[subscriptionGroups]
+			koroneikiAccount?.slaCurrent ||
+			koroneikiAccount?.slaExpired ||
+			koroneikiAccount?.slaFuture,
+		[koroneikiAccount]
 	);
 
 	useEffect(() => {
@@ -108,36 +121,6 @@ const ProjectRoutes = () => {
 
 				<Route element={<Layout />} path="/:accountKey">
 					<Route element={<Overview />} index />
-
-					{featureFlags.includes('LPS-153478') && (
-						<Route
-							element={
-								<ProductOutlet
-									product={
-										PRODUCT_TYPES.liferayExperienceCloud
-									}
-								/>
-							}
-						>
-							<Route
-								element={<LiferayExperienceCloud />}
-								path={getKebabCase(
-									PRODUCT_TYPES.liferayExperienceCloud
-								)}
-							/>
-						</Route>
-					)}
-
-					<Route
-						element={
-							<ProductOutlet product={PRODUCT_TYPES.dxpCloud} />
-						}
-					>
-						<Route
-							element={<DXPCloud />}
-							path={getKebabCase(PRODUCT_TYPES.dxpCloud)}
-						/>
-					</Route>
 
 					<Route element={<ActivationOutlet />} path="activation">
 						<Route
@@ -255,6 +238,34 @@ const ProjectRoutes = () => {
 
 						<Route
 							element={
+								<ProductOutlet product={PRODUCT_TYPES.dxpCloud} />
+							}
+						>
+							<Route
+								element={<DXPCloud />}
+								path={getKebabCase(PRODUCT_TYPES.dxpCloud)}
+							/>
+						</Route>
+
+						<Route
+							element={
+								<ProductOutlet
+									product={
+										PRODUCT_TYPES.liferayExperienceCloud
+									}
+								/>
+							}
+						>
+							<Route
+								element={<LiferayExperienceCloud />}
+								path={getKebabCase(
+									PRODUCT_TYPES.liferayExperienceCloud
+								)}
+							/>
+						</Route>
+
+						<Route
+							element={
 								<ProductOutlet
 									product={PRODUCT_TYPES.analyticsCloud}
 								/>
@@ -262,6 +273,23 @@ const ProjectRoutes = () => {
 							path={getKebabCase(PRODUCT_TYPES.analyticsCloud)}
 						>
 							<Route element={<AnalyticsCloud />} index />
+						</Route>
+
+						<Route
+							element={
+								<ProductOutlet
+									product={
+										PRODUCT_TYPES.cloudNative
+									}
+								/>
+							}
+						>
+							<Route
+								element={<CloudNative />}
+								path={getKebabCase(
+									PRODUCT_TYPES.cloudNative
+								)}
+							/>
 						</Route>
 
 						<Route
@@ -292,8 +320,8 @@ const ProjectRoutes = () => {
 					)}
 
 					<Route element={<TeamMembers />} path="team-members" />
-					
-					{featureFlags.includes('LRSD-5119') && (
+
+					{hasSLASubscription && (
 						<Route path="business-events">
 							<Route element={<BusinessEvents />} index />
 							<Route element={<BusinessEventAdd />} path="new"/>

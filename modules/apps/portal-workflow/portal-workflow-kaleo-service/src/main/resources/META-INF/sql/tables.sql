@@ -63,6 +63,7 @@ create table KaleoDefinition (
 	scope VARCHAR(75) null,
 	version INTEGER,
 	active_ BOOLEAN,
+	status INTEGER,
 	primary key (kaleoDefinitionId, ctCollectionId)
 );
 
@@ -194,6 +195,21 @@ create table KaleoNode (
 	initial_ BOOLEAN,
 	terminal BOOLEAN,
 	primary key (kaleoNodeId, ctCollectionId)
+);
+
+create table KaleoNodeSetting (
+	mvccVersion LONG default 0 not null,
+	ctCollectionId LONG default 0 not null,
+	kaleoNodeSettingId LONG not null,
+	companyId LONG,
+	userId LONG,
+	userName VARCHAR(75) null,
+	createDate DATE null,
+	modifiedDate DATE null,
+	kaleoNodeId LONG,
+	name VARCHAR(75) null,
+	value TEXT null,
+	primary key (kaleoNodeSettingId, ctCollectionId)
 );
 
 create table KaleoNotification (

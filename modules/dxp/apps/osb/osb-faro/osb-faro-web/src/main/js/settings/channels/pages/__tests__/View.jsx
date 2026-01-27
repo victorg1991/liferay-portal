@@ -19,6 +19,13 @@ import {waitForLoadingToBeRemoved} from 'test/helpers';
 
 jest.unmock('react-dom');
 
+jest.mock('react-router-dom', () => ({
+	...jest.requireActual('react-router-dom'),
+	useParams: () => ({
+		groupId: '23'
+	})
+}));
+
 const defaultProps = {
 	currentUser: new User(data.mockUser()),
 	groupId: '23'
@@ -152,7 +159,7 @@ describe('View Channel', () => {
 			screen.getByText('Access our documentation to learn more.')
 		).toHaveAttribute(
 			'href',
-			'https://learn.liferay.com/en/w/analytics-cloud/workspace-settings/managing-properties#adding-and-removing-users-to-a-property'
+			'https://learn.liferay.com/w/dxp/personalization/analytics-cloud/workspace-settings/managing-properties#adding-and-removing-users-to-a-property'
 		);
 	});
 
@@ -204,7 +211,7 @@ describe('View Channel', () => {
 			screen.getByText('Access our documentation to learn more.')
 		).toHaveAttribute(
 			'href',
-			'https://learn.liferay.com/en/w/analytics-cloud/workspace-settings/managing-properties#adding-and-removing-users-to-a-property'
+			'https://learn.liferay.com/w/dxp/personalization/analytics-cloud/workspace-settings/managing-properties#adding-and-removing-users-to-a-property'
 		);
 	});
 

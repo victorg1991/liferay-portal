@@ -6,15 +6,26 @@
 import {ApiHelpers} from './ApiHelpers';
 
 interface postSiteTaxonomyVocabularyProps {
+	assetLibraries?: AssetLibrary[];
 	assetTypes?: AssetType[];
+	multiValued?: boolean;
 	name: string;
 	siteId: string;
+	visibilityType?: string;
 }
 
 export interface postTaxonomyCategoryTaxonomyCategory {
 	name: string;
 	name_i18n?: {['ES-es']: string};
 	parentTaxonomyCategoryId: number;
+}
+
+export interface postTaxonomyVocabularyProps {
+	assetLibraries?: AssetLibrary[];
+	assetTypes?: AssetType[];
+	name: string;
+	name_i18n?: {['ES-es']: string};
+	visibilityType?: string;
 }
 
 export interface postTaxonomyVocabularyTaxonomyCategoryProps {
@@ -36,6 +47,16 @@ interface postAssetLibraryKeywordProps {
 interface postSiteKeywordProps {
 	name: string;
 	siteId: string;
+}
+
+interface putTaxonomyCategoriesTaxonomyCategoryPermissions {
+	actionIds: string[];
+	roleName: string;
+}
+
+interface putTaxonomyVocabulariesTaxonomyVocabularyPermissions {
+	actionIds: string[];
+	roleName: string;
 }
 
 export class HeadlessAdminTaxonomyApiHelper {
@@ -93,13 +114,24 @@ export class HeadlessAdminTaxonomyApiHelper {
 	 */
 
 	async postSiteTaxonomyVocabulary({
+		assetLibraries,
 		assetTypes,
+		multiValued = true,
 		name,
 		siteId,
+		visibilityType,
 	}: postSiteTaxonomyVocabularyProps): Promise<{id: number}> {
 		return this.apiHelpers.post(
 			`${this.apiHelpers.baseUrl}${this.basePath}/sites/${siteId}/taxonomy-vocabularies`,
-			{data: {assetTypes, name}}
+			{
+				data: {
+					assetLibraries,
+					assetTypes,
+					multiValued,
+					name,
+					visibilityType,
+				},
+			}
 		);
 	}
 
@@ -199,6 +231,59 @@ export class HeadlessAdminTaxonomyApiHelper {
 	async deleteKeyword({id}: {id: number}) {
 		return this.apiHelpers.delete(
 			`${this.apiHelpers.baseUrl}${this.basePath}/keywords/${id}`
+		);
+	}
+
+	/**
+	 * It allows to add permission to a taxonomy category.
+	 *
+	 * @param id the id of the tag
+	 * @param actionIds the actionIds of the user
+	 * @param roleName the roleName of the user
+	 */
+
+	async putTaxonomyCategoriesTaxonomyCategoryPermissions(
+		id: number,
+		{actionIds, roleName}: putTaxonomyCategoriesTaxonomyCategoryPermissions
+	) {
+		return this.apiHelpers.put(
+			`${this.apiHelpers.baseUrl}${this.basePath}/taxonomy-categories/${id}/permissions`,
+			{
+				data: [
+					{
+						actionIds,
+						roleName,
+					},
+				],
+			}
+		);
+	}
+
+	/**
+	 * It allows to add permission to a taxonomy vocabulary.
+	 *
+	 * @param id the id of the tag
+	 * @param actionIds the actionIds of the user
+	 * @param roleName the roleName of the user
+	 */
+
+	async putTaxonomyVocabulariesTaxonomyVocabularyPermissions(
+		id: number,
+		{
+			actionIds,
+			roleName,
+		}: putTaxonomyVocabulariesTaxonomyVocabularyPermissions
+	) {
+		return this.apiHelpers.put(
+			`${this.apiHelpers.baseUrl}${this.basePath}/taxonomy-vocabularies/${id}/permissions`,
+			{
+				data: [
+					{
+						actionIds,
+						roleName,
+					},
+				],
+			}
 		);
 	}
 }

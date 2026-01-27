@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import {buildQueryString} from '@liferay/analytics-reports-js-components-web';
 import React, {useContext, useState} from 'react';
 
 import ApiHelper from '../../../common/services/ApiHelper';
 import {ViewDashboardContext} from '../ViewDashboardContext';
-import {buildQueryString} from '../utils/buildQueryString';
 import {FilterDropdown, Item} from './FilterDropdown';
 import {
 	IAllFiltersDropdown,
@@ -21,6 +21,7 @@ const AllTagsDropdown: React.FC<IAllFiltersDropdown> = ({
 	onSelectItem,
 }) => {
 	const {
+		constants: {cmsGroupId},
 		filters: {space},
 	} = useContext(ViewDashboardContext);
 
@@ -34,7 +35,7 @@ const AllTagsDropdown: React.FC<IAllFiltersDropdown> = ({
 			search,
 		});
 
-		const endpoint = `/o/headless-admin-taxonomy/v1.0/keywords${queryParams}`;
+		const endpoint = `/o/headless-admin-taxonomy/v1.0/sites/${cmsGroupId}/keywords${queryParams}`;
 
 		const {data, error} = await ApiHelper.get<{
 			items: {assetLibraries: {id: number}[]; id: string; name: string}[];
@@ -70,7 +71,7 @@ const AllTagsDropdown: React.FC<IAllFiltersDropdown> = ({
 			icon="tag"
 			items={tags}
 			loading={loading}
-			onActiveChange={() => setDropdownActive(!dropdownActive)}
+			onActiveChange={() => setDropdownActive((prevState) => !prevState)}
 			onSearch={async (value) => {
 				setLoading(true);
 

@@ -9,6 +9,7 @@ import {apiHelpersTest} from '../../../fixtures/apiHelpersTest';
 import {changeTrackingPagesTest} from '../../../fixtures/changeTrackingPagesTest';
 import {customFieldsPagesTest} from '../../../fixtures/customFieldsPagesTest';
 import {dataApiHelpersTest} from '../../../fixtures/dataApiHelpersTest';
+import {displayPageTemplatesPagesTest} from '../../../fixtures/displayPageTemplatesPagesTest';
 import {featureFlagsTest} from '../../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../../fixtures/isolatedSiteTest';
 import {masterPagesPagesTest} from '../../../fixtures/masterPagesPagesTest';
@@ -28,6 +29,7 @@ import {templatesPageTest} from '../../template-web/main/fixtures/templatesPageT
 export const test = mergeTests(
 	apiHelpersTest,
 	dataApiHelpersTest,
+	displayPageTemplatesPagesTest,
 	changeTrackingPagesTest,
 	customFieldsPagesTest,
 	featureFlagsTest({
@@ -100,6 +102,8 @@ test('Add and apply content template', async ({
 		template: contentPageTemplateName,
 	});
 
+	await pageEditorPage.publishPage();
+
 	// Review publication changes and publish
 
 	await changeTrackingPage.goToReviewChanges(ctCollection.body.name);
@@ -110,6 +114,15 @@ test('Add and apply content template', async ({
 		title: contentPageTemplateName,
 		type: 'Layout Page Template Entry',
 	});
+
+	await page
+		.getByRole('link', {exact: true, name: contentPageTemplateName})
+		.click();
+	await expect(
+		page.locator(
+			'//td[contains(@class,"publications-render-view-content")]'
+		)
+	).toBeVisible();
 
 	await apiHelpers.headlessChangeTracking.publishCTCollection(
 		ctCollection.body.id
@@ -131,6 +144,83 @@ test('Add and apply content template', async ({
 		pageTemplateCollectionName
 	);
 });
+
+test(
+	'Add and apply display page template',
+	{tag: '@LPD-60041'},
+	async ({
+		apiHelpers,
+		changeTrackingPage,
+		ctCollection,
+		displayPageTemplatesPage,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+		await changeTrackingPage.workOnPublication(ctCollection);
+
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+
+		const displayPageTemplateName = getRandomString();
+
+		// Create a display page template for Basic Web Content
+
+		await displayPageTemplatesPage.createTemplate({
+			contentSubtype: 'Basic Web Content',
+			contentType: 'Web Content Article',
+			name: displayPageTemplateName,
+		});
+
+		await displayPageTemplatesPage.editTemplate(displayPageTemplateName);
+
+		// Add heading fragment to the template
+
+		await pageEditorPage.addFragment('Basic Components', 'Heading');
+
+		await pageEditorPage.publishPage();
+
+		// Review publication changes
+
+		await changeTrackingPage.goToReviewChanges(ctCollection.body.name);
+
+		await changeTrackingPage.viewChanges({
+			changed: 'Added',
+			site: site.name,
+			title: displayPageTemplateName,
+			type: 'Layout Page Template Entry',
+		});
+
+		await page
+			.getByRole('link', {exact: true, name: displayPageTemplateName})
+			.click();
+		await expect(
+			page.locator(
+				'//td[contains(@class,"publications-render-view-content")]'
+			)
+		).toBeVisible();
+
+		await apiHelpers.headlessChangeTracking.publishCTCollection(
+			ctCollection.body.id
+		);
+
+		await changeTrackingPage.assertStatus(
+			'Published',
+			ctCollection.body.name
+		);
+
+		// Verify that the fragment is present
+
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+		await displayPageTemplatesPage.editTemplate(displayPageTemplateName);
+		await expect(page.getByText('Heading Example')).toBeVisible();
+
+		// Delete display page template
+
+		await displayPageTemplatesPage.goto(site.friendlyUrlPath);
+
+		await displayPageTemplatesPage.deleteAllDisplayPageTemplates();
+	}
+);
 
 test('Add and apply information template', async ({
 	apiHelpers,
@@ -351,7 +441,8 @@ test('Add new page with master template', async ({
 
 	const layout = await apiHelpers.jsonWebServicesLayout.addLayout({
 		groupId: site.id,
-		masterLayoutPlid: masterPageTemplate.plid,
+		masterLayoutPageTemplateEntryERC:
+			masterPageTemplate.externalReferenceCode,
 		options: {type: 'content'},
 		title: layoutTitle,
 	});
@@ -370,6 +461,15 @@ test('Add new page with master template', async ({
 		title: masterPageTemplateEntryName,
 		type: 'Fragment Entry Link',
 	});
+
+	await page
+		.getByRole('link', {exact: true, name: masterPageTemplateEntryName})
+		.click();
+	await expect(
+		page.locator(
+			'//td[contains(@class,"publications-render-view-content")]'
+		)
+	).toBeVisible();
 
 	await apiHelpers.headlessChangeTracking.publishCTCollection(
 		ctCollection.body.id
@@ -818,8 +918,10 @@ test(
 
 		await changeTrackingPage.reviewChange(layoutTitle);
 
-		await expect(page.getByText('Heading Example')).toBeVisible();
-		await expect(page.getByText('Edited Text')).toBeVisible();
+		const view = page.frameLocator('iframe');
+
+		await expect(view.nth(0).getByText('Heading Example')).toBeVisible();
+		await expect(view.nth(1).getByText('Edited Text')).toBeVisible();
 
 		await apiHelpers.jsonWebServicesLayout.deleteLayout(layout.plid);
 	}
@@ -1016,6 +1118,19 @@ testWithPrivatePages(
 			ctCollection.body.name
 		);
 
+		// Review published changes
+
+		await changeTrackingPage.goToReviewChangesHistory(
+			ctCollection.body.name
+		);
+
+		await changeTrackingPage.viewChanges({
+			changed: 'Added',
+			site: site.name,
+			title: fragmentEntryName,
+			type: 'Fragment Entry Link',
+		});
+
 		// View fragment in private page
 
 		await page.goto(`/group${site.friendlyUrlPath}`);
@@ -1058,7 +1173,7 @@ test('Publish with asset publisher configuration', async ({
 		.getByLabel('Dynamic')
 		.click();
 
-	await page.getByLabel('close', {exact: true}).click();
+	await page.locator('.modal').getByLabel('Close', {exact: true}).click();
 
 	await page.reload();
 
@@ -1254,7 +1369,6 @@ test(
 		await dragAndDropElement({
 			dragTarget: page.locator('[data-name="Button"]'),
 			dropTarget: middleGridColumn,
-			page,
 		});
 
 		await expect(
@@ -1290,5 +1404,177 @@ test(
 		).toBe('8px');
 
 		await apiHelpers.jsonWebServicesLayout.deleteLayout(layout.plid);
+	}
+);
+
+test(
+	'Can edit content page from review changes screen',
+	{tag: '@LPD-70037'},
+	async ({
+		apiHelpers,
+		changeTrackingPage,
+		ctCollection,
+		page,
+		pageEditorPage,
+		site,
+	}) => {
+		await changeTrackingPage.workOnPublication(ctCollection);
+
+		// Add a page with an HTML fragment
+
+		const layoutTitle = getRandomString();
+
+		await apiHelpers.jsonWebServicesLayout.addLayout({
+			groupId: site.id,
+			options: {type: 'content'},
+			title: layoutTitle,
+		});
+
+		// Go to edit content page template from review changes
+
+		await changeTrackingPage.goToReviewChanges(ctCollection.body.name);
+
+		await changeTrackingPage.viewChanges({
+			changed: 'Added',
+			click: true,
+			site: site.name,
+			title: layoutTitle,
+			type: 'Page',
+		});
+
+		await changeTrackingPage.gotoEditChanges(ctCollection.body.name);
+
+		// Edit content page template and save
+
+		await pageEditorPage.addFragment('Basic Components', 'HTML');
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: page.locator(
+				'//td[contains(@class,"publications-render-view-content")]'
+			),
+			trigger: pageEditorPage.publishButton,
+		});
+	}
+);
+
+test(
+	'Can edit content page template from review changes screen',
+	{tag: '@LPD-70037'},
+	async ({
+		changeTrackingPage,
+		ctCollection,
+		page,
+		pageEditorPage,
+		pageTemplatesPage,
+		site,
+	}) => {
+		await changeTrackingPage.workOnPublication(ctCollection);
+
+		// Create page template collection
+
+		await pageTemplatesPage.goto(site.friendlyUrlPath);
+
+		const pageTemplateCollectionName = getRandomString();
+
+		await pageTemplatesPage.addPageTemplateCollection(
+			pageTemplateCollectionName
+		);
+
+		// Create content page template
+
+		const contentPageTemplateName = getRandomString();
+
+		await pageTemplatesPage.addContentPageTemplate(contentPageTemplateName);
+
+		await pageEditorPage.publishButton.click();
+
+		await waitForAlert(
+			page,
+			'Success:The page template was published successfully.'
+		);
+
+		// Go to edit content page template from review changes
+
+		await changeTrackingPage.goToReviewChanges(ctCollection.body.name);
+
+		await changeTrackingPage.viewChanges({
+			changed: 'Added',
+			click: true,
+			site: site.name,
+			title: contentPageTemplateName,
+			type: 'Layout Page Template Entry',
+		});
+
+		await changeTrackingPage.gotoEditChanges(ctCollection.body.name);
+
+		// Edit content page template and save
+
+		await pageEditorPage.addFragment('Basic Components', 'Heading');
+
+		await clickAndExpectToBeVisible({
+			autoClick: true,
+			target: page.locator(
+				'//td[contains(@class,"publications-render-view-content")]'
+			),
+			trigger: pageEditorPage.publishButton,
+		});
+	}
+);
+
+test(
+	'Can edit widget page template from review changes screen',
+	{tag: '@LPD-70037'},
+	async ({
+		changeTrackingPage,
+		ctCollection,
+		page,
+		pageTemplatesPage,
+		site,
+		widgetPagePage,
+	}) => {
+		await changeTrackingPage.workOnPublication(ctCollection);
+
+		// Create page template collection
+
+		await pageTemplatesPage.goto(site.friendlyUrlPath);
+
+		const pageTemplateCollectionName = getRandomString();
+
+		await pageTemplatesPage.addPageTemplateCollection(
+			pageTemplateCollectionName
+		);
+
+		// Create widget page template
+
+		const widgetPageTemplateName = getRandomString();
+
+		await pageTemplatesPage.addWidgetPageTemplate(widgetPageTemplateName);
+
+		// Go to edit content page template from review changes
+
+		await changeTrackingPage.goToReviewChanges(ctCollection.body.name);
+
+		await changeTrackingPage.viewChanges({
+			changed: 'Added',
+			click: true,
+			site: site.name,
+			title: widgetPageTemplateName,
+			type: 'Layout Page Template Entry',
+		});
+
+		await changeTrackingPage.gotoEditChanges(ctCollection.body.name);
+
+		// Edit widget page template
+
+		await widgetPagePage.addPortlet('Web Content Display');
+
+		await page.getByRole('link', {exact: true, name: 'Back'}).click();
+
+		await expect(
+			page.locator(
+				'//td[contains(@class,"publications-render-view-content")]'
+			)
+		).toBeVisible();
 	}
 );

@@ -10,9 +10,11 @@ import {
 	acceptAllCookies,
 	declineAllCookies,
 	getCookie,
+	removeAllCookies,
 	setCookie,
 	setUserConfigCookie,
 	userConfigCookieName,
+	userConfigDateCookieName,
 } from '../../js/CookiesUtil';
 
 let openCookieConsentModal = () => {
@@ -24,7 +26,9 @@ let openCookieConsentModal = () => {
 export default function ({
 	configurationNamespace,
 	configurationURL,
+	consentRenewalPeriod = 12,
 	includeDeclineAllButton,
+	modifiedDate = 0,
 	namespace,
 	optionalConsentCookieTypeNames,
 	requiredConsentCookieTypeNames,
@@ -43,7 +47,30 @@ export default function ({
 	const editMode = document.body.classList.contains('has-edit-mode-menu');
 
 	if (!editMode) {
-		setBannerVisibility(cookieBanner);
+		if (isCookiesPreferenceHandlingConfigurationModified(modifiedDate)) {
+			removeAllCookies(
+				optionalConsentCookieTypeNames,
+				requiredConsentCookieTypeNames
+			);
+		}
+
+		const cookieManager = document.getElementById(
+			'_com_liferay_my_account_web_portlet_MyAccountPortlet_cookiesBannerConfigurationForm'
+		);
+		const productAnalyticsBanner = document.querySelector(
+			'.product-analytics-banner'
+		);
+
+		if (
+			cookieManager ||
+			(productAnalyticsBanner &&
+				productAnalyticsBanner.style.display === 'block')
+		) {
+			cookieBanner.style.display = 'none';
+		}
+		else {
+			setBannerVisibility(cookieBanner, modifiedDate);
+		}
 
 		const cookiePreferences = {};
 
@@ -62,11 +89,12 @@ export default function ({
 			cookieBanner.style.display = 'none';
 
 			acceptAllCookies(
+				consentRenewalPeriod,
 				optionalConsentCookieTypeNames,
 				requiredConsentCookieTypeNames
 			);
 
-			setUserConfigCookie();
+			setUserConfigCookie(consentRenewalPeriod);
 		});
 
 		openCookieConsentModal = ({
@@ -88,25 +116,46 @@ export default function ({
 			openModal({
 				buttons: [
 					{
+						className: includeDeclineAllButton ? '' : 'd-none',
 						displayType: 'secondary',
-						label: Liferay.Language.get('confirm'),
+						label: Liferay.Language.get(
+							'use-necessary-cookies-only'
+						),
+						onClick() {
+							declineAllCookies(
+								consentRenewalPeriod,
+								optionalConsentCookieTypeNames,
+								requiredConsentCookieTypeNames
+							);
+
+							setUserConfigCookie(consentRenewalPeriod);
+
+							setBannerVisibility(cookieBanner);
+
+							getOpener().Liferay.fire('closeModal');
+						},
+					},
+					{
+						displayType: 'secondary',
+						label: Liferay.Language.get('accept-selected'),
 						onClick() {
 							Object.entries(cookiePreferences).forEach(
 								([key, value]) => {
-									setCookie(key, value);
+									setCookie(consentRenewalPeriod, key, value);
 								}
 							);
 
 							requiredConsentCookieTypeNames.forEach(
 								(requiredConsentCookieTypeName) => {
 									setCookie(
+										consentRenewalPeriod,
 										requiredConsentCookieTypeName,
 										'true'
 									);
 								}
 							);
 
-							setUserConfigCookie();
+							setUserConfigCookie(consentRenewalPeriod);
 
 							setBannerVisibility(cookieBanner);
 
@@ -118,28 +167,12 @@ export default function ({
 						label: Liferay.Language.get('accept-all'),
 						onClick() {
 							acceptAllCookies(
+								consentRenewalPeriod,
 								optionalConsentCookieTypeNames,
 								requiredConsentCookieTypeNames
 							);
 
-							setUserConfigCookie();
-
-							setBannerVisibility(cookieBanner);
-
-							getOpener().Liferay.fire('closeModal');
-						},
-					},
-					{
-						className: includeDeclineAllButton ? '' : 'd-none',
-						displayType: 'secondary',
-						label: Liferay.Language.get('decline-all'),
-						onClick() {
-							declineAllCookies(
-								optionalConsentCookieTypeNames,
-								requiredConsentCookieTypeNames
-							);
-
-							setUserConfigCookie();
+							setUserConfigCookie(consentRenewalPeriod);
 
 							setBannerVisibility(cookieBanner);
 
@@ -167,11 +200,12 @@ export default function ({
 				cookieBanner.style.display = 'none';
 
 				declineAllCookies(
+					consentRenewalPeriod,
 					optionalConsentCookieTypeNames,
 					requiredConsentCookieTypeNames
 				);
 
-				setUserConfigCookie();
+				setUserConfigCookie(consentRenewalPeriod);
 			});
 		}
 	}
@@ -202,8 +236,28 @@ function isCookieTypesAccepted(cookieTypes) {
 	return cookieTypes.every((cookieType) => checkConsent(cookieType));
 }
 
-function setBannerVisibility(cookieBanner) {
-	if (getCookie(userConfigCookieName)) {
+function isCookiesPreferenceHandlingConfigurationModified(modifiedDate) {
+	if (modifiedDate === 0) {
+		return false;
+	}
+
+	const userConfigDateCookie = getCookie(userConfigDateCookieName);
+
+	if (
+		userConfigDateCookie === undefined ||
+		userConfigDateCookie < modifiedDate
+	) {
+		return true;
+	}
+
+	return false;
+}
+
+function setBannerVisibility(cookieBanner, modifiedDate) {
+	if (
+		!isCookiesPreferenceHandlingConfigurationModified(modifiedDate) &&
+		getCookie(userConfigCookieName)
+	) {
 		cookieBanner.style.display = 'none';
 	}
 	else {

@@ -20,7 +20,6 @@ import com.liferay.petra.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.dao.orm.EntityCache;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -88,7 +87,10 @@ public class FragmentEntryLinkUpgradeProcessTest
 	@Test
 	public void testUpgrade() throws Exception {
 		String editableValues = StringUtil.replace(
-			_read("editable_values.json"), "${", "}",
+			new String(
+				FileUtil.getBytes(
+					getClass(), "dependencies/editable_values.json")),
+			"${", "}",
 			HashMapBuilder.put(
 				"CLASS_NAME_ID",
 				String.valueOf(
@@ -177,7 +179,8 @@ public class FragmentEntryLinkUpgradeProcessTest
 				JSONUtil.put(
 					RandomTestUtil.randomString(),
 					RandomTestUtil.randomString())
-			).toString());
+			).toString(),
+			true);
 	}
 
 	private DLFileEntry _addDLFileEntry() throws Exception {
@@ -204,8 +207,7 @@ public class FragmentEntryLinkUpgradeProcessTest
 					fragmentEntryLinkId);
 
 			JSONObject editableValuesJSONObject =
-				JSONFactoryUtil.createJSONObject(
-					fragmentEntryLink.getEditableValues());
+				fragmentEntryLink.getEditableValuesJSONObject();
 
 			JSONObject editableFragmentEntryProcessorJSONObject =
 				editableValuesJSONObject.getJSONObject(
@@ -245,11 +247,6 @@ public class FragmentEntryLinkUpgradeProcessTest
 				String.valueOf(expectedClassNameId),
 				jsonObject.getString("classNameId"));
 		}
-	}
-
-	private String _read(String fileName) throws Exception {
-		return new String(
-			FileUtil.getBytes(getClass(), "dependencies/" + fileName));
 	}
 
 	@Inject(

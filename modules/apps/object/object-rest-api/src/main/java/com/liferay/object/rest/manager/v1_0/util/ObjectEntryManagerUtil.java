@@ -23,6 +23,10 @@ public class ObjectEntryManagerUtil {
 		ObjectEntry existingObjectEntry, long objectDefinitionId,
 		ObjectEntry objectEntry) {
 
+		if (objectEntry.getComments() != null) {
+			existingObjectEntry.setComments(objectEntry::getComments);
+		}
+
 		if (objectEntry.getDateCreated() != null) {
 			existingObjectEntry.setDateCreated(objectEntry::getDateCreated);
 		}
@@ -57,6 +61,16 @@ public class ObjectEntryManagerUtil {
 
 		if (objectEntry.getKeywords() != null) {
 			existingObjectEntry.setKeywords(objectEntry::getKeywords);
+		}
+
+		if (objectEntry.getObjectEntryFolderExternalReferenceCode() != null) {
+			existingObjectEntry.setObjectEntryFolderExternalReferenceCode(
+				objectEntry::getObjectEntryFolderExternalReferenceCode);
+		}
+
+		if (objectEntry.getObjectEntryFolderId() != null) {
+			existingObjectEntry.setObjectEntryFolderId(
+				objectEntry::getObjectEntryFolderId);
 		}
 
 		existingObjectEntry.setPermissions(objectEntry::getPermissions);
@@ -106,6 +120,11 @@ public class ObjectEntryManagerUtil {
 
 		if (objectEntry.getStatus() != null) {
 			existingObjectEntry.setStatus(objectEntry::getStatus);
+		}
+
+		if (objectEntry.getTaxonomyCategoryBriefs() != null) {
+			existingObjectEntry.setTaxonomyCategoryBriefs(
+				objectEntry::getTaxonomyCategoryBriefs);
 		}
 
 		if (objectEntry.getTaxonomyCategoryIds() != null) {

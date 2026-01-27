@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.Transactional;
+import com.liferay.portal.kernel.util.OrderByComparator;
 
 import java.util.List;
 
@@ -49,12 +50,11 @@ public interface ObjectEntryVersionService extends BaseService {
 		throws PortalException;
 
 	public ObjectEntryVersion expireObjectEntryVersion(
-			ObjectEntry objectEntry, ServiceContext serviceContext, long userId,
-			int version)
+			ObjectEntry objectEntry, ServiceContext serviceContext, int version)
 		throws PortalException;
 
 	public void expireObjectEntryVersions(
-			long userId, ObjectEntry objectEntry, ServiceContext serviceContext)
+			ObjectEntry objectEntry, ServiceContext serviceContext)
 		throws Exception;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -65,6 +65,12 @@ public interface ObjectEntryVersionService extends BaseService {
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<ObjectEntryVersion> getObjectEntryVersions(
 			long objectEntryId, int start, int end)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<ObjectEntryVersion> getObjectEntryVersions(
+			long objectEntryId, int start, int end,
+			OrderByComparator<ObjectEntryVersion> orderByComparator)
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)

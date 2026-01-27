@@ -7,11 +7,15 @@ import '../../../css/structure_builder/StructureBuilder.scss';
 
 import React, {useEffect} from 'react';
 
+import {
+	ObjectDefinition,
+	ObjectDefinitions,
+} from '../../common/types/ObjectDefinition';
 import {Config, initializeConfig} from '../config';
 import CacheContextProvider from '../contexts/CacheContext';
 import StateContextProvider, {useSelector} from '../contexts/StateContext';
 import selectStructureId from '../selectors/selectStructureId';
-import {ObjectDefinition} from '../types/ObjectDefinition';
+import selectStructureStatus from '../selectors/selectStructureStatus';
 import buildState from '../utils/buildState';
 import Sidebar from './Sidebar';
 import StructureBuilderToolbar from './StructureBuilderToolbar';
@@ -24,28 +28,16 @@ export default function StructureBuilder({
 	config: Config;
 	state: {
 		mainObjectDefinition: ObjectDefinition;
-		objectDefinitions: ObjectDefinition[];
+		objectDefinitions: ObjectDefinitions;
 	};
 }) {
 	initializeConfig(config);
 
-	const objectDefinitions = new Map(
-		state.objectDefinitions.map((objectDefinition) => [
-			objectDefinition.externalReferenceCode,
-			objectDefinition,
-		])
-	);
-
 	return (
-		<StateContextProvider
-			initialState={buildState({
-				mainObjectDefinition: state.mainObjectDefinition,
-				objectDefinitions,
-			})}
-		>
+		<StateContextProvider initialState={buildState(state)}>
 			<CacheContextProvider
 				initialData={{
-					'object-definitions': objectDefinitions,
+					'object-definitions': state.objectDefinitions,
 				}}
 			>
 				<div className="d-flex flex-column structure-builder__wrapper">
@@ -65,10 +57,11 @@ export default function StructureBuilder({
 }
 
 function HistoryManager() {
-	const structureId = useSelector(selectStructureId);
+	const id = useSelector(selectStructureId);
+	const status = useSelector(selectStructureStatus);
 
 	useEffect(() => {
-		if (!structureId) {
+		if (status !== 'published' || !id) {
 			return;
 		}
 
@@ -78,10 +71,10 @@ function HistoryManager() {
 			url.searchParams.delete('objectFolderExternalReferenceCode');
 		}
 
-		url.searchParams.set('objectDefinitionId', structureId.toString());
+		url.searchParams.set('objectDefinitionId', String(id));
 
 		history.replaceState(null, document.head.title, url.href);
-	}, [structureId]);
+	}, [id, status]);
 
 	return null;
 }

@@ -56,10 +56,10 @@ public class FreeMarkerFragmentEntryProcessor
 
 	@Override
 	public JSONObject getDefaultEditableValuesJSONObject(
-		String html, String configuration) {
+		String html, JSONObject configurationJSONObject) {
 
 		return _fragmentEntryConfigurationParser.
-			getConfigurationDefaultValuesJSONObject(configuration);
+			getConfigurationDefaultValuesJSONObject(configurationJSONObject);
 	}
 
 	@Override
@@ -115,8 +115,8 @@ public class FreeMarkerFragmentEntryProcessor
 
 		JSONObject configurationValuesJSONObject =
 			_fragmentEntryConfigurationParser.getConfigurationJSONObject(
-				fragmentEntryLink.getConfiguration(),
-				fragmentEntryLink.getEditableValues(),
+				fragmentEntryLink.getConfigurationJSONObject(),
+				fragmentEntryLink.getEditableValuesJSONObject(),
 				fragmentEntryProcessorContext.getLocale());
 
 		template.putAll(
@@ -140,10 +140,8 @@ public class FreeMarkerFragmentEntryProcessor
 			).putAll(
 				_fragmentEntryConfigurationParser.getContextObjects(
 					configurationValuesJSONObject,
-					fragmentEntryLink.getConfiguration(),
-					_getInfoItem(
-						fragmentEntryProcessorContext.
-							getContextInfoItemReference()),
+					fragmentEntryLink.getConfigurationJSONObject(),
+					_getInfoItem(fragmentEntryProcessorContext),
 					fragmentEntryProcessorContext.getSegmentsEntryIds())
 			).build());
 
@@ -182,7 +180,12 @@ public class FreeMarkerFragmentEntryProcessor
 		return unsyncStringWriter.toString();
 	}
 
-	private Object _getInfoItem(InfoItemReference infoItemReference) {
+	private Object _getInfoItem(
+		FragmentEntryProcessorContext fragmentEntryProcessorContext) {
+
+		InfoItemReference infoItemReference =
+			fragmentEntryProcessorContext.getContextInfoItemReference();
+
 		if (infoItemReference == null) {
 			return null;
 		}
@@ -196,7 +199,9 @@ public class FreeMarkerFragmentEntryProcessor
 				infoItemIdentifier.getInfoItemServiceFilter());
 
 		try {
-			return infoItemObjectProvider.getInfoItem(infoItemIdentifier);
+			return infoItemObjectProvider.getInfoItem(
+				fragmentEntryProcessorContext.getScopeGroupId(),
+				infoItemIdentifier);
 		}
 		catch (NoSuchInfoItemException noSuchInfoItemException) {
 			if (_log.isDebugEnabled()) {

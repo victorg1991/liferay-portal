@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, Page} from '@playwright/test';
+import {Locator, Page, expect} from '@playwright/test';
 
 export class CommerceMiniCartPage {
 	readonly cartItemActionsButton: Locator;
@@ -29,7 +29,9 @@ export class CommerceMiniCartPage {
 	readonly proceedAsGuest: Locator;
 	readonly quickAddToCartButton: Locator;
 	readonly quickAddToCartSku: (sku: string) => Locator;
+	readonly requestAQuoteButton: Locator;
 	readonly reviewOrderButton: Locator;
+	readonly resubmitButton: Locator;
 	readonly searchProductsInput: Locator;
 	readonly selectOption: (
 		optionLabel: string,
@@ -82,6 +84,15 @@ export class CommerceMiniCartPage {
 		this.proceedAsGuest = page.getByRole('button', {
 			name: 'Proceed as Guest',
 		});
+		this.requestAQuoteButton = page
+			.locator('.mini-cart-wrapper')
+			.getByRole('button', {
+				name: 'Request A Quote',
+			});
+		this.resubmitButton = page.getByRole('button', {
+			exact: true,
+			name: 'Resubmit',
+		});
 		this.reviewOrderButton = page.getByRole('button', {
 			exact: true,
 			name: 'Review Order',
@@ -110,17 +121,18 @@ export class CommerceMiniCartPage {
 	}
 
 	async quickAddToCart(sku: string) {
-		await this.miniCartButton.click();
-		await this.searchProductsInput.fill(sku);
-		await this.quickAddToCartSku(sku).waitFor({state: 'visible'});
+		if (await this.searchProductsInput.isHidden()) {
+			await this.miniCartButton.click();
+		}
+
+		await expect(this.miniCartButtonClose).toBeVisible();
+
+		await expect(async () => {
+			await this.searchProductsInput.fill(sku);
+			await expect(this.quickAddToCartSku(sku)).toBeVisible();
+		}).toPass();
+
 		await this.quickAddToCartSku(sku).click();
 		await this.quickAddToCartButton.click();
-	}
-
-	async submitCart() {
-		await this.page.waitForLoadState('networkidle');
-
-		await this.miniCartButton.click();
-		await this.submitButton.click();
 	}
 }

@@ -27,6 +27,7 @@ const Numeric: React.FC<NumericProps> = (props) => {
 		dataType,
 		decimalPlaces,
 		defaultLanguageId,
+		displayErrors,
 		focused,
 		inputMask,
 		inputMaskFormat,
@@ -83,6 +84,7 @@ const Numeric: React.FC<NumericProps> = (props) => {
 	return (
 		<NumericBase
 			{...props}
+			displayErrors={displayErrors}
 			editingLanguageId={editingLanguageId}
 			inputValue={inputValue}
 			onChange={handleChange}
@@ -96,10 +98,9 @@ const Main = ({
 	localizedValue,
 	...otherProps
 }: NumericProps) => {
-	const Component =
-		Liferay.FeatureFlags['LPD-32050'] && localizedObjectField
-			? NumericLocalizedObjectField
-			: Numeric;
+	const Component = localizedObjectField
+		? NumericLocalizedObjectField
+		: Numeric;
 
 	return (
 		<FieldBase
@@ -124,6 +125,7 @@ export type NumericProps = {
 	dataType: NumericDataType;
 	decimalPlaces: number;
 	defaultLanguageId: Locale;
+	displayErrors?: boolean;
 	editingLanguageId: Locale;
 	editingLocale: Locale;
 	errorMessage?: string;

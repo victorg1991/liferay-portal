@@ -15,17 +15,21 @@ export function executeAsyncItemAction({
 	refreshData,
 	requestBody,
 	setActionItemLoading,
+	showToast = true,
 	successMessage,
 	url,
 }: {
 	errorMessage?: string;
 	method?: string;
-	refreshData?: () => {};
+	refreshData?: (responseData: any) => void;
 	requestBody?: string;
 	setActionItemLoading?: (loading: boolean) => void;
+	showToast?: boolean;
 	successMessage?: string;
 	url: string;
 }): Promise<void> {
+	const DEFAULT_ERROR = Liferay.Language.get('an-unexpected-error-occurred');
+
 	const requestOptions: RequestInit = {
 		headers: {
 			'Accept': 'application/json',
@@ -41,7 +45,14 @@ export function executeAsyncItemAction({
 
 	return fetch(url, requestOptions)
 		.then((response) => {
-			if (response.ok) {
+			if (!response.ok) {
+				throw new Error(DEFAULT_ERROR);
+			}
+
+			return response.status === 204 ? '' : response.json();
+		})
+		.then((responseData) => {
+			if (showToast) {
 				openToast({
 					message:
 						successMessage ||
@@ -50,25 +61,13 @@ export function executeAsyncItemAction({
 						),
 					type: 'success',
 				});
-
-				refreshData?.();
 			}
-			else {
-				openToast({
-					message:
-						errorMessage ||
-						Liferay.Language.get('an-unexpected-error-occurred'),
-					type: 'danger',
-				});
 
-				setActionItemLoading?.(false);
-			}
+			refreshData?.(responseData);
 		})
 		.catch(() => {
 			openToast({
-				message:
-					errorMessage ||
-					Liferay.Language.get('an-unexpected-error-occurred'),
+				message: errorMessage || DEFAULT_ERROR,
 				type: 'danger',
 			});
 

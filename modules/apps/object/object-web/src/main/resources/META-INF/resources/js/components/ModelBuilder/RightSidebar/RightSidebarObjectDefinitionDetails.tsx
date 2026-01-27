@@ -23,6 +23,8 @@ import {TYPES} from '../ModelBuilderContext/typesEnum';
 import {nonRelationshipObjectFieldsInfo} from '../types';
 
 import './RightSidebarObjectDefinitionDetails.scss';
+import {InheritanceObjectDefinitionAlert} from '../../ObjectDetails/InheritanceObjectDefinitionAlert';
+import {SubscriptionsContainer} from '../../ObjectDetails/SubscriptionsContainer';
 
 interface RightSidebarObjectDefinitionDetailsProps {
 	companies: Scope[];
@@ -60,8 +62,14 @@ export function RightSidebarObjectDefinitionDetails({
 		setNonRelationshipObjectFieldsInfo,
 	] = useState<nonRelationshipObjectFieldsInfo[]>();
 
-	const [{selectedObjectDefinitionNode, selectedObjectFolder}, dispatch] =
-		useObjectFolderContext();
+	const [
+		{
+			learnResourceContext,
+			selectedObjectDefinitionNode,
+			selectedObjectFolder,
+		},
+		dispatch,
+	] = useObjectFolderContext();
 
 	const [backEndErrors, setBackEndErrors] = useState<Error>({});
 
@@ -80,11 +88,6 @@ export function RightSidebarObjectDefinitionDetails({
 			},
 			onSubmit: () => {},
 		});
-
-	const isRootDescendantNode =
-		!!values.rootObjectDefinitionExternalReferenceCode &&
-		values.externalReferenceCode !==
-			values.rootObjectDefinitionExternalReferenceCode;
 
 	useEffect(() => {
 		const makeFetch = async () => {
@@ -189,6 +192,11 @@ export function RightSidebarObjectDefinitionDetails({
 		}
 	};
 
+	const isRootDescendantNode =
+		!!values.rootObjectDefinitionExternalReferenceCode &&
+		values.externalReferenceCode !==
+			values.rootObjectDefinitionExternalReferenceCode;
+
 	const objectDefinitionNodeDetailsTitle = sub(
 		Liferay.Language.get('x-details'),
 		stringUtils.getLocalizableLabel({
@@ -200,13 +208,16 @@ export function RightSidebarObjectDefinitionDetails({
 	);
 
 	const showSeoSection =
-		Liferay.FeatureFlags['LPD-21926'] &&
 		values.friendlyURLSeparator !== undefined &&
 		!(
 			(Liferay.FeatureFlags['LPS-135430'] &&
 				values.storageType !== 'default') ||
 			(!values.modifiable && values.system)
 		);
+
+	const showSubscriptionSection =
+		Liferay.FeatureFlags['LPD-17564'] &&
+		!(!values.modifiable && values.system);
 
 	return (
 		<>
@@ -219,6 +230,12 @@ export function RightSidebarObjectDefinitionDetails({
 				</div>
 			</div>
 			<div className="lfr-objects__model-builder-right-sidebar-object-definition-node-content">
+				{isRootDescendantNode && (
+					<InheritanceObjectDefinitionAlert
+						learnResources={learnResourceContext}
+					/>
+				)}
+
 				<ObjectDataContainer
 					dbTableName={
 						selectedObjectDefinitionNode?.data?.dbTableName
@@ -265,7 +282,6 @@ export function RightSidebarObjectDefinitionDetails({
 						selectedObjectDefinitionNode?.data
 							?.linkedObjectDefinition ?? false
 					}
-					isRootDescendantNode={isRootDescendantNode}
 					onSubmit={onSubmit}
 					setValues={setValues}
 					sites={sites}
@@ -281,7 +297,6 @@ export function RightSidebarObjectDefinitionDetails({
 							selectedObjectDefinitionNode?.data
 								?.linkedObjectDefinition ?? false
 						}
-						isRootDescendantNode={isRootDescendantNode}
 						objectFields={
 							(values?.objectFields as ObjectField[]) ?? []
 						}
@@ -296,22 +311,21 @@ export function RightSidebarObjectDefinitionDetails({
 					hasUpdateObjectDefinitionPermission={
 						!!values.actions?.update
 					}
+					isApproved={values?.status?.label === 'approved'}
+					isEnableObjectEntrySchedule={
+						!!values.enableObjectEntrySchedule
+					}
 					isLinkedObjectDefinition={
 						selectedObjectDefinitionNode?.data
 							?.linkedObjectDefinition ?? false
 					}
-					isRootDescendantNode={isRootDescendantNode}
 					onSubmit={onSubmit}
 					setValues={setValues}
 					values={values as ObjectDefinition}
 				/>
 			</div>
 			<div className="lfr-objects__model-builder-right-sidebar-object-definition-node-content">
-				<TranslationsContainer
-					onSubmit={onSubmit}
-					setValues={setValues}
-					values={values}
-				/>
+				<TranslationsContainer />
 			</div>
 			{showSeoSection && (
 				<div className="lfr-objects__model-builder-right-sidebar-object-definition-node-content">
@@ -326,6 +340,23 @@ export function RightSidebarObjectDefinitionDetails({
 						}
 						onSubmit={onSubmit}
 						setErrors={setBackEndErrors}
+						setValues={setValues}
+						values={values}
+					/>
+				</div>
+			)}
+
+			{showSubscriptionSection && (
+				<div className="lfr-objects__model-builder-right-sidebar-object-definition-node-content">
+					<SubscriptionsContainer
+						hasUpdateObjectDefinitionPermission={
+							!!values.actions?.update
+						}
+						isLinkedObjectDefinition={
+							selectedObjectDefinitionNode?.data
+								?.linkedObjectDefinition ?? false
+						}
+						onSubmit={onSubmit}
 						setValues={setValues}
 						values={values}
 					/>

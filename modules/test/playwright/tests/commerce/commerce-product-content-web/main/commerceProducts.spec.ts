@@ -14,6 +14,7 @@ import {featureFlagsTest} from '../../../../fixtures/featureFlagsTest';
 import {isolatedSiteTest} from '../../../../fixtures/isolatedSiteTest';
 import {loginTest} from '../../../../fixtures/loginTest';
 import {pageViewModePagesTest} from '../../../../fixtures/pageViewModePagesTest';
+import {liferayConfig} from '../../../../liferay.config';
 import {getRandomInt} from '../../../../utils/getRandomInt';
 import getRandomString from '../../../../utils/getRandomString';
 import performLogin, {performLogout} from '../../../../utils/performLogin';
@@ -102,7 +103,6 @@ test('COMMERCE-12809 As a buyer, I want to be able to verify the included and ex
 		});
 
 		await apiHelpers.headlessCommerceAdminChannel.postChannel({
-			name: 'ProductDetailsSite',
 			siteGroupId: site.id,
 		});
 
@@ -348,7 +348,6 @@ test('COMMERCE-8153 Verify the visibility rules', async ({
 	apiHelpers.data.push({id: site.id, type: 'site'});
 
 	const channel = await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: 'ProductDetailsSite',
 		siteGroupId: site.id,
 	});
 
@@ -524,7 +523,6 @@ test('LPD-33807 Mapped product add to cart', async ({
 	});
 
 	const channel = await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: 'DiagramSite',
 		siteGroupId: site.id,
 	});
 
@@ -805,7 +803,6 @@ test('LPD-33075 Verify buyers can view the SKU of a product on the product card 
 	);
 
 	const channel = await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: getRandomString(),
 		siteGroupId: site.id,
 	});
 
@@ -865,7 +862,6 @@ test('LPD-3424 Can click AddToButton button multiple times on Diagram Product Di
 	);
 
 	await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: getRandomString(),
 		siteGroupId: site.id,
 	});
 
@@ -948,7 +944,6 @@ test('LPD-37780 Friendly URLs history for products', async ({
 	});
 
 	await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: getRandomString(),
 		siteGroupId: site.id,
 	});
 
@@ -1166,3 +1161,174 @@ test('LPD-52731 Product shows in catalog after updating Account Group Visibility
 
 	await expect(page.getByText(product.name['en_US'])).toBeVisible();
 });
+
+test(
+	'If AccountGroupFilter is enabled and the relationship is deleted, product should not show',
+	{tag: '@LPD-65844'},
+	async ({
+		apiHelpers,
+		commerceAdminChannelsPage,
+		page,
+		productPublisherPage,
+		site,
+		widgetPagePage,
+	}) => {
+		const layout = await apiHelpers.jsonWebServicesLayout.addLayout({
+			groupId: site.id,
+			title: getRandomString(),
+		});
+
+		const channel =
+			await apiHelpers.headlessCommerceAdminChannel.postChannel({
+				siteGroupId: site.id,
+			});
+
+		await commerceAdminChannelsPage.changeCommerceChannelSiteType(
+			channel.name,
+			'B2B'
+		);
+
+		const catalog =
+			await apiHelpers.headlessCommerceAdminCatalog.postCatalog({
+				name: getRandomString(),
+			});
+
+		const account = await apiHelpers.headlessAdminUser.postAccount({
+			name: getRandomString(),
+			type: 'business',
+		});
+
+		await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
+			account.id,
+			['test@liferay.com']
+		);
+
+		const accountGroup =
+			await apiHelpers.headlessAdminUser.postAccountGroup({
+				name: getRandomString(),
+			});
+
+		apiHelpers.data.push({id: accountGroup.id, type: 'accountGroup'});
+
+		await apiHelpers.headlessAdminUser.assignAccountToAccountGroup(
+			account.externalReferenceCode,
+			accountGroup.externalReferenceCode
+		);
+
+		const product =
+			await apiHelpers.headlessCommerceAdminCatalog.postProduct({
+				catalogId: catalog.id,
+				name: {en_US: getRandomString()},
+				productAccountGroupFilter: true,
+				productAccountGroups: [
+					{accountGroupId: accountGroup.id, id: 0},
+				],
+			});
+
+		await page.goto(`/web${site.friendlyUrlPath}${layout.friendlyURL}`);
+
+		await widgetPagePage.addPortlet('Product Publisher');
+
+		await expect(
+			productPublisherPage.productCard(product.name.en_US)
+		).toBeVisible();
+
+		await page.goto(`/web/${site.name}`);
+
+		await expect(
+			productPublisherPage.productCard(product.name.en_US)
+		).toBeVisible();
+
+		const productAccountGroups =
+			await apiHelpers.headlessCommerceAdminCatalog.getProductAccountGroups(
+				product.productId
+			);
+
+		await apiHelpers.headlessCommerceAdminCatalog.deleteProductAccountGroup(
+			productAccountGroups.items[0].id
+		);
+
+		await page.goto(`/web/${site.name}`);
+
+		await expect(
+			productPublisherPage.productCard(product.name.en_US)
+		).not.toBeVisible();
+	}
+);
+
+test(
+	'The uploaded svg in product media is downloaded instead of being opened',
+	{tag: '@LPD-70547'},
+	async ({apiHelpers, attachmentsPage, commerceAdminProductPage, page}) => {
+		let catalog;
+		let product;
+		let site;
+		let siteDocument;
+		let siteDocumentsPage;
+
+		await test.step('Create channel, catalog and product via API', async () => {
+			site =
+				await apiHelpers.headlessAdminUser.getSiteByFriendlyUrlPath(
+					'guest'
+				);
+
+			await apiHelpers.headlessCommerceAdminChannel.postChannel({});
+
+			catalog =
+				await apiHelpers.headlessCommerceAdminCatalog.postCatalog();
+
+			product = await apiHelpers.headlessCommerceAdminCatalog.postProduct(
+				{
+					catalogId: catalog.id,
+				}
+			);
+		});
+
+		await test.step('Upload the svg file to the product', async () => {
+			await attachmentsPage.goToDocumentsAndMedia();
+			await attachmentsPage.createFileEntry(
+				path.join(__dirname, '/dependencies/diagram.svg'),
+				'diagram'
+			);
+
+			siteDocumentsPage =
+				await apiHelpers.headlessDelivery.getSiteDocumentsPage(
+					site.id,
+					'id:desc'
+				);
+
+			siteDocument = siteDocumentsPage.items[0];
+
+			await apiHelpers.headlessCommerceAdminCatalog.postImage(
+				product.productId,
+				siteDocument.id,
+				siteDocument.title
+			);
+
+			apiHelpers.data.push({id: siteDocument.id, type: 'document'});
+		});
+
+		await test.step('Navigate to product, get the link to src from the thumbnail, perform a get request and check the response', async () => {
+			await commerceAdminProductPage.gotoProduct(product.name['en_US']);
+
+			const svgURL = await page
+				.locator('.d-none > .sticker-overlay .sticker-img')
+				.getAttribute('src');
+
+			const response = await page.request.get(
+				`${liferayConfig.environment.baseUrl}${svgURL}`
+			);
+
+			expect(response.ok).toBeTruthy();
+
+			const headers = response.headers();
+
+			const contentDisposition = headers['content-disposition'];
+			const contentType = headers['content-type'];
+
+			expect(contentDisposition).toContain('attachment');
+			expect(contentDisposition).toContain('diagram.svg');
+			expect(contentType).toBe('image/svg+xml');
+		});
+	}
+);

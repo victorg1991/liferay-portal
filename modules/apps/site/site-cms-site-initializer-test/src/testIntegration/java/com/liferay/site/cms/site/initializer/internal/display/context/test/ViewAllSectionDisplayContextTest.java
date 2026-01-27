@@ -14,7 +14,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.Sync;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -22,7 +22,6 @@ import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -39,7 +38,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 @RunWith(Arquillian.class)
 @Sync
 public class ViewAllSectionDisplayContextTest
-	extends BaseSectionDisplayContextTestCase {
+	extends BaseFilesSectionDisplayContextTestCase {
 
 	@ClassRule
 	@Rule
@@ -52,33 +51,28 @@ public class ViewAllSectionDisplayContextTest
 	protected Map<String, String> getExpectedCreationMenuItems()
 		throws PortalException {
 
-		return HashMapBuilder.put(
-			"Basic Document",
+		return LinkedHashMapBuilder.put(
+			"basic-web-content",
 			getRedirect(
-				"L_BASIC_DOCUMENT",
+				"L_CMS_BASIC_WEB_CONTENT",
+				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS)
+		).put(
+			"single-file",
+			getRedirect(
+				"L_CMS_BASIC_DOCUMENT",
 				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES)
-		).put(
-			"Basic Web Content",
-			getRedirect(
-				"L_BASIC_WEB_CONTENT",
-				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS)
-		).put(
-			"Blog",
-			getRedirect(
-				"L_BLOG",
-				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS)
-		).put(
-			"External Video",
-			getRedirect(
-				"L_EXTERNAL_VIDEO",
-				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES)
-		).put(
-			"Knowledge Base",
-			getRedirect(
-				"L_KNOWLEDGE_BASE",
-				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS)
 		).put(
 			"multiple-files", StringPool.BLANK
+		).put(
+			"blog",
+			getRedirect(
+				"L_CMS_BLOG",
+				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS)
+		).put(
+			"external-video",
+			getRedirect(
+				"L_CMS_EXTERNAL_VIDEO",
+				ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES)
 		).build();
 	}
 
@@ -93,10 +87,11 @@ public class ViewAllSectionDisplayContextTest
 	}
 
 	@Override
-	protected List<String> getObjectFolderExternalReferenceCodes() {
-		return List.of(
+	protected String[] getObjectFolderExternalReferenceCodes() {
+		return new String[] {
 			ObjectFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENT_STRUCTURES,
-			ObjectFolderConstants.EXTERNAL_REFERENCE_CODE_FILE_TYPES);
+			ObjectFolderConstants.EXTERNAL_REFERENCE_CODE_FILE_TYPES
+		};
 	}
 
 	@Override

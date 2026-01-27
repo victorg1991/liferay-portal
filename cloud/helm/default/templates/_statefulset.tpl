@@ -21,6 +21,8 @@ spec:
     serviceName: {{ include "liferay.name" .root }}{{ $suffix }}
     template:
         metadata:
+            annotations:
+                checksum/config: {{ include (print .root.Template.BasePath "/configmap.yaml") .root | sha256sum }}
             labels:
                 app: {{ include "liferay.name" .root }}{{ $suffix }}
                 {{- include "liferay.labels" .root | nindent 16 }}
@@ -143,6 +145,11 @@ spec:
                 {{- with .statefulset.volumes }}
                 {{- toYaml . | nindent 16 }}
                 {{- end }}
+                {{- if and .statefulset.overlay .statefulset.overlay.enabled }}
+                -   name: {{ .statefulset.overlay.bucketName }}
+                    persistentVolumeClaim:
+                        claimName: {{ .statefulset.overlay.bucketName }}
+                {{- end }}
                 {{- range $k, $v := .statefulset.customVolumes }}
                 {{- toYaml $v | nindent 16 }}
                 {{- end }}
@@ -234,7 +241,11 @@ spec:
         {{- end }}
     {{- with .statefulset.ingress.tls }}
     tls:
-        {{- toYaml . | nindent 8 }}
+        {{- range $tls := . }}
+        -   hosts:
+            {{- toYaml $tls.hosts | nindent 12 }}
+            secretName: {{ $tls.secretName }}
+        {{- end }}
     {{- end }}
 {{- end }}
 {{- end -}}

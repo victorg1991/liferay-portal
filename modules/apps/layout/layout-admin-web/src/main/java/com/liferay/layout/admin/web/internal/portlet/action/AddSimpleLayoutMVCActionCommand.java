@@ -29,10 +29,10 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropertiesParamUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.util.PropsValues;
 
 import jakarta.portlet.ActionRequest;
 import jakarta.portlet.ActionResponse;
@@ -83,19 +83,24 @@ public class AddSimpleLayoutMVCActionCommand
 			PropertiesParamUtil.getProperties(
 				actionRequest, "TypeSettingsProperties--");
 
-		long masterLayoutPlid = ParamUtil.getLong(
-			actionRequest, "masterLayoutPlid");
+		LayoutPageTemplateEntry masterLayoutPageTemplateEntry = null;
 
 		if (!Objects.equals(type, LayoutConstants.TYPE_CONTENT)) {
-			LayoutPageTemplateEntry defaultLayoutPageTemplateEntry =
+			masterLayoutPageTemplateEntry =
 				_layoutPageTemplateEntryService.
 					fetchDefaultLayoutPageTemplateEntry(
 						groupId,
 						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						WorkflowConstants.STATUS_APPROVED);
+		}
+		else {
+			long masterLayoutPlid = ParamUtil.getLong(
+				actionRequest, "masterLayoutPlid");
 
-			if (defaultLayoutPageTemplateEntry != null) {
-				masterLayoutPlid = defaultLayoutPageTemplateEntry.getPlid();
+			if (masterLayoutPlid > 0) {
+				masterLayoutPageTemplateEntry =
+					_layoutPageTemplateEntryService.
+						fetchLayoutPageTemplateEntryByPlid(masterLayoutPlid);
 			}
 		}
 
@@ -103,11 +108,19 @@ public class AddSimpleLayoutMVCActionCommand
 			Layout.class.getName(), actionRequest);
 
 		try {
+			String masterLayoutPageTemplateEntryERC = null;
+
+			if (masterLayoutPageTemplateEntry != null) {
+				masterLayoutPageTemplateEntryERC =
+					masterLayoutPageTemplateEntry.getExternalReferenceCode();
+			}
+
 			Layout layout = _layoutService.addLayout(
 				null, groupId, privateLayout, parentLayoutId, nameMap,
 				new HashMap<>(), new HashMap<>(), new HashMap<>(),
 				new HashMap<>(), type, typeSettingsUnicodeProperties.toString(),
-				false, new HashMap<>(), masterLayoutPlid, serviceContext);
+				false, new HashMap<>(), masterLayoutPageTemplateEntryERC,
+				serviceContext);
 
 			if (!Objects.equals(type, LayoutConstants.TYPE_CONTENT)) {
 				LayoutTypePortlet layoutTypePortlet =
@@ -117,7 +130,7 @@ public class AddSimpleLayoutMVCActionCommand
 					themeDisplay.getUserId(),
 					PropsValues.DEFAULT_LAYOUT_TEMPLATE_ID);
 
-				_layoutService.updateLayout(
+				_layoutService.updateTypeSettings(
 					groupId, privateLayout, layout.getLayoutId(),
 					layout.getTypeSettings());
 			}

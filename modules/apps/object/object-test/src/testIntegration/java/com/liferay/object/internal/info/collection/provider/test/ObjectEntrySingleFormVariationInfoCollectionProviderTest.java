@@ -200,7 +200,7 @@ public class ObjectEntrySingleFormVariationInfoCollectionProviderTest {
 
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
-				TestPropsValues.getUserId(), 0, null, false, false,
+				null, TestPropsValues.getUserId(), 0, null, false, true, false,
 				enableIndexSearch, false, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
@@ -215,7 +215,8 @@ public class ObjectEntrySingleFormVariationInfoCollectionProviderTest {
 							RandomTestUtil.randomString())
 					).name(
 						"textObjectFieldName"
-					).build()));
+					).build()),
+				Collections.emptyList(), new ServiceContext());
 
 		objectDefinition =
 			_objectDefinitionLocalService.publishCustomObjectDefinition(

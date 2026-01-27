@@ -43,6 +43,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.SynchronousMailTestRule;
+import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ import java.util.Objects;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -101,6 +103,22 @@ public class PostalAddressResourceTest
 		super.testDeletePostalAddress();
 
 		_testDeletePrimaryPostalAddress();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLGetAccountByExternalReferenceCodePostalAddressesPage()
+		throws Exception {
+
+		super.testGraphQLGetAccountByExternalReferenceCodePostalAddressesPage();
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLPostAccountPostalAddress() throws Exception {
+		super.testGraphQLPostAccountPostalAddress();
 	}
 
 	@Override
@@ -460,7 +478,8 @@ public class PostalAddressResourceTest
 		ListTypeDefinition listTypeDefinition =
 			_listTypeDefinitionLocalService.addListTypeDefinition(
 				RandomTestUtil.randomString(), TestPropsValues.getUserId(),
-				false);
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				false, Collections.emptyList(), new ServiceContext());
 
 		ListTypeEntry listTypeEntry =
 			_listTypeEntryLocalService.addListTypeEntry(
@@ -501,7 +520,8 @@ public class PostalAddressResourceTest
 		ListTypeDefinition listTypeDefinition =
 			_listTypeDefinitionLocalService.addListTypeDefinition(
 				RandomTestUtil.randomString(), TestPropsValues.getUserId(),
-				false);
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				false, Collections.emptyList(), new ServiceContext());
 
 		ListTypeEntry listTypeEntry =
 			_listTypeEntryLocalService.addListTypeEntry(

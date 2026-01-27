@@ -26,7 +26,6 @@ import com.liferay.layout.util.structure.LayoutStructureItem;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -147,9 +146,11 @@ public class CreateLayoutPageTemplateEntryMVCActionCommandTest {
 				WorkflowConstants.STATUS_APPROVED,
 				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
-		draftLayout = _layoutLocalService.updateMasterLayoutPlid(
-			draftLayout.getGroupId(), draftLayout.isPrivateLayout(),
-			draftLayout.getLayoutId(), masterLayoutPageTemplateEntry.getPlid());
+		draftLayout =
+			_layoutLocalService.updateMasterLayoutPageTemplateEntryERC(
+				draftLayout.getGroupId(), draftLayout.isPrivateLayout(),
+				draftLayout.getLayoutId(),
+				masterLayoutPageTemplateEntry.getExternalReferenceCode());
 
 		StyleBookEntry styleBookEntry =
 			_styleBookEntryLocalService.addStyleBookEntry(
@@ -158,9 +159,10 @@ public class CreateLayoutPageTemplateEntryMVCActionCommandTest {
 				StringPool.BLANK, RandomTestUtil.randomString(),
 				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
-		draftLayout = _layoutLocalService.updateStyleBookEntryId(
+		draftLayout = _layoutLocalService.updateStyleBookEntryERC(
 			draftLayout.getGroupId(), draftLayout.isPrivateLayout(),
-			draftLayout.getLayoutId(), styleBookEntry.getStyleBookEntryId());
+			draftLayout.getLayoutId(),
+			styleBookEntry.getExternalReferenceCode());
 
 		ContentLayoutTestUtil.addPortletToLayout(
 			draftLayout, JournalContentPortletKeys.JOURNAL_CONTENT);
@@ -188,8 +190,8 @@ public class CreateLayoutPageTemplateEntryMVCActionCommandTest {
 			masterLayoutPageTemplateEntry.getPlid(),
 			draftLayout.getMasterLayoutPlid());
 		Assert.assertEquals(
-			styleBookEntry.getStyleBookEntryId(),
-			draftLayout.getStyleBookEntryId());
+			styleBookEntry.getExternalReferenceCode(),
+			draftLayout.getStyleBookEntryERC());
 
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			LayoutPageTemplateStructureLocalServiceUtil.
@@ -213,8 +215,8 @@ public class CreateLayoutPageTemplateEntryMVCActionCommandTest {
 
 		Assert.assertTrue(fragmentEntryLink.isTypePortlet());
 
-		JSONObject editableValuesJSONObject = _jsonFactory.createJSONObject(
-			fragmentEntryLink.getEditableValues());
+		JSONObject editableValuesJSONObject =
+			fragmentEntryLink.getEditableValuesJSONObject();
 
 		Assert.assertEquals(
 			JournalContentPortletKeys.JOURNAL_CONTENT,
@@ -313,9 +315,6 @@ public class CreateLayoutPageTemplateEntryMVCActionCommandTest {
 
 	@DeleteAfterTestRun
 	private Group _group;
-
-	@Inject
-	private JSONFactory _jsonFactory;
 
 	private Layout _layout;
 

@@ -23,13 +23,13 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TreeMapBuilder;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.util.PortalInstances;
-import com.liferay.portal.util.PropsValues;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -377,8 +377,11 @@ public class I18nFilterTest {
 
 			return ReflectionTestUtil.invoke(
 				_i18nFilter, "prependI18nLanguageId",
-				new Class<?>[] {HttpServletRequest.class, int.class},
-				mockHttpServletRequest, localePrependFriendlyURLStyle);
+				new Class<?>[] {
+					long.class, HttpServletRequest.class, int.class
+				},
+				_group.getCompanyId(), mockHttpServletRequest,
+				localePrependFriendlyURLStyle);
 		}
 	}
 
@@ -404,8 +407,8 @@ public class I18nFilterTest {
 				redirect,
 				ReflectionTestUtil.invoke(
 					_i18nFilter, "getRedirect",
-					new Class<?>[] {HttpServletRequest.class},
-					mockHttpServletRequest));
+					new Class<?>[] {long.class, HttpServletRequest.class},
+					companyId, mockHttpServletRequest));
 		}
 
 		Assert.assertEquals(

@@ -53,10 +53,14 @@ public interface ObjectEntry
 	public String buildTreePath()
 		throws com.liferay.portal.kernel.exception.PortalException;
 
+	public java.util.Map<String, java.io.Serializable> getIndexedValues();
+
 	public String getModelClassName();
 
 	public long getNonzeroGroupId()
 		throws com.liferay.portal.kernel.exception.PortalException;
+
+	public ObjectDefinition getObjectDefinition();
 
 	public java.util.Map<java.util.Locale, String> getTitleMap()
 		throws com.liferay.portal.kernel.exception.PortalException;
@@ -75,6 +79,12 @@ public interface ObjectEntry
 	public java.util.Map<String, String> getURLTitleMap();
 
 	public java.util.Map<String, java.io.Serializable> getValues();
+
+	public boolean isHead();
+
+	public boolean isRootDescendantNode();
+
+	public void setObjectDefinition(ObjectDefinition objectDefinition);
 
 	public void setTransientValues(
 		java.util.Map<String, java.io.Serializable> values);

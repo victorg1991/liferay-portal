@@ -291,55 +291,6 @@ definition {
 	}
 
 	@summary = "Default summary"
-	macro approveJoinSiteRestrictedViaMySitesPG(userLastName = null, userScreenName = null, userFirstName = null) {
-		var key_userScreenName = ${userScreenName};
-
-		LexiconEntry.gotoHeaderMenuItem(menuItem = "View Membership Requests");
-
-		LexiconEntry.changeDisplayStyle(displayStyle = "table");
-
-		AssertTextEquals(
-			locator1 = "SiteMembershipsViewMembershipRequests#USER_NAME",
-			value1 = "${userFirstName} ${userLastName}");
-
-		if (!(isSet(memebershipComment))) {
-			var memebershipComment = "Please allow me to join the Restricted Site.";
-		}
-
-		AssertTextEquals(
-			locator1 = "SiteMembershipsViewMembershipRequests#USER_COMMENTS",
-			value1 = ${memebershipComment});
-
-		LexiconTable.clickEllipsisItem(
-			item = "Reply",
-			tableEntry = "${userFirstName} ${userLastName}");
-
-		Select(
-			locator1 = "SiteMembershipsViewMembershipRequests#STATUS",
-			value1 = "Approve");
-
-		Type(
-			locator1 = "SiteMembershipsViewMembershipRequests#REPLY_COMMENTS_AREA",
-			value1 = "You may join the Restricted Site.");
-
-		Button.clickSave();
-
-		VerifyElementPresent(locator1 = "Message#SUCCESS");
-
-		Navigator.gotoNavItem(navItem = "Approved");
-
-		LexiconEntry.changeDisplayStyle(displayStyle = "table");
-
-		AssertTextEquals(
-			locator1 = "SiteMembershipsViewMembershipRequests#USER_NAME",
-			value1 = "${userFirstName} ${userLastName}");
-
-		AssertTextEquals(
-			locator1 = "SiteMembershipsViewMembershipRequests#REPLIER_NAME",
-			value1 = "Test Test");
-	}
-
-	@summary = "Default summary"
 	macro assertMemberListNotVisibleCP(usersEmailsList = null) {
 		for (var userEmail : list ${usersEmailsList}) {
 			var userName = StringUtil.replace(${userEmail}, "@liferay.com", "");
@@ -1146,13 +1097,6 @@ definition {
 	}
 
 	@summary = "Default summary"
-	macro searchCP(siteName = null) {
-		Search.searchCP(searchTerm = ${siteName});
-
-		Site.viewSearchResultsCP(siteName = ${siteName});
-	}
-
-	@summary = "Default summary"
 	macro searchMemberCP(userLastNameSearchValue = null, userScreenNameSearchValue = null, userEmailAddressSearchValue = null, userLastName = null, userScreenName = null, userFirstNameSearchValue = null, userFirstName = null) {
 		var searchTerm = ${userEmailAddressSearchValue};
 
@@ -1212,38 +1156,6 @@ definition {
 		}
 
 		PortletEntry.save();
-	}
-
-	@summary = "Default summary"
-	macro selectParentSite(parentSiteName = null, chooseButtonAvailable = null) {
-		Click(
-			key_itemName = "Site Configuration",
-			locator1 = "ListGroupItem#ITEM_TEXT");
-
-		Click(
-			key_fieldLabel = "Parent Site",
-			key_text = "Change",
-			locator1 = "Button#ANY_WITH_LABEL");
-
-		var key_parentSiteName = ${parentSiteName};
-
-		SelectFrame(locator1 = "SitesSelectSite#SELECT_SITE_IFRAME");
-
-		Search.searchCP(searchTerm = ${parentSiteName});
-
-		if (${chooseButtonAvailable} == "false") {
-			AssertElementNotPresent(
-				key_parentSiteName = ${parentSiteName},
-				locator1 = "SitesSelectSite#SITES_TABLE_NAME");
-
-			AssertTextEquals.assertPartialText(
-				locator1 = "Message#EMPTY_INFO",
-				value1 = "No sites were found.");
-		}
-
-		Close(locator1 = "null");
-
-		SelectFrame(value1 = "relative=top");
 	}
 
 	@summary = "Default summary"
@@ -1358,19 +1270,6 @@ definition {
 		}
 
 		SelectFrameTop();
-	}
-
-	@summary = "Default summary"
-	macro viewChildCP(siteName = null, childSiteName = null) {
-		Site.viewCP(siteName = ${siteName});
-
-		LexiconTable.clickEllipsisItem(
-			item = "View Child Sites",
-			tableEntry = ${siteName});
-
-		Breadcrumb.viewActiveEntry(breadcrumbName = ${siteName});
-
-		Site.viewCP(siteName = ${childSiteName});
 	}
 
 	@summary = "Default summary"
@@ -1617,26 +1516,6 @@ definition {
 			key_menuItem = "Delete",
 			locator1 = "MenuItem#ANY_MENU_ITEM",
 			value1 = "Delete");
-	}
-
-	@summary = "Default summary"
-	macro viewSiteClonedFromSiteTemplateCP(clonedFromTemplate = null, siteTemplateName = null) {
-		Click(
-			key_itemName = "Other",
-			locator1 = "ListGroupItem#ITEM_TEXT");
-
-		Navigator.gotoNavTab(navTab = "Site Template");
-
-		if (${clonedFromTemplate} == "true") {
-			AssertTextEquals.assertPartialText(
-				locator1 = "SiteSettingsSiteTemplate#CONTENT_CONTAINER",
-				value1 = "These pages are linked to site template ${siteTemplateName} without propagation of changes.");
-		}
-		else {
-			AssertTextEquals.assertPartialText(
-				locator1 = "SiteSettingsSiteTemplate#CONTENT_CONTAINER",
-				value1 = "This site is not related to a site template.");
-		}
 	}
 
 	@summary = "Default summary"

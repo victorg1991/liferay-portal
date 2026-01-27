@@ -5,16 +5,22 @@
 
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
+import com.liferay.jenkins.results.parser.DownstreamBuildReport;
 import com.liferay.jenkins.results.parser.JenkinsResultsParserUtil;
 import com.liferay.jenkins.results.parser.TestReport;
 import com.liferay.jenkins.results.parser.test.clazz.FunctionalTestClass;
 import com.liferay.jenkins.results.parser.test.clazz.TestClass;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 
@@ -22,6 +28,27 @@ import org.json.JSONObject;
  * @author Michael Hashimoto
  */
 public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
+
+	@Override
+	public List<DownstreamBuildReport> getCachedDownstreamBuildReports() {
+		if (!isBuildCachingEnabled() || !isResultsCached()) {
+			return null;
+		}
+
+		Set<DownstreamBuildReport> cachedDownstreamBuildReports =
+			new HashSet<>();
+
+		for (FunctionalTestClass functionalTestClass :
+				getFunctionalTestClasses()) {
+
+			DownstreamBuildReport downstreamBuildReport =
+				functionalTestClass.getCachedDownstreamBuildReport();
+
+			cachedDownstreamBuildReports.add(downstreamBuildReport);
+		}
+
+		return new ArrayList<>(cachedDownstreamBuildReports);
+	}
 
 	public List<FunctionalTestClass> getFunctionalTestClasses() {
 		List<FunctionalTestClass> functionalTestClasses = new ArrayList<>();
@@ -62,6 +89,47 @@ public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
 		return super.getMinimumSlaveRAM();
 	}
 
+	@Override
+	public String getOSArchitecture() {
+		List<String> propertyOpts = new ArrayList<>();
+
+		Properties poshiProperties = getPoshiProperties();
+
+		String browserChromeVersion = poshiProperties.getProperty(
+			"browser.chrome.version");
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(browserChromeVersion)) {
+			Matcher chromeVersionMatcher = _chromeVersionPattern.matcher(
+				browserChromeVersion);
+
+			if (chromeVersionMatcher.find()) {
+				propertyOpts.add(
+					"chrome" + chromeVersionMatcher.group("majorVersion"));
+			}
+		}
+
+		if (isTestAnalyticsCloud()) {
+			propertyOpts.add("analytics-cloud");
+		}
+
+		propertyOpts.add(getBatchName());
+
+		try {
+			String osArchitecture = JenkinsResultsParserUtil.getBuildProperty(
+				"test.batch.os.architecture",
+				propertyOpts.toArray(new String[0]));
+
+			if (!JenkinsResultsParserUtil.isNullOrEmpty(osArchitecture)) {
+				return osArchitecture;
+			}
+		}
+		catch (IOException ioException) {
+			ioException.printStackTrace();
+		}
+
+		return super.getOSArchitecture();
+	}
+
 	public Properties getPoshiProperties() {
 		List<FunctionalTestClass> functionalTestClasses =
 			getFunctionalTestClasses();
@@ -69,18 +137,6 @@ public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
 		FunctionalTestClass functionalTestClass = functionalTestClasses.get(0);
 
 		return functionalTestClass.getPoshiProperties();
-	}
-
-	@Override
-	public String getSlaveLabel() {
-		String slaveLabel = JenkinsResultsParserUtil.getProperty(
-			getPoshiProperties(), "slave.label");
-
-		if (!JenkinsResultsParserUtil.isNullOrEmpty(slaveLabel)) {
-			return slaveLabel;
-		}
-
-		return super.getSlaveLabel();
 	}
 
 	@Override
@@ -103,7 +159,7 @@ public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
 
 	@Override
 	public boolean isResultsCached() {
-		if (!JenkinsResultsParserUtil.isBuildCachingEnabled()) {
+		if (!isBuildCachingEnabled()) {
 			return false;
 		}
 
@@ -119,6 +175,29 @@ public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
 		}
 
 		return true;
+	}
+
+	public boolean isTestAnalyticsCloud() {
+		if (_testAnalyticsCloud != null) {
+			return _testAnalyticsCloud;
+		}
+
+		Properties poshiProperties = getPoshiProperties();
+
+		String analyticsCloudEnabled = poshiProperties.getProperty(
+			"analytics.cloud.enabled");
+
+		if ((analyticsCloudEnabled != null) &&
+			analyticsCloudEnabled.equals("true")) {
+
+			_testAnalyticsCloud = true;
+
+			return _testAnalyticsCloud;
+		}
+
+		_testAnalyticsCloud = false;
+
+		return _testAnalyticsCloud;
 	}
 
 	protected FunctionalAxisTestClassGroup(
@@ -138,6 +217,22 @@ public class FunctionalAxisTestClassGroup extends AxisTestClassGroup {
 		_testBaseDir = new File(jsonObject.getString("test_base_dir"));
 	}
 
+	@Override
+	protected String getBaseSlaveLabel() {
+		String slaveLabel = JenkinsResultsParserUtil.getProperty(
+			getPoshiProperties(), "slave.label");
+
+		if (!JenkinsResultsParserUtil.isNullOrEmpty(slaveLabel)) {
+			return slaveLabel;
+		}
+
+		return super.getBaseSlaveLabel();
+	}
+
+	private static final Pattern _chromeVersionPattern = Pattern.compile(
+		"(?<majorVersion>\\d+)\\.\\d+");
+
+	private Boolean _testAnalyticsCloud;
 	private final File _testBaseDir;
 
 }

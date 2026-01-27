@@ -9,6 +9,7 @@ import {DatePicker} from '@liferay/object-js-components-web';
 import React, {useEffect, useState} from 'react';
 
 import {callWindowGlobalFunction} from '../../js/utils/callWindowGlobalFunction';
+import {convertToUTC} from '../../js/utils/convertToUTC';
 
 interface ModalSchedulePublicationProps {
 	hiddenScheduleValues: {[key: string]: string | null};
@@ -60,7 +61,7 @@ export default function ModalSchedulePublication({
 
 		hiddenInput.value = JSON.stringify({
 			...hiddenScheduleValues,
-			displayDate,
+			displayDate: convertToUTC(displayDate),
 		});
 
 		callWindowGlobalFunction(submitRef);
@@ -87,7 +88,9 @@ export default function ModalSchedulePublication({
 		<>
 			{visible && (
 				<ClayModal center observer={observer}>
-					<ClayModal.Header>
+					<ClayModal.Header
+						closeButtonAriaLabel={Liferay.Language.get('close')}
+					>
 						{Liferay.Language.get('schedule-publication')}
 					</ClayModal.Header>
 

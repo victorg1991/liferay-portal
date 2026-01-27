@@ -38,12 +38,12 @@ import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.servlet.NamespaceServletRequest;
 import com.liferay.portal.servlet.SharedSessionServletRequest;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.PortletPreferencesImpl;
 import com.liferay.portlet.PortletPreferencesWrapper;
 import com.liferay.portlet.PublicRenderParametersPool;
@@ -1243,6 +1243,10 @@ public abstract class PortletRequestImpl implements LiferayPortletRequest {
 
 		for (String checkboxName : StringUtil.split(checkboxNames)) {
 			String value = dynamicServletRequest.getParameter(checkboxName);
+
+			if (checkboxName.contains("ExpandoAttribute")) {
+				continue;
+			}
 
 			if (value == null) {
 				dynamicServletRequest.setParameter(

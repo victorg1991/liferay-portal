@@ -9,6 +9,7 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.content.security.policy.ContentSecurityPolicyNonceProviderUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.taglib.aui.base.BaseLinkTag;
+import com.liferay.taglib.util.HashedFileUtil;
 
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspWriter;
@@ -48,6 +49,10 @@ public class LinkTag extends BaseLinkTag {
 			String href = getHref();
 
 			if (Validator.isNotNull(href)) {
+				if (getHashedFile()) {
+					href = HashedFileUtil.getURL(getRequest(), href);
+				}
+
 				_write(jspWriter, "href", href);
 			}
 

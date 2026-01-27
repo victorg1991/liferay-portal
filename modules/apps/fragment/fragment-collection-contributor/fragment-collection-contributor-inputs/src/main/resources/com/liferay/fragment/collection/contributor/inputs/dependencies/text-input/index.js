@@ -1,18 +1,13 @@
 const currentLength = document.getElementById(
-	`${fragmentNamespace}-current-length`
+	`${fragmentElementId}-current-length`
 );
+const error = document.getElementById(`${fragmentElementId}-text-input-error`);
 const errorMessage = document.getElementById(
-	`${fragmentNamespace}-text-input-error-message`
+	`${fragmentElementId}-text-input-error-message`
 );
-const formGroup = document.getElementById(`${fragmentNamespace}-form-group`);
-const inputElement = document.getElementById(`${fragmentNamespace}-text-input`);
-const lengthInfo = document.getElementById(`${fragmentNamespace}-length-info`);
-const lengthWarning = document.getElementById(
-	`${fragmentNamespace}-length-warning`
-);
-const lengthWarningText = document.getElementById(
-	`${fragmentNamespace}-length-warning-text`
-);
+const formGroup = document.getElementById(`${fragmentElementId}-form-group`);
+const inputElement = document.getElementById(`${fragmentElementId}-text-input`);
+const lengthInfo = document.getElementById(`${fragmentElementId}-length-info`);
 
 function main() {
 	if (layoutMode === 'edit' && inputElement) {
@@ -21,37 +16,40 @@ function main() {
 	else {
 		import('@liferay/fragment-impl/api').then(
 			({
+				focusInput,
 				handleInputLengthError,
-				hideLengthError,
 				registerLocalizedInput,
 				registerUnlocalizedInput,
+				showInputError,
 			}) => {
+				const hasError = formGroup.classList.contains('has-error');
+
+				if (hasError) {
+					focusInput(inputElement);
+				}
+
 				currentLength.innerText = inputElement.value.length;
 
 				if (
-					!errorMessage &&
+					!hasError &&
 					inputElement.value.length > input.attributes.maxLength
 				) {
-					hideLengthError({
-						configuration,
+					showInputError({
+						errorType: 'length',
 						formGroup,
-						lengthInfo,
-						lengthWarning,
-						lengthWarningText,
+						lengthInfoContainer: lengthInfo,
 					});
 				}
 
 				const onKeyup = (event) =>
 					handleInputLengthError({
-						configuration,
 						currentLength,
-						errorMessage,
+						errorContainer: error,
+						errorMessageContainer: errorMessage,
 						event,
 						formGroup,
 						input,
-						lengthInfo,
-						lengthWarning,
-						lengthWarningText,
+						lengthInfoContainer: lengthInfo,
 					});
 
 				inputElement.addEventListener('keyup', onKeyup);
@@ -65,7 +63,7 @@ function main() {
 						inputElement,
 						inputName: input.name,
 						localizationInputsContainer: inputElement.parentNode,
-						namespace: fragmentNamespace,
+						namespace: fragmentElementId,
 					});
 
 					inputElement.addEventListener('change', (event) => {
@@ -77,12 +75,12 @@ function main() {
 						defaultLanguageId,
 						inputElement,
 						readOnlyInputLabel: document.getElementById(
-							`${fragmentNamespace}-text-input-readonly`
+							`${fragmentElementId}-text-input-readonly`
 						),
 						unlocalizedFieldsState:
 							input.attributes.unlocalizedFieldsState,
 						unlocalizedMessageContainer: document.getElementById(
-							`${fragmentNamespace}-unlocalized-info`
+							`${fragmentElementId}-unlocalized-info`
 						),
 					});
 				}

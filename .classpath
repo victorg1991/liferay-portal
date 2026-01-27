@@ -104,7 +104,6 @@
 	<classpathentry kind="lib" path="lib/development/smtp.jar"/>
 	<classpathentry kind="lib" path="lib/development/snakeyaml.jar"/>
 	<classpathentry kind="lib" path="lib/development/spring-instrument.jar"/>
-	<classpathentry kind="lib" path="lib/development/spring-instrument-tomcat.jar"/>
 	<classpathentry kind="lib" path="lib/development/spring-test.jar"/>
 	<classpathentry kind="lib" path="lib/development/tlddoc.jar"/>
 	<classpathentry kind="lib" path="lib/development/tomcat-annotations-api.jar"/>
@@ -152,7 +151,6 @@
 	<classpathentry kind="lib" path="lib/portal/spring-core.jar"/>
 	<classpathentry kind="lib" path="lib/portal/spring-expression.jar"/>
 	<classpathentry kind="lib" path="lib/portal/spring-jdbc.jar"/>
-	<classpathentry kind="lib" path="lib/portal/spring-orm.jar"/>
 	<classpathentry kind="lib" path="lib/portal/spring-tx.jar"/>
 	<classpathentry kind="lib" path="lib/portal/spring-web.jar"/>
 	<classpathentry kind="lib" path="lib/portal/stax-ex.jar"/>

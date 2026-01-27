@@ -15,16 +15,21 @@ ViewVersionHistoryDisplayContext viewVersionHistoryDisplayContext = (ViewVersion
 	<div>
 		<react:component
 			module="{Toolbar} from site-cms-site-initializer"
-			props="<%= viewVersionHistoryDisplayContext.getToolbarReactData() %>"
+			props="<%= viewVersionHistoryDisplayContext.getProps() %>"
 		/>
 	</div>
 
 	<frontend-data-set:headless-display
+		additionalProps="<%= viewVersionHistoryDisplayContext.getProps() %>"
 		apiURL="<%= viewVersionHistoryDisplayContext.getAPIURL() %>"
 		fdsActionDropdownItems="<%= viewVersionHistoryDisplayContext.getFDSActionDropdownItems() %>"
+		fdsSortItemList="<%= viewVersionHistoryDisplayContext.getFDSSortItemList() %>"
 		formName="fm"
 		id="<%= CMSSiteInitializerFDSNames.VIEW_HISTORY %>"
 		itemsPerPage="<%= 20 %>"
-		style="fluid"
+		propsTransformer="{ViewVersionHistoryFDSPropsTransformer} from site-cms-site-initializer"
+		selectedItemsKey="systemProperties.version.number"
+		selectionType="multiple"
+		showSelectAll="<%= true %>"
 	/>
 </div>

@@ -51,6 +51,7 @@ page import="com.liferay.layout.admin.web.internal.frontend.taglib.clay.servlet.
 page import="com.liferay.layout.admin.web.internal.servlet.taglib.util.LayoutActionDropdownItemsProvider" %><%@
 page import="com.liferay.layout.admin.web.internal.util.CustomizationSettingsUtil" %><%@
 page import="com.liferay.layout.importer.LayoutsImporterResultEntry" %><%@
+page import="com.liferay.layout.page.template.kernel.provider.util.LayoutPageTemplateEntryLayoutProviderUtil" %><%@
 page import="com.liferay.layout.page.template.model.LayoutPageTemplateCollection" %><%@
 page import="com.liferay.layout.page.template.model.LayoutPageTemplateEntry" %><%@
 page import="com.liferay.layout.page.template.service.LayoutPageTemplateCollectionLocalServiceUtil" %><%@
@@ -100,7 +101,6 @@ page import="com.liferay.portal.kernel.security.permission.ActionKeys" %><%@
 page import="com.liferay.portal.kernel.security.permission.ResourceActionsUtil" %><%@
 page import="com.liferay.portal.kernel.service.GroupLocalServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.LayoutLocalServiceUtil" %><%@
-page import="com.liferay.portal.kernel.service.LayoutPrototypeLocalServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.LayoutPrototypeServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.LayoutSetBranchLocalServiceUtil" %><%@
 page import="com.liferay.portal.kernel.service.LayoutSetPrototypeLocalServiceUtil" %><%@
@@ -125,6 +125,7 @@ page import="com.liferay.portal.kernel.util.MapUtil" %><%@
 page import="com.liferay.portal.kernel.util.ParamUtil" %><%@
 page import="com.liferay.portal.kernel.util.PortalUtil" %><%@
 page import="com.liferay.portal.kernel.util.PropertiesParamUtil" %><%@
+page import="com.liferay.portal.kernel.util.PropsValues" %><%@
 page import="com.liferay.portal.kernel.util.ResourceBundleUtil" %><%@
 page import="com.liferay.portal.kernel.util.StringUtil" %><%@
 page import="com.liferay.portal.kernel.util.UnicodeProperties" %><%@
@@ -132,7 +133,6 @@ page import="com.liferay.portal.kernel.util.Validator" %><%@
 page import="com.liferay.portal.kernel.util.WebKeys" %><%@
 page import="com.liferay.portal.kernel.webserver.WebServerServletTokenUtil" %><%@
 page import="com.liferay.portal.util.LayoutTypeControllerTracker" %><%@
-page import="com.liferay.portal.util.PropsValues" %><%@
 page import="com.liferay.segments.exception.RequiredSegmentsExperienceException" %><%@
 page import="com.liferay.site.navigation.model.SiteNavigationMenu" %>
 
@@ -142,9 +142,9 @@ page import="jakarta.portlet.PortletURL" %>
 <%@ page import="java.util.List" %><%@
 page import="java.util.Locale" %><%@
 page import="java.util.Map" %><%@
+page import="java.util.NavigableMap" %><%@
 page import="java.util.Objects" %><%@
-page import="java.util.ResourceBundle" %><%@
-page import="java.util.TreeMap" %>
+page import="java.util.ResourceBundle" %>
 
 <liferay-frontend:defineObjects />
 

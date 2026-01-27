@@ -12,10 +12,16 @@ import {sub} from 'frontend-js-web';
 import React, {useState} from 'react';
 
 import {Option} from '../../../common/types/Picklist';
+import getLocalizedValue from '../../../common/utils/getLocalizedValue';
 import {useAddOption} from '../../contexts/PicklistBuilderContext';
 import getRandomId from '../../utils/getRandomId';
 import ERCInput from '../ERCInput';
 import Input from '../Input';
+
+const DEFAULT_NAME = {
+	[Liferay.ThemeDisplay.getDefaultLanguageId()]:
+		Liferay.Language.get('option'),
+};
 
 export default function AddOptionModal({
 	onCloseModal,
@@ -27,10 +33,7 @@ export default function AddOptionModal({
 	const [erc, setErc] = useState<string>(option?.erc || getRandomId());
 	const [key, setKey] = useState<string>(option?.key || getRandomKey());
 	const [name, setName] = useState<Liferay.Language.LocalizedValue<string>>(
-		option?.name || {
-			[Liferay.ThemeDisplay.getDefaultLanguageId()]:
-				Liferay.Language.get('option'),
-		}
+		option?.name || DEFAULT_NAME
 	);
 	const addOption = useAddOption();
 
@@ -39,18 +42,24 @@ export default function AddOptionModal({
 	});
 
 	const onSave = () => {
-		if (!erc || !key || !name) {
-			return;
-		}
-
 		addOption({erc, key, name});
 
 		onClose();
 	};
 
+	const onSaveAndAddAnother = () => {
+		addOption({erc, key, name});
+
+		setKey(getRandomKey());
+		setErc(getRandomId());
+		setName(DEFAULT_NAME);
+	};
+
 	return (
 		<ClayModal observer={observer}>
-			<ClayModal.Header>
+			<ClayModal.Header
+				closeButtonAriaLabel={Liferay.Language.get('close')}
+			>
 				{Liferay.Language.get('add-option')}
 			</ClayModal.Header>
 
@@ -59,7 +68,7 @@ export default function AddOptionModal({
 					<InputLocalized
 						aria-label={Liferay.Language.get('picklist-name')}
 						error={
-							name[Liferay.ThemeDisplay.getDefaultLanguageId()]
+							getLocalizedValue(name)
 								? ''
 								: Liferay.Language.get('this-field-is-required')
 						}
@@ -74,6 +83,12 @@ export default function AddOptionModal({
 
 					<Input
 						disabled={Boolean(option?.key)}
+						error={
+							key
+								? ''
+								: Liferay.Language.get('this-field-is-required')
+						}
+						key={key}
 						label={Liferay.Language.get('key')}
 						onValueChange={(key) => setKey(key)}
 						required
@@ -81,12 +96,18 @@ export default function AddOptionModal({
 					/>
 
 					<ERCInput
+						error={
+							erc
+								? ''
+								: Liferay.Language.get('this-field-is-required')
+						}
 						helpText={sub(
 							Liferay.Language.get(
 								'unique-key-for-referencing-the-x'
 							),
 							Liferay.Language.get('option')
 						)}
+						key={erc}
 						onValueChange={(erc) => setErc(erc)}
 						value={erc}
 					/>
@@ -96,8 +117,19 @@ export default function AddOptionModal({
 			<ClayModal.Footer
 				last={
 					<ClayButton.Group spaced>
-						<ClayButton displayType="secondary" onClick={onClose}>
+						<ClayButton
+							borderless
+							displayType="secondary"
+							onClick={onClose}
+						>
 							{Liferay.Language.get('cancel')}
+						</ClayButton>
+
+						<ClayButton
+							displayType="secondary"
+							onClick={onSaveAndAddAnother}
+						>
+							{Liferay.Language.get('save-and-add-another')}
 						</ClayButton>
 
 						<ClayButton onClick={onSave}>

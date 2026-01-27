@@ -611,6 +611,14 @@ public class CommerceOrderItemPersistenceTest {
 	}
 
 	@Test
+	public void testCountByC_PCOI() throws Exception {
+		_persistence.countByC_PCOI(
+			RandomTestUtil.nextLong(), RandomTestUtil.nextLong());
+
+		_persistence.countByC_PCOI(0L, 0L);
+	}
+
+	@Test
 	public void testCountByC_S() throws Exception {
 		_persistence.countByC_S(
 			RandomTestUtil.nextLong(), RandomTestUtil.randomBoolean());
@@ -970,13 +978,6 @@ public class CommerceOrderItemPersistenceTest {
 			ReflectionTestUtil.<Long>invoke(
 				commerceOrderItem, "getColumnOriginalValue",
 				new Class<?>[] {String.class}, "groupId"));
-
-		Assert.assertEquals(
-			Long.valueOf(
-				commerceOrderItem.getCommerceInventoryBookedQuantityId()),
-			ReflectionTestUtil.<Long>invoke(
-				commerceOrderItem, "getColumnOriginalValue",
-				new Class<?>[] {String.class}, "CIBookedQuantityId"));
 
 		Assert.assertEquals(
 			commerceOrderItem.getExternalReferenceCode(),

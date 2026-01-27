@@ -53,8 +53,23 @@ public interface MultipartTestEntityResource {
 			Long multipartTestEntityId)
 		throws Exception;
 
+	public Response getSiteMultipartTestEntity(String siteExternalReferenceCode)
+		throws Exception;
+
 	public MultipartTestEntity patchMultipartTestEntity(
 			Long multipartTestEntityId, MultipartTestEntity multipartTestEntity)
+		throws Exception;
+
+	public MultipartTestEntity postMultipartTestEntity(
+			MultipartTestEntity multipartTestEntity)
+		throws Exception;
+
+	public MultipartTestEntity postMultipartTestEntity(
+			MultipartBody multipartBody)
+		throws Exception;
+
+	public Response postMultipartTestEntityBatch(
+			String callbackURL, Object object)
 		throws Exception;
 
 	public MultipartTestEntity putMultipartTestEntity(
@@ -63,6 +78,10 @@ public interface MultipartTestEntityResource {
 
 	public Response putMultipartTestEntityBatch(
 			MultipartBody multipartBody, String callbackURL, Object object)
+		throws Exception;
+
+	public MultipartTestEntity putSiteMultipartTestEntity(
+			String siteExternalReferenceCode, MultipartBody multipartBody)
 		throws Exception;
 
 	public default void setContextAcceptLanguage(

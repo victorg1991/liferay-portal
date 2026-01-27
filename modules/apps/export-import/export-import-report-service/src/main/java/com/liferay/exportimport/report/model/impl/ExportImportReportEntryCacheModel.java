@@ -69,7 +69,7 @@ public class ExportImportReportEntryCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(27);
+		StringBundler sb = new StringBundler(33);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -87,16 +87,22 @@ public class ExportImportReportEntryCacheModel
 		sb.append(classExternalReferenceCode);
 		sb.append(", classNameId=");
 		sb.append(classNameId);
+		sb.append(", classPK=");
+		sb.append(classPK);
 		sb.append(", exportImportConfigurationId=");
 		sb.append(exportImportConfigurationId);
-		sb.append(", error=");
-		sb.append(error);
+		sb.append(", errorMessage=");
+		sb.append(errorMessage);
 		sb.append(", errorStacktrace=");
 		sb.append(errorStacktrace);
-		sb.append(", resolved=");
-		sb.append(resolved);
+		sb.append(", modelNameLanguageKey=");
+		sb.append(modelNameLanguageKey);
+		sb.append(", origin=");
+		sb.append(origin);
 		sb.append(", type=");
 		sb.append(type);
+		sb.append(", status=");
+		sb.append(status);
 		sb.append("}");
 
 		return sb.toString();
@@ -136,12 +142,23 @@ public class ExportImportReportEntryCacheModel
 		}
 
 		exportImportReportEntryImpl.setClassNameId(classNameId);
+		exportImportReportEntryImpl.setClassPK(classPK);
 		exportImportReportEntryImpl.setExportImportConfigurationId(
 			exportImportConfigurationId);
-		exportImportReportEntryImpl.setError(error);
+		exportImportReportEntryImpl.setErrorMessage(errorMessage);
 		exportImportReportEntryImpl.setErrorStacktrace(errorStacktrace);
-		exportImportReportEntryImpl.setResolved(resolved);
+
+		if (modelNameLanguageKey == null) {
+			exportImportReportEntryImpl.setModelNameLanguageKey("");
+		}
+		else {
+			exportImportReportEntryImpl.setModelNameLanguageKey(
+				modelNameLanguageKey);
+		}
+
+		exportImportReportEntryImpl.setOrigin(origin);
 		exportImportReportEntryImpl.setType(type);
+		exportImportReportEntryImpl.setStatus(status);
 
 		exportImportReportEntryImpl.resetOriginalValues();
 
@@ -165,13 +182,18 @@ public class ExportImportReportEntryCacheModel
 
 		classNameId = objectInput.readLong();
 
-		exportImportConfigurationId = objectInput.readLong();
-		error = (String)objectInput.readObject();
-		errorStacktrace = (String)objectInput.readObject();
+		classPK = objectInput.readLong();
 
-		resolved = objectInput.readBoolean();
+		exportImportConfigurationId = objectInput.readLong();
+		errorMessage = (String)objectInput.readObject();
+		errorStacktrace = (String)objectInput.readObject();
+		modelNameLanguageKey = objectInput.readUTF();
+
+		origin = objectInput.readInt();
 
 		type = objectInput.readInt();
+
+		status = objectInput.readInt();
 	}
 
 	@Override
@@ -195,13 +217,15 @@ public class ExportImportReportEntryCacheModel
 
 		objectOutput.writeLong(classNameId);
 
+		objectOutput.writeLong(classPK);
+
 		objectOutput.writeLong(exportImportConfigurationId);
 
-		if (error == null) {
+		if (errorMessage == null) {
 			objectOutput.writeObject("");
 		}
 		else {
-			objectOutput.writeObject(error);
+			objectOutput.writeObject(errorMessage);
 		}
 
 		if (errorStacktrace == null) {
@@ -211,9 +235,18 @@ public class ExportImportReportEntryCacheModel
 			objectOutput.writeObject(errorStacktrace);
 		}
 
-		objectOutput.writeBoolean(resolved);
+		if (modelNameLanguageKey == null) {
+			objectOutput.writeUTF("");
+		}
+		else {
+			objectOutput.writeUTF(modelNameLanguageKey);
+		}
+
+		objectOutput.writeInt(origin);
 
 		objectOutput.writeInt(type);
+
+		objectOutput.writeInt(status);
 	}
 
 	public long mvccVersion;
@@ -224,10 +257,13 @@ public class ExportImportReportEntryCacheModel
 	public long modifiedDate;
 	public String classExternalReferenceCode;
 	public long classNameId;
+	public long classPK;
 	public long exportImportConfigurationId;
-	public String error;
+	public String errorMessage;
 	public String errorStacktrace;
-	public boolean resolved;
+	public String modelNameLanguageKey;
+	public int origin;
 	public int type;
+	public int status;
 
 }

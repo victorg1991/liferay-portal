@@ -6,11 +6,14 @@
 package com.liferay.frontend.js.web.internal.servlet.taglib;
 
 import com.liferay.exportimport.kernel.staging.Staging;
+import com.liferay.frontend.js.web.internal.configuration.LiferayGlobalObjectConfiguration;
 import com.liferay.layout.seo.kernel.LayoutSEOLink;
 import com.liferay.layout.seo.kernel.LayoutSEOLinkManager;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
+import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.content.security.policy.ContentSecurityPolicyNonceProviderUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlag;
@@ -23,6 +26,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.impl.VirtualLayout;
+import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.security.auth.AuthToken;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.permission.LayoutPermission;
@@ -41,6 +45,7 @@ import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsProps;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.util.URLCodec;
@@ -48,7 +53,6 @@ import com.liferay.portal.kernel.util.UnicodeFormatter;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.servlet.BrowserSnifferUtil;
-import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.ShutdownUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,6 +67,7 @@ import java.text.DateFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -87,6 +92,9 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 			HttpServletResponse httpServletResponse, String key)
 		throws IOException {
 
+		LiferayGlobalObjectConfiguration liferayGlobalObjectConfiguration =
+			_getLiferayGlobalObjectConfiguration(httpServletRequest);
+
 		PrintWriter printWriter = httpServletResponse.getWriter();
 
 		printWriter.print("<script");
@@ -96,7 +104,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 		printWriter.print(" data-senna-track=\"temporary\"");
 		printWriter.println(" type=\"text/javascript\">");
 
-		StringBuilder sb = new StringBuilder();
+		StringBundler sb = new StringBundler();
 
 		try {
 			_renderLiferayAUI(httpServletRequest, sb);
@@ -107,7 +115,8 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 			_renderLiferayPortlet(sb);
 			_renderLiferayPortletKeys(sb);
 			_renderLiferayPropsValues(httpServletRequest, sb);
-			_renderLiferayThemeDisplay(httpServletRequest, sb);
+			_renderLiferayThemeDisplay(
+				httpServletRequest, liferayGlobalObjectConfiguration, sb);
 			_renderLiferayUtil(sb);
 
 			_renderValue(
@@ -210,8 +219,37 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 		return dateFormatPattern;
 	}
 
+	private LiferayGlobalObjectConfiguration
+		_getLiferayGlobalObjectConfiguration(
+			HttpServletRequest httpServletRequest) {
+
+		long companyId = _portal.getCompanyId(httpServletRequest);
+
+		try {
+			return _configurationProvider.getCompanyConfiguration(
+				LiferayGlobalObjectConfiguration.class, companyId);
+		}
+		catch (ConfigurationException configurationException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Using default configuration for company " + companyId,
+					configurationException);
+			}
+
+			return ConfigurableUtil.createConfigurable(
+				LiferayGlobalObjectConfiguration.class, Collections.emptyMap());
+		}
+	}
+
+	private void _renderDisabledMethod(String methodName, StringBundler sb) {
+		sb.append(methodName);
+		sb.append(": () => {throw new Error('Method ");
+		sb.append(methodName);
+		sb.append(" has been disabled in Instance Settings');},\n");
+	}
+
 	private void _renderLiferayAUI(
-		HttpServletRequest httpServletRequest, StringBuilder sb) {
+		HttpServletRequest httpServletRequest, StringBundler sb) {
 
 		sb.append("AUI: {\n");
 
@@ -279,7 +317,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderLiferayBrowser(
-		HttpServletRequest httpServletRequest, StringBuilder sb) {
+		HttpServletRequest httpServletRequest, StringBundler sb) {
 
 		sb.append("Browser: {\n");
 
@@ -321,7 +359,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderLiferayData(
-			HttpServletRequest httpServletRequest, StringBuilder sb)
+			HttpServletRequest httpServletRequest, StringBundler sb)
 		throws PortalException {
 
 		ThemeDisplay themeDisplay =
@@ -395,7 +433,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderLiferayFeatureFlags(
-		HttpServletRequest httpServletRequest, StringBuilder sb) {
+		HttpServletRequest httpServletRequest, StringBundler sb) {
 
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)httpServletRequest.getAttribute(
@@ -405,7 +443,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 
 		for (FeatureFlag featureFlag :
 				_featureFlagManager.getFeatureFlags(
-					themeDisplay.getCompanyId(), featureFlag -> true)) {
+					themeDisplay.getCompanyId(), null)) {
 
 			sb.append(StringPool.APOSTROPHE);
 			sb.append(featureFlag.getKey());
@@ -417,9 +455,9 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 		sb.append("},\n");
 	}
 
-	private void _renderLiferayLanguage(StringBuilder sb) {
-		StringBuilder availableSB = new StringBuilder();
-		StringBuilder directionSB = new StringBuilder();
+	private void _renderLiferayLanguage(StringBundler sb) {
+		StringBundler availableSB = new StringBundler();
+		StringBundler directionSB = new StringBundler();
 
 		for (Locale locale : _language.getAvailableLocales()) {
 			String languageId = LocaleUtil.toLanguageId(locale);
@@ -428,7 +466,8 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 			availableSB.append(languageId);
 			availableSB.append("': '");
 			availableSB.append(
-				HtmlUtil.escapeJS(locale.getDisplayName(locale)));
+				_displayNames.computeIfAbsent(
+					locale, key -> HtmlUtil.escapeJS(key.getDisplayName(key))));
 			availableSB.append("',\n");
 
 			directionSB.append(StringPool.APOSTROPHE);
@@ -446,7 +485,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 		sb.append(StringPool.NEW_LINE);
 	}
 
-	private void _renderLiferayPortlet(StringBuilder sb) {
+	private void _renderLiferayPortlet(StringBundler sb) {
 		sb.append("Portlet: {\n");
 
 		_renderStub(
@@ -458,7 +497,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 		sb.append("},\n");
 	}
 
-	private void _renderLiferayPortletKeys(StringBuilder sb) {
+	private void _renderLiferayPortletKeys(StringBundler sb) {
 		sb.append("PortletKeys: {\n");
 
 		_renderValue("DOCUMENT_LIBRARY", sb, PortletKeys.DOCUMENT_LIBRARY);
@@ -475,7 +514,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderLiferayPropsValues(
-		HttpServletRequest httpServletRequest, StringBuilder sb) {
+		HttpServletRequest httpServletRequest, StringBundler sb) {
 
 		sb.append("PropsValues: {\n");
 
@@ -498,7 +537,9 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderLiferayThemeDisplay(
-			HttpServletRequest httpServletRequest, StringBuilder sb)
+			HttpServletRequest httpServletRequest,
+			LiferayGlobalObjectConfiguration liferayGlobalObjectConfiguration,
+			StringBundler sb)
 		throws PortalException {
 
 		sb.append("ThemeDisplay: {\n");
@@ -527,6 +568,9 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 			_renderMethod(
 				"getLayoutURL", sb, _portal.getLayoutURL(layout, themeDisplay));
 			_renderMethod("getParentLayoutId", sb, layout.getParentLayoutId());
+			_renderMethod(
+				"getPathFriendlyURLPublic", sb,
+				_portal.getPathFriendlyURLPublic());
 			_renderMethod("isControlPanel", sb, layout.isTypeControlPanel());
 			_renderMethod("isPrivateLayout", sb, layout.isPrivateLayout());
 			_renderMethod(
@@ -577,8 +621,15 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 		_renderMethod("getPlid", sb, themeDisplay.getPlid());
 		_renderMethod("getPortalURL", sb, themeDisplay.getPortalURL());
 		_renderMethod("getRealUserId", sb, themeDisplay.getRealUserId());
-		_renderMethod("getRemoteAddr", sb, themeDisplay.getRemoteAddr());
-		_renderMethod("getRemoteHost", sb, themeDisplay.getRemoteHost());
+
+		if (liferayGlobalObjectConfiguration.disableGetRemoteMethods()) {
+			_renderDisabledMethod("getRemoteAddr", sb);
+			_renderDisabledMethod("getRemoteHost", sb);
+		}
+		else {
+			_renderMethod("getRemoteAddr", sb, themeDisplay.getRemoteAddr());
+			_renderMethod("getRemoteHost", sb, themeDisplay.getRemoteHost());
+		}
 
 		Group scopeGroup = themeDisplay.getScopeGroup();
 
@@ -645,7 +696,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 		sb.append("},\n");
 	}
 
-	private void _renderLiferayUtil(StringBuilder sb) {
+	private void _renderLiferayUtil(StringBundler sb) {
 		sb.append("Util: {\n");
 		sb.append(_TPL_WINDOW_JS);
 		sb.append(StringPool.NEW_LINE);
@@ -669,7 +720,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderMethod(
-		String methodName, StringBuilder sb, Object value) {
+		String methodName, StringBundler sb, Object value) {
 
 		sb.append(methodName);
 		sb.append(": () => ");
@@ -690,7 +741,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderStub(
-		String contextPath, String methodName, StringBuilder sb,
+		String contextPath, String methodName, StringBundler sb,
 		String symbol) {
 
 		sb.append(methodName);
@@ -702,7 +753,7 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 	}
 
 	private void _renderValue(
-		String fieldName, StringBuilder sb, Object value) {
+		String fieldName, StringBundler sb, Object value) {
 
 		sb.append(fieldName);
 		sb.append(": ");
@@ -746,6 +797,11 @@ public class LiferayGlobalObjectPreAUIDynamicInclude
 
 	@Reference
 	private AuthToken _authToken;
+
+	@Reference
+	private ConfigurationProvider _configurationProvider;
+
+	private final Map<Locale, String> _displayNames = new ConcurrentHashMap<>();
 
 	@Reference
 	private FastDateFormatFactory _fastDateFormatFactory;

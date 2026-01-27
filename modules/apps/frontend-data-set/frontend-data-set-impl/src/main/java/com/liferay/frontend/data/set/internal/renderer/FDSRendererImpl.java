@@ -12,15 +12,18 @@ import com.liferay.frontend.data.set.serializer.FDSSerializer;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.template.react.renderer.ComponentDescriptor;
 import com.liferay.portal.template.react.renderer.ReactRenderer;
 
@@ -43,6 +46,47 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(service = FDSRenderer.class)
 public class FDSRendererImpl implements FDSRenderer {
+
+	public String getFDSAPIURL(
+		String fdsName, HttpServletRequest httpServletRequest,
+		boolean interpolate, JSONObject tokenResolutionsJSONObject) {
+
+		FDSSerializer fdsSerializer = _getFDSSerializer(
+			fdsName, httpServletRequest);
+
+		if (fdsSerializer != null) {
+			String fdsAPIURL = fdsSerializer.serializeAPIURL(
+				fdsName, httpServletRequest, interpolate,
+				tokenResolutionsJSONObject);
+
+			String additionalAPIURLParameters =
+				fdsSerializer.serializeAdditionalAPIURLParameters(
+					fdsName, httpServletRequest, interpolate,
+					tokenResolutionsJSONObject);
+
+			if (fdsAPIURL.contains(StringPool.QUESTION) &&
+				Validator.isNotNull(additionalAPIURLParameters)) {
+
+				return fdsAPIURL + StringPool.AMPERSAND +
+					additionalAPIURLParameters;
+			}
+
+			if (Validator.isNotNull(additionalAPIURLParameters)) {
+				return fdsAPIURL + StringPool.QUESTION +
+					additionalAPIURLParameters;
+			}
+
+			return fdsAPIURL;
+		}
+
+		if (_log.isDebugEnabled()) {
+			_log.debug(
+				"No frontend data set serializer is associated with " +
+					fdsName);
+		}
+
+		return StringPool.BLANK;
+	}
 
 	@Override
 	public void render(
@@ -68,13 +112,28 @@ public class FDSRendererImpl implements FDSRenderer {
 			}
 		}
 		else {
+			Boolean snapshotsEnabled;
+
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
+
+			if (!themeDisplay.isSignedIn()) {
+				snapshotsEnabled = false;
+			}
+			else {
+				snapshotsEnabled = fdsSerializer.serializeSnapshotsEnabled(
+					fdsName, httpServletRequest);
+			}
+
 			props.putAll(
 				HashMapBuilder.<String, Object>put(
 					"additionalAPIURLParameters",
 					() -> {
 						String additionalAPIURLParameters =
 							fdsSerializer.serializeAdditionalAPIURLParameters(
-								fdsName, httpServletRequest);
+								fdsName, httpServletRequest, true,
+								(JSONObject)props.get("tokenResolutions"));
 
 						if (Validator.isNull(additionalAPIURLParameters)) {
 							return null;
@@ -86,7 +145,8 @@ public class FDSRendererImpl implements FDSRenderer {
 					"apiURL",
 					() -> {
 						String apiURL = fdsSerializer.serializeAPIURL(
-							fdsName, httpServletRequest);
+							fdsName, httpServletRequest, true,
+							(JSONObject)props.get("tokenResolutions"));
 
 						if (Validator.isNull(apiURL)) {
 							return null;
@@ -136,6 +196,12 @@ public class FDSRendererImpl implements FDSRenderer {
 						return filtersJSONArray;
 					}
 				).put(
+					"hideManagementBarInEmptyState",
+					() -> fdsSerializer.serializeHideManagementBarInEmptyState(
+						fdsName, httpServletRequest)
+				).put(
+					"id", fdsName
+				).put(
 					"itemsActions",
 					() -> {
 						List<FDSActionDropdownItem> fdsActionDropdownItems =
@@ -161,6 +227,25 @@ public class FDSRendererImpl implements FDSRenderer {
 
 						return paginationJSONObject;
 					}
+				).put(
+					"snapshots",
+					() -> {
+						if (!snapshotsEnabled) {
+							return null;
+						}
+
+						JSONArray snapshotsJSONArray =
+							fdsSerializer.serializeSnapshots(
+								fdsName, httpServletRequest);
+
+						if (JSONUtil.isEmpty(snapshotsJSONArray)) {
+							return null;
+						}
+
+						return snapshotsJSONArray;
+					}
+				).put(
+					"snapshotsEnabled", snapshotsEnabled
 				).put(
 					"sorts",
 					() -> {

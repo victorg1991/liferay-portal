@@ -53,7 +53,6 @@ import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
@@ -187,8 +186,9 @@ public class FragmentEntryStagedModelDataHandlerTest
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), stagingGroup.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(),
+				null, TestPropsValues.getUserId(), stagingGroup.getGroupId(),
+				null, fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(),
 				_segmentsExperienceLocalService.
 					fetchDefaultSegmentsExperienceId(_layout.getPlid()),
 				stagingGroup.getDefaultPublicPlid(), fragmentEntry.getCss(),
@@ -244,8 +244,9 @@ public class FragmentEntryStagedModelDataHandlerTest
 
 		String itemId = ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 			_fragmentEntryLinkLocalService.addFragmentEntryLink(
-				null, TestPropsValues.getUserId(), stagingGroup.getGroupId(), 0,
-				fragmentEntry.getFragmentEntryId(), segmentsExperienceId,
+				null, TestPropsValues.getUserId(), stagingGroup.getGroupId(),
+				null, fragmentEntry.getExternalReferenceCode(),
+				fragmentEntry.getScopeERC(), segmentsExperienceId,
 				draftLayout.getPlid(), fragmentEntry.getCss(),
 				fragmentEntry.getHtml(), fragmentEntry.getJs(),
 				fragmentEntry.getConfiguration(), StringPool.BLANK,
@@ -275,10 +276,14 @@ public class FragmentEntryStagedModelDataHandlerTest
 
 		ContentLayoutTestUtil.publishLayout(draftLayout, _layout);
 
+		FragmentEntryLink originalFragmentEntryLink =
+			_fragmentEntryLinkLocalService.fetchFragmentEntryLink(
+				fragmentStyledLayoutStructureItem.getFragmentEntryLinkId());
+
 		FragmentEntryLink publishedFragmentEntryLink =
 			_fragmentEntryLinkLocalService.getFragmentEntryLink(
 				stagingGroup.getGroupId(),
-				fragmentStyledLayoutStructureItem.getFragmentEntryLinkId(),
+				originalFragmentEntryLink.getExternalReferenceCode(),
 				_layout.getPlid());
 
 		Company company = _companyLocalService.getCompany(
@@ -438,8 +443,9 @@ public class FragmentEntryStagedModelDataHandlerTest
 			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 				_fragmentEntryLinkLocalService.addFragmentEntryLink(
 					null, TestPropsValues.getUserId(),
-					stagingGroup.getGroupId(), 0,
-					fragmentEntry.getFragmentEntryId(), segmentsExperienceId,
+					stagingGroup.getGroupId(), null,
+					fragmentEntry.getExternalReferenceCode(),
+					fragmentEntry.getScopeERC(), segmentsExperienceId,
 					layout.getPlid(), fragmentEntry.getCss(),
 					fragmentEntry.getHtml(), fragmentEntry.getJs(),
 					fragmentEntry.getConfiguration(),
@@ -464,8 +470,7 @@ public class FragmentEntryStagedModelDataHandlerTest
 
 		for (String string : strings) {
 			Assert.assertTrue(
-				html + " not contains " + string,
-				StringUtil.contains(content, string, StringPool.BLANK));
+				html + " not contains " + string, content.contains(string));
 
 			content = content.substring(content.indexOf(string));
 		}

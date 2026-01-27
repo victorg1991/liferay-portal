@@ -5,6 +5,7 @@
 
 package com.liferay.jenkins.results.parser.test.clazz.group;
 
+import com.liferay.jenkins.results.parser.DownstreamBuildReport;
 import com.liferay.jenkins.results.parser.TestClassReport;
 import com.liferay.jenkins.results.parser.test.clazz.JUnitTestClass;
 import com.liferay.jenkins.results.parser.test.clazz.TestClass;
@@ -22,29 +23,22 @@ import org.json.JSONObject;
 public class JUnitAxisTestClassGroup extends AxisTestClassGroup {
 
 	@Override
-	public long getAverageTotalTestTaskDuration() {
-		if (_averageTotalTestTaskDuration != null) {
-			return _averageTotalTestTaskDuration;
+	public List<DownstreamBuildReport> getCachedDownstreamBuildReports() {
+		if (!isBuildCachingEnabled() || !isResultsCached()) {
+			return null;
 		}
 
-		_averageTotalTestTaskDuration = 0L;
+		Set<DownstreamBuildReport> cachedDownstreamBuildReports =
+			new HashSet<>();
 
-		Set<String> testTaskNames = new HashSet<>();
+		for (JUnitTestClass jUnitTestClass : getJUnitTestClasses()) {
+			DownstreamBuildReport downstreamBuildReport =
+				jUnitTestClass.getCachedDownstreamBuildReport();
 
-		for (TestClass testClass : getTestClasses()) {
-			String testTaskName = testClass.getTestTaskName();
-
-			if (testTaskNames.contains(testTaskName)) {
-				continue;
-			}
-
-			testTaskNames.add(testTaskName);
-
-			_averageTotalTestTaskDuration +=
-				testClass.getAverageTestTaskDuration();
+			cachedDownstreamBuildReports.add(downstreamBuildReport);
 		}
 
-		return _averageTotalTestTaskDuration;
+		return new ArrayList<>(cachedDownstreamBuildReports);
 	}
 
 	public List<JUnitTestClass> getJUnitTestClasses() {
@@ -63,6 +57,10 @@ public class JUnitAxisTestClassGroup extends AxisTestClassGroup {
 
 	@Override
 	public boolean isResultsCached() {
+		if (!isBuildCachingEnabled()) {
+			return false;
+		}
+
 		for (JUnitTestClass jUnitTestClass : getJUnitTestClasses()) {
 			List<TestClassReport> cachedTestClassReports =
 				jUnitTestClass.getCachedTestClassReports();
@@ -88,7 +86,5 @@ public class JUnitAxisTestClassGroup extends AxisTestClassGroup {
 
 		super(jUnitBatchTestClassGroup);
 	}
-
-	private Long _averageTotalTestTaskDuration;
 
 }

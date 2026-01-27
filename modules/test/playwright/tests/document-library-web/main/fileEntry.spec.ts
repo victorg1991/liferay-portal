@@ -525,6 +525,125 @@ test(
 	}
 );
 
+async function addDocumentShortcut(
+	apiHelpers,
+	siteId,
+	documentTitle: string,
+	documentFolderId: number,
+	shortcutFolderId: number
+) {
+	const document = await apiHelpers.headlessDelivery.postDocument(
+		siteId,
+		createReadStream(path.join(__dirname, '/dependencies/image1.jpeg')),
+		{
+			documentFolderId,
+			fileName: documentTitle + '.jpeg',
+			title: documentTitle,
+		}
+	);
+
+	return await apiHelpers.headlessDelivery.postDocumentShortcut(siteId, {
+		folderId: shortcutFolderId,
+		targetDocumentId: document.id,
+	});
+}
+
+test(
+	'Shortcuts in one folder linked to documents in another folder are correctly shown in DL widget as a List',
+	{tag: ['@LPD-63743']},
+	async ({apiHelpers, documentLibraryPage, page, site}) => {
+		const documentTitle = 'Title' + getRandomString();
+
+		const folderDocuments =
+			await apiHelpers.headlessDelivery.postDocumentFolder(site.id, {
+				name: 'FolderDocuments' + getRandomString(),
+			});
+
+		const folderShortcuts =
+			await apiHelpers.headlessDelivery.postDocumentFolder(site.id, {
+				name: 'FolderShortcuts' + getRandomString(),
+			});
+
+		await addDocumentShortcut(
+			apiHelpers,
+			site.id,
+			documentTitle + '1',
+			folderDocuments.id,
+			folderShortcuts.id
+		);
+		await addDocumentShortcut(
+			apiHelpers,
+			site.id,
+			documentTitle + '2',
+			folderDocuments.id,
+			folderShortcuts.id
+		);
+		await addDocumentShortcut(
+			apiHelpers,
+			site.id,
+			documentTitle + '3',
+			folderDocuments.id,
+			folderShortcuts.id
+		);
+
+		const widgetDefinition = getWidgetDefinition({
+			id: getRandomString(),
+			widgetConfig: {
+				rootFolderExternalReferenceCode:
+					folderShortcuts.externalReferenceCode,
+				selectedGroupExternalReferenceCode: site.externalReferenceCode,
+			},
+			widgetName: 'com_liferay_document_library_web_portlet_DLPortlet',
+		});
+
+		const layout = await apiHelpers.headlessDelivery.createSitePage({
+			pageDefinition: getPageDefinition([widgetDefinition]),
+			siteId: site.id,
+			title: getRandomString(),
+		});
+
+		await page.goto(`/web/${site.name}/${layout.friendlyUrlPath}`);
+
+		await expect(
+			page
+				.locator('.portlet-document-library')
+				.getByRole('link', {name: documentTitle + '1'})
+		).toBeVisible();
+
+		await expect(
+			page
+				.locator('.portlet-document-library')
+				.getByRole('link', {name: documentTitle + '2'})
+		).toBeVisible();
+
+		await expect(
+			page
+				.locator('.portlet-document-library')
+				.getByRole('link', {name: documentTitle + '3'})
+		).toBeVisible();
+
+		await documentLibraryPage.changeView('list');
+
+		await expect(
+			page
+				.locator('.portlet-document-library')
+				.getByRole('link', {name: documentTitle + '1'})
+		).toBeVisible();
+
+		await expect(
+			page
+				.locator('.portlet-document-library')
+				.getByRole('link', {name: documentTitle + '2'})
+		).toBeVisible();
+
+		await expect(
+			page
+				.locator('.portlet-document-library')
+				.getByRole('link', {name: documentTitle + '3'})
+		).toBeVisible();
+	}
+);
+
 test(
 	'Replace option does not work on Categories Selector',
 	{
@@ -747,7 +866,7 @@ test(
 
 		await documentLibraryPage.goToViewHistoryFileEntry(title);
 
-		await page.getByRole('link', {name: 'Back'}).click();
+		await page.locator('span[title="Back"]').click();
 
 		await expect(
 			page.getByRole('button', {name: 'Versions'})
@@ -866,7 +985,7 @@ test(
 
 		await page
 			.getByRole('dialog')
-			.getByRole('button', {name: 'close'})
+			.getByRole('button', {name: 'Close'})
 			.click();
 
 		await page.click('button[title="Options"]');
@@ -954,6 +1073,39 @@ test(
 
 		await expect(
 			page.getByRole('menuitem', {name: 'Revert'})
+		).not.toBeVisible();
+	}
+);
+
+test(
+	'Select All should not be visible in case of search or filter',
+	{
+		tag: ['@LPD-71053'],
+	},
+
+	async ({
+		documentLibraryEditFilePage,
+		documentLibraryEditFolderPage,
+		documentLibraryPage,
+		page,
+		site,
+	}) => {
+		const folderTitle = 'Folder' + getRandomString();
+
+		await documentLibraryPage.goto(site.friendlyUrlPath);
+
+		for (let i = 0; i < 21; i++) {
+			await documentLibraryPage.goToCreateNewFolder();
+			await documentLibraryEditFolderPage.fillTitle(folderTitle + i);
+			await documentLibraryEditFilePage.saveButton.click();
+		}
+
+		await documentLibraryPage.searchInDL('Folder');
+
+		await page.getByLabel('Select All Items on the Page').click();
+
+		await expect(
+			page.getByRole('button', {name: 'Select All'})
 		).not.toBeVisible();
 	}
 );

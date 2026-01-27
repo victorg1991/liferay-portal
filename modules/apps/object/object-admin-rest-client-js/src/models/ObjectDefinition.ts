@@ -11,7 +11,9 @@
 			import {ObjectRelationship} from './ObjectRelationship';
 			import {ObjectValidationRule} from './ObjectValidationRule';
 			import {ObjectView} from './ObjectView';
+			import {Permission} from './Permission';
 			import {Status} from './Status';
+			import {WorkflowDefinitionLink} from './WorkflowDefinitionLink';
 
 /**
  * @author Javier Gamarra
@@ -30,12 +32,14 @@
 			"defaultLanguageId"?: string;
 			"enableCategorization"?: boolean;
 			"enableComments"?: boolean;
+			"enableFormContainer"?: boolean;
 			"enableFriendlyURLCustomization"?: boolean;
 			"enableIndexSearch"?: boolean;
 			"enableLocalization"?: boolean;
 			"enableObjectEntryDraft"?: boolean;
 			"enableObjectEntryHistory"?: boolean;
 			"enableObjectEntrySchedule"?: boolean;
+			"enableObjectEntrySubscription"?: boolean;
 			"enableObjectEntryVersioning"?: boolean;
 			"externalReferenceCode"?: string;
 			"friendlyURLSeparator"?: string;
@@ -54,6 +58,7 @@
 			"panelAppOrder"?: string;
 			"panelCategoryKey"?: string;
 			"parameterRequired"?: boolean;
+			"permissions"?: Array<Permission>;
 			"pluralLabel"?: {[key: string]: string;};
 			"portlet"?: boolean;
 			"restContextPath"?: string;
@@ -63,6 +68,7 @@
 			"storageType"?: string;
 			"system"?: boolean;
 			"titleObjectFieldName"?: string;
+			"workflowDefinitionLinks"?: Array<WorkflowDefinitionLink>;
 
 		static "discriminator": string | undefined = undefined;
 
@@ -127,6 +133,11 @@
 			type: "boolean",
 		},
 		{
+			baseName: "enableFormContainer",
+			name: "enableFormContainer",
+			type: "boolean",
+		},
+		{
 			baseName: "enableFriendlyURLCustomization",
 			name: "enableFriendlyURLCustomization",
 			type: "boolean",
@@ -154,6 +165,11 @@
 		{
 			baseName: "enableObjectEntrySchedule",
 			name: "enableObjectEntrySchedule",
+			type: "boolean",
+		},
+		{
+			baseName: "enableObjectEntrySubscription",
+			name: "enableObjectEntrySubscription",
 			type: "boolean",
 		},
 		{
@@ -247,6 +263,11 @@
 			type: "boolean",
 		},
 		{
+			baseName: "permissions",
+			name: "permissions",
+			type: "Array<Permission>",
+		},
+		{
 			baseName: "pluralLabel",
 			name: "pluralLabel",
 			type: "{[key: string]: string;}",
@@ -290,6 +311,11 @@
 			baseName: "titleObjectFieldName",
 			name: "titleObjectFieldName",
 			type: "string",
+		},
+		{
+			baseName: "workflowDefinitionLinks",
+			name: "workflowDefinitionLinks",
+			type: "Array<WorkflowDefinitionLink>",
 		},
 		];
 

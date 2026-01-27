@@ -9,6 +9,7 @@ import {fetch, objectToFormData} from 'frontend-js-web';
 import React, {useState} from 'react';
 
 import {showNotification} from '../util/util';
+import PublicationsPermissionsSearchBar from './PublicationsPermissionsSearchBar';
 import PublicationsPermissionsTable from './form/PublicationsPermissionsTable';
 
 export default function PublicationsPermissions({
@@ -17,16 +18,12 @@ export default function PublicationsPermissions({
 	roles,
 	updatePermissionsURL,
 }) {
-	const [showModal, setShowModal] = useState(false);
-	const [permissions, setPermissions] = useState(defaultPermissions);
+	const [filteredRoles, setFilteredRoles] = useState(roles);
+	const [permissions, setPermissions] = useState([defaultPermissions]);
 
-	const {observer} = useModal({
-		onClose: () => {
-			Liferay.Portlet.refresh(`#p_p_id${namespace}`);
-		},
-	});
+	const {observer, onOpenChange, open} = useModal({});
 
-	const saveRolePermissions = () => {
+	const saveRolePermissions = async () => {
 		const permissionsMap = new Map(
 			permissions.map(({actionIds, roleId}) => [roleId, actionIds])
 		);
@@ -48,6 +45,10 @@ export default function PublicationsPermissions({
 					return;
 				}
 
+				onOpenChange(false);
+
+				Liferay.Portlet.refresh(`#p_p_id${namespace}`);
+
 				showNotification(
 					Liferay.Language.get('your-request-completed-successfully'),
 					false
@@ -58,65 +59,63 @@ export default function PublicationsPermissions({
 			});
 	};
 
-	const renderModal = () => {
-		if (!showModal) {
-			return null;
-		}
-
-		return (
-			<ClayModal observer={observer} size="full-screen">
-				<ClayModal.Header withTitle>
-					{Liferay.Language.get('permissions')}
-				</ClayModal.Header>
-
-				<ClayModal.Body scrollable>
-					<PublicationsPermissionsTable
-						defaultPermissions={defaultPermissions}
-						onChange={setPermissions}
-						roles={roles}
-					/>
-				</ClayModal.Body>
-
-				<ClayModal.Footer
-					last={
-						<ClayButton.Group spaced>
-							<ClayButton
-								displayType="secondary"
-								onClick={() =>
-									Liferay.Portlet.refresh(
-										`#p_p_id${namespace}`
-									)
-								}
-							>
-								{Liferay.Language.get('cancel')}
-							</ClayButton>
-
-							<ClayButton
-								onClick={() => {
-									saveRolePermissions();
-								}}
-								type="submit"
-							>
-								{Liferay.Language.get('save')}
-							</ClayButton>
-						</ClayButton.Group>
-					}
-				/>
-			</ClayModal>
-		);
-	};
-
 	return (
 		<>
 			<ClayButton
+				aria-label={Liferay.Language.get('edit-permissions')}
 				displayType="secondary"
-				onClick={() => setShowModal(true)}
-				title={Liferay.Language.get('edit-permissions')}
+				onClick={() => onOpenChange(true)}
 			>
 				{Liferay.Language.get('edit-permissions')}
 			</ClayButton>
 
-			{renderModal()}
+			{open && (
+				<ClayModal observer={observer} size="full-screen">
+					<ClayModal.Header
+						closeButtonAriaLabel={Liferay.Language.get('close')}
+						withTitle
+					>
+						{Liferay.Language.get('permissions')}
+					</ClayModal.Header>
+
+					<ClayModal.Body scrollable>
+						<PublicationsPermissionsSearchBar
+							filteredRoles={filteredRoles}
+							onChangeRoles={setFilteredRoles}
+							roles={roles}
+						/>
+
+						<PublicationsPermissionsTable
+							defaultPermissions={defaultPermissions}
+							onChange={setPermissions}
+							roles={filteredRoles}
+						/>
+					</ClayModal.Body>
+
+					<ClayModal.Footer
+						last={
+							<ClayButton.Group spaced>
+								<ClayButton
+									aria-label={Liferay.Language.get('cancel')}
+									displayType="secondary"
+									onClick={() => onOpenChange(false)}
+								>
+									{Liferay.Language.get('cancel')}
+								</ClayButton>
+
+								<ClayButton
+									aria-label={Liferay.Language.get('save')}
+									onClick={() => {
+										saveRolePermissions();
+									}}
+								>
+									{Liferay.Language.get('save')}
+								</ClayButton>
+							</ClayButton.Group>
+						}
+					/>
+				</ClayModal>
+			)}
 		</>
 	);
 }

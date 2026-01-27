@@ -1,6 +1,7 @@
 @component-name = "portal-search"
 definition {
 
+	property browser.chrome.version = "139.0";
 	property portal.release = "true";
 	property portal.suite.search.engine = "elasticsearch7,opensearch2";
 	property portal.upstream = "true";
@@ -62,6 +63,8 @@ definition {
 
 	@priority = 4
 	test CanConfigureSearchContributorSize {
+		property test.run.type = "single";
+
 		JSONWebcontent.addWebContent(
 			content = "WC WebContent Content",
 			description = "WC WebContent Description",
@@ -180,6 +183,8 @@ definition {
 
 	@priority = 4
 	test CanViewSearchBarSuggestionsResultDetails {
+		property test.run.type = "single";
+
 		JSONWebcontent.addWebContent(
 			content = "WC WebContent Content",
 			description = "WC WebContent Description",
@@ -227,6 +232,8 @@ definition {
 	@description = "This is a use case for LPS-166050. When using a Blueprint to drive Search Bar suggestions, I can configure a character threshold that applies to this group"
 	@priority = 3
 	test ConfigureBlueprintContributorCharacterThresholds {
+		property test.run.type = "single";
+
 		task ("Add Web Content and Blueprint") {
 			JSONWebcontent.addWebContent(
 				content = "WC WebContent Content",

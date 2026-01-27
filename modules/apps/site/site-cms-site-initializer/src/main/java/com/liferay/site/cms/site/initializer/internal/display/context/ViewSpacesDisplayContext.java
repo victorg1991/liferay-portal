@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.site.cms.site.initializer.internal.util.ActionUtil;
+import com.liferay.site.cms.site.initializer.internal.util.InfoItemUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -40,6 +41,7 @@ public class ViewSpacesDisplayContext {
 		PortletResourcePermission portletResourcePermission) {
 
 		_assetLibraryResourceFactory = assetLibraryResourceFactory;
+		_httpServletRequest = httpServletRequest;
 		_jsonFactory = jsonFactory;
 		_portletResourcePermission = portletResourcePermission;
 
@@ -51,6 +53,8 @@ public class ViewSpacesDisplayContext {
 		Page<AssetLibrary> page = _getPage();
 
 		return HashMapBuilder.<String, Object>put(
+			"allSpacesActive", _isAllSpacesActive(_themeDisplay)
+		).put(
 			"allSpacesURL",
 			StringBundler.concat(
 				_themeDisplay.getPathFriendlyURLPublic(),
@@ -60,6 +64,8 @@ public class ViewSpacesDisplayContext {
 			JSONUtil.toJSONArray(
 				page.getItems(),
 				assetLibrary -> JSONUtil.put(
+					"active", _isAssetLibraryActive(assetLibrary)
+				).put(
 					"id", assetLibrary.getId()
 				).put(
 					"name", assetLibrary.getName()
@@ -74,10 +80,7 @@ public class ViewSpacesDisplayContext {
 		).put(
 			"assetLibrariesCount", page.getTotalCount()
 		).put(
-			"newSpaceURL",
-			StringBundler.concat(
-				_themeDisplay.getPathFriendlyURLPublic(),
-				GroupConstants.CMS_FRIENDLY_URL, "/new-space")
+			"newSpaceURL", _getNewSpaceCreationURL()
 		).put(
 			"showAddButton",
 			_portletResourcePermission.contains(
@@ -118,6 +121,13 @@ public class ViewSpacesDisplayContext {
 		return assetLibraries;
 	}
 
+	private String _getNewSpaceCreationURL() {
+		return StringBundler.concat(
+			_themeDisplay.getPathFriendlyURLPublic(),
+			GroupConstants.CMS_FRIENDLY_URL, "/new-space?backURL=",
+			_themeDisplay.getURLCurrent());
+	}
+
 	private Page<AssetLibrary> _getPage() throws Exception {
 		AssetLibraryResource.Builder builder =
 			_assetLibraryResourceFactory.create();
@@ -128,7 +138,8 @@ public class ViewSpacesDisplayContext {
 
 		Page<AssetLibrary> assetLibrariesPage =
 			assetLibraryResource.getAssetLibrariesPage(
-				null, null, null, Pagination.of(1, 5), null);
+				null, null, assetLibraryResource.toFilter("type eq 'Space'"),
+				Pagination.of(1, 5), null);
 
 		return Page.of(
 			assetLibrariesPage.getActions(),
@@ -139,7 +150,26 @@ public class ViewSpacesDisplayContext {
 			Pagination.of(1, 5), assetLibrariesPage.getTotalCount());
 	}
 
+	private boolean _isAllSpacesActive(ThemeDisplay themeDisplay) {
+		String currentURL = themeDisplay.getURLCurrent();
+
+		return currentURL.contains("/all-spaces");
+	}
+
+	private boolean _isAssetLibraryActive(AssetLibrary assetLibrary) {
+		if ((InfoItemUtil.getDepotEntryId(_httpServletRequest) ==
+				assetLibrary.getId()) ||
+			(InfoItemUtil.getGroupId(_httpServletRequest) ==
+				assetLibrary.getId())) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private final AssetLibraryResource.Factory _assetLibraryResourceFactory;
+	private final HttpServletRequest _httpServletRequest;
 	private final JSONFactory _jsonFactory;
 	private final PortletResourcePermission _portletResourcePermission;
 	private final ThemeDisplay _themeDisplay;

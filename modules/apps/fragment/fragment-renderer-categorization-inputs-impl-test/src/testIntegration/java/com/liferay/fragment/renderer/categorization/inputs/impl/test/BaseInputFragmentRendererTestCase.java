@@ -23,11 +23,13 @@ import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
@@ -140,11 +142,12 @@ public abstract class BaseInputFragmentRendererTestCase {
 
 		return ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 			StringPool.BLANK, StringPool.BLANK,
-			fragmentRenderer.getConfiguration(
-				new DefaultFragmentRendererContext(null)),
-			0, StringPool.BLANK, StringPool.BLANK, draftLayout, getRenderKey(),
-			fragmentRenderer.getType(), jsonObject.getString("addedItemId"), 0,
-			segmentsExperienceId);
+			JSONFactoryUtil.toString(
+				fragmentRenderer.getConfigurationJSONObject(
+					new DefaultFragmentRendererContext(null))),
+			null, null, StringPool.BLANK, StringPool.BLANK, draftLayout,
+			getRenderKey(), fragmentRenderer.getType(),
+			jsonObject.getString("addedItemId"), 0, segmentsExperienceId);
 	}
 
 	protected abstract ObjectEntry addObjectEntry() throws Exception;
@@ -214,12 +217,13 @@ public abstract class BaseInputFragmentRendererTestCase {
 			objectDefinition.isAccountEntryRestricted(),
 			objectDefinition.isActive(), objectDefinition.getClassName(), false,
 			objectDefinition.isEnableComments(),
+			objectDefinition.isEnableFormContainer(),
 			objectDefinition.isEnableFriendlyURLCustomization(),
 			objectDefinition.isEnableIndexSearch(),
-			objectDefinition.isEnableLocalization(),
 			objectDefinition.isEnableObjectEntryDraft(),
 			objectDefinition.isEnableObjectEntryHistory(),
 			objectDefinition.isEnableObjectEntrySchedule(),
+			objectDefinition.isEnableObjectEntrySubscription(),
 			objectDefinition.isEnableObjectEntryVersioning(),
 			objectDefinition.getFriendlyURLSeparator(),
 			objectDefinition.getLabelMap(), objectDefinition.getName(),
@@ -227,7 +231,8 @@ public abstract class BaseInputFragmentRendererTestCase {
 			objectDefinition.getPanelCategoryKey(),
 			objectDefinition.isPortlet(), objectDefinition.getPluralLabelMap(),
 			objectDefinition.getScope(), objectDefinition.getStatus(),
-			Collections.emptyList());
+			Collections.emptyList(), Collections.emptyList(),
+			Collections.emptyList(), new ServiceContext());
 
 		FragmentRenderer fragmentRenderer = getFragmentRenderer();
 

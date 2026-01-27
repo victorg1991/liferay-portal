@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import ClayLink from '@clayui/link';
 import ClaySticker from '@clayui/sticker';
 import cx from 'classnames';
 import React from 'react';
@@ -22,39 +23,36 @@ export const logoColors: Record<LogoColor, string> = {
 	'outline-9': Liferay.Language.get('white'),
 };
 
-function getDisplayType(char: string): LogoColor {
-	const displayTypes = Object.keys(logoColors);
-
-	return displayTypes[char.charCodeAt(0) % displayTypes.length] as LogoColor;
-}
-
 export default function SpaceSticker({
-	displayType,
+	displayType = 'outline-0',
 	hideName,
+	href,
 	name,
 	size,
 	...otherProps
 }: {
 	hideName?: boolean;
+	href?: string;
 	name: string;
 } & Pick<
 	React.ComponentProps<typeof ClaySticker>,
 	'className' | 'displayType' | 'id' | 'size'
 >) {
 	const gap = size === 'lg' ? 'c-gap-3' : 'c-gap-2';
-	const wrapperClasses = cx('align-items-center d-flex', gap);
+	const wrapperClasses = cx('align-items-center d-flex text-nowrap', gap);
 
 	return (
 		<div className={wrapperClasses}>
-			<ClaySticker
-				displayType={displayType || getDisplayType(name)}
-				size={size}
-				{...otherProps}
-			>
+			<ClaySticker displayType={displayType} size={size} {...otherProps}>
 				{name.charAt(0).toUpperCase()}
 			</ClaySticker>
 
-			{!hideName && <span>{name}</span>}
+			{!hideName &&
+				(href ? (
+					<ClayLink href={href}>{name}</ClayLink>
+				) : (
+					<span>{name}</span>
+				))}
 		</div>
 	);
 }

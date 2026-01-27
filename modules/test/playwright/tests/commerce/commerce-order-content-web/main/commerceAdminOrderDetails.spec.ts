@@ -44,7 +44,6 @@ test(
 
 		const channel =
 			await apiHelpers.headlessCommerceAdminChannel.postChannel({
-				name: getRandomString(),
 				siteGroupId: site.id,
 			});
 
@@ -199,7 +198,6 @@ test('LPD-26244 Split order items are shown on admin order details page when sho
 	apiHelpers.data.push({id: site.id, type: 'site'});
 
 	const channel = await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: getRandomString(),
 		siteGroupId: site.id,
 	});
 
@@ -315,6 +313,277 @@ test('LPD-26244 Split order items are shown on admin order details page when sho
 		).row
 	).toBeVisible();
 });
+
+test(
+	'Split order items are shown on admin shipment details page when show separate order items toggle is enabled',
+	{tag: ['@LPD-39379', '@COMMERCE-12599']},
+	async ({
+		apiHelpers,
+		commerceAdminChannelDetailsPage,
+		commerceAdminChannelsPage,
+		commerceAdminOrderDetailsPage,
+		commerceAdminOrdersPage,
+		commerceAdminShipmentsPage,
+		page,
+	}) => {
+		const site = await apiHelpers.headlessSite.createSite({
+			name: getRandomString(),
+		});
+
+		apiHelpers.data.push({id: site.id, type: 'site'});
+
+		const channel =
+			await apiHelpers.headlessCommerceAdminChannel.postChannel({
+				siteGroupId: site.id,
+			});
+
+		await commerceAdminChannelsPage.goto();
+
+		await (
+			await commerceAdminChannelsPage.channelsTableRowLink(channel.name)
+		).click();
+
+		await (
+			await commerceAdminChannelDetailsPage.showSeparateOrderItemsToggle
+		).check();
+
+		await expect(
+			await commerceAdminChannelDetailsPage.showSeparateOrderItemsToggle
+		).toBeChecked();
+
+		await (await commerceAdminChannelDetailsPage.saveButton).click();
+
+		await expect(
+			await commerceAdminChannelDetailsPage.showSeparateOrderItemsToggle
+		).toBeChecked();
+
+		const catalog =
+			await apiHelpers.headlessCommerceAdminCatalog.postCatalog({
+				name: getRandomString(),
+			});
+
+		const product =
+			await apiHelpers.headlessCommerceAdminCatalog.postProduct({
+				catalogId: catalog.id,
+				name: {en_US: getRandomString()},
+			});
+
+		const productSkus = await apiHelpers.headlessCommerceAdminCatalog
+			.getProduct(product.productId)
+			.then((product) => {
+				return product.skus;
+			});
+
+		const sku = productSkus[0];
+
+		const warehouse =
+			await apiHelpers.headlessCommerceAdminInventoryApiHelper.postWarehouses(
+				{
+					active: true,
+					latitude: getRandomInt(),
+					longitude: getRandomInt(),
+					warehouseItems: [
+						{
+							quantity: 100,
+							sku: sku.sku,
+						},
+					],
+				}
+			);
+
+		await apiHelpers.headlessCommerceAdminInventoryApiHelper.postWarehousesChannels(
+			warehouse.id,
+			channel.id
+		);
+
+		const account = await apiHelpers.headlessAdminUser.postAccount({
+			name: getRandomString(),
+			type: 'person',
+		});
+
+		await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
+			account.id,
+			['test@liferay.com']
+		);
+
+		const address =
+			await apiHelpers.headlessCommerceAdminAccount.postAddress(
+				account.id
+			);
+
+		const cartItem1 = {
+			options: '[]',
+			quantity: 3,
+			replacedSkuId: 0,
+			skuId: sku.id,
+		};
+
+		const cartItem2 = {
+			options: '[]',
+			quantity: 4,
+			replacedSkuId: 0,
+			skuId: sku.id,
+		};
+
+		const cart = await apiHelpers.headlessCommerceDeliveryCart.postCart(
+			{
+				accountId: account.id,
+				billingAddressId: address.id,
+				cartItems: [cartItem1, cartItem2],
+				shippingAddressId: address.id,
+			},
+			channel.id
+		);
+
+		await apiHelpers.headlessCommerceDeliveryCart.checkoutCart(cart.id);
+
+		await commerceAdminOrdersPage.goto();
+
+		await (
+			await commerceAdminOrdersPage.tableRowLink({
+				colIndex: 1,
+				rowValue: cart.id,
+			})
+		).click();
+
+		await expect(
+			commerceAdminOrderDetailsPage.headerDetailsTitle
+		).toBeVisible();
+
+		await expect(
+			(
+				await commerceAdminOrderDetailsPage.tableRow(
+					2,
+					product.name['en_US'],
+					true
+				)
+			).row
+		).toBeVisible();
+
+		await expect(
+			(
+				await commerceAdminOrderDetailsPage.tableRow(
+					8,
+					cartItem1.quantity,
+					true
+				)
+			).row
+		).toBeVisible();
+
+		await expect(
+			(
+				await commerceAdminOrderDetailsPage.tableRow(
+					8,
+					cartItem2.quantity,
+					true
+				)
+			).row
+		).toBeVisible();
+
+		await commerceAdminOrderDetailsPage.acceptOrderButton.click();
+		await commerceAdminOrderDetailsPage.createShipmentButton.click();
+
+		await commerceAdminShipmentsPage.addProductsToShipment.click();
+
+		await expect(
+			await commerceAdminShipmentsPage.shipmentItemFrame.getByText(
+				'Showing 1 to 2 of 2 entries.'
+			)
+		).toBeVisible();
+
+		await expect(
+			(
+				await commerceAdminShipmentsPage.shipmentItemsTableRow(
+					3,
+					cartItem1.quantity,
+					true
+				)
+			).row
+		).toContainText('3');
+
+		await expect(
+			(
+				await commerceAdminShipmentsPage.shipmentItemsTableRow(
+					3,
+					cartItem2.quantity,
+					true
+				)
+			).row
+		).toContainText('4');
+
+		await (
+			await commerceAdminShipmentsPage.shipmentItemsTableRowAction(
+				1,
+				sku.sku
+			)
+		).check();
+
+		await commerceAdminShipmentsPage.shipmentsItemSubmitButton.click();
+		await commerceAdminShipmentsPage.productsSkuLink(sku.sku).click();
+		await commerceAdminShipmentsPage.addQuantityInShipment.fill('2');
+		await commerceAdminShipmentsPage.editProductSaveButton.click();
+
+		await waitForAlert(page.frameLocator('iframe'));
+
+		await commerceAdminShipmentsPage.editProductCloseButton.click();
+		await commerceAdminShipmentsPage
+			.shipmentStatusLink('Finish Processing')
+			.click();
+
+		await waitForAlert(page);
+
+		await commerceAdminShipmentsPage.shipmentStatusLink('Ship').click();
+
+		await waitForAlert(page);
+
+		await commerceAdminShipmentsPage.shipmentStatusLink('Deliver').click();
+
+		await waitForAlert(page);
+
+		await commerceAdminOrdersPage.goto();
+
+		await expect(
+			(await commerceAdminOrdersPage.tableRow(7, 'Partially Shipped')).row
+		).toBeVisible();
+
+		await (
+			await commerceAdminOrdersPage.tableRowLink({
+				colIndex: 1,
+				rowValue: cart.id,
+			})
+		).click();
+
+		await commerceAdminOrderDetailsPage.createShipmentButton.click();
+
+		await commerceAdminShipmentsPage.addProductsToShipment.click();
+
+		await expect(
+			await commerceAdminShipmentsPage.shipmentItemFrame.getByText(
+				'Showing 1 to 2 of 2 entries.'
+			)
+		).toBeVisible();
+
+		await expect(
+			(
+				await commerceAdminShipmentsPage.shipmentItemsTableRow(
+					3,
+					cartItem1.quantity - 2,
+					true
+				)
+			).row
+		).toContainText('1');
+
+		await expect(
+			(
+				await commerceAdminShipmentsPage.shipmentItemsTableRow(
+					3,
+					cartItem2.quantity,
+					true
+				)
+			).row
+		).toContainText('4');
+	}
+);
 
 test('COMMERCE-11888. As a supplier user, I can edit the order details, payments and shipments', async ({
 	apiHelpers,
@@ -686,7 +955,6 @@ test('LPD-30856 Can update order status by deleting unshipped items', async ({
 	apiHelpers.data.push({id: site.id, type: 'site'});
 
 	const channel = await apiHelpers.headlessCommerceAdminChannel.postChannel({
-		name: getRandomString(),
 		siteGroupId: site.id,
 	});
 
@@ -864,5 +1132,127 @@ test('LPD-30856 Can update order status by deleting unshipped items', async ({
 
 	await expect(
 		commerceAdminOrdersPage.keyOrderStatus('Completed')
+	).toBeVisible();
+});
+
+test('COMMERCE-7982 Can Edit Order Measurement Unit', async ({
+	apiHelpers,
+	commerceAdminOrderDetailsPage,
+	commerceAdminOrdersPage,
+	page,
+}) => {
+	const site = await apiHelpers.headlessSite.createSite({
+		name: getRandomString(),
+	});
+
+	apiHelpers.data.push({id: site.id, type: 'site'});
+
+	const channel = await apiHelpers.headlessCommerceAdminChannel.postChannel({
+		siteGroupId: site.id,
+	});
+
+	const catalog = await apiHelpers.headlessCommerceAdminCatalog.postCatalog();
+
+	const product = await apiHelpers.headlessCommerceAdminCatalog.postProduct({
+		catalogId: catalog.id,
+		name: {en_US: 'Product'},
+	});
+
+	const productSkus = await apiHelpers.headlessCommerceAdminCatalog
+		.getProduct(product.productId)
+		.then((product) => {
+			return product.skus;
+		});
+
+	const sku1 = productSkus[0];
+
+	const account = await apiHelpers.headlessAdminUser.postAccount({
+		name: getRandomString(),
+		type: 'business',
+	});
+
+	await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
+		account.id,
+		['test@liferay.com']
+	);
+
+	const address = await apiHelpers.headlessCommerceAdminAccount.postAddress(
+		account.id,
+		{
+			regionISOCode: 'LA',
+		}
+	);
+
+	const warehouse =
+		await apiHelpers.headlessCommerceAdminInventoryApiHelper.postWarehouses(
+			{
+				active: true,
+				latitude: getRandomInt(),
+				longitude: getRandomInt(),
+				warehouseItems: [
+					{
+						quantity: 1,
+						sku: sku1.sku,
+					},
+				],
+			}
+		);
+
+	await apiHelpers.headlessCommerceAdminInventoryApiHelper.postWarehousesChannels(
+		warehouse.id,
+		channel.id
+	);
+
+	const order = await apiHelpers.headlessCommerceAdminOrder.postOrder({
+		accountId: account.id,
+		billingAddressId: address.id,
+		channelId: channel.id,
+		orderItems: [
+			{
+				quantity: 1,
+				skuId: sku1.id,
+			},
+		],
+		orderStatus: '1',
+		paymentMethod: 'money-order',
+		paymentStatus: '0',
+		shippingAddressId: address.id,
+		shippingMethod: 'by-weight',
+		shippingOption: 'standard-option',
+	});
+
+	await commerceAdminOrdersPage.goto();
+
+	await expect(
+		await commerceAdminOrdersPage.tableRowLink({
+			colIndex: 1,
+			rowValue: order.id,
+		})
+	).toBeVisible();
+	await (
+		await commerceAdminOrdersPage.tableRowLink({
+			colIndex: 1,
+			rowValue: order.id,
+		})
+	).click();
+
+	await page.waitForLoadState('domcontentloaded');
+
+	await commerceAdminOrderDetailsPage.orderItemActions.click();
+
+	await commerceAdminOrderDetailsPage.orderItemActionEdit.click();
+
+	await commerceAdminOrderDetailsPage.orderItemMeasurementUnits.selectOption(
+		'meters'
+	);
+
+	await commerceAdminOrderDetailsPage.orderItemSaveButton.click();
+
+	await waitForAlert(commerceAdminOrderDetailsPage.orderItemFrame);
+
+	await commerceAdminOrderDetailsPage.orderItemFrameCloseButton.click();
+
+	await expect(
+		await commerceAdminOrderDetailsPage.orderItemQuantityColumn('1 meters')
 	).toBeVisible();
 });
