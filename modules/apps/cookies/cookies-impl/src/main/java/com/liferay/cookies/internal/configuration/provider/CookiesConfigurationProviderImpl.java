@@ -63,7 +63,7 @@ public class CookiesConfigurationProviderImpl
 			Group group = layoutSet.getGroup();
 
 			return _configurationProvider.getGroupConfiguration(
-				clazz, group.getGroupId());
+				clazz, themeDisplay.getCompanyId(), group.getGroupId());
 		}
 
 		return _configurationProvider.getCompanyConfiguration(

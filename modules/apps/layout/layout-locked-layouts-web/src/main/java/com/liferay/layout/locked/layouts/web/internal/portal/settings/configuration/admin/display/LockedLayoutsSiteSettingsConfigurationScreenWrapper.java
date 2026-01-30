@@ -7,12 +7,11 @@ package com.liferay.layout.locked.layouts.web.internal.portal.settings.configura
 
 import com.liferay.configuration.admin.display.ConfigurationScreen;
 import com.liferay.configuration.admin.display.ConfigurationScreenWrapper;
+import com.liferay.configuration.admin.util.ConfigurationFilterStringUtil;
 import com.liferay.layout.configuration.LockedLayoutsGroupConfiguration;
 import com.liferay.layout.locked.layouts.web.internal.display.context.LockedLayoutsConfigurationDisplayContext;
 import com.liferay.layout.locked.layouts.web.internal.display.context.LockedLayoutsSiteSettingsConfigurationDisplayContext;
 import com.liferay.petra.reflect.ReflectionUtil;
-import com.liferay.petra.string.StringBundler;
-import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
@@ -127,9 +126,12 @@ public class LockedLayoutsSiteSettingsConfigurationScreenWrapper
 				httpServletRequest.setAttribute(
 					LockedLayoutsConfigurationDisplayContext.class.getName(),
 					new LockedLayoutsSiteSettingsConfigurationDisplayContext(
-						_hasConfiguration(themeDisplay.getScopeGroupId()),
+						_hasConfiguration(
+							themeDisplay.getCompanyId(),
+							themeDisplay.getScopeGroupId()),
 						_configurationProvider.getGroupConfiguration(
 							LockedLayoutsGroupConfiguration.class,
+							themeDisplay.getCompanyId(),
 							themeDisplay.getScopeGroupId())));
 			}
 			catch (PortalException portalException) {
@@ -137,18 +139,17 @@ public class LockedLayoutsSiteSettingsConfigurationScreenWrapper
 			}
 		}
 
-		private boolean _hasConfiguration(long groupId)
+		private boolean _hasConfiguration(long companyId, long groupId)
 			throws ConfigurationException {
 
 			try {
-				String filterString = StringBundler.concat(
-					"(&(", ConfigurationAdmin.SERVICE_FACTORYPID,
-					StringPool.EQUAL,
-					LockedLayoutsGroupConfiguration.class.getName(), ".scoped",
-					")(groupId=", groupId, "))");
-
 				Configuration[] configuration =
-					_configurationAdmin.listConfigurations(filterString);
+					_configurationAdmin.listConfigurations(
+						ConfigurationFilterStringUtil.
+							getGroupScopedFilterString(
+								companyId, groupId,
+								LockedLayoutsGroupConfiguration.class.getName(),
+								null));
 
 				if (ArrayUtil.isEmpty(configuration)) {
 					return false;

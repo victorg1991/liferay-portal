@@ -5,6 +5,7 @@
 
 package com.liferay.site.internal.configuration.manager;
 
+import com.liferay.configuration.admin.util.ConfigurationFilterStringUtil;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
@@ -34,7 +35,8 @@ public class MenuAccessConfigurationManagerImpl
 
 			MenuAccessConfiguration menuAccessConfiguration =
 				_configurationProvider.getGroupConfiguration(
-					MenuAccessConfiguration.class, group.getGroupId());
+					MenuAccessConfiguration.class,
+					group.getCompanyId(), group.getGroupId());
 
 			if (!menuAccessConfiguration.showControlMenuByRole()) {
 				continue;
@@ -64,7 +66,8 @@ public class MenuAccessConfigurationManagerImpl
 
 			MenuAccessConfiguration menuAccessConfiguration =
 				_configurationProvider.getGroupConfiguration(
-					MenuAccessConfiguration.class, group.getGroupId());
+					MenuAccessConfiguration.class,
+					group.getCompanyId(), group.getGroupId());
 
 			String roleId = String.valueOf(role.getRoleId());
 			String[] accessToControlMenuRoleIds =
@@ -85,18 +88,22 @@ public class MenuAccessConfigurationManagerImpl
 	public String[] getAccessToControlMenuRoleIds(long groupId)
 		throws Exception {
 
+		Group group = _groupLocalService.getGroup(groupId);
+
 		MenuAccessConfiguration menuAccessConfiguration =
 			_configurationProvider.getGroupConfiguration(
-				MenuAccessConfiguration.class, groupId);
+				MenuAccessConfiguration.class, group.getCompanyId(), groupId);
 
 		return menuAccessConfiguration.accessToControlMenuRoleIds();
 	}
 
 	@Override
 	public boolean isShowControlMenuByRole(long groupId) throws Exception {
+		Group group = _groupLocalService.getGroup(groupId);
+
 		MenuAccessConfiguration menuAccessConfiguration =
 			_configurationProvider.getGroupConfiguration(
-				MenuAccessConfiguration.class, groupId);
+				MenuAccessConfiguration.class, group.getCompanyId(), groupId);
 
 		return menuAccessConfiguration.showControlMenuByRole();
 	}
@@ -107,8 +114,10 @@ public class MenuAccessConfigurationManagerImpl
 			boolean showControlMenuByRole)
 		throws Exception {
 
+		Group group = _groupLocalService.getGroup(groupId);
+
 		_configurationProvider.saveGroupConfiguration(
-			MenuAccessConfiguration.class, groupId,
+			MenuAccessConfiguration.class, group.getCompanyId(), groupId,
 			HashMapDictionaryBuilder.<String, Object>put(
 				"accessToControlMenuRoleIds", accessToControlMenuRoleIds
 			).put(

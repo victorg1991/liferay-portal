@@ -6,7 +6,9 @@
 package com.liferay.site.internal.configuration.manager;
 
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.site.configuration.manager.SitemapConfigurationManager;
 import com.liferay.site.internal.configuration.SitemapCompanyConfiguration;
@@ -43,7 +45,7 @@ public class SitemapConfigurationManagerImpl
 
 		SitemapGroupConfiguration sitemapGroupConfiguration =
 			_configurationProvider.getGroupConfiguration(
-				SitemapGroupConfiguration.class, groupId);
+				SitemapGroupConfiguration.class, companyId, groupId);
 
 		return sitemapGroupConfiguration.includeCategories();
 	}
@@ -69,7 +71,7 @@ public class SitemapConfigurationManagerImpl
 
 		SitemapGroupConfiguration sitemapGroupConfiguration =
 			_configurationProvider.getGroupConfiguration(
-				SitemapGroupConfiguration.class, groupId);
+				SitemapGroupConfiguration.class, companyId, groupId);
 
 		return sitemapGroupConfiguration.includePages();
 	}
@@ -95,7 +97,7 @@ public class SitemapConfigurationManagerImpl
 
 		SitemapGroupConfiguration sitemapGroupConfiguration =
 			_configurationProvider.getGroupConfiguration(
-				SitemapGroupConfiguration.class, groupId);
+				SitemapGroupConfiguration.class, companyId, groupId);
 
 		return sitemapGroupConfiguration.includeWebContent();
 	}
@@ -123,8 +125,10 @@ public class SitemapConfigurationManagerImpl
 			boolean includeWebContent)
 		throws ConfigurationException {
 
+		Group group = _groupLocalService.fetchGroup(groupId);
+
 		_configurationProvider.saveGroupConfiguration(
-			SitemapGroupConfiguration.class, groupId,
+			SitemapGroupConfiguration.class, group.getCompanyId(), groupId,
 			HashMapDictionaryBuilder.<String, Object>put(
 				"includeCategories", includeCategories
 			).put(
@@ -136,5 +140,8 @@ public class SitemapConfigurationManagerImpl
 
 	@Reference
 	private ConfigurationProvider _configurationProvider;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 }

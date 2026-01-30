@@ -13,6 +13,7 @@ import com.liferay.layout.seo.kernel.LayoutSEOLink;
 import com.liferay.layout.seo.kernel.LayoutSEOLinkManager;
 import com.liferay.layout.seo.model.LayoutSEOEntry;
 import com.liferay.layout.seo.service.LayoutSEOEntryLocalService;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.exception.NoSuchLayoutException;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -80,7 +81,8 @@ public class LayoutSEOLinkManagerImpl implements LayoutSEOLinkManager {
 
 		LayoutSEOGeneralGroupConfiguration layoutSEOGeneralGroupConfiguration =
 			_configurationProvider.getGroupConfiguration(
-				LayoutSEOGeneralGroupConfiguration.class, layout.getGroupId());
+				LayoutSEOGeneralGroupConfiguration.class,
+				layout.getCompanyId(), layout.getGroupId());
 
 		if (layoutSEOGeneralGroupConfiguration.showOnlyLayoutTitle()) {
 			return layoutTitle;
