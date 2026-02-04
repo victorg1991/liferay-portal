@@ -151,7 +151,6 @@ public class AntivirusAsyncFileStoreSchedulerJobConfiguration
 
 			actionableDynamicQuery.setCompanyId(
 				CompanyThreadLocal.getCompanyId());
-
 			actionableDynamicQuery.setPerformActionMethod(
 				(DLFileEntry dlFileEntry) -> {
 					DLFileVersion dlFileVersion = dlFileEntry.getFileVersion();
