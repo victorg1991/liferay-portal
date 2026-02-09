@@ -72,11 +72,13 @@ public interface SiteNavigationMenuItemService extends BaseService {
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<Long> getParentSiteNavigationMenuItemIds(
-		long siteNavigationMenuId, String typeSettingsKeyword);
+			long siteNavigationMenuId, String typeSettingsKeyword)
+		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<SiteNavigationMenuItem> getSiteNavigationMenuItems(
-		long siteNavigationMenuId);
+			long siteNavigationMenuId)
+		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<SiteNavigationMenuItem> getSiteNavigationMenuItems(
@@ -85,16 +87,17 @@ public interface SiteNavigationMenuItemService extends BaseService {
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<SiteNavigationMenuItem> getSiteNavigationMenuItems(
-		long siteNavigationMenuId,
-		OrderByComparator<SiteNavigationMenuItem> orderByComparator);
+			long siteNavigationMenuId,
+			OrderByComparator<SiteNavigationMenuItem> orderByComparator)
+		throws PortalException;
 
 	public SiteNavigationMenuItem updateSiteNavigationMenuItem(
-			long siteNavigationMenuId, long parentSiteNavigationMenuItemId,
+			long siteNavigationMenuItemId, long parentSiteNavigationMenuItemId,
 			int order)
 		throws PortalException;
 
 	public SiteNavigationMenuItem updateSiteNavigationMenuItem(
-			long siteNavigationMenuId, String typeSettings,
+			long siteNavigationMenuItemId, String typeSettings,
 			ServiceContext serviceContext)
 		throws PortalException;
 
