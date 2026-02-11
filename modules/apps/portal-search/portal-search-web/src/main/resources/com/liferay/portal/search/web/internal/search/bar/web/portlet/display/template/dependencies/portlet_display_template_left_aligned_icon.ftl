@@ -51,7 +51,7 @@
 				data=data
 				label=""
 				name=htmlUtil.escape(searchBarPortletDisplayContext.getKeywordsParameterName())
-				placeholder=searchBarPortletDisplayContext.getInputPlaceholder()
+				placeholder=htmlUtil.escape(searchBarPortletDisplayContext.getInputPlaceholder())
 				title=languageUtil.get(locale, "search")
 				type="text"
 				useNamespace=false
@@ -66,7 +66,7 @@
 					data-qa-id="searchInput"
 					id="${namespace + stringUtil.randomId()}"
 					name="${htmlUtil.escape(searchBarPortletDisplayContext.getKeywordsParameterName())}"
-					placeholder="${searchBarPortletDisplayContext.getInputPlaceholder()}"
+					placeholder="${htmlUtil.escape(searchBarPortletDisplayContext.getInputPlaceholder())}"
 					title="${languageUtil.get(locale, "search")}"
 					type="text"
 					value="${htmlUtil.escape(searchBarPortletDisplayContext.getKeywords())}"
