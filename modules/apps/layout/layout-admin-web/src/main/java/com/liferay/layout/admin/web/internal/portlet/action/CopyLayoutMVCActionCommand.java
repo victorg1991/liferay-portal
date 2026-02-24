@@ -14,10 +14,12 @@ import com.liferay.portal.kernel.portlet.JSONPortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.permission.LayoutPermissionUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -87,6 +89,10 @@ public class CopyLayoutMVCActionCommand extends BaseMVCActionCommand {
 			Layout.class.getName(), actionRequest);
 
 		try {
+			LayoutPermissionUtil.check(
+				themeDisplay.getPermissionChecker(), sourcePlid,
+				ActionKeys.VIEW);
+
 			Layout targetLayout = _layoutService.copyLayout(
 				groupId, privateLayout, nameMap, false, false, copyPermissions,
 				sourcePlid, serviceContext);

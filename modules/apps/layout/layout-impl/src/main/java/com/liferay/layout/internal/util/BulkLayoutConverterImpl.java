@@ -34,6 +34,7 @@ import com.liferay.portal.kernel.model.Theme;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.PortletPreferenceValueLocalService;
 import com.liferay.portal.kernel.service.PortletPreferencesLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
@@ -110,7 +111,7 @@ public class BulkLayoutConverterImpl implements BulkLayoutConverter {
 			long plid, Locale locale)
 		throws Exception {
 
-		Layout layout = _layoutLocalService.getLayout(plid);
+		Layout layout = _layoutService.getLayout(plid);
 
 		if (!Objects.equals(layout.getType(), LayoutConstants.TYPE_PORTLET)) {
 			throw new LayoutConvertException(
@@ -152,8 +153,7 @@ public class BulkLayoutConverterImpl implements BulkLayoutConverter {
 				draftLayout, layoutConversionResult.getLayoutData(),
 				serviceContext);
 
-			draftLayout = _layoutLocalService.fetchLayout(
-				draftLayout.getPlid());
+			draftLayout = _layoutService.getLayout(draftLayout.getPlid());
 
 			_updatePortletDecorator(draftLayout);
 
@@ -252,12 +252,11 @@ public class BulkLayoutConverterImpl implements BulkLayoutConverter {
 
 			Layout draftLayout = layoutConversionResult.getDraftLayout();
 
-			Layout layout = _layoutLocalService.getLayout(
-				draftLayout.getClassPK());
+			Layout layout = _layoutService.getLayout(draftLayout.getClassPK());
 
 			_layoutCopyHelper.copyLayoutContent(draftLayout, layout);
 
-			draftLayout = _layoutLocalService.getLayout(draftLayout.getPlid());
+			draftLayout = _layoutService.getLayout(draftLayout.getPlid());
 
 			draftLayout.setLayoutPrototypeLinkEnabled(false);
 
@@ -272,7 +271,7 @@ public class BulkLayoutConverterImpl implements BulkLayoutConverter {
 
 			draftLayout = _layoutLocalService.updateLayout(draftLayout);
 
-			layout = _layoutLocalService.getLayout(layout.getPlid());
+			layout = _layoutService.getLayout(layout.getPlid());
 
 			layout.setType(draftLayout.getType());
 			layout.setLayoutPrototypeUuid(StringPool.BLANK);
@@ -423,6 +422,9 @@ public class BulkLayoutConverterImpl implements BulkLayoutConverter {
 	@Reference
 	private LayoutPageTemplateStructureLocalService
 		_layoutPageTemplateStructureLocalService;
+
+	@Reference
+	private LayoutService _layoutService;
 
 	@Reference
 	private PortletPreferencesLocalService _portletPreferencesLocalService;

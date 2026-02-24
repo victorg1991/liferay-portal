@@ -16,7 +16,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.portlet.bridges.mvc.BaseMVCActionCommand;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCActionCommand;
-import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.LayoutService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.servlet.SessionErrors;
@@ -101,10 +101,10 @@ public class CopyLayoutPageTemplateEntryMVCActionCommand
 			_layoutPageTemplateEntryLocalService.getLayoutPageTemplateEntry(
 				layoutPageTemplateEntryId);
 
-		Layout sourceLayout = _layoutLocalService.getLayout(
+		Layout sourceLayout = _layoutService.getLayout(
 			sourceLayoutPageTemplateEntry.getPlid());
 
-		Layout targetLayout = _layoutLocalService.getLayout(
+		Layout targetLayout = _layoutService.getLayout(
 			layoutPageTemplateEntry.getPlid());
 
 		_layoutCopyHelper.copyLayoutContent(
@@ -126,14 +126,14 @@ public class CopyLayoutPageTemplateEntryMVCActionCommand
 	private LayoutCopyHelper _layoutCopyHelper;
 
 	@Reference
-	private LayoutLocalService _layoutLocalService;
-
-	@Reference
 	private LayoutPageTemplateEntryLocalService
 		_layoutPageTemplateEntryLocalService;
 
 	@Reference
 	private LayoutPageTemplateEntryService _layoutPageTemplateEntryService;
+
+	@Reference
+	private LayoutService _layoutService;
 
 	private class CopyLayoutPageTemplateEntryCallable
 		implements Callable<LayoutPageTemplateEntry> {
