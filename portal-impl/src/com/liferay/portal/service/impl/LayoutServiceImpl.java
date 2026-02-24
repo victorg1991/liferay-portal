@@ -374,6 +374,9 @@ public class LayoutServiceImpl extends LayoutServiceBaseImpl {
 				ActionKeys.ADD_LAYOUT);
 		}
 
+		LayoutPermissionUtil.check(
+			permissionChecker, sourceLayout, ActionKeys.VIEW);
+
 		return layoutLocalService.copyLayout(
 			getUserId(), groupId, privateLayout, localeNamesMap, hidden, system,
 			copyPermissions, sourcePlid, serviceContext);
