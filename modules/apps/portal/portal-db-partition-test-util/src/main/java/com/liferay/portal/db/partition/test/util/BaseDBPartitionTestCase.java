@@ -299,8 +299,8 @@ public abstract class BaseDBPartitionTestCase {
 				PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
 						"insert into Group_ (mvccVersion, ctCollectionId, " +
-							"companyId, groupId, classNameId, classPK) " +
-								"values (?, ?, ?, ?, ?, ?)");
+							"companyId, groupId, classNameId, classPK, " +
+								"groupKey) values (?, ?, ?, ?, ?, ?, ?)");
 				PreparedStatement preparedStatement2 =
 					connection.prepareStatement(
 						"insert into PasswordPolicy (mvccVersion, " +
@@ -324,6 +324,7 @@ public abstract class BaseDBPartitionTestCase {
 				preparedStatement1.setLong(
 					5, ClassNameLocalServiceUtil.getClassNameId(Company.class));
 				preparedStatement1.setLong(6, companyId);
+				preparedStatement1.setString(7, RandomTestUtil.randomString());
 
 				preparedStatement1.executeUpdate();
 
