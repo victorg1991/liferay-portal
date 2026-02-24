@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
@@ -128,6 +129,44 @@ public class LayoutUtilityPageEntryServiceTest {
 		Assert.assertEquals(
 			layoutUtilityPageEntry.getType(),
 			copiedLayoutUtilityPageEntry.getType());
+	}
+
+	@Test(expected = PrincipalException.class)
+	public void testCopyLayoutUtilityPageEntryWithoutPermissions()
+		throws Exception {
+
+		LayoutUtilityPageEntry layoutUtilityPageEntry =
+			_layoutUtilityPageEntryService.addLayoutUtilityPageEntry(
+				RandomTestUtil.randomString(), _group.getGroupId(), 0, 0, true,
+				RandomTestUtil.randomString(), RandomTestUtil.randomString(), 0,
+				_serviceContext);
+
+		User user = UserTestUtil.addUser();
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		_roleLocalService.addUserRole(user.getUserId(), role.getRoleId());
+
+		RoleTestUtil.addResourcePermission(
+			role, Group.class.getName(), ResourceConstants.SCOPE_GROUP,
+			String.valueOf(_group.getGroupId()),
+			LayoutUtilityPageActionKeys.ADD_LAYOUT_UTILITY_PAGE_ENTRY);
+
+		RoleTestUtil.removeResourcePermission(
+			RoleConstants.GUEST, LayoutUtilityPageEntry.class.getName(),
+			ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(
+				layoutUtilityPageEntry.getLayoutUtilityPageEntryId()),
+			ActionKeys.VIEW);
+
+		try (ContextUserReplace contextUserReplace = new ContextUserReplace(
+				user)) {
+
+			_layoutUtilityPageEntryService.copyLayoutUtilityPageEntry(
+				_group.getGroupId(),
+				layoutUtilityPageEntry.getLayoutUtilityPageEntryId(),
+				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
+		}
 	}
 
 	@Test
