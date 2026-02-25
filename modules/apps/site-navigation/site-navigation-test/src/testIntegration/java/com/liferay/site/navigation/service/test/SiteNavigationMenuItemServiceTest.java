@@ -161,7 +161,7 @@ public class SiteNavigationMenuItemServiceTest {
 	}
 
 	@Test
-	public void testUpdateSiteNavigationMenuItemOrder() throws Exception {
+	public void testUpdateSiteNavigationMenuItem() throws Exception {
 		try {
 			_testUpdateSiteNavigationMenuItemOrder(_guestUser);
 
@@ -177,10 +177,7 @@ public class SiteNavigationMenuItemServiceTest {
 		}
 
 		_testUpdateSiteNavigationMenuItemOrder(_user);
-	}
 
-	@Test
-	public void testUpdateSiteNavigationMenuItemParent() throws Exception {
 		try {
 			_testUpdateSiteNavigationMenuItemParent(_guestUser);
 
