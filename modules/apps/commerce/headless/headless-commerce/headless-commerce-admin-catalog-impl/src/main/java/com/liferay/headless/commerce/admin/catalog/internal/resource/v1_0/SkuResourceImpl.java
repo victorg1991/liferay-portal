@@ -142,7 +142,8 @@ public class SkuResourceImpl extends BaseSkuResourceImpl {
 		CPDefinition cpDefinition =
 			_cpDefinitionService.
 				fetchCPDefinitionByCProductExternalReferenceCode(
-					externalReferenceCode, contextCompany.getCompanyId());
+					externalReferenceCode, contextCompany.getCompanyId(),
+					false);
 
 		if (cpDefinition == null) {
 			throw new NoSuchCPDefinitionException(
@@ -262,7 +263,8 @@ public class SkuResourceImpl extends BaseSkuResourceImpl {
 		CPDefinition cpDefinition =
 			_cpDefinitionService.
 				fetchCPDefinitionByCProductExternalReferenceCode(
-					externalReferenceCode, contextCompany.getCompanyId());
+					externalReferenceCode, contextCompany.getCompanyId(),
+					false);
 
 		if (cpDefinition == null) {
 			throw new NoSuchCPDefinitionException(
@@ -276,7 +278,7 @@ public class SkuResourceImpl extends BaseSkuResourceImpl {
 	@Override
 	public Sku postProductIdSku(Long id, Sku sku) throws Exception {
 		CPDefinition cpDefinition =
-			_cpDefinitionService.fetchCPDefinitionByCProductId(id);
+			_cpDefinitionService.fetchCPDefinitionByCProductId(id, false);
 
 		if (cpDefinition == null) {
 			throw new NoSuchCPDefinitionException(
@@ -330,7 +332,7 @@ public class SkuResourceImpl extends BaseSkuResourceImpl {
 		throws Exception {
 
 		CPDefinition cpDefinition =
-			_cpDefinitionService.fetchCPDefinitionByCProductId(id);
+			_cpDefinitionService.fetchCPDefinitionByCProductId(id, false);
 
 		if (cpDefinition == null) {
 			return Page.of(Collections.emptyList());

@@ -52,7 +52,8 @@ public class MappedProductUtil {
 		CPDefinition cpDefinition =
 			cpDefinitionService.
 				fetchCPDefinitionByCProductExternalReferenceCode(
-					mappedProduct.getProductExternalReferenceCode(), companyId);
+					mappedProduct.getProductExternalReferenceCode(), companyId,
+					false);
 
 		if (cpDefinition != null) {
 			productId = cpDefinition.getCProductId();

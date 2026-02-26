@@ -78,6 +78,7 @@ import com.liferay.expando.kernel.service.ExpandoRowLocalService;
 import com.liferay.friendly.url.model.FriendlyURLEntry;
 import com.liferay.friendly.url.model.FriendlyURLEntryLocalization;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
+import com.liferay.object.action.util.ObjectActionThreadLocal;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -3156,7 +3157,8 @@ public class CPDefinitionLocalServiceImpl
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		Map<String, Serializable> workflowContext = new HashMap<>();
+		boolean skipObjectActionExecution =
+			ObjectActionThreadLocal.isSkipObjectActionExecution();
 
 		try {
 			ObjectActionThreadLocal.setSkipObjectActionExecution(true);

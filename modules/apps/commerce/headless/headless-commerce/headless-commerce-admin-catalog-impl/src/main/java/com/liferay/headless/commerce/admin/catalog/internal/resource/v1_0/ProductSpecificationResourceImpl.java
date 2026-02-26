@@ -68,7 +68,7 @@ public class ProductSpecificationResourceImpl
 		throws Exception {
 
 		CPDefinition cpDefinition =
-			_cpDefinitionService.fetchCPDefinitionByCProductId(id);
+			_cpDefinitionService.fetchCPDefinitionByCProductId(id, false);
 
 		if (cpDefinition == null) {
 			throw new NoSuchCPDefinitionException(

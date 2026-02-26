@@ -368,7 +368,7 @@ public class CommerceSiteInitializerImpl implements CommerceSiteInitializer {
 					fetchCPDefinitionByCProductExternalReferenceCode(
 						jsonObject.getString(
 							"cpDefinitionExternalReferenceCode"),
-						serviceContext.getCompanyId());
+						serviceContext.getCompanyId(), true);
 
 			if (cpDefinition == null) {
 				continue;
@@ -499,7 +499,7 @@ public class CommerceSiteInitializerImpl implements CommerceSiteInitializer {
 					fetchCPDefinitionByCProductExternalReferenceCode(
 						subscriptionPropertiesJSONObject.getString(
 							"cpDefinitionExternalReferenceCode"),
-						serviceContext.getCompanyId());
+						serviceContext.getCompanyId(), true);
 
 			if (cpDefinition == null) {
 				continue;
