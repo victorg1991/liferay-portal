@@ -13,6 +13,7 @@ import com.liferay.contacts.exception.DuplicateEntryEmailAddressException;
 import com.liferay.contacts.exception.EntryEmailAddressException;
 import com.liferay.contacts.model.Entry;
 import com.liferay.contacts.service.EntryLocalService;
+import com.liferay.contacts.service.EntryService;
 import com.liferay.contacts.util.ContactsUtil;
 import com.liferay.contacts.web.internal.constants.ContactsPortletKeys;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
@@ -478,7 +479,7 @@ public class ContactsCenterPortlet extends MVCPortlet {
 			Entry entry = null;
 
 			if (entryId > 0) {
-				entry = entryLocalService.getEntry(entryId);
+				entry = entryService.getEntry(entryId);
 
 				if (entry.getUserId() == themeDisplay.getUserId()) {
 					entry = entryLocalService.updateEntry(
@@ -719,6 +720,9 @@ public class ContactsCenterPortlet extends MVCPortlet {
 
 	@Reference
 	protected EntryLocalService entryLocalService;
+
+	@Reference
+	protected EntryService entryService;
 
 	@Reference
 	protected File file;
