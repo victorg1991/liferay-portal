@@ -22,6 +22,7 @@ import com.liferay.commerce.product.service.CPDefinitionOptionRelLocalService;
 import com.liferay.commerce.product.service.CPInstanceLocalService;
 import com.liferay.commerce.product.service.CPOptionLocalService;
 import com.liferay.commerce.product.service.CommerceCatalogLocalServiceUtil;
+import com.liferay.commerce.product.service.persistence.CPDefinitionFinder;
 import com.liferay.commerce.product.test.util.CPTestUtil;
 import com.liferay.commerce.product.type.simple.constants.SimpleCPTypeConstants;
 import com.liferay.petra.string.StringPool;
@@ -38,13 +39,16 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
+import com.liferay.portal.test.rule.TransactionalTestRule;
 
 import java.math.BigDecimal;
 
+import java.util.Date;
 import java.util.List;
 
 import org.frutilla.FrutillaRule;
@@ -70,7 +74,8 @@ public class CPDefinitionLocalServiceTest {
 	public static final AggregateTestRule aggregateTestRule =
 		new AggregateTestRule(
 			new LiferayIntegrationTestRule(),
-			PermissionCheckerMethodTestRule.INSTANCE);
+			PermissionCheckerMethodTestRule.INSTANCE,
+			TransactionalTestRule.INSTANCE);
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
@@ -506,35 +511,79 @@ public class CPDefinitionLocalServiceTest {
 	public void testFindByExpirationDate() throws Exception {
 		long time = System.currentTimeMillis();
 
-		Date date = new Date(time + Time.DAY);
-
-		CPDefinition cpDefinition1 = CPTestUtil.addCPDefinitionFromCatalog(
-			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME,
-			new Date(time - Time.MONTH), date, false, false,
-			WorkflowConstants.STATUS_APPROVED);
+		CPDefinition cpDefinition1 = CPTestUtil.addCPDefinition(
+			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME);
 
 		cpDefinition1.setExpirationDate(new Date(time - Time.DAY));
 
 		cpDefinition1 = _cpDefinitionLocalService.updateCPDefinition(
 			cpDefinition1);
 
-		CPTestUtil.addCPDefinitionFromCatalog(
-			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME,
-			new Date(time - Time.MONTH), date, false, false,
-			WorkflowConstants.STATUS_APPROVED);
+		CPDefinition cpDefinition2 = CPTestUtil.addCPDefinition(
+			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME);
+
+		cpDefinition2.setExpirationDate(new Date(time + Time.MONTH));
+
+		_cpDefinitionLocalService.updateCPDefinition(cpDefinition2);
 
 		List<CPDefinition> cpDefinitions =
-			_cpDefinitionLocalService.findByExpirationDate(
+			_cpDefinitionFinder.findByExpirationDate(
 				new Date(time),
 				new QueryDefinition(WorkflowConstants.STATUS_APPROVED));
 
-		Assert.assertEquals(1, cpDefinitions.size());
+		int count = cpDefinitions.size();
+
+		Assert.assertEquals(1, count);
+
+		CPDefinition cpDefinition3 = cpDefinitions.get(0);
+
+		Assert.assertEquals(
+			cpDefinition1.getCPDefinitionId(),
+			cpDefinition3.getCPDefinitionId());
+	}
+
+	@Test
+	public void testGetCPDefinitions() throws Exception {
+		CPTestUtil.addCPDefinition(
+			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME);
+
+		CPDefinition cpDefinition1 = CPTestUtil.addCPDefinition(
+			_commerceCatalog.getGroupId(), "virtual");
+
+		List<CPDefinition> cpDefinitions =
+			_cpDefinitionLocalService.getCPDefinitions(
+				_commerceCatalog.getGroupId(),
+				cpDefinition1.getProductTypeName(),
+				cpDefinition1.getDefaultLanguageId(),
+				WorkflowConstants.STATUS_APPROVED, QueryUtil.ALL_POS,
+				QueryUtil.ALL_POS, null);
+
+		int count = cpDefinitions.size();
+
+		Assert.assertEquals(1, count);
 
 		CPDefinition cpDefinition2 = cpDefinitions.get(0);
 
 		Assert.assertEquals(
 			cpDefinition1.getCPDefinitionId(),
 			cpDefinition2.getCPDefinitionId());
+	}
+
+	@Test
+	public void testGetCPDefinitionsCount() throws Exception {
+		CPTestUtil.addCPDefinition(
+			_commerceCatalog.getGroupId(), SimpleCPTypeConstants.NAME);
+
+		CPDefinition cpDefinition = CPTestUtil.addCPDefinition(
+			_commerceCatalog.getGroupId(), "virtual");
+
+		Assert.assertEquals(
+			1,
+			_cpDefinitionLocalService.getCPDefinitionsCount(
+				_commerceCatalog.getGroupId(),
+				cpDefinition.getProductTypeName(),
+				cpDefinition.getDefaultLanguageId(),
+				WorkflowConstants.STATUS_APPROVED));
 	}
 
 	@Test
@@ -579,6 +628,9 @@ public class CPDefinitionLocalServiceTest {
 
 	@Inject
 	private CommercePriceListLocalService _commercePriceListLocalService;
+
+	@Inject
+	private CPDefinitionFinder _cpDefinitionFinder;
 
 	@Inject
 	private CPDefinitionLocalService _cpDefinitionLocalService;
