@@ -1,0 +1,251 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2026 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {Locale, openToast} from 'frontend-js-components-web';
+import React, {
+	Dispatch,
+	SetStateAction,
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
+
+import {ISearchAssetObjectEntry} from '../../../common/types/AssetType';
+import {StickerConfig} from '../../../common/types/StickerConfig';
+import FindAndReplaceService from '../services/FindAndReplaceService';
+
+export type View = 'loading' | 'no-matches' | 'setup' | 'summary' | 'discard';
+
+export type ReplaceItemField = {
+	label: string;
+	name: string;
+	value?: string;
+	value_i18n?: Partial<Record<Locale['id'], string>>;
+};
+
+export type ReplaceItem = {
+	className: string;
+	externalReferenceCode: string;
+	fields: ReplaceItemField[];
+	id: string;
+	related?: Array<{
+		externalReferenceCode: string;
+		fields: ReplaceItemField[];
+		label: string;
+		name: string;
+	}>;
+	stickerClassName: string;
+	stickerSymbol: string;
+};
+
+export const FindAndReplaceContext = createContext<{
+	closeModal: () => void;
+	dataSetId: string;
+	items: ReplaceItem[] | null;
+	localeId: Locale['id'] | 'all';
+	locales: Locale[];
+	previousView: View | null;
+	removeItem: (itemId: string) => void;
+	replacement: string;
+	search: string;
+	setItems: Dispatch<SetStateAction<ReplaceItem[] | null>>;
+	setLocaleId: Dispatch<SetStateAction<Locale['id'] | 'all'>>;
+	setPreviousView: Dispatch<SetStateAction<View | null>>;
+	setReplacement: Dispatch<SetStateAction<string>>;
+	setView: Dispatch<SetStateAction<View>>;
+	view: View;
+}>({
+	closeModal: () => {},
+	dataSetId: '',
+	items: null,
+	localeId: 'all',
+	locales: [],
+	previousView: null,
+	removeItem: () => {},
+	replacement: '',
+	search: '',
+	setItems: () => {},
+	setLocaleId: () => {},
+	setPreviousView: () => {},
+	setReplacement: () => {},
+	setView: () => {},
+	view: 'loading',
+});
+
+type Props = {
+	availableLocales: Locale[];
+	children: React.ReactNode;
+	closeModal: () => void;
+	dataSetId: string;
+	fdsItems: ISearchAssetObjectEntry[];
+	search: string;
+	stickerConfig: StickerConfig;
+};
+
+export function FindAndReplaceContextProvider({
+	availableLocales,
+	children,
+	closeModal,
+	dataSetId,
+	fdsItems,
+	search,
+	stickerConfig,
+}: Props) {
+	const [items, setItems] = useState<ReplaceItem[] | null>(null);
+
+	const [locales, setLocales] = useState<Locale[]>([]);
+
+	const [localeId, setLocaleId] = useState<Locale['id'] | 'all'>('all');
+
+	const [replacement, setReplacement] = useState('');
+
+	const [view, setView] = useState<View>('loading');
+
+	const [previousView, setPreviousView] = useState<View | null>(null);
+
+	const loadingRef = useRef(false);
+
+	const removeItem = useCallback(
+		(itemId: string) => {
+			const isLast = items?.length === 1;
+
+			setItems((prevItems) => {
+				if (!prevItems) {
+					return prevItems;
+				}
+
+				return prevItems.filter((item) => item.id !== itemId);
+			});
+
+			if (isLast) {
+				closeModal();
+			}
+		},
+		[closeModal, items]
+	);
+
+	useEffect(() => {
+		async function loadItems() {
+			const response = await FindAndReplaceService.getReplaceItems({
+				fdsItems,
+				stickerConfig,
+			});
+
+			if (response.error) {
+				openToast({
+					message: Liferay.Language.get(
+						'an-unexpected-error-occurred'
+					),
+					type: 'danger',
+				});
+
+				closeModal();
+
+				return;
+			}
+
+			const filteredItems = filterItems(response.data ?? [], search);
+
+			setItems(filteredItems);
+			setLocales(filterLocales(filteredItems, availableLocales));
+			setView(filteredItems.length ? 'setup' : 'no-matches');
+		}
+
+		if (items || loadingRef.current) {
+			return;
+		}
+
+		loadingRef.current = true;
+
+		loadItems();
+	}, [availableLocales, closeModal, fdsItems, items, search, stickerConfig]);
+
+	return (
+		<FindAndReplaceContext.Provider
+			value={{
+				closeModal,
+				dataSetId,
+				items,
+				localeId,
+				locales,
+				previousView,
+				removeItem,
+				replacement,
+				search,
+				setItems,
+				setLocaleId,
+				setPreviousView,
+				setReplacement,
+				setView,
+				view,
+			}}
+		>
+			{children}
+		</FindAndReplaceContext.Provider>
+	);
+}
+
+export function useDiscard() {
+	const {setPreviousView, setView, view} = useContext(FindAndReplaceContext);
+
+	return useCallback(() => {
+		setPreviousView(view);
+
+		setView('discard');
+	}, [setPreviousView, setView, view]);
+}
+
+export function useCancelDiscard() {
+	const {previousView, setPreviousView, setView} = useContext(
+		FindAndReplaceContext
+	);
+
+	return useCallback(() => {
+		if (previousView) {
+			setView(previousView);
+		}
+
+		setPreviousView(null);
+	}, [previousView, setPreviousView, setView]);
+}
+
+function filterItems(items: ReplaceItem[], search: string) {
+	return items.filter(({fields}) =>
+		fields.some(({value, value_i18n}) => {
+			if (value?.includes(search)) {
+				return true;
+			}
+
+			if (!value_i18n) {
+				return false;
+			}
+
+			return Object.values(value_i18n).some((translation) =>
+				translation?.includes(search)
+			);
+		})
+	);
+}
+
+function filterLocales(items: ReplaceItem[], availableLocales: Locale[]) {
+	const localeIds = new Set<Locale['id']>();
+
+	for (const item of items) {
+		for (const field of item.fields) {
+			if (!field.value_i18n) {
+				continue;
+			}
+
+			for (const localeId of Object.keys(field.value_i18n)) {
+				localeIds.add(localeId as Locale['id']);
+			}
+		}
+	}
+
+	return availableLocales.filter(({id}) => localeIds.has(id));
+}
