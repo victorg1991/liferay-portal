@@ -12,6 +12,7 @@ type Status = 'loading' | 'idle';
 
 type Props = {
 	className?: string;
+	disabled?: boolean;
 	displayType?: 'primary' | 'secondary';
 	label: string;
 	onClick: () => Promise<void>;
@@ -20,6 +21,7 @@ type Props = {
 
 export default function AsyncButton({
 	className,
+	disabled,
 	displayType = 'primary',
 	label,
 	onClick,
@@ -28,7 +30,7 @@ export default function AsyncButton({
 	return (
 		<ClayButton
 			className={classNames('align-items-center c-gap-2', className)}
-			disabled={status === 'loading'}
+			disabled={disabled || status === 'loading'}
 			displayType={displayType}
 			onClick={onClick}
 			size="sm"

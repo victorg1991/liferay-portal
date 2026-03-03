@@ -6,8 +6,89 @@
 import ApiHelper from '../../../common/services/ApiHelper';
 import {ISearchAssetObjectEntry} from '../../../common/types/AssetType';
 import {StickerConfig} from '../../../common/types/StickerConfig';
+import {triggerAssetBulkAction} from '../../props_transformer/actions/triggerAssetBulkAction';
 import {getFileMimeTypeObjectDefinitionStickerValue} from '../../props_transformer/utils/transformViewsItemProps';
-import {ReplaceItem} from '../contexts/FindAndReplaceContext';
+import {ReplaceItem, ReplaceItemField} from '../contexts/FindAndReplaceContext';
+
+type Values = Record<
+	string,
+	ReplaceItemField['value'] | ReplaceItemField['value_i18n']
+>;
+
+function replaceFieldValues(
+	fields: ReplaceItemField[],
+	search: string,
+	replacement: string
+) {
+	const values: Values = {};
+
+	for (const field of fields) {
+		if (field.value_i18n) {
+			values[`${field.name}_i18n`] = Object.fromEntries(
+				Object.entries(field.value_i18n).map(([localeId, value]) => [
+					localeId,
+					value.replaceAll(search, replacement),
+				])
+			);
+		}
+		else if (field.value) {
+			values[field.name] = field.value.replaceAll(search, replacement);
+		}
+	}
+
+	return values;
+}
+
+function getBulkReplaceData({
+	replaceItems,
+	replacement,
+	search,
+}: {
+	replaceItems: ReplaceItem[];
+	replacement: string;
+	search: string;
+}) {
+	const items: Array<{className: string; id: number}> = [];
+	const values: Values = {};
+
+	for (const replaceItem of replaceItems) {
+		items.push({
+			className: replaceItem.className,
+			id: Number(replaceItem.id),
+		});
+
+		const itemValues = replaceFieldValues(
+			replaceItem.fields,
+			search,
+			replacement
+		);
+
+		const relatedValues: Record<string, Array<Values>> = {};
+
+		for (const relatedItem of replaceItem.related || []) {
+			relatedValues[relatedItem.name] = [
+				{
+					externalReferenceCode: relatedItem.externalReferenceCode,
+					...replaceFieldValues(
+						relatedItem.fields,
+						search,
+						replacement
+					),
+				},
+			];
+		}
+
+		values[replaceItem.id] = {
+			...itemValues,
+			...relatedValues,
+		};
+	}
+
+	return {
+		items,
+		values,
+	};
+}
 
 function enrichItem({
 	fdsItem,
@@ -93,4 +174,65 @@ async function getReplaceItems({
 	};
 }
 
-export default {getReplaceItems};
+function performBulkReplace({
+	dataSetId,
+	items: replaceItems,
+	replacement,
+	search,
+}: {
+	dataSetId: string;
+	items: ReplaceItem[];
+	replacement: string;
+	search: string;
+}) {
+	const {items, values} = getBulkReplaceData({
+		replaceItems,
+		replacement,
+		search,
+	});
+
+	triggerAssetBulkAction<'UpdateValuesBulkAction'>({
+		additionalData: {
+			replacement,
+			search,
+		},
+		apiURL: '/o/bulk/v1.0/bulk-action',
+		dataSetId,
+		keyValues: {
+			values,
+		},
+		resetSearch: true,
+		selectedData: {
+			items: items as unknown as ISearchAssetObjectEntry[],
+			selectAll: false,
+		},
+		type: 'UpdateValuesBulkAction',
+	});
+}
+
+function performSingleReplace({
+	item,
+	replacement,
+	search,
+}: {
+	item: ReplaceItem;
+	replacement: string;
+	search: string;
+}) {
+	const {items, values} = getBulkReplaceData({
+		replaceItems: [item],
+		replacement,
+		search,
+	});
+
+	return ApiHelper.post('/o/bulk/v1.0/bulk-action', {
+		bulkActionItems: items.map(({className, id}) => ({
+			className,
+			classPK: id,
+		})),
+		type: 'UpdateValuesBulkAction',
+		values,
+	});
+}
+
+export default {getReplaceItems, performBulkReplace, performSingleReplace};
