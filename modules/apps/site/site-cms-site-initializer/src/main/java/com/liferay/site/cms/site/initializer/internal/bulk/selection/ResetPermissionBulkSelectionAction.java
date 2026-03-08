@@ -43,10 +43,10 @@ import org.osgi.service.component.annotations.Reference;
  * @author Balazs Breier
  */
 @Component(
-	property = "bulk.selection.action.key=reset.permission.object",
+	property = "bulk.selection.action.key=reset.permission",
 	service = BulkSelectionAction.class
 )
-public class ResetPermissionObjectBulkSelectionAction
+public class ResetPermissionBulkSelectionAction
 	implements BulkSelectionAction<Object> {
 
 	@Override
@@ -189,7 +189,7 @@ public class ResetPermissionObjectBulkSelectionAction
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
-		ResetPermissionObjectBulkSelectionAction.class);
+		ResetPermissionBulkSelectionAction.class);
 
 	@Reference(
 		target = "(filter.factory.key=" + ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT + ")"

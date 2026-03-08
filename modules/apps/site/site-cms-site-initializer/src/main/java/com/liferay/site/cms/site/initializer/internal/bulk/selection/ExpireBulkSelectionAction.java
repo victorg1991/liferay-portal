@@ -24,11 +24,10 @@ import org.osgi.service.component.annotations.Reference;
  * @author Balázs Sáfrány-Kovalik
  */
 @Component(
-	property = "bulk.selection.action.key=expire.object",
+	property = "bulk.selection.action.key=expire",
 	service = BulkSelectionAction.class
 )
-public class ExpireObjectBulkSelectionAction
-	extends BaseObjectBulkSelectionAction {
+public class ExpireBulkSelectionAction extends BaseObjectBulkSelectionAction {
 
 	@Override
 	protected void doExecute(

@@ -29,10 +29,10 @@ import org.osgi.service.component.annotations.Reference;
  * @author Víctor Galán
  */
 @Component(
-	property = "bulk.selection.action.key=update.object.values",
+	property = "bulk.selection.action.key=update.values",
 	service = BulkSelectionAction.class
 )
-public class UpdateObjectValuesBulkSelectionAction
+public class UpdateValuesBulkSelectionAction
 	extends BaseObjectBulkSelectionAction {
 
 	@Override

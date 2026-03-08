@@ -25,11 +25,10 @@ import org.osgi.service.component.annotations.Reference;
  * @author Danny Situ
  */
 @Component(
-	property = "bulk.selection.action.key=due.date.object",
+	property = "bulk.selection.action.key=due.date",
 	service = BulkSelectionAction.class
 )
-public class DueDateObjectBulkSelectionAction
-	extends BaseObjectBulkSelectionAction {
+public class DueDateBulkSelectionAction extends BaseObjectBulkSelectionAction {
 
 	@Override
 	protected void doExecute(

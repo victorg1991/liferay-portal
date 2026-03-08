@@ -45,7 +45,7 @@ import org.junit.runner.RunWith;
  * @author Víctor Galán
  */
 @RunWith(Arquillian.class)
-public class UpdateObjectValuesBulkSelectionActionTest {
+public class UpdateValuesBulkSelectionActionTest {
 
 	@ClassRule
 	@Rule
@@ -85,7 +85,7 @@ public class UpdateObjectValuesBulkSelectionActionTest {
 		String newValue = RandomTestUtil.randomString();
 
 		ReflectionTestUtil.invoke(
-			_updateObjectValuesBulkSelectionAction, "doExecute",
+			_updateValuesBulkSelectionAction, "doExecute",
 			new Class<?>[] {User.class, Map.class, Object.class},
 			TestPropsValues.getUser(),
 			HashMapBuilder.put(
@@ -202,7 +202,7 @@ public class UpdateObjectValuesBulkSelectionActionTest {
 			).build();
 
 		ReflectionTestUtil.invoke(
-			_updateObjectValuesBulkSelectionAction, "doExecute",
+			_updateValuesBulkSelectionAction, "doExecute",
 			new Class<?>[] {User.class, Map.class, Object.class},
 			TestPropsValues.getUser(),
 			HashMapBuilder.put(
@@ -234,8 +234,8 @@ public class UpdateObjectValuesBulkSelectionActionTest {
 	private ObjectRelationshipLocalService _objectRelationshipLocalService;
 
 	@Inject(
-		filter = "component.name=com.liferay.site.cms.site.initializer.internal.bulk.selection.UpdateObjectValuesBulkSelectionAction"
+		filter = "component.name=com.liferay.site.cms.site.initializer.internal.bulk.selection.UpdateValuesBulkSelectionAction"
 	)
-	private BulkSelectionAction<Object> _updateObjectValuesBulkSelectionAction;
+	private BulkSelectionAction<Object> _updateValuesBulkSelectionAction;
 
 }

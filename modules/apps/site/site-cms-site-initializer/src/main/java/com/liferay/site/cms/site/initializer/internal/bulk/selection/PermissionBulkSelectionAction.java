@@ -38,10 +38,10 @@ import org.osgi.service.component.annotations.Reference;
  * @author Andrea Sbarra
  */
 @Component(
-	property = "bulk.selection.action.key=permission.object",
+	property = "bulk.selection.action.key=permission",
 	service = BulkSelectionAction.class
 )
-public class PermissionObjectBulkSelectionAction
+public class PermissionBulkSelectionAction
 	extends BaseObjectBulkSelectionAction {
 
 	@Override

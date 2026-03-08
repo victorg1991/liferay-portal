@@ -29,7 +29,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Mario Gomes
  */
 @Component(
-	property = "bulk.selection.action.key=delete.object.entry",
+	property = "bulk.selection.action.key=delete.entry",
 	service = BulkSelectionAction.class
 )
 public class DeleteObjectEntryBulkSelectionAction

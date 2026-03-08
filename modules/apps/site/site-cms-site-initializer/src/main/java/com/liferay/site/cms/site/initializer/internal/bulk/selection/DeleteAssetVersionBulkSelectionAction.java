@@ -35,10 +35,10 @@ import org.osgi.service.component.annotations.Reference;
  * @author Michele Vigilante
  */
 @Component(
-	property = "bulk.selection.action.key=delete.object.asset.version",
+	property = "bulk.selection.action.key=delete.asset.version",
 	service = BulkSelectionAction.class
 )
-public class DeleteObjectAssetVersionBulkSelectionAction
+public class DeleteAssetVersionBulkSelectionAction
 	extends BaseObjectBulkSelectionAction {
 
 	@Override
@@ -129,7 +129,7 @@ public class DeleteObjectAssetVersionBulkSelectionAction
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
-		DeleteObjectAssetVersionBulkSelectionAction.class);
+		DeleteAssetVersionBulkSelectionAction.class);
 
 	@Reference
 	private GroupLocalService _groupLocalService;
