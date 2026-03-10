@@ -1485,6 +1485,14 @@ public class CPDefinitionLocalServiceImpl
 
 	@Override
 	public CPDefinition fetchCPDefinitionByCProductExternalReferenceCode(
+		String externalReferenceCode, long companyId) {
+
+		return fetchCPDefinitionByCProductExternalReferenceCode(
+			externalReferenceCode, companyId, false);
+	}
+
+	@Override
+	public CPDefinition fetchCPDefinitionByCProductExternalReferenceCode(
 		String externalReferenceCode, long companyId, boolean excludeDraft) {
 
 		if (Validator.isNull(externalReferenceCode)) {
@@ -1514,6 +1522,11 @@ public class CPDefinitionLocalServiceImpl
 
 		return cpDefinitionPersistence.fetchByC_V(
 			cProduct.getCProductId(), cProduct.getLatestVersion());
+	}
+
+	@Override
+	public CPDefinition fetchCPDefinitionByCProductId(long cProductId) {
+		return fetchCPDefinitionByCProductId(cProductId, false);
 	}
 
 	@Override
