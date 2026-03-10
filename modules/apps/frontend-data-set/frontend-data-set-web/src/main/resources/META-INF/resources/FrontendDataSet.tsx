@@ -1452,9 +1452,23 @@ const FrontendDataSetContent = ({
 
 	useEffect(() => {
 		function handleRefreshFromTheOutside(event: any) {
-			if (event.id === id) {
-				refreshData();
+			if (event.id !== id) {
+				return;
 			}
+
+			if (event.resetSearch && globalFDSState.search.query) {
+				const unfrozenGlobalFDSState: IFDSState =
+					deepClone(globalFDSState);
+
+				setGlobalFDSState({
+					...unfrozenGlobalFDSState,
+					search: {query: ''},
+				});
+
+				return;
+			}
+
+			refreshData();
 		}
 
 		function handleCloseSidePanel() {
@@ -1482,7 +1496,14 @@ const FrontendDataSetContent = ({
 				window.removeEventListener('popstate', handlePopState);
 			}
 		};
-	}, [configInURLBehavior, handlePopState, id, refreshData]);
+	}, [
+		configInURLBehavior,
+		globalFDSState,
+		handlePopState,
+		id,
+		refreshData,
+		setGlobalFDSState,
+	]);
 
 	const fdsRef = useRef(null);
 
