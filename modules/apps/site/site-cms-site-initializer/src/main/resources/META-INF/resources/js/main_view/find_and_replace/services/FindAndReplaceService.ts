@@ -191,7 +191,7 @@ function performBulkReplace({
 		search,
 	});
 
-	triggerAssetBulkAction<'UpdateValuesBulkAction'>({
+	triggerAssetBulkAction<'UpdateObjectValuesBulkSelectionAction'>({
 		additionalData: {
 			replacement,
 			search,
@@ -206,7 +206,7 @@ function performBulkReplace({
 			items: items as unknown as ISearchAssetObjectEntry[],
 			selectAll: false,
 		},
-		type: 'UpdateValuesBulkAction',
+		type: 'UpdateObjectValuesBulkSelectionAction',
 	});
 }
 
@@ -230,7 +230,7 @@ function performSingleReplace({
 			className,
 			classPK: id,
 		})),
-		type: 'UpdateValuesBulkAction',
+		type: 'UpdateObjectValuesBulkSelectionAction',
 		values,
 	});
 }

@@ -6,13 +6,15 @@
 import ClayModal, {useModal} from '@clayui/modal';
 import {Observer} from '@clayui/modal/src/types';
 import {Locale} from 'frontend-js-components-web';
-import React, {useContext, useState} from 'react';
+import React, {useCallback, useContext, useRef, useState} from 'react';
 
 import {ISearchAssetObjectEntry} from '../../../common/types/AssetType';
 import {StickerConfig} from '../../../common/types/StickerConfig';
+import {FDS_EVENT_UPDATE_DISPLAY} from '../../../common/utils/constants';
 import {
 	FindAndReplaceContext,
 	FindAndReplaceContextProvider,
+	History,
 	View,
 } from '../contexts/FindAndReplaceContext';
 import {Discard} from './Discard';
@@ -38,8 +40,30 @@ export default function Wrapper({
 }: Props) {
 	const [visible, setVisible] = useState(true);
 
+	const historyRef = useRef<History>({
+		hasApplied: false,
+		hasDiscarded: false,
+	});
+
+	const setHistory = useCallback((changes: Partial<History>) => {
+		historyRef.current = {...historyRef.current, ...changes};
+	}, []);
+
 	const {observer, onClose: closeModal} = useModal({
-		onClose: () => setVisible(false),
+		onClose: () => {
+			setVisible(false);
+
+			const {hasApplied, hasDiscarded} = historyRef.current;
+
+			if (!hasApplied) {
+				return;
+			}
+
+			Liferay.fire(FDS_EVENT_UPDATE_DISPLAY, {
+				id: dataSetId,
+				resetSearch: !hasDiscarded,
+			});
+		},
 	});
 
 	if (!visible) {
@@ -53,6 +77,7 @@ export default function Wrapper({
 			dataSetId={dataSetId}
 			fdsItems={fdsItems}
 			search={search}
+			setHistory={setHistory}
 			stickerConfig={stickerConfig}
 		>
 			<FindAndReplaceModal observer={observer} />

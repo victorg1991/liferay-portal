@@ -43,16 +43,23 @@ export type ReplaceItem = {
 	stickerSymbol: string;
 };
 
+export type History = {
+	hasApplied: boolean;
+	hasDiscarded: boolean;
+};
+
 export const FindAndReplaceContext = createContext<{
+	apply: (itemId: string) => void;
 	closeModal: () => void;
 	dataSetId: string;
+	discard: (itemId: string) => void;
 	items: ReplaceItem[] | null;
 	localeId: Locale['id'] | 'all';
 	locales: Locale[];
 	previousView: View | null;
-	removeItem: (itemId: string) => void;
 	replacement: string;
 	search: string;
+	setHistory: (history: Partial<History>) => void;
 	setItems: Dispatch<SetStateAction<ReplaceItem[] | null>>;
 	setLocaleId: Dispatch<SetStateAction<Locale['id'] | 'all'>>;
 	setPreviousView: Dispatch<SetStateAction<View | null>>;
@@ -60,15 +67,17 @@ export const FindAndReplaceContext = createContext<{
 	setView: Dispatch<SetStateAction<View>>;
 	view: View;
 }>({
+	apply: () => {},
 	closeModal: () => {},
 	dataSetId: '',
+	discard: () => {},
 	items: null,
 	localeId: 'all',
 	locales: [],
 	previousView: null,
-	removeItem: () => {},
 	replacement: '',
 	search: '',
+	setHistory: () => {},
 	setItems: () => {},
 	setLocaleId: () => {},
 	setPreviousView: () => {},
@@ -84,6 +93,7 @@ type Props = {
 	dataSetId: string;
 	fdsItems: ISearchAssetObjectEntry[];
 	search: string;
+	setHistory: (history: Partial<History>) => void;
 	stickerConfig: StickerConfig;
 };
 
@@ -94,6 +104,7 @@ export function FindAndReplaceContextProvider({
 	dataSetId,
 	fdsItems,
 	search,
+	setHistory,
 	stickerConfig,
 }: Props) {
 	const [items, setItems] = useState<ReplaceItem[] | null>(null);
@@ -127,6 +138,22 @@ export function FindAndReplaceContextProvider({
 			}
 		},
 		[closeModal, items]
+	);
+
+	const apply = useCallback(
+		(itemId: string) => {
+			removeItem(itemId);
+		},
+		[removeItem]
+	);
+
+	const discard = useCallback(
+		(itemId: string) => {
+			setHistory({hasDiscarded: true});
+
+			removeItem(itemId);
+		},
+		[removeItem, setHistory]
 	);
 
 	useEffect(() => {
@@ -168,15 +195,17 @@ export function FindAndReplaceContextProvider({
 	return (
 		<FindAndReplaceContext.Provider
 			value={{
+				apply,
 				closeModal,
 				dataSetId,
+				discard,
 				items,
 				localeId,
 				locales,
 				previousView,
-				removeItem,
 				replacement,
 				search,
+				setHistory,
 				setItems,
 				setLocaleId,
 				setPreviousView,

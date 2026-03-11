@@ -26,8 +26,15 @@ import {
 import FindAndReplaceService from '../services/FindAndReplaceService';
 
 export function Summary() {
-	const {closeModal, dataSetId, items, replacement, search, setView} =
-		useContext(FindAndReplaceContext);
+	const {
+		closeModal,
+		dataSetId,
+		items,
+		replacement,
+		search,
+		setHistory,
+		setView,
+	} = useContext(FindAndReplaceContext);
 
 	const discard = useDiscard();
 
@@ -42,6 +49,8 @@ export function Summary() {
 			replacement,
 			search,
 		});
+
+		setHistory({hasApplied: true});
 
 		closeModal();
 	}
@@ -112,7 +121,9 @@ export function Summary() {
 }
 
 function ListItem({item}: {item: ReplaceItem}) {
-	const {removeItem, replacement, search} = useContext(FindAndReplaceContext);
+	const {apply, discard, replacement, search, setHistory} = useContext(
+		FindAndReplaceContext
+	);
 
 	const [status, setStatus] = useState<'applied' | 'applying' | 'idle'>(
 		'idle'
@@ -131,6 +142,10 @@ function ListItem({item}: {item: ReplaceItem}) {
 	}, []);
 
 	async function applySingleItem() {
+		if (status !== 'idle') {
+			return;
+		}
+
 		setStatus('applying');
 
 		const {error} = await FindAndReplaceService.performSingleReplace({
@@ -152,13 +167,15 @@ function ListItem({item}: {item: ReplaceItem}) {
 
 		setStatus('applied');
 
+		setHistory({hasApplied: true});
+
 		openToast({
 			message: sub(Liferay.Language.get('changes-applied-to-x'), title),
 			type: 'success',
 		});
 
 		timeoutRef.current = setTimeout(() => {
-			removeItem(item.id);
+			apply(item.id);
 		}, 5000);
 	}
 
@@ -187,7 +204,7 @@ function ListItem({item}: {item: ReplaceItem}) {
 
 			<ClayList.ItemField>
 				<AsyncButton
-					disabled={status === 'applied'}
+					disabled={status !== 'idle'}
 					displayType="secondary"
 					label={Liferay.Language.get('apply-changes')}
 					onClick={applySingleItem}
@@ -202,9 +219,10 @@ function ListItem({item}: {item: ReplaceItem}) {
 						title
 					)}
 					borderless
+					disabled={status !== 'idle'}
 					displayType="secondary"
 					monospaced
-					onClick={() => removeItem(item.id)}
+					onClick={() => discard(item.id)}
 					size="sm"
 					symbol="times-circle"
 				/>
