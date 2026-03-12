@@ -967,7 +967,7 @@ public class PermissionCheckerTest {
 		_company = CompanyTestUtil.addCompany();
 
 		try (SafeCloseable safeCloseable =
-				CompanyThreadLocal.setCompanyIdWithSafeCloseable(
+				CompanyThreadLocal.setWithSafeCloseable(
 					_company.getCompanyId())) {
 
 			_user = UserTestUtil.addCompanyAdminUser(_company);
