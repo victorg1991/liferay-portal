@@ -1488,7 +1488,7 @@ public class CPDefinitionLocalServiceImpl
 		String externalReferenceCode, long companyId) {
 
 		return fetchCPDefinitionByCProductExternalReferenceCode(
-			externalReferenceCode, companyId, false);
+			externalReferenceCode, companyId, true);
 	}
 
 	@Override
@@ -1526,7 +1526,7 @@ public class CPDefinitionLocalServiceImpl
 
 	@Override
 	public CPDefinition fetchCPDefinitionByCProductId(long cProductId) {
-		return fetchCPDefinitionByCProductId(cProductId, false);
+		return fetchCPDefinitionByCProductId(cProductId, true);
 	}
 
 	@Override
