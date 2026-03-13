@@ -18,6 +18,7 @@ import {config as layoutContentPageEditorWebConfig} from './tests/layout-content
 import {config as layoutSetPrototypeWebConfig} from './tests/layout-set-prototype-web/config';
 import {config as loginWebConfig} from './tests/login-web/config';
 import {config as objectWebConfig} from './tests/object-web/config';
+import {config as portalSettingsAuthenticationOpenSSOWebConfig} from './tests/portal-settings-authentication-opensso-web/main/config';
 import {config as portalWebConfig} from './tests/portal-web/config';
 import {config as productNavigationUserPersonalBarWebConfig} from './tests/product-navigation-user-personal-bar-web/config';
 import {config as stableConfig} from './tests/stable/config';
@@ -42,6 +43,7 @@ export default defineConfig({
 		layoutSetPrototypeWebConfig,
 		loginWebConfig,
 		objectWebConfig,
+		portalSettingsAuthenticationOpenSSOWebConfig,
 		portalWebConfig,
 		productNavigationUserPersonalBarWebConfig,
 		stableConfig,
