@@ -5,12 +5,10 @@
 
 package com.liferay.portal.kernel.workflow;
 
-import com.liferay.portal.kernel.exception.NoSuchModelException;
-
 /**
  * @author Michael Cavalcanti
  */
-public class NoSuchWorkflowDefinitionException extends NoSuchModelException {
+public class NoSuchWorkflowDefinitionException extends WorkflowException {
 
 	public NoSuchWorkflowDefinitionException() {
 	}

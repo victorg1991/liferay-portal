@@ -6,7 +6,7 @@
 package com.liferay.headless.admin.workflow.internal.jaxrs.exception.mapper;
 
 import com.liferay.portal.kernel.exception.NoSuchModelException;
-import com.liferay.portal.kernel.workflow.WorkflowException;
+import com.liferay.portal.kernel.workflow.NoSuchWorkflowDefinitionException;
 import com.liferay.portal.vulcan.jaxrs.exception.mapper.BaseExceptionMapper;
 import com.liferay.portal.vulcan.jaxrs.exception.mapper.Problem;
 
@@ -24,15 +24,17 @@ import org.osgi.service.component.annotations.Component;
 	property = {
 		"osgi.jaxrs.application.select=(osgi.jaxrs.name=Liferay.Headless.Admin.Workflow)",
 		"osgi.jaxrs.extension=true",
-		"osgi.jaxrs.name=Liferay.Headless.Admin.Workflow.WorkflowExceptionMapper"
+		"osgi.jaxrs.name=Liferay.Headless.Admin.Workflow.NoSuchWorkflowDefinitionExceptionMapper"
 	},
 	service = ExceptionMapper.class
 )
-public class WorkflowExceptionMapper
-	extends BaseExceptionMapper<WorkflowException> {
+public class NoSuchWorkflowDefinitionExceptionMapper
+	extends BaseExceptionMapper<NoSuchWorkflowDefinitionException> {
 
 	@Override
-	public Response toResponse(WorkflowException workflowException) {
+	public Response toResponse(
+		NoSuchWorkflowDefinitionException noSuchWorkflowDefinitionException) {
+
 		ExceptionMapper<NoSuchModelException> exceptionMapper =
 			_providers.getExceptionMapper(NoSuchModelException.class);
 
@@ -40,11 +42,13 @@ public class WorkflowExceptionMapper
 			return exceptionMapper.toResponse(new NoSuchModelException());
 		}
 
-		return super.toResponse(workflowException);
+		return super.toResponse(noSuchWorkflowDefinitionException);
 	}
 
 	@Override
-	protected Problem getProblem(WorkflowException workflowException) {
+	protected Problem getProblem(
+		NoSuchWorkflowDefinitionException noSuchWorkflowDefinitionException) {
+
 		return new Problem(Response.Status.NOT_FOUND, "Not Found");
 	}
 

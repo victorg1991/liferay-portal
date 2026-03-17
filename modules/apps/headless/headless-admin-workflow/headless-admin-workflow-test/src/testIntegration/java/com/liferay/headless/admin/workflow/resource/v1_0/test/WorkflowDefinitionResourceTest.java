@@ -9,6 +9,8 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.headless.admin.workflow.client.dto.v1_0.Node;
 import com.liferay.headless.admin.workflow.client.dto.v1_0.Transition;
 import com.liferay.headless.admin.workflow.client.dto.v1_0.WorkflowDefinition;
+import com.liferay.headless.admin.workflow.client.problem.Problem;
+import com.liferay.headless.admin.workflow.client.resource.v1_0.WorkflowDefinitionResource;
 import com.liferay.headless.admin.workflow.client.serdes.v1_0.WorkflowDefinitionSerDes;
 import com.liferay.headless.admin.workflow.resource.v1_0.test.util.WorkflowDefinitionTestUtil;
 import com.liferay.petra.io.StreamUtil;
@@ -17,10 +19,14 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.HTTPTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Http;
@@ -114,6 +120,57 @@ public class WorkflowDefinitionResourceTest
 					workflowDefinition.getVersion()));
 
 		_workflowDefinitions.remove(workflowDefinition.getName());
+	}
+
+	@Override
+	@Test
+	public void testGetWorkflowDefinition() throws Exception {
+		WorkflowDefinition workflowDefinition =
+			testGetWorkflowDefinition_addWorkflowDefinition();
+
+		assertHttpResponseStatusCode(
+			200,
+			workflowDefinitionResource.getWorkflowDefinitionHttpResponse(
+				workflowDefinition.getId()));
+
+		assertHttpResponseStatusCode(
+			404,
+			workflowDefinitionResource.getWorkflowDefinitionHttpResponse(0L));
+
+		WorkflowDefinitionResource.Builder builder =
+			WorkflowDefinitionResource.builder();
+
+		User user = UserTestUtil.addUser(
+			TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			PropsValues.DEFAULT_ADMIN_PASSWORD, "random@liferay.com", "random",
+			LocaleUtil.getDefault(), "random", RandomTestUtil.randomString(),
+			null, ServiceContextTestUtil.getServiceContext());
+
+		WorkflowDefinitionResource workflowDefinitionResource =
+			builder.authentication(
+				user.getEmailAddress(), PropsValues.DEFAULT_ADMIN_PASSWORD
+			).locale(
+				LocaleUtil.getDefault()
+			).build();
+
+		assertHttpResponseStatusCode(
+			404,
+			workflowDefinitionResource.getWorkflowDefinitionHttpResponse(
+				workflowDefinition.getId()));
+
+		try {
+			workflowDefinitionResource.getWorkflowDefinition(
+				workflowDefinition.getId());
+
+			Assert.fail();
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals("NOT_FOUND", problem.getStatus());
+			Assert.assertNull(problem.getTitle());
+			Assert.assertNull(problem.getType());
+		}
 	}
 
 	@Override
