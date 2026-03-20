@@ -201,7 +201,7 @@ public class AntivirusAsyncFileStoreSchedulerJobConfigurationTest {
 			StringPool.BLANK,
 			DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT, null,
 			null, new ByteArrayInputStream(TestDataConstants.TEST_BYTE_ARRAY),
-			TestDataConstants.TEST_BYTE_ARRAY.length, null, null, null,
+			TestDataConstants.TEST_BYTE_ARRAY.length, null, null,
 			ServiceContextTestUtil.getServiceContext(
 				_group.getGroupId(), TestPropsValues.getUserId()));
 
@@ -215,7 +215,7 @@ public class AntivirusAsyncFileStoreSchedulerJobConfigurationTest {
 			StringPool.BLANK,
 			DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_BASIC_DOCUMENT, null,
 			null, new ByteArrayInputStream(TestDataConstants.TEST_BYTE_ARRAY),
-			TestDataConstants.TEST_BYTE_ARRAY.length, null, null, null,
+			TestDataConstants.TEST_BYTE_ARRAY.length, null, null,
 			ServiceContextTestUtil.getServiceContext(
 				_group.getGroupId(), TestPropsValues.getUserId()));
 
