@@ -24,6 +24,7 @@ import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateCollectionLocalService;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
+import com.liferay.layout.page.template.service.LayoutPageTemplateEntryService;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
 import com.liferay.layout.util.structure.LayoutStructure;
 import com.liferay.layout.utility.page.model.LayoutUtilityPageEntry;
@@ -160,7 +161,7 @@ public class LayoutsExporterImpl implements LayoutsExporter {
 
 		for (long layoutPageTemplateEntryId : layoutPageTemplateEntryIds) {
 			LayoutPageTemplateEntry layoutPageTemplateEntry =
-				_layoutPageTemplateEntryLocalService.getLayoutPageTemplateEntry(
+				_layoutPageTemplateEntryService.getLayoutPageTemplateEntry(
 					layoutPageTemplateEntryId);
 
 			if (layoutPageTemplateEntry.isDraft() ||
@@ -445,6 +446,9 @@ public class LayoutsExporterImpl implements LayoutsExporter {
 	@Reference
 	private LayoutPageTemplateEntryLocalService
 		_layoutPageTemplateEntryLocalService;
+
+	@Reference
+	private LayoutPageTemplateEntryService _layoutPageTemplateEntryService;
 
 	@Reference
 	private LayoutPageTemplateStructureLocalService
