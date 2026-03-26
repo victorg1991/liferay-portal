@@ -569,6 +569,19 @@ public class ObjectEntryLocalServiceUtil {
 
 	public static List<Map<String, Serializable>> getValuesList(
 			long groupId, long companyId, long userId, long objectDefinitionId,
+			com.liferay.petra.sql.dsl.expression.Predicate predicate,
+			String search, int start, int end,
+			com.liferay.petra.sql.dsl.query.sort.OrderByExpression[]
+				orderByExpressions)
+		throws PortalException {
+
+		return getService().getValuesList(
+			groupId, companyId, userId, objectDefinitionId, predicate, search,
+			start, end, orderByExpressions);
+	}
+
+	public static List<Map<String, Serializable>> getValuesList(
+			long groupId, long companyId, long userId, long objectDefinitionId,
 			String[] selectedObjectFieldNames,
 			com.liferay.petra.sql.dsl.expression.Predicate predicate,
 			String search, int start, int end,
@@ -578,7 +591,8 @@ public class ObjectEntryLocalServiceUtil {
 
 		return getService().getValuesList(
 			groupId, companyId, userId, objectDefinitionId,
-			selectedObjectFieldNames, predicate, search, start, end, orderByExpressions);
+			selectedObjectFieldNames, predicate, search, start, end,
+			orderByExpressions);
 	}
 
 	public static int getValuesListCount(
