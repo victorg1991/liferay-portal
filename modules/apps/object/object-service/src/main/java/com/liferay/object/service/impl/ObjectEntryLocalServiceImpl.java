@@ -1143,6 +1143,17 @@ public class ObjectEntryLocalServiceImpl
 		return values;
 	}
 
+	public List<Map<String, Serializable>> getValuesList(
+			long groupId, long companyId, long userId, long objectDefinitionId,
+			Predicate predicate, String search, int start, int end,
+			OrderByExpression[] orderByExpressions)
+		throws PortalException {
+
+		return _getValuesList(
+			groupId, objectDefinitionId, null, predicate, search, start, end,
+			orderByExpressions);
+	}
+
 	@Override
 	public List<Map<String, Serializable>> getValuesList(
 			long groupId, long companyId, long userId, long objectDefinitionId,
@@ -1151,88 +1162,9 @@ public class ObjectEntryLocalServiceImpl
 			OrderByExpression[] orderByExpressions)
 		throws PortalException {
 
-		DynamicObjectDefinitionLocalizationTable
-			dynamicObjectDefinitionLocalizationTable =
-				DynamicObjectDefinitionLocalizationTableFactory.create(
-					_objectDefinitionPersistence.findByPrimaryKey(
-						objectDefinitionId),
-					_objectFieldLocalService);
-		DynamicObjectDefinitionTable dynamicObjectDefinitionTable =
-			_getDynamicObjectDefinitionTable(objectDefinitionId);
-		DynamicObjectDefinitionTable extensionDynamicObjectDefinitionTable =
-			_getExtensionDynamicObjectDefinitionTable(objectDefinitionId);
-		DynamicObjectDefinitionTable rootDynamicObjectDefinitionTable =
-			_getRootDynamicObjectDefinitionTable(objectDefinitionId);
-
-		Expression<?>[] selectExpressions = ArrayUtil.append(
-			_getSelectExpressions(dynamicObjectDefinitionLocalizationTable),
-			_getSelectExpressions(
-				dynamicObjectDefinitionTable, selectedObjectFieldNames),
-			ArrayUtil.remove(
-				_getSelectExpressions(
-					extensionDynamicObjectDefinitionTable,
-					selectedObjectFieldNames),
-				extensionDynamicObjectDefinitionTable.getPrimaryKeyColumn()),
-			_EXPRESSIONS);
-
-		List<Object[]> rows = _list(
-			DSLQueryFactoryUtil.select(
-				selectExpressions
-			).from(
-				dynamicObjectDefinitionTable
-			).innerJoinON(
-				extensionDynamicObjectDefinitionTable,
-				extensionDynamicObjectDefinitionTable.getPrimaryKeyColumn(
-				).eq(
-					dynamicObjectDefinitionTable.getPrimaryKeyColumn()
-				)
-			).innerJoinON(
-				ObjectEntryTable.INSTANCE,
-				ObjectEntryTable.INSTANCE.objectEntryId.eq(
-					dynamicObjectDefinitionTable.getPrimaryKeyColumn())
-			).innerJoinON(
-				rootDynamicObjectDefinitionTable,
-				_getInnerJoinRootObjectDefinitionTablePredicate(
-					rootDynamicObjectDefinitionTable)
-			).leftJoinOn(
-				dynamicObjectDefinitionLocalizationTable,
-				_getLeftJoinLocalizationTablePredicate(
-					dynamicObjectDefinitionLocalizationTable,
-					dynamicObjectDefinitionTable)
-			).where(
-				ObjectEntryTable.INSTANCE.objectDefinitionId.eq(
-					objectDefinitionId
-				).and(
-					() -> {
-						if (groupId == 0) {
-							return null;
-						}
-
-						return ObjectEntryTable.INSTANCE.groupId.eq(groupId);
-					}
-				).and(
-					Predicate.withParentheses(
-						_fillPredicate(objectDefinitionId, predicate, search))
-				).and(
-					_getPermissionWherePredicate(
-						dynamicObjectDefinitionTable, groupId)
-				)
-			).orderBy(
-				orderByExpressions
-			).limit(
-				start, end
-			),
-			objectDefinitionId, selectExpressions);
-
-		List<Map<String, Serializable>> valuesList = new ArrayList<>(
-			rows.size());
-
-		for (Object[] objects : rows) {
-			valuesList.add(
-				_getValues(objectDefinitionId, objects, selectExpressions));
-		}
-
-		return valuesList;
+		return _getValuesList(
+			groupId, objectDefinitionId, selectedObjectFieldNames, predicate,
+			search, start, end, orderByExpressions);
 	}
 
 	@Override
@@ -3260,6 +3192,97 @@ public class ObjectEntryLocalServiceImpl
 		}
 
 		return values;
+	}
+
+	private List<Map<String, Serializable>> _getValuesList(
+			long groupId, long objectDefinitionId,
+			String[] selectedObjectFieldNames, Predicate predicate,
+			String search, int start, int end,
+			OrderByExpression[] orderByExpressions)
+		throws PortalException {
+
+		DynamicObjectDefinitionLocalizationTable
+			dynamicObjectDefinitionLocalizationTable =
+				DynamicObjectDefinitionLocalizationTableFactory.create(
+					_objectDefinitionPersistence.findByPrimaryKey(
+						objectDefinitionId),
+					_objectFieldLocalService);
+		DynamicObjectDefinitionTable dynamicObjectDefinitionTable =
+			_getDynamicObjectDefinitionTable(objectDefinitionId);
+		DynamicObjectDefinitionTable extensionDynamicObjectDefinitionTable =
+			_getExtensionDynamicObjectDefinitionTable(objectDefinitionId);
+		DynamicObjectDefinitionTable rootDynamicObjectDefinitionTable =
+			_getRootDynamicObjectDefinitionTable(objectDefinitionId);
+
+		Expression<?>[] selectExpressions = ArrayUtil.append(
+			_getSelectExpressions(dynamicObjectDefinitionLocalizationTable),
+			_getSelectExpressions(
+				dynamicObjectDefinitionTable, selectedObjectFieldNames),
+			ArrayUtil.remove(
+				_getSelectExpressions(
+					extensionDynamicObjectDefinitionTable,
+					selectedObjectFieldNames),
+				extensionDynamicObjectDefinitionTable.getPrimaryKeyColumn()),
+			_EXPRESSIONS);
+
+		List<Object[]> rows = _list(
+			DSLQueryFactoryUtil.select(
+				selectExpressions
+			).from(
+				dynamicObjectDefinitionTable
+			).innerJoinON(
+				extensionDynamicObjectDefinitionTable,
+				extensionDynamicObjectDefinitionTable.getPrimaryKeyColumn(
+				).eq(
+					dynamicObjectDefinitionTable.getPrimaryKeyColumn()
+				)
+			).innerJoinON(
+				ObjectEntryTable.INSTANCE,
+				ObjectEntryTable.INSTANCE.objectEntryId.eq(
+					dynamicObjectDefinitionTable.getPrimaryKeyColumn())
+			).innerJoinON(
+				rootDynamicObjectDefinitionTable,
+				_getInnerJoinRootObjectDefinitionTablePredicate(
+					rootDynamicObjectDefinitionTable)
+			).leftJoinOn(
+				dynamicObjectDefinitionLocalizationTable,
+				_getLeftJoinLocalizationTablePredicate(
+					dynamicObjectDefinitionLocalizationTable,
+					dynamicObjectDefinitionTable)
+			).where(
+				ObjectEntryTable.INSTANCE.objectDefinitionId.eq(
+					objectDefinitionId
+				).and(
+					() -> {
+						if (groupId == 0) {
+							return null;
+						}
+
+						return ObjectEntryTable.INSTANCE.groupId.eq(groupId);
+					}
+				).and(
+					Predicate.withParentheses(
+						_fillPredicate(objectDefinitionId, predicate, search))
+				).and(
+					_getPermissionWherePredicate(
+						dynamicObjectDefinitionTable, groupId)
+				)
+			).orderBy(
+				orderByExpressions
+			).limit(
+				start, end
+			),
+			objectDefinitionId, selectExpressions);
+
+		List<Map<String, Serializable>> valuesList = new ArrayList<>(
+			rows.size());
+
+		for (Object[] objects : rows) {
+			valuesList.add(
+				_getValues(objectDefinitionId, objects, selectExpressions));
+		}
+
+		return valuesList;
 	}
 
 	private void _insertIntoLocalizationTable(
