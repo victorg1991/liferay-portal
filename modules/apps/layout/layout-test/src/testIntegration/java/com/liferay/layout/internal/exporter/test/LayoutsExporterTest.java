@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
@@ -27,6 +28,7 @@ import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
@@ -79,6 +81,10 @@ public class LayoutsExporterTest {
 			"User ", _user.getUserId(), " must have VIEW permission for ",
 			LayoutPageTemplateEntry.class.getName(), " ",
 			_layoutPageTemplateEntryId);
+
+		_originalName = PrincipalThreadLocal.getName();
+
+		PrincipalThreadLocal.setName(TestPropsValues.getUserId());
 	}
 
 	@AfterClass
@@ -89,6 +95,10 @@ public class LayoutsExporterTest {
 
 		if (_group != null) {
 			_groupLocalService.deleteGroup(_group);
+		}
+
+		if (_originalName != null) {
+			PrincipalThreadLocal.setName(_originalName);
 		}
 	}
 
@@ -138,6 +148,7 @@ public class LayoutsExporterTest {
 		_layoutPageTemplateEntryLocalService;
 
 	private static String _layoutPageTemplateEntryMessage;
+	private static String _originalName;
 	private static User _user;
 
 	@Inject
