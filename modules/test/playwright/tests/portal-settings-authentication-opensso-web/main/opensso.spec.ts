@@ -7,11 +7,10 @@ import {expect, mergeTests} from '@playwright/test';
 
 import {loginTest} from '../../../fixtures/loginTest';
 
-export const test = mergeTests(loginTest());
+export const test = mergeTests(loginTest);
 
 test(
 	'Block request with invalid CSRF token',
-	{tag: '@LPD-81903'},
 	async ({page}) => {
 		await page.goto(
 			'/group/guest/~/control_panel/manage' +
