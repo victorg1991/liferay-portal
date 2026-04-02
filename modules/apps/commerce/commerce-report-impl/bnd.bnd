@@ -41,6 +41,7 @@ Import-Package:\
 	!org.apache.bcel.*,\
 	!org.apache.commons.javaflow.*,\
 	!org.apache.commons.jci.*,\
+	!org.apache.fop.*,\
 	!org.apache.log.*,\
 	!org.apache.oro.*,\
 	!org.apache.poi.hdgf.*,\
