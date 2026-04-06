@@ -1,3 +1,4 @@
 Bundle-Name: Liferay Portal Search REST Implementation
 Bundle-SymbolicName: com.liferay.portal.search.rest.impl
 Bundle-Version: 1.0.44
+-fixupmessages: Classes found in the wrong directory: ...;is:=ignore

@@ -3,4 +3,5 @@ Bundle-SymbolicName: com.liferay.portal.search.admin.web
 Bundle-Version: 4.0.59
 Liferay-JS-Submodules-Bridge: portal-search-admin-web/js/FieldMappings.es.js
 Web-ContextPath: /portal-search-admin-web
+-fixupmessages: Classes found in the wrong directory: ...;is:=ignore
 -includeresource: package.json
