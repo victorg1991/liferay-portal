@@ -185,7 +185,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.commerce.google.merchant.jar!jackson-dataformat-xml.jar</file-name>
-				<version>2.10.3</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-XML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformat-xml</project-url>
 				<licenses>
@@ -233,7 +233,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.commerce.payment.method.mercanet.jar!jackson-datatype-jsr310.jar</file-name>
-				<version>2.12.1</version>
+				<version>2.18.6</version>
 				<project-name>Jackson datatype: JSR310</project-name>
 				<project-url>https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310</project-url>
 				<licenses>
@@ -2038,7 +2038,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.k8s.agent.impl.jar!jackson-dataformat-yaml.jar</file-name>
-				<version>2.14.2</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-YAML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformats-text</project-url>
 				<licenses>
@@ -2050,7 +2050,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.k8s.agent.impl.jar!jackson-datatype-jsr310.jar</file-name>
-				<version>2.13.2</version>
+				<version>2.18.6</version>
 				<project-name>Jackson datatype: JSR310</project-name>
 				<project-url>https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310</project-url>
 				<licenses>
@@ -2682,31 +2682,31 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.search.elasticsearch7.impl.jar!jackson-dataformat-cbor.jar</file-name>
-				<version>2.12.6</version>
+				<version>2.18.6</version>
 				<project-name>Jackson dataformat: CBOR</project-name>
-				<project-url>http://github.com/FasterXML/jackson-dataformats-binary</project-url>
+				<project-url>https://github.com/FasterXML/jackson-dataformats-binary</project-url>
 				<licenses>
 					<license>
 						<license-name>The Apache Software License, Version 2.0</license-name>
-						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
+						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
 			<library>
 				<file-name>com.liferay.portal.search.elasticsearch7.impl.jar!jackson-dataformat-smile.jar</file-name>
-				<version>2.13.2</version>
+				<version>2.18.6</version>
 				<project-name>Jackson dataformat: Smile</project-name>
-				<project-url>http://github.com/FasterXML/jackson-dataformats-binary</project-url>
+				<project-url>https://github.com/FasterXML/jackson-dataformats-binary</project-url>
 				<licenses>
 					<license>
 						<license-name>The Apache Software License, Version 2.0</license-name>
-						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
+						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
 			<library>
 				<file-name>com.liferay.portal.search.elasticsearch7.impl.jar!jackson-dataformat-yaml.jar</file-name>
-				<version>2.14.2</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-YAML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformats-text</project-url>
 				<licenses>
@@ -2914,7 +2914,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.search.rest.impl.jar!jackson-dataformat-xml.jar</file-name>
-				<version>2.10.3</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-XML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformat-xml</project-url>
 				<licenses>
@@ -3387,7 +3387,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.azure.jar!jackson-annotations.jar</file-name>
-				<version>2.16.1</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-annotations</project-name>
 				<project-url>https://github.com/FasterXML/jackson</project-url>
 				<licenses>
@@ -3399,7 +3399,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.azure.jar!jackson-core.jar</file-name>
-				<version>2.16.1</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-core</project-name>
 				<project-url>https://github.com/FasterXML/jackson-core</project-url>
 				<licenses>
@@ -3411,7 +3411,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.azure.jar!jackson-databind.jar</file-name>
-				<version>2.16.1</version>
+				<version>2.18.6</version>
 				<project-name>jackson-databind</project-name>
 				<project-url>https://github.com/FasterXML/jackson</project-url>
 				<licenses>
@@ -3423,7 +3423,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.azure.jar!jackson-dataformat-xml.jar</file-name>
-				<version>2.13.5</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-XML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformat-xml</project-url>
 				<licenses>
@@ -3435,7 +3435,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.azure.jar!jackson-datatype-jsr310.jar</file-name>
-				<version>2.13.5</version>
+				<version>2.18.6</version>
 				<project-name>Jackson datatype: JSR310</project-name>
 				<project-url>https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310</project-url>
 				<licenses>
@@ -3991,13 +3991,13 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.store.s3.jar!jackson-dataformat-cbor.jar</file-name>
-				<version>2.12.6</version>
+				<version>2.18.6</version>
 				<project-name>Jackson dataformat: CBOR</project-name>
-				<project-url>http://github.com/FasterXML/jackson-dataformats-binary</project-url>
+				<project-url>https://github.com/FasterXML/jackson-dataformats-binary</project-url>
 				<licenses>
 					<license>
 						<license-name>The Apache Software License, Version 2.0</license-name>
-						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
+						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
@@ -4296,7 +4296,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.vulcan.api.jar!jackson-dataformat-xml.jar</file-name>
-				<version>2.10.3</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-XML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformat-xml</project-url>
 				<licenses>
@@ -4415,7 +4415,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.vulcan.impl.jar!jackson-dataformat-xml.jar</file-name>
-				<version>2.10.3</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-XML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformat-xml</project-url>
 				<licenses>
@@ -4427,7 +4427,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.vulcan.impl.jar!jackson-dataformat-yaml.jar</file-name>
-				<version>2.14.2</version>
+				<version>2.18.6</version>
 				<project-name>Jackson-dataformat-YAML</project-name>
 				<project-url>https://github.com/FasterXML/jackson-dataformats-text</project-url>
 				<licenses>
@@ -4439,7 +4439,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.vulcan.impl.jar!jackson-datatype-jdk8.jar</file-name>
-				<version>2.9.8</version>
+				<version>2.18.6</version>
 				<project-name>Jackson datatype: jdk8</project-name>
 				<project-url>https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jdk8</project-url>
 				<licenses>
@@ -4451,25 +4451,25 @@
 			</library>
 			<library>
 				<file-name>com.liferay.portal.vulcan.impl.jar!jackson-jaxrs-xml-provider.jar</file-name>
-				<version>2.9.8</version>
-				<project-name>Jackson-JAXRS-XML</project-name>
-				<project-url>http://github.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-xml-provider</project-url>
+				<version>2.18.6</version>
+				<project-name>Jackson-JAXRS: XML</project-name>
+				<project-url>https://github.com/FasterXML/jackson-jaxrs-providers/jackson-jaxrs-xml-provider</project-url>
 				<licenses>
 					<license>
 						<license-name>The Apache Software License, Version 2.0</license-name>
-						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
+						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
 			<library>
 				<file-name>com.liferay.portal.vulcan.impl.jar!jackson-module-jaxb-annotations.jar</file-name>
-				<version>2.9.8</version>
-				<project-name>Jackson module: JAXB Annotations</project-name>
+				<version>2.18.6</version>
+				<project-name>Jackson module: Old JAXB Annotations (javax.xml.bind)</project-name>
 				<project-url>https://github.com/FasterXML/jackson-modules-base</project-url>
 				<licenses>
 					<license>
 						<license-name>The Apache Software License, Version 2.0</license-name>
-						<license-url>http://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
+						<license-url>https://www.apache.org/licenses/LICENSE-2.0.txt</license-url>
 					</license>
 				</licenses>
 			</library>
@@ -4663,7 +4663,7 @@
 			</library>
 			<library>
 				<file-name>com.liferay.push.notifications.sender.sms.jar!jackson-datatype-jsr310.jar</file-name>
-				<version>2.11.3</version>
+				<version>2.18.6</version>
 				<project-name>Jackson datatype: JSR310</project-name>
 				<project-url>https://github.com/FasterXML/jackson-modules-java8/jackson-datatype-jsr310</project-url>
 				<licenses>
