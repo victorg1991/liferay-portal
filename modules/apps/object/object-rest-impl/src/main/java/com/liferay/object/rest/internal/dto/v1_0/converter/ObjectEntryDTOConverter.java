@@ -61,6 +61,8 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.auth.GuestOrUserUtil;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.Base64;
@@ -330,6 +332,15 @@ public class ObjectEntryDTOConverter
 									getSystemObjectDefinitionManager(
 										objectDefinition.getName());
 
+						if (!systemObjectDefinitionManager.
+								hasModelResourcePermission(
+									objectDefinition.getObjectDefinitionId(),
+									GuestOrUserUtil.getPermissionChecker(),
+									primaryKey, ActionKeys.VIEW)) {
+
+							return null;
+						}
+
 						BaseModel<?> baseModel =
 							systemObjectDefinitionManager.
 								getBaseModelByExternalReferenceCode(
@@ -376,6 +387,13 @@ public class ObjectEntryDTOConverter
 							(Serializable)values);
 					}
 					else {
+						if (!_objectEntryService.hasModelResourcePermission(
+								objectDefinition.getObjectDefinitionId(),
+								primaryKey, ActionKeys.VIEW)) {
+
+							return null;
+						}
+
 						relatedObjectEntryAtomicReference.set(
 							toDTO(
 								_getDTOConverterContext(
