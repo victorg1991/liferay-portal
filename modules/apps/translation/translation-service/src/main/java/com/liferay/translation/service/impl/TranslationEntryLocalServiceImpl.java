@@ -49,6 +49,7 @@ import java.nio.charset.StandardCharsets;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
@@ -73,36 +74,11 @@ public class TranslationEntryLocalServiceImpl
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		try {
-			infoItemReference = infoItemFieldValues.getInfoItemReference();
+		Locale defaultLocale = LocaleUtil.getDefault();
 
-			InfoItemIdentifier infoItemIdentifier =
-				infoItemReference.getInfoItemIdentifier();
-
-			if (!(infoItemIdentifier instanceof ClassPKInfoItemIdentifier)) {
-				throw new NoSuchInfoItemException(
-					"Unable to add or update a translation entry without a " +
-						"class PK info item identifier");
-			}
-
-			ClassPKInfoItemIdentifier classPKInfoItemIdentifier =
-				(ClassPKInfoItemIdentifier)
-					infoItemReference.getInfoItemIdentifier();
-
-			return addOrUpdateTranslationEntry(
-				groupId, infoItemReference.getClassName(),
-				classPKInfoItemIdentifier.getClassPK(),
-				StreamUtil.toString(
-					_xliffTranslationInfoItemFieldValuesExporter.
-						exportInfoItemFieldValues(
-							infoItemFieldValues, LocaleUtil.getDefault(),
-							LocaleUtil.fromLanguageId(languageId))),
-				_xliffTranslationInfoItemFieldValuesExporter.getMimeType(),
-				languageId, serviceContext);
-		}
-		catch (IOException ioException) {
-			throw new PortalException(ioException);
-		}
+		return translationEntryLocalService.addOrUpdateTranslationEntry(
+			groupId, defaultLocale.toString(), languageId, infoItemReference,
+			infoItemFieldValues, serviceContext);
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -165,6 +141,48 @@ public class TranslationEntryLocalServiceImpl
 			serviceContext.getUserId(), TranslationEntry.class.getName(),
 			translationEntry.getTranslationEntryId(), translationEntry,
 			serviceContext, new HashMap<>());
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public TranslationEntry addOrUpdateTranslationEntry(
+			long groupId, String sourceLanguageId, String targetLanguageId,
+			InfoItemReference infoItemReference,
+			InfoItemFieldValues infoItemFieldValues,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		try {
+			infoItemReference = infoItemFieldValues.getInfoItemReference();
+
+			InfoItemIdentifier infoItemIdentifier =
+				infoItemReference.getInfoItemIdentifier();
+
+			if (!(infoItemIdentifier instanceof ClassPKInfoItemIdentifier)) {
+				throw new NoSuchInfoItemException(
+					"Unable to add or update a translation entry without a " +
+						"class PK info item identifier");
+			}
+
+			ClassPKInfoItemIdentifier classPKInfoItemIdentifier =
+				(ClassPKInfoItemIdentifier)
+					infoItemReference.getInfoItemIdentifier();
+
+			return addOrUpdateTranslationEntry(
+				groupId, infoItemReference.getClassName(),
+				classPKInfoItemIdentifier.getClassPK(),
+				StreamUtil.toString(
+					_xliffTranslationInfoItemFieldValuesExporter.
+						exportInfoItemFieldValues(
+							infoItemFieldValues,
+							LocaleUtil.fromLanguageId(sourceLanguageId),
+							LocaleUtil.fromLanguageId(targetLanguageId))),
+				_xliffTranslationInfoItemFieldValuesExporter.getMimeType(),
+				targetLanguageId, serviceContext);
+		}
+		catch (IOException ioException) {
+			throw new PortalException(ioException);
+		}
 	}
 
 	@Override

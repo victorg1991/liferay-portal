@@ -116,6 +116,21 @@ public class TranslationEntryServiceImpl
 	}
 
 	@Override
+	public TranslationEntry addOrUpdateTranslationEntry(
+			long groupId, String sourceLanguageId, String targetLanguageId,
+			InfoItemReference infoItemReference,
+			InfoItemFieldValues infoItemFieldValues,
+			ServiceContext serviceContext)
+		throws PortalException {
+
+		_checkPermission(groupId, targetLanguageId, infoItemReference);
+
+		return translationEntryLocalService.addOrUpdateTranslationEntry(
+			groupId, sourceLanguageId, targetLanguageId, infoItemReference,
+			infoItemFieldValues, serviceContext);
+	}
+
+	@Override
 	public TranslationEntry deleteTranslationEntry(long translationEntryId)
 		throws PortalException {
 
