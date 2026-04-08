@@ -49,7 +49,6 @@ import java.nio.charset.StandardCharsets;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
@@ -79,11 +78,9 @@ public class TranslationEntryLocalServiceImpl
 			ServiceContext serviceContext)
 		throws PortalException {
 
-		Locale defaultLocale = LocaleUtil.getDefault();
-
 		return translationEntryLocalService.addOrUpdateTranslationEntry(
-			groupId, defaultLocale.toString(), languageId, infoItemReference,
-			infoItemFieldValues, serviceContext);
+			groupId, LocaleUtil.toLanguageId(LocaleUtil.getDefault()),
+			languageId, infoItemReference, infoItemFieldValues, serviceContext);
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
