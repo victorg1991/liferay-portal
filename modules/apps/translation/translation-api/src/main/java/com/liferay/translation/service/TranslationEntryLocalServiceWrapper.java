@@ -32,6 +32,11 @@ public class TranslationEntryLocalServiceWrapper
 		_translationEntryLocalService = translationEntryLocalService;
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addOrUpdateTranslationEntry(long, String, String, InfoItemReference, InfoItemFieldValues, ServiceContext)}
+	 */
+	@Deprecated
 	@Override
 	public TranslationEntry addOrUpdateTranslationEntry(
 			long groupId, String languageId,

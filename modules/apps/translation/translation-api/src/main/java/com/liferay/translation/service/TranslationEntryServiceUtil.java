@@ -38,6 +38,11 @@ public class TranslationEntryServiceUtil {
 			groupId, infoItemReference, content, contentType, serviceContext);
 	}
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addOrUpdateTranslationEntry(long, String, String, InfoItemReference, InfoItemFieldValues, ServiceContext)}
+	 */
+	@Deprecated
 	public static TranslationEntry addOrUpdateTranslationEntry(
 			long groupId, String languageId,
 			com.liferay.info.item.InfoItemReference infoItemReference,

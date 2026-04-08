@@ -64,6 +64,12 @@ public interface TranslationEntryLocalService
 	 *
 	 * Never modify this interface directly. Add custom service methods to <code>com.liferay.translation.service.impl.TranslationEntryLocalServiceImpl</code> and rerun ServiceBuilder to automatically copy the method declarations to this interface. Consume the translation entry local service via injection or a <code>org.osgi.util.tracker.ServiceTracker</code>. Use {@link TranslationEntryLocalServiceUtil} if injection and service tracking are not available.
 	 */
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addOrUpdateTranslationEntry(long, String, String, InfoItemReference, InfoItemFieldValues, ServiceContext)}
+	 */
+	@Deprecated
 	@Indexable(type = IndexableType.REINDEX)
 	public TranslationEntry addOrUpdateTranslationEntry(
 			long groupId, String languageId,

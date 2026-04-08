@@ -36,6 +36,12 @@ public class TranslationEntryLocalServiceUtil {
 	 *
 	 * Never modify this class directly. Add custom service methods to <code>com.liferay.translation.service.impl.TranslationEntryLocalServiceImpl</code> and rerun ServiceBuilder to regenerate this class.
 	 */
+
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 #addOrUpdateTranslationEntry(long, String, String, InfoItemReference, InfoItemFieldValues, ServiceContext)}
+	 */
+	@Deprecated
 	public static TranslationEntry addOrUpdateTranslationEntry(
 			long groupId, String languageId,
 			com.liferay.info.item.InfoItemReference infoItemReference,
