@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 
@@ -149,6 +150,11 @@ public interface SystemObjectDefinitionManager {
 	}
 
 	public int getVersion();
+
+	public boolean hasModelResourcePermission(
+			long objectDefinitionId, PermissionChecker permissionChecker,
+			long primaryKey, String actionId)
+		throws PortalException;
 
 	public void updateBaseModel(
 			long primaryKey, User user, Map<String, Object> values)

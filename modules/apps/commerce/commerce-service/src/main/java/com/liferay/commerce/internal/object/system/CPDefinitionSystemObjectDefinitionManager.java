@@ -8,8 +8,10 @@ package com.liferay.commerce.internal.object.system;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPDefinitionTable;
 import com.liferay.commerce.product.model.CProduct;
+import com.liferay.commerce.product.model.CommerceCatalog;
 import com.liferay.commerce.product.service.CPDefinitionLocalService;
 import com.liferay.commerce.product.service.CProductLocalService;
+import com.liferay.commerce.product.service.CommerceCatalogLocalService;
 import com.liferay.headless.commerce.admin.catalog.dto.v1_0.Product;
 import com.liferay.headless.commerce.admin.catalog.resource.v1_0.ProductResource;
 import com.liferay.object.constants.ObjectDefinitionConstants;
@@ -28,6 +30,8 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 
@@ -268,6 +272,16 @@ public class CPDefinitionSystemObjectDefinitionManager
 	}
 
 	@Override
+	public boolean hasModelResourcePermission(
+			long objectDefinitionId, PermissionChecker permissionChecker,
+			long primaryKey, String actionId)
+		throws PortalException {
+
+		return _commerceCatalogModelResourcePermission.contains(
+			permissionChecker, _getCommerceCatalog(primaryKey), actionId);
+	}
+
+	@Override
 	public void updateBaseModel(
 			long primaryKey, User user, Map<String, Object> values)
 		throws Exception {
@@ -297,6 +311,26 @@ public class CPDefinitionSystemObjectDefinitionManager
 		).build();
 	}
 
+	private CommerceCatalog _getCommerceCatalog(long primaryKey)
+		throws PortalException {
+
+		CPDefinition cpDefinition = _cpDefinitionLocalService.fetchCPDefinition(
+			primaryKey);
+
+		if (cpDefinition == null) {
+			cpDefinition =
+				_cpDefinitionLocalService.fetchCPDefinitionByCProductId(
+					primaryKey);
+
+			if (cpDefinition == null) {
+				return null;
+			}
+		}
+
+		return _commerceCatalogLocalService.fetchCommerceCatalogByGroupId(
+			cpDefinition.getGroupId());
+	}
+
 	private Product _toProduct(Map<String, Object> values) {
 		return new Product() {
 			{
@@ -319,6 +353,15 @@ public class CPDefinitionSystemObjectDefinitionManager
 			}
 		};
 	}
+
+	@Reference
+	private CommerceCatalogLocalService _commerceCatalogLocalService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.commerce.product.model.CommerceCatalog)"
+	)
+	private ModelResourcePermission<CommerceCatalog>
+		_commerceCatalogModelResourcePermission;
 
 	@Reference
 	private CPDefinitionLocalService _cpDefinitionLocalService;
