@@ -56,6 +56,13 @@ public interface TranslationEntryService extends BaseService {
 			ServiceContext serviceContext)
 		throws PortalException;
 
+	public TranslationEntry addOrUpdateTranslationEntry(
+			long groupId, String sourceLanguageId, String targetLanguageId,
+			InfoItemReference infoItemReference,
+			InfoItemFieldValues infoItemFieldValues,
+			ServiceContext serviceContext)
+		throws PortalException;
+
 	public TranslationEntry deleteTranslationEntry(long translationEntryId)
 		throws PortalException;
 

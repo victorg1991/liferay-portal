@@ -59,6 +59,18 @@ public class TranslationEntryLocalServiceUtil {
 			serviceContext);
 	}
 
+	public static TranslationEntry addOrUpdateTranslationEntry(
+			long groupId, String sourceLanguageId, String targetLanguageId,
+			com.liferay.info.item.InfoItemReference infoItemReference,
+			com.liferay.info.item.InfoItemFieldValues infoItemFieldValues,
+			com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws PortalException {
+
+		return getService().addOrUpdateTranslationEntry(
+			groupId, sourceLanguageId, targetLanguageId, infoItemReference,
+			infoItemFieldValues, serviceContext);
+	}
+
 	/**
 	 * Adds the translation entry to the database. Also notifies the appropriate model listeners.
 	 *

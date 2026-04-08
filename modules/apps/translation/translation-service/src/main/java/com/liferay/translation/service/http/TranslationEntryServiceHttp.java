@@ -134,6 +134,53 @@ public class TranslationEntryServiceHttp {
 	}
 
 	public static com.liferay.translation.model.TranslationEntry
+			addOrUpdateTranslationEntry(
+				HttpPrincipal httpPrincipal, long groupId,
+				String sourceLanguageId, String targetLanguageId,
+				com.liferay.info.item.InfoItemReference infoItemReference,
+				com.liferay.info.item.InfoItemFieldValues infoItemFieldValues,
+				com.liferay.portal.kernel.service.ServiceContext serviceContext)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		try {
+			MethodKey methodKey = new MethodKey(
+				TranslationEntryServiceUtil.class,
+				"addOrUpdateTranslationEntry",
+				_addOrUpdateTranslationEntryParameterTypes2);
+
+			MethodHandler methodHandler = new MethodHandler(
+				methodKey, groupId, sourceLanguageId, targetLanguageId,
+				infoItemReference, infoItemFieldValues, serviceContext);
+
+			Object returnObj = null;
+
+			try {
+				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
+			}
+			catch (Exception exception) {
+				if (exception instanceof
+						com.liferay.portal.kernel.exception.PortalException) {
+
+					throw (com.liferay.portal.kernel.exception.PortalException)
+						exception;
+				}
+
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					exception);
+			}
+
+			return (com.liferay.translation.model.TranslationEntry)returnObj;
+		}
+		catch (com.liferay.portal.kernel.exception.SystemException
+					systemException) {
+
+			_log.error(systemException, systemException);
+
+			throw systemException;
+		}
+	}
+
+	public static com.liferay.translation.model.TranslationEntry
 			deleteTranslationEntry(
 				HttpPrincipal httpPrincipal, long translationEntryId)
 		throws com.liferay.portal.kernel.exception.PortalException {
@@ -141,7 +188,7 @@ public class TranslationEntryServiceHttp {
 		try {
 			MethodKey methodKey = new MethodKey(
 				TranslationEntryServiceUtil.class, "deleteTranslationEntry",
-				_deleteTranslationEntryParameterTypes2);
+				_deleteTranslationEntryParameterTypes3);
 
 			MethodHandler methodHandler = new MethodHandler(
 				methodKey, translationEntryId);
@@ -190,7 +237,14 @@ public class TranslationEntryServiceHttp {
 			com.liferay.info.item.InfoItemFieldValues.class,
 			com.liferay.portal.kernel.service.ServiceContext.class
 		};
-	private static final Class<?>[] _deleteTranslationEntryParameterTypes2 =
+	private static final Class<?>[]
+		_addOrUpdateTranslationEntryParameterTypes2 = new Class[] {
+			long.class, String.class, String.class,
+			com.liferay.info.item.InfoItemReference.class,
+			com.liferay.info.item.InfoItemFieldValues.class,
+			com.liferay.portal.kernel.service.ServiceContext.class
+		};
+	private static final Class<?>[] _deleteTranslationEntryParameterTypes3 =
 		new Class[] {long.class};
 
 }
