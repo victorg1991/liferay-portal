@@ -39,15 +39,15 @@ public class TranslationEntryServiceUtil {
 	}
 
 	public static TranslationEntry addOrUpdateTranslationEntry(
-			long groupId, String sourceLanguageId, String targetLanguageId,
+			long groupId, String languageId,
 			com.liferay.info.item.InfoItemReference infoItemReference,
 			com.liferay.info.item.InfoItemFieldValues infoItemFieldValues,
 			com.liferay.portal.kernel.service.ServiceContext serviceContext)
 		throws PortalException {
 
 		return getService().addOrUpdateTranslationEntry(
-			groupId, sourceLanguageId, targetLanguageId, infoItemReference,
-			infoItemFieldValues, serviceContext);
+			groupId, languageId, infoItemReference, infoItemFieldValues,
+			serviceContext);
 	}
 
 	public static TranslationEntry deleteTranslationEntry(
