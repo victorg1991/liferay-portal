@@ -65,6 +65,11 @@ import org.osgi.service.component.annotations.Reference;
 public class TranslationEntryLocalServiceImpl
 	extends TranslationEntryLocalServiceBaseImpl {
 
+	/**
+	 * @deprecated As of Cavanaugh (7.4.x), replaced by {@link
+	 * 			#addOrUpdateTranslationEntry(long, String, String, InfoItemReference, InfoItemFieldValues, ServiceContext)}
+	 */
+	@Deprecated
 	@Indexable(type = IndexableType.REINDEX)
 	@Override
 	public TranslationEntry addOrUpdateTranslationEntry(
