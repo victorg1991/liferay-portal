@@ -114,7 +114,7 @@
 				</div>
 			</div>
 		[#else]
-			[@liferay_editor["editor"] contents=input.value editorName="ckeditor" name=input.name placeholder=input.label required=input.required /]
+			[@liferay_editor["editor"] contents=htmlUtil.unescape(input.value) editorName="ckeditor" name=input.name placeholder=input.label required=input.required /]
 		[/#if]
 
 		[#if input.errorMessage?has_content]
