@@ -290,11 +290,7 @@ public class FragmentEntryInputTemplateNodeContextHelper {
 			}
 		}
 
-		if (infoFieldType instanceof LongTextInfoFieldType ||
-			infoFieldType instanceof TextInfoFieldType) {
-
-			value = HtmlUtil.escape(value);
-		}
+		value = HtmlUtil.escape(value);
 
 		InputTemplateNode inputTemplateNode = new InputTemplateNode(
 			errorMessage, inputHelpText, inputLabel, name, readOnly, required,
