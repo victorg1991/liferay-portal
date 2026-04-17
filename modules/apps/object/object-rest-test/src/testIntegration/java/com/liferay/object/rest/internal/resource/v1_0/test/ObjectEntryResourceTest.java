@@ -9028,7 +9028,7 @@ public class ObjectEntryResourceTest {
 			).put(
 				_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE,
 				_toFileEntryJSONObject(
-					DLTestUtil.randomTextFileBytes(),
+					RandomTestUtil.randomString(),
 					RandomTestUtil.randomString() + ".txt", null,
 					ContentTypes.TEXT_PLAIN,
 					_OBJECT_FIELD_NAME_ATTACHMENT_DOCS_AND_MEDIA_SOURCE)
