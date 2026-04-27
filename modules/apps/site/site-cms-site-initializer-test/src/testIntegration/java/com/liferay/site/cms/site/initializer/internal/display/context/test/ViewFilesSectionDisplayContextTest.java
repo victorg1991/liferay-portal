@@ -11,6 +11,7 @@ import com.liferay.object.constants.ObjectEntryFolderConstants;
 import com.liferay.object.constants.ObjectFolderConstants;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.Sync;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -49,11 +50,24 @@ public class ViewFilesSectionDisplayContextTest
 			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Override
-	public HashMap<String, Object> getBaseAdditionalProps()
-		throws PortalException {
-
+	public HashMap<String, Object> getBaseAdditionalProps() throws Exception {
 		return new HashMapBuilder<>().putAll(
 			super.getBaseAdditionalProps()
+		).put(
+			"breadcrumbProps",
+			HashMapBuilder.<String, Object>put(
+				"breadcrumbItems",
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"active", false
+					).put(
+						"href", (String)null
+					).put(
+						"label", "test"
+					))
+			).put(
+				"hideSpace", true
+			).build()
 		).put(
 			"galleryViewEnabled", true
 		).build();
@@ -72,6 +86,11 @@ public class ViewFilesSectionDisplayContextTest
 		).put(
 			"external-video", getRedirect("L_CMS_EXTERNAL_VIDEO")
 		).build();
+	}
+
+	@Override
+	protected String getFilterString() {
+		return "cmsRoot eq true and cmsSection eq 'files'";
 	}
 
 	@Override

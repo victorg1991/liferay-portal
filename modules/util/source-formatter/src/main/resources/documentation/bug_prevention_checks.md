@@ -32,7 +32,6 @@ CSPTagMissingAttributesCheck | .ftl, .html, .jsp, .jspf, .jspx, or .vm | Checks 
 ClassNameIdCheck | .java | Avoid caching noncompany scoped class name IDs. |
 [CodeownersFileLocationCheck](check/codeowners_file_location_check.md#codeownersfilelocationcheck) | CODEOWNERS | Checks that `CODEOWNERS` files are located in `.github` directory. |
 [CompanyIterationCheck](check/company_iteration_check.md#companyiterationcheck) | .java, .jsp, .jspf, .jspx, .tag, .tpl, or .vm | Checks that `CompanyLocalService.forEachCompany` or `CompanyLocalService.forEachCompanyId` is used when iterating over companies. |
-[CompanyThreadLocalCheck](check/company_thread_local_check.md#companythreadlocalcheck) | .java | Checks usage of `CompanyThreadLocal`. |
 CompatClassImportsCheck | .java, .jsp, .jspf, .jspx, .tag, .tpl, or .vm | Checks that classes are imported from `compat` modules, when possible. |
 ComponentAnnotationCheck | .java | Performs several checks on classes with @Component annotation. |
 [ComponentExposureCheck](check/component_exposure_check.md#componentexposurecheck) | .java | Avoid exposing static component. |
@@ -56,11 +55,12 @@ GradleExportedPackageDependenciesCheck | .gradle | Validates dependencies in gra
 GradleJavaVersionCheck | .gradle | Checks values of properties `sourceCompatibility` and `targetCompatibility` in gradle build files. |
 GradleMissingDependenciesForUpgradeJava21Check | .gradle | Checks missing dependencies for upgrade Java 21 in gradle build files. |
 GradleMissingJarManifestTaskCheck | .gradle | Finds missing `jarManifest` task when using `jarPatched` task in gradle build files. |
-GradlePetraModuleDependenciesCheck | .gradle | Checks that dependencies in `petra` moudule can only contains `petra` dependencies. |
+GradlePetraModuleDependenciesCheck | .gradle | Checks that dependencies in `petra` module can only contains `petra` dependencies. |
 GradlePropertiesCheck | .gradle | Validates property values in gradle build files. |
 GradleProvidedDependenciesCheck | .gradle | Validates the scope of dependencies in build gradle files. |
 [GradleRequiredDependenciesCheck](check/gradle_required_dependencies_check.md#gradlerequireddependenciescheck) | .gradle | Validates the dependencies in `/required-dependencies/required-dependencies/build.gradle`. |
-GradleRestClientDependenciesCheck | .gradle | Validates the project dependencies `.*-rest-client` can only be used for `testIntegrationImplementation`. |
+GradleRestClientModuleDependenciesCheck | .gradle | Validates that only Jakarta dependencies can be used in `*-rest-client` modules. |
+GradleRestTestModuleDependenciesCheck | .gradle | Validates the project dependencies `*-rest-client` can only be used for `testIntegrationImplementation` in `*-rest-test` modules. |
 GradleTestDependencyVersionCheck | .gradle | Checks the version for dependencies in gradle build files. |
 GradleTestUtilDeployDirCheck | .gradle | Checks for incorrect use of `deployDir`. |
 IllegalImportsCheck | .java, .jsp, .jspf, .jspx, .tag, .tpl, or .vm | Finds cases of incorrect use of certain classes. |
@@ -99,6 +99,7 @@ JavaCleanUpMethodSuperCleanUpCheck | .java | Checks that `cleanUp` method in `*T
 [JavaCleanUpMethodVariablesCheck](check/java_clean_up_method_variables_check.md#javacleanupmethodvariablescheck) | .java | Checks that variables in `Tag` classes get cleaned up properly. |
 [JavaCollatorUtilCheck](check/java_collator_util_check.md#javacollatorutilcheck) | .java | Checks for correct use of `Collator`. |
 JavaCompanyScopedIdsCheck | .java | Finds cases where company scoped ids are used, see LPD-45118. |
+JavaCompanyThreadLocalCheck | .java | Checks that `CompanyThreadLocal.lock` and `CompanyThreadLocal.setCompanyId*` methods are not used. |
 JavaComponentAnnotationsCheck | .java | Performs several checks on classes with `@Component` annotation. |
 [JavaConfigurationAdminCheck](check/java_configuration_admin_check.md#javaconfigurationadmincheck) | .java | Checks for correct use of `location == ?` when calling `org.osgi.service.cm.ConfigurationAdmin#createFactoryConfiguration`. |
 [JavaConfigurationCategoryCheck](check/java_configuration_category_check.md#javaconfigurationcategorycheck) | .java | Checks that the value of `category` in `@ExtendedObjectClassDefinition` matches the `categoryKey` of the corresponding class that implements `ConfigurationCategory`. |
@@ -163,7 +164,6 @@ JavaUniqueUpgradeProcessCheck | .java | Checks that only one regular `UpgradePro
 [JavaUnsafeCastingCheck](check/java_unsafe_casting_check.md#javaunsafecastingcheck) | .java | Checks for potential ClassCastException. |
 [JavaUpgradeAlterCheck](check/java_upgrade_alter_check.md#javaupgradealtercheck) | .java | Performs several checks on `alter` calls in Upgrade classes. |
 [JavaUpgradeClassCheck](check/java_upgrade_class_check.md#javaupgradeclasscheck) | .java | Performs several checks on Upgrade classes. |
-JavaUpgradeCompanyThreadLocalCheck | .java | Checks that we do not use `CompanyThreadLocal.setCompanyId*` in upgrade classes. |
 JavaUpgradeConnectionCheck | .java | Performs several checks on connection in Upgrade classes. |
 JavaUpgradeCreateTableCheck | .java | Checks that we do not use `create table` statement in upgrade classes. |
 [JavaUpgradeDropTableCheck](check/java_upgrade_drop_table_check.md#javaupgradedroptablecheck) | .java | Finds cases where `DROP_TABLE_IF_EXISTS` should be used (instead of `drop table if exists`). |
@@ -222,6 +222,7 @@ ResourceTestInjectionCheck | .java | Checks that if any `*ResourceTest` class in
 [ResultSetGetCallCheck](check/result_set_get_call_check.md#resultsetgetcallcheck) | .java | Finds incorrect use of `ResultSet.get*` calls. |
 SHSubshellCheck | .expect, .sh, or .tpl | Checks that local variables are not assigned via subshells. |
 [SQLLongNamesCheck](check/sql_long_names_check.md#sqllongnamescheck) | .sql | Checks for table and column names that exceed 30 characters. |
+SafeCloseableMissingCloseCheck | .java | Finds missing `close()` calls for `SafeCloseable` instances. |
 SelfReferenceCheck | .java | Finds cases of unnecessary reference to its own class. |
 [ServiceComponentRuntimeCheck](check/service_component_runtime_check.md#servicecomponentruntimecheck) | .java | Checks `ServiceComponentRuntime` usage in test classes. |
 ServiceImplAccessModifierCheck | .java | Checks for cases where visibility of methods can be decreased. |

@@ -39,6 +39,8 @@ public class Context
 
 	public static final String SIGNED_IN = "signedIn";
 
+	public static final String TIMEZONE = "timezone";
+
 	public static final String URL = "url";
 
 	public static final String USER_AGENT = "userAgent";

@@ -216,11 +216,10 @@ export function createCSV({fieldMappingMaps, fileVersionId, groupId, name}) {
 	});
 }
 
-export function createDemandbase({credentials, groupId, name, status}) {
+export function createDemandbase({credentials, groupId, name}) {
 	const data = pickBy(
 		{
-			credentials,
-			status
+			credentials
 		},
 		Boolean
 	);
@@ -319,14 +318,12 @@ export function updateDemandbase({
 	credentials,
 	groupId,
 	id,
-	name,
-	status
+	name
 }) {
 	const data = pickBy(
 		{
 			channelsConfiguration,
-			credentials,
-			status
+			credentials
 		},
 		Boolean
 	);
@@ -496,3 +493,12 @@ export function fetchChannelsMetric({groupId, id}) {
 }
 
 export {delete$ as delete};
+
+/* Demandbase endpoints */
+
+export async function fetchDemandbaseAccountsCount({groupId, id}) {
+	return sendRequest({
+		method: 'GET',
+		path: `contacts/${groupId}/demandbase/accounts_count?dataSourceId=${id}`
+	});
+}

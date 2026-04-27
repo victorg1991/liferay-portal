@@ -119,14 +119,14 @@ public abstract class BaseSectionDisplayContextTestCase
 			"getAdditionalProps", new Class<?>[0]);
 	}
 
-	public HashMap<String, Object> getBaseAdditionalProps()
-		throws PortalException {
-
+	public HashMap<String, Object> getBaseAdditionalProps() throws Exception {
 		ThemeDisplay themeDisplay =
 			(ThemeDisplay)mockHttpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
 		return HashMapBuilder.<String, Object>put(
+			"additionalAPIURLParameters", getAdditionalAPIURLParameters()
+		).put(
 			"assetLibraries", _getDepotEntriesJSONArray()
 		).put(
 			"autocompleteURL",
@@ -247,7 +247,7 @@ public abstract class BaseSectionDisplayContextTestCase
 			StringBundler.concat(
 				themeDisplay.getPortalURL(), themeDisplay.getPathMain(),
 				GroupConstants.CMS_FRIENDLY_URL,
-				"/edit_content_item?&p_l_mode=read&p_p_state=",
+				"/edit_content_item?p_l_mode=read&p_p_state=",
 				LiferayWindowState.POP_UP, "&redirect=",
 				themeDisplay.getURLCurrent(), "&objectEntryId={embedded.id}")
 		).put(
@@ -297,6 +297,17 @@ public abstract class BaseSectionDisplayContextTestCase
 		_objectEntryFolder = null;
 
 		setUser(adminUser);
+	}
+
+	@Test
+	public void testGetAdditionalAPIURLParameters() throws Exception {
+		String additionalAPIURLParameters = ReflectionTestUtil.invoke(
+			getSectionDisplayContext(getMockHttpServletRequest()),
+			"getAdditionalAPIURLParameters", new Class<?>[0]);
+
+		Assert.assertTrue(
+			additionalAPIURLParameters,
+			additionalAPIURLParameters.contains("sort=dateModified:desc"));
 	}
 
 	@Test
@@ -682,6 +693,31 @@ public abstract class BaseSectionDisplayContextTestCase
 				group.getGroupId(), userId));
 	}
 
+	protected String appendGroupIds(String filterString) throws Exception {
+		return StringBundler.concat(
+			filterString, " and groupIds/any(g:g in (",
+			com.liferay.petra.string.StringUtil.merge(
+				_depotEntryLocalService.getDepotEntryGroupIds(
+					group.getCompanyId(), TestPropsValues.getUserId(),
+					DepotConstants.TYPE_SPACE),
+				StringPool.COMMA),
+			"))");
+	}
+
+	protected String appendStatus(String filterString) {
+		return filterString + " and status in (0, 2, 3, 1, 7)";
+	}
+
+	protected String getAdditionalAPIURLParameters() throws Exception {
+		return StringBundler.concat(
+			"emptySearch=true&filter=",
+			appendStatus(appendGroupIds(getFilterString())),
+			"&nestedFields=embedded,embeddedTaxonomyCategory,",
+			"file.metadata,file.previewURL,file.thumbnailURL,",
+			"numberOfObjectEntries,numberOfObjectEntryFolders,",
+			"systemProperties.objectDefinitionBrief&sort=dateModified:desc");
+	}
+
 	protected String getCMSSectionFilterString(Object displayContext) {
 		return ReflectionTestUtil.invoke(
 			displayContext, "getCMSSectionFilterString", new Class<?>[0],
@@ -717,6 +753,10 @@ public abstract class BaseSectionDisplayContextTestCase
 		return ReflectionTestUtil.invoke(
 			getSectionDisplayContext(getMockHttpServletRequest()),
 			"getFDSActionDropdownItems", new Class<?>[0]);
+	}
+
+	protected String getFilterString() {
+		return StringPool.BLANK;
 	}
 
 	@Override
@@ -1057,7 +1097,7 @@ public abstract class BaseSectionDisplayContextTestCase
 		).build();
 	}
 
-	private JSONArray _getDepotEntriesJSONArray() throws PortalException {
+	private JSONArray _getDepotEntriesJSONArray() throws Exception {
 		return _getDepotEntriesJSONArray(
 			_depotEntryLocalService.getDepotEntryGroupIds(
 				group.getCompanyId(), TestPropsValues.getUserId(),

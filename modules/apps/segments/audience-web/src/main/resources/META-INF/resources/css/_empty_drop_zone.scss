@@ -1,0 +1,18 @@
+@import 'cadmin-variables';
+
+.empty-drop-zone {
+	border-width: 2px;
+
+	&.border-secondary-light {
+		border-color: $cadmin-secondary-l2;
+	}
+
+	&--dashed {
+		border-style: dashed;
+	}
+
+	&--target {
+		background: $cadmin-primary-l3;
+		border-style: solid;
+	}
+}

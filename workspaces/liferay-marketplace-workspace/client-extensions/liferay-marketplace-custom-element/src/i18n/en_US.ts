@@ -6,6 +6,8 @@
 import {Liferay} from '../liferay/liferay';
 
 export default {
+	'a-license-key-for-the-entered-domain-already-exists':
+		'A license key for the entered domain already exists.',
 	'a-request-will-be-sent-to-deactivate-the-selected-activation-key-from-now-on-it-will-be-hidden-and-no-longer-visible':
 		'A request will be sent to deactivate the selected activation key. From now on, it will be hidden and no longer visible.',
 	'a-sleek-and-intuitive-admin-dashboard-for-monitoring-key-metrics':
@@ -235,6 +237,7 @@ export default {
 	'developer-licenses-are-limited-to-5-unique-addresses-and-should-not-be-used-for-full-scale-production-deployments':
 		'Developer licenses are limited to 5 unique addresses and should not be used for full-scale production deployments.',
 	'do-not-close-this-window': 'DO NOT CLOSE THIS WINDOW',
+	'documentation': 'Documentation',
 	'domain': 'Domain',
 	'done': 'Done',
 	'download': 'Download',
@@ -351,8 +354,8 @@ export default {
 		'How satisfied are you with the product?',
 	'how-useful-is-the-product-for-your-workflow':
 		'How useful is the product for your workflow?',
-	'i-agree-to-the-processing-of-my-personal-data-for-the-purpose-of-evaluating-my-beta-access-request-in-accordance-with-liferay’s-privacy-policy':
-		'I agree to the processing of my personal data for the purpose of evaluating my beta access request in accordance with Liferay’s Privacy Policy.',
+	'i-agree-to-the-processing-of-my-personal-data-for-the-purpose-of-evaluating-my-beta-access-request-in-accordance-with':
+		'I agree to the processing of my personal data for the purpose of evaluating my beta access request in accordance with',
 	'i-certify-that-the-instances-activated-with-the-selected-activation-keys-have-been-shut-down-and-that-there-is-no-liferay-software-installed-deployed-used-or-executed-that-is-activated-with-the-selected-activation-key':
 		'I certify that the instances activated with the selected activation keys have been shut down and that there is no Liferay software installed, deployed, used or executed that is activated with the selected activation key.',
 	'i-have-read-and-agree-to-the-liferay-end-user-agreement':
@@ -419,6 +422,7 @@ export default {
 	'liferay-publisher-license-agreement':
 		'Liferay Publisher License Agreement',
 	'liferay-s': 'Liferay’s',
+	'liferay-s-privacy-policy': 'Liferay’s Privacy Policy',
 	'liferay-saas': 'Liferay SaaS',
 	'liferay-self-hosted': 'Liferay Self-Hosted',
 	'liferay-version': 'Liferay Version',
@@ -472,6 +476,9 @@ export default {
 	'my-saas-demos': 'My SaaS Demos',
 	'my-solutions': 'My Solutions',
 	'name': 'Name',
+	'need-help-activating-this-product-check-the':
+		'Need help activating this product? Check the',
+	'need-help-getting-started?': 'Need help getting started?',
 	'net-price': 'Net Price',
 	'new-account': 'New Account',
 	'new-activation-key': 'New Activation Key',
@@ -856,6 +863,7 @@ export default {
 	'view-all': 'View All',
 	'view-details': 'View Details',
 	'view-request': 'View Request',
+	'view-the-documentation': 'View the documentation',
 	'visit': 'Visit',
 	'we-are-happy-to-have-you-interested-in-the-liferay-marketplace-at-the-moment-we-are-working-on-enhancing-the-experience-for-our-customers-in-the-marketplace-and-access-is-invite-only-if-you-are-an-existing-liferay-customer-please-keep-an-eye-out-for-an-announcement-related-to-the-new-marketplace-in-the-coming-months':
 		'We are happy to have you interested in the Liferay Marketplace. At the moment, we are working on enhancing the experience for our customers in the Marketplace and access is invite only. If you are an existing Liferay customer, please keep an eye out for an announcement related to the new Marketplace in the coming months!',

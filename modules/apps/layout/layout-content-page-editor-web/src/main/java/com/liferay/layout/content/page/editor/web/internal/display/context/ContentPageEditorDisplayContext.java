@@ -1305,19 +1305,26 @@ public class ContentPageEditorDisplayContext {
 
 		List<SegmentsEntry> segmentsEntries = null;
 
+		long segmentsGroupId = stagingGroupHelper.getStagedPortletGroupId(
+			getGroupId(), SegmentsPortletKeys.SEGMENTS);
+
 		if (FeatureFlagManagerUtil.isEnabled(
 				CompanyConstants.SYSTEM, "LPD-78863")) {
 
 			segmentsEntries = _segmentsEntryService.getSegmentsEntries(
-				stagingGroupHelper.getStagedPortletGroupId(
-					getGroupId(), SegmentsPortletKeys.SEGMENTS));
+				segmentsGroupId);
 		}
 		else {
-			segmentsEntries = _segmentsEntryService.getSegmentsEntries(
-				stagingGroupHelper.getStagedPortletGroupId(
-					getGroupId(), SegmentsPortletKeys.SEGMENTS),
-				SegmentsEntryConstants.SOURCE_ASAH_FARO_BACKEND,
-				QueryUtil.ALL_POS, QueryUtil.ALL_POS, null);
+			segmentsEntries = new ArrayList<>(
+				_segmentsEntryService.getSegmentsEntries(
+					segmentsGroupId,
+					SegmentsEntryConstants.SOURCE_ASAH_FARO_BACKEND,
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS, null));
+
+			segmentsEntries.addAll(
+				_segmentsEntryService.getSegmentsEntries(
+					segmentsGroupId, "AUDIENCE", QueryUtil.ALL_POS,
+					QueryUtil.ALL_POS, null));
 		}
 
 		for (SegmentsEntry segmentsEntry : segmentsEntries) {

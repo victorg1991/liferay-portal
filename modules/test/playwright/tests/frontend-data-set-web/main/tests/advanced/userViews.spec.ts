@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Locator, expect, mergeTests} from '@playwright/test';
+import {expect, mergeTests} from '@playwright/test';
 
 import {apiHelpersTest} from '../../../../../fixtures/apiHelpersTest';
 import {featureFlagsTest} from '../../../../../fixtures/featureFlagsTest';
@@ -37,62 +37,14 @@ test(
 		tag: ['@LPS-130101'],
 	},
 	async ({fdsSamplePage, page}) => {
-		let actionsDropdown: Locator;
-		let userViewsDropdown: Locator;
-		let columnsVisibilityDropdown: Locator;
-
 		const newUserViewName = getRandomString();
 		const userView1Name = getRandomString();
 		const userView2Name = getRandomString();
 
-		await test.step('Get dropdown references', async () => {
-
-			// Click on dropdown toggle button adds the aria-controls attribute
-
-			await fdsSamplePage.userViewsActionsButton.click();
-
-			const actionsDropdownId =
-				await fdsSamplePage.userViewsActionsButton.getAttribute(
-					'aria-controls'
-				);
-
-			actionsDropdown = page.locator(`#${actionsDropdownId}`);
-
-			page.keyboard.press('Escape');
-
-			await fdsSamplePage.userViewsSelectorButton.click();
-
-			const userViewsDropdownId =
-				await fdsSamplePage.userViewsSelectorButton.getAttribute(
-					'aria-controls'
-				);
-
-			userViewsDropdown = page.locator(`#${userViewsDropdownId}`);
-
-			page.keyboard.press('Escape');
-
-			await fdsSamplePage.table.manageColumnsVisibilityButton.click();
-
-			const columnsVisibilityDropdownId =
-				await fdsSamplePage.table.manageColumnsVisibilityButton.getAttribute(
-					'aria-controls'
-				);
-
-			columnsVisibilityDropdown = page.locator(
-				`#${columnsVisibilityDropdownId}`
-			);
-
-			page.keyboard.press('Escape');
-		});
-
 		await test.step('Create a user view and set it as the default one', async () => {
 			await fdsSamplePage.userViewsActionsButton.click();
 
-			await actionsDropdown
-				.filter({has: page.getByRole('menu')})
-				.waitFor();
-
-			const menuItem = actionsDropdown.getByRole('menuitem', {
+			const menuItem = fdsSamplePage.dropdownMenu.getByRole('menuitem', {
 				name: 'Save View As...',
 			});
 
@@ -112,11 +64,7 @@ test(
 
 			await fdsSamplePage.userViewsActionsButton.click();
 
-			await actionsDropdown
-				.filter({has: page.getByRole('menu')})
-				.waitFor();
-
-			await actionsDropdown
+			await fdsSamplePage.dropdownMenu
 				.getByRole('menuitem', {name: 'Save View As...'})
 				.click();
 
@@ -136,7 +84,7 @@ test(
 			await fdsSamplePage.userViewsSelectorButton.click();
 
 			expect(
-				await userViewsDropdown.getByRole('option').count()
+				await fdsSamplePage.dropdownMenu.getByRole('option').count()
 			).toBeGreaterThanOrEqual(3);
 		});
 
@@ -145,7 +93,7 @@ test(
 
 			await fdsSamplePage.table.manageColumnsVisibilityButton.click();
 
-			await columnsVisibilityDropdown
+			await fdsSamplePage.dropdownMenu
 				.getByRole('menuitem', {name: 'Description'})
 				.click();
 
@@ -163,29 +111,27 @@ test(
 
 			await fdsSamplePage.userViewsSelectorButton.click();
 
-			await userViewsDropdown.waitFor();
-
-			await userViewsDropdown
+			await fdsSamplePage.dropdownMenu
 				.getByRole('option', {name: 'Default View'})
 				.click();
 
 			await expect(fdsSamplePage.table.headerCells).toHaveCount(10);
 		});
 
-		await test.step('Can change a user view name', async () => {
+		await test.step('Can not change a user view name if no name is provided', async () => {
 			await fdsSamplePage.userViewsSelectorButton.click();
 
-			await userViewsDropdown.waitFor();
+			await fdsSamplePage.dropdownMenu.waitFor();
 
-			await userViewsDropdown
+			await fdsSamplePage.dropdownMenu
 				.getByRole('option', {name: userView2Name})
 				.click();
 
 			await fdsSamplePage.userViewsActionsButton.click();
 
-			await actionsDropdown.waitFor();
+			await fdsSamplePage.dropdownMenu.waitFor();
 
-			const menuItem = actionsDropdown.getByRole('menuitem', {
+			const menuItem = fdsSamplePage.dropdownMenu.getByRole('menuitem', {
 				name: 'Rename View',
 			});
 
@@ -193,13 +139,51 @@ test(
 
 			await menuItem.click();
 
-			await expect(fdsSamplePage.userViewsSaveModal).toBeInViewport();
+			await expect(fdsSamplePage.userViewsRenameModal).toBeInViewport();
 
-			await fdsSamplePage.userViewsSaveModal
+			await fdsSamplePage.userViewsRenameModal
+				.getByLabel('NameRequired')
+				.fill('');
+
+			await fdsSamplePage.userViewsRenameModal
+				.getByRole('button', {name: 'Save'})
+				.click();
+
+			await expect(
+				fdsSamplePage.userViewsRenameModal.getByText(
+					'This field is required.'
+				)
+			).toBeVisible();
+
+			await fdsSamplePage.userViewsRenameModal
+				.getByRole('button', {name: 'Cancel'})
+				.click();
+		});
+
+		await test.step('Can change a user view name', async () => {
+			await fdsSamplePage.userViewsSelectorButton.click();
+
+			await fdsSamplePage.dropdownMenu
+				.getByRole('option', {name: userView2Name})
+				.click();
+
+			await fdsSamplePage.userViewsActionsButton.click();
+
+			const menuItem = fdsSamplePage.dropdownMenu.getByRole('menuitem', {
+				name: 'Rename View',
+			});
+
+			await expect(menuItem).toBeVisible();
+
+			await menuItem.click();
+
+			await expect(fdsSamplePage.userViewsRenameModal).toBeInViewport();
+
+			await fdsSamplePage.userViewsRenameModal
 				.getByLabel('NameRequired')
 				.fill(newUserViewName);
 
-			await fdsSamplePage.userViewsSaveModal
+			await fdsSamplePage.userViewsRenameModal
 				.getByRole('button', {name: 'Save'})
 				.click();
 
@@ -211,17 +195,13 @@ test(
 		await test.step('Delete a user view', async () => {
 			await fdsSamplePage.userViewsSelectorButton.click();
 
-			await userViewsDropdown.waitFor();
-
-			await userViewsDropdown
+			await fdsSamplePage.dropdownMenu
 				.getByRole('option', {name: userView1Name})
 				.click();
 
 			await fdsSamplePage.userViewsActionsButton.click();
 
-			await actionsDropdown.waitFor();
-
-			const menuItem = actionsDropdown.getByRole('menuitem', {
+			const menuItem = fdsSamplePage.dropdownMenu.getByRole('menuitem', {
 				name: 'Delete View',
 			});
 
@@ -237,19 +217,17 @@ test(
 
 			await fdsSamplePage.userViewsSelectorButton.click();
 
-			await userViewsDropdown.waitFor();
-
 			await expect(
-				userViewsDropdown.getByRole('option', {name: userView1Name})
+				fdsSamplePage.dropdownMenu.getByRole('option', {
+					name: userView1Name,
+				})
 			).not.toBeVisible();
 
-			await userViewsDropdown
+			await fdsSamplePage.dropdownMenu
 				.getByRole('option', {name: newUserViewName})
 				.click();
 
 			await fdsSamplePage.userViewsActionsButton.click();
-
-			await actionsDropdown.waitFor();
 
 			await expect(menuItem).toBeVisible();
 
@@ -263,10 +241,10 @@ test(
 
 			await fdsSamplePage.userViewsSelectorButton.click();
 
-			await userViewsDropdown.waitFor();
-
 			await expect(
-				userViewsDropdown.getByRole('option', {name: newUserViewName})
+				fdsSamplePage.dropdownMenu.getByRole('option', {
+					name: newUserViewName,
+				})
 			).not.toBeVisible();
 		});
 	}

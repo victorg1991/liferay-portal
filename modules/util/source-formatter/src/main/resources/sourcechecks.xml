@@ -349,11 +349,6 @@
 			<category name="Bug Prevention" />
 			<description name="Validates the dependencies in `/required-dependencies/required-dependencies/build.gradle`." />
 		</check>
-		<check name="GradleRestClientDependenciesCheck">
-			<category name="Bug Prevention" />
-			<description name="Validates the project dependencies `.*-rest-client` can only be used for `testIntegrationImplementation`." />
-			<property name="enabled" value="false" />
-		</check>
 		<check name="GradleStylingCheck">
 			<category name="Styling" />
 			<description name="Applies rules to enforce consistency in code style." />
@@ -391,7 +386,15 @@
 		</check>
 		<check name="GradlePetraModuleDependenciesCheck">
 			<category name="Bug Prevention" />
-			<description name="Checks that dependencies in `petra` moudule can only contains `petra` dependencies." />
+			<description name="Checks that dependencies in `petra` module can only contains `petra` dependencies." />
+		</check>
+		<check name="GradleRestClientModuleDependenciesCheck">
+			<category name="Bug Prevention" />
+			<description name="Validates that only Jakarta dependencies can be used in `*-rest-client` modules." />
+		</check>
+		<check name="GradleRestTestModuleDependenciesCheck">
+			<category name="Bug Prevention" />
+			<description name="Validates the project dependencies `*-rest-client` can only be used for `testIntegrationImplementation` in `*-rest-test` modules." />
 		</check>
 	</source-processor>
 	<source-processor name="GroovySourceProcessor">
@@ -776,6 +779,11 @@
 			<description name="Finds cases where company scoped ids are used, see LPD-45118." />
 			<property name="enabled" value="false" />
 		</check>
+		<check name="JavaCompanyThreadLocalCheck">
+			<category name="Bug Prevention" />
+			<description name="Checks that `CompanyThreadLocal.lock` and `CompanyThreadLocal.setCompanyId*` methods are not used." />
+			<property name="enabled" value="false" />
+		</check>
 		<check name="JavaComponentActivateCheck">
 			<category name="Naming Conventions" />
 			<description name="Checks if methods with annotation `@Activate` or `@Deactivate` follow naming conventions." />
@@ -977,11 +985,6 @@
 		<check name="JavaUpgradeClassCheck">
 			<category name="Bug Prevention" />
 			<description name="Performs several checks on Upgrade classes." />
-		</check>
-		<check name="JavaUpgradeCompanyThreadLocalCheck">
-			<category name="Bug Prevention" />
-			<description name="Checks that we do not use `CompanyThreadLocal.setCompanyId*` in upgrade classes." />
-			<property name="enabled" value="false" />
 		</check>
 		<check name="JavaUpgradeConnectionCheck">
 			<category name="Bug Prevention" />

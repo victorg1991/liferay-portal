@@ -8,8 +8,7 @@ import NoResultsDisplay from 'shared/components/NoResultsDisplay';
 import React from 'react';
 import TotalAccounts from 'contacts/components/account/TotalAccounts';
 import URLConstants from 'shared/util/url-constants';
-import {columns, pagination} from 'shared/util/frontend-data-set';
-import {CUSTOM_DATE_FORMAT, formatUTCDate} from 'shared/util/date';
+import {columns, pagination, useSnapshots} from 'shared/util/frontend-data-set';
 import {isNil} from 'lodash/fp';
 import {LifecycleStages} from './utils/constants';
 import {Routes, toRoute} from 'shared/util/router';
@@ -128,6 +127,8 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 
 	const FrontendDataSet = useFrontendDataSet();
 
+	const snapshots = useSnapshots('accounts-list-dataset');
+
 	if (dataSourceLoading) {
 		return <Loading />;
 	}
@@ -158,7 +159,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 						{FrontendDataSet && (
 							<Card>
 								<FrontendDataSet
-									apiURL={`/o/contacts/${groupId}/account/search`}
+									apiURL={`/o/faro/contacts/${groupId}/account/search`}
 									configInURLBehavior='off'
 									customDataRenderers={{
 										accountLifecycleStageRenderer: ({
@@ -178,37 +179,18 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 										accountNameRenderer: ({
 											itemData,
 											value
-										}) => {
-											const itemTitle =
-												value || itemData.id;
-
-											return (
-												<Link
-													className='font-weight-semi-bold text-dark'
-													href={toRoute(
-														Routes.CONTACTS_ACCOUNT,
-														{
-															groupId,
-															id: itemData.id
-														}
-													)}
-												>
-													{itemTitle}
-												</Link>
-											);
-										},
+										}) =>
+											columns.nameAndLinkRenderer({
+												groupId,
+												itemData,
+												route: Routes.CONTACTS_ACCOUNT,
+												value
+											}),
 										annualRevenueRenderer: ({value}) => (
 											<div>{toThousands(value)}</div>
 										),
-										dateRenderer: ({value}) => (
-											<div>
-												{value &&
-													formatUTCDate(
-														value,
-														CUSTOM_DATE_FORMAT
-													)}
-											</div>
-										)
+										dateRenderer: ({value}) =>
+											columns.dateRenderer({value})
 									}}
 									emptyState={{
 										description: Liferay.Language.get(
@@ -230,7 +212,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 											type: 'selection'
 										},
 										{
-											apiURL: `/o/contacts/${groupId}/account/industries`,
+											apiURL: `/o/faro/contacts/${groupId}/account/fds_field_values?channelId=${channelId}&fieldMappingFieldName=industry`,
 											entityFieldType: 'string',
 											id: 'industry',
 											itemKey: 'name',
@@ -242,7 +224,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 											type: 'selection'
 										},
 										{
-											apiURL: `/o/contacts/${groupId}/account/countries`,
+											apiURL: `/o/faro/contacts/${groupId}/account/fds_field_values?channelId=${channelId}&fieldMappingFieldName=country`,
 											entityFieldType: 'string',
 											id: 'country',
 											itemKey: 'name',
@@ -258,6 +240,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 									loading={dataSourceLoading}
 									pagination={pagination}
 									showPagination
+									snapshots={snapshots}
 									snapshotsEnabled
 									sort={[
 										{
@@ -272,12 +255,15 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 									views={[
 										{
 											contentRenderer: 'table',
-											default: false,
-											label: 'table',
+											default: true,
+											label: Liferay.Language.get(
+												'default-view'
+											),
 											name: 'table',
 											schema: {
 												fields: [
 													{
+														_key: 'accountName',
 														contentRenderer:
 															'accountNameRenderer',
 														fieldName:
@@ -289,6 +275,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 														truncate: true
 													},
 													{
+														_key: 'industry',
 														fieldName: 'industry',
 														label: Liferay.Language.get(
 															'industry'
@@ -296,6 +283,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 														sortable: true
 													},
 													{
+														_key: 'lifecycleStage',
 														contentRenderer:
 															'accountLifecycleStageRenderer',
 														fieldName:
@@ -306,6 +294,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 														sortable: true
 													},
 													{
+														_key: 'annualRevenue',
 														contentRenderer:
 															'annualRevenueRenderer',
 														fieldName:
@@ -316,6 +305,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 														sortable: true
 													},
 													{
+														_key: 'country',
 														fieldName: 'country',
 														label: Liferay.Language.get(
 															'country'
@@ -323,6 +313,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 														sortable: true
 													},
 													{
+														_key: 'lastActive',
 														contentRenderer:
 															'dateRenderer',
 														fieldName: 'lastActive',
@@ -332,6 +323,7 @@ const List: React.FC<IListProps> = ({channelId, groupId}) => {
 														sortable: true
 													},
 													{
+														_key: 'lastEnriched',
 														contentRenderer:
 															'dateRenderer',
 														fieldName:

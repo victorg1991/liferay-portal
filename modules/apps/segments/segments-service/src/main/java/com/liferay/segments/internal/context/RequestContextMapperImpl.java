@@ -7,6 +7,7 @@ package com.liferay.segments.internal.context;
 
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
@@ -115,6 +116,8 @@ public class RequestContextMapperImpl implements RequestContextMapper {
 		}
 
 		context.put(Context.SIGNED_IN, signedIn);
+
+		context.put(Context.TIMEZONE, StringPool.BLANK);
 
 		context.put(
 			Context.URL, _portal.getCurrentCompleteURL(httpServletRequest));

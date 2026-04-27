@@ -1,0 +1,15 @@
+@import 'atlas-variables';
+
+.drop-zone-root {
+	.drop-zone-target {
+		align-items: center;
+		display: flex;
+		height: 16px;
+		width: 100%;
+
+		.drop-zone-indicator {
+			background-color: $primary;
+			height: 2px;
+		}
+	}
+}

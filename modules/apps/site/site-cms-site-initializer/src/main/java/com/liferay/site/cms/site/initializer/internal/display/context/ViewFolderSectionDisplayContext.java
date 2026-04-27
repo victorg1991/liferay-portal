@@ -78,10 +78,22 @@ public class ViewFolderSectionDisplayContext extends BaseSectionDisplayContext {
 			getRootObjectEntryFolderExternalReferenceCode(),
 			ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS);
 
+		boolean rootFolder = false;
+
+		if (objectEntryFolder != null) {
+			rootFolder = Objects.equals(
+				objectEntryFolder.getExternalReferenceCode(),
+				getRootObjectEntryFolderExternalReferenceCode());
+		}
+
 		return new HashMapBuilder<>().putAll(
 			super.getAdditionalProps()
 		).put(
+			"breadcrumbProps", getBreadcrumbProps()
+		).put(
 			"galleryViewEnabled", !contentsFolder
+		).put(
+			"rootFolder", rootFolder
 		).put(
 			"rootObjectEntryFolderExternalReferenceCode",
 			getRootObjectEntryFolderExternalReferenceCode()
@@ -167,6 +179,18 @@ public class ViewFolderSectionDisplayContext extends BaseSectionDisplayContext {
 				LanguageUtil.get(httpServletRequest, "copy-to")
 			).build(
 				"copy-to"
+			));
+		fdsBulkActionDropdownItems.add(
+			FDSActionDropdownItemBuilder.setHighlighted(
+				true
+			).setHref(
+				"#"
+			).setIcon(
+				"upload"
+			).setLabel(
+				LanguageUtil.get(httpServletRequest, "export-for-translation")
+			).build(
+				"export-for-translation"
 			));
 		fdsBulkActionDropdownItems.add(
 			new FDSActionDropdownItem(
@@ -409,6 +433,11 @@ public class ViewFolderSectionDisplayContext extends BaseSectionDisplayContext {
 	@Override
 	protected String getCMSSectionFilterString() {
 		return null;
+	}
+
+	@Override
+	protected boolean isFolderSearchEnabled() {
+		return true;
 	}
 
 	private final HttpServletRequest _httpServletRequest;

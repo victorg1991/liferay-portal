@@ -508,17 +508,22 @@ export async function initializerSetUp(
 			catalogName
 		);
 
-	apiHelpers.data.push({id: catalogs.items[0].id, type: 'catalog'});
+	if (catalogs.items?.length) {
+		apiHelpers.data.push({id: catalogs.items[0].id, type: 'catalog'});
 
-	const products =
-		await apiHelpers.headlessCommerceAdminCatalog.getProductsPage(100, '');
+		const products =
+			await apiHelpers.headlessCommerceAdminCatalog.getProductsPage(
+				100,
+				''
+			);
 
-	for (let i = 0; i < products.totalCount; i++) {
-		if (products.items[i].catalogId === catalogs.items[0].id) {
-			apiHelpers.data.push({
-				id: products.items[i].productId,
-				type: 'product',
-			});
+		for (let i = 0; i < products.totalCount; i++) {
+			if (products.items[i].catalogId === catalogs.items[0].id) {
+				apiHelpers.data.push({
+					id: products.items[i].productId,
+					type: 'product',
+				});
+			}
 		}
 	}
 
@@ -588,7 +593,9 @@ export async function guestCheckoutSetUp(
 	});
 
 	await productMenuPagesButton.click();
-	await page.locator('[aria-label="Select All Items on the Page"]').click();
+	await page
+		.getByRole('checkbox', {name: 'Select All Items on the Page'})
+		.click();
 	await page.getByRole('button', {name: 'Permissions'}).click();
 
 	const guestActionViewCheckbox = page
@@ -646,4 +653,75 @@ export async function miniumSetUp(
 		null,
 		siteName
 	);
+}
+
+export async function createAccountWithBuyerUser(
+	apiHelpers: DataApiHelpers,
+	siteId: number | string,
+	options?: {
+		accountName?: string;
+		userEmailAddress?: string;
+		userFirstName?: string;
+		userLastName?: string;
+		userScreenName?: string;
+	}
+) {
+	const randomSuffix = getRandomString();
+	const accountName =
+		options?.accountName || `Commerce Account ${randomSuffix}`;
+	const userScreenName = options?.userScreenName || `buyer${randomSuffix}`;
+	const userEmailAddress =
+		options?.userEmailAddress || `${userScreenName}@liferay.com`;
+	const userFirstName = options?.userFirstName || `Buyer${randomSuffix}`;
+	const userLastName = options?.userLastName || 'User';
+
+	const account = await apiHelpers.headlessAdminUser.postAccount({
+		name: accountName,
+		type: 'business',
+	});
+
+	const buyerUser = await apiHelpers.headlessAdminUser.postUserAccount({
+		alternateName: userScreenName,
+		emailAddress: userEmailAddress,
+		familyName: userLastName,
+		givenName: userFirstName,
+	});
+
+	await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
+		account.id,
+		[buyerUser.emailAddress]
+	);
+
+	const rolesResponse = await apiHelpers.headlessAdminUser.getAccountRoles(
+		account.id
+	);
+
+	const buyerRole = rolesResponse?.items?.find(
+		(role: {name: string}) => role.name === 'Buyer'
+	);
+
+	if (buyerRole) {
+		await apiHelpers.headlessAdminUser.assignAccountRoles(
+			account.externalReferenceCode,
+			buyerRole.id,
+			buyerUser.emailAddress
+		);
+	}
+
+	const siteRole =
+		await apiHelpers.headlessAdminUser.getRoleByName('Site Member');
+
+	await apiHelpers.headlessAdminUser.assignUserToSite(
+		siteRole.id,
+		siteId,
+		buyerUser.id
+	);
+
+	userData[buyerUser.alternateName] = {
+		name: buyerUser.givenName,
+		password: 'test',
+		surname: buyerUser.familyName,
+	};
+
+	return {account, buyerUser};
 }

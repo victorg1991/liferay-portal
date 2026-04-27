@@ -8,6 +8,7 @@ package com.liferay.portal.test.cluster.tomcat;
 import com.liferay.petra.concurrent.BaseFutureListener;
 import com.liferay.petra.concurrent.DefaultNoticeableFuture;
 import com.liferay.petra.concurrent.NoticeableFuture;
+import com.liferay.petra.concurrent.NoticeableFutureConverter;
 import com.liferay.petra.io.ClassLoaderObjectInputStream;
 import com.liferay.petra.io.Deserializer;
 import com.liferay.petra.io.Serializer;
@@ -19,9 +20,9 @@ import com.liferay.petra.process.PathHolder;
 import com.liferay.petra.process.ProcessCallable;
 import com.liferay.petra.process.ProcessChannel;
 import com.liferay.petra.process.ProcessConfig;
-import com.liferay.petra.process.ProcessException;
 import com.liferay.petra.process.ProcessExecutor;
 import com.liferay.petra.process.local.LocalProcessExecutor;
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -46,6 +47,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import java.net.URI;
@@ -69,6 +71,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -275,7 +278,7 @@ public class TomcatNode {
 						}
 					}
 					catch (Exception exception) {
-						throw new ProcessException(exception);
+						return ReflectionUtil.throwException(exception);
 					}
 				},
 				false);
@@ -504,29 +507,21 @@ public class TomcatNode {
 			throw new IllegalStateException("Tomcat node is not running");
 		}
 
-		if (osgiify) {
-			clusterExecutable = _osgiify(clusterExecutable);
+		if (!osgiify) {
+			return processChannel.write(
+				new BridgeProcessCallable<>(clusterExecutable));
 		}
 
-		return processChannel.write(
-			new BridgeProcessCallable<>(clusterExecutable));
-	}
+		return new NoticeableFutureConverter<V, byte[]>(
+			processChannel.write(
+				new BridgeProcessCallable<>(
+					RPCUtil._osgiify(clusterExecutable)))) {
 
-	private <V extends Serializable> ClusterExecutable<V> _osgiify(
-		ClusterExecutable<V> clusterExecutable) {
+			@Override
+			protected V convert(byte[] bytes) throws Exception {
+				return RPCUtil._deserialize(bytes);
+			}
 
-		Serializer serializer = new Serializer();
-
-		serializer.writeObject(clusterExecutable);
-
-		ByteBuffer byteBuffer = serializer.toByteBuffer();
-
-		byte[] data = byteBuffer.array();
-
-		return () -> {
-			Deserializer deserializer = new Deserializer(ByteBuffer.wrap(data));
-
-			return RPCUtil._invokeClusterExecutable(deserializer.readObject());
 		};
 	}
 
@@ -537,7 +532,12 @@ public class TomcatNode {
 		NoticeableFuture<V> noticeableFuture = _execute(
 			clusterExecutable, osgiify);
 
-		return noticeableFuture.get();
+		try {
+			return noticeableFuture.get();
+		}
+		catch (ExecutionException executionException) {
+			return ReflectionUtil.throwException(executionException.getCause());
+		}
 	}
 
 	private String _toJarPath(Class<?> clazz) {
@@ -603,7 +603,7 @@ public class TomcatNode {
 		}
 
 		@Override
-		public String call() throws ProcessException {
+		public String call() {
 			Bootstrap.main(new String[] {"start"});
 
 			return "Done";
@@ -646,9 +646,9 @@ public class TomcatNode {
 		implements ProcessCallable<T> {
 
 		@Override
-		public T call() throws ProcessException {
+		public T call() {
 			try (InputStream inputStream = new UnsyncByteArrayInputStream(
-					_data);
+					_bytes);
 
 				ObjectInputStream objectInputStream =
 					new ClassLoaderObjectInputStream(
@@ -664,7 +664,7 @@ public class TomcatNode {
 				}
 			}
 			catch (Exception exception) {
-				throw new ProcessException(exception);
+				return ReflectionUtil.throwException(exception);
 			}
 		}
 
@@ -681,12 +681,12 @@ public class TomcatNode {
 				throw new RuntimeException(ioException);
 			}
 
-			_data = unsyncByteArrayOutputStream.toByteArray();
+			_bytes = unsyncByteArrayOutputStream.toByteArray();
 		}
 
 		private static final long serialVersionUID = 1L;
 
-		private final byte[] _data;
+		private final byte[] _bytes;
 
 		private static class BridgeClassLoaderHolder {
 
@@ -757,6 +757,15 @@ public class TomcatNode {
 	 */
 	private static class RPCUtil {
 
+		private static <T> T _deserialize(byte[] bytes)
+			throws ClassNotFoundException {
+
+			Deserializer deserializer = new Deserializer(
+				ByteBuffer.wrap(bytes));
+
+			return deserializer.readObject();
+		}
+
 		private static <T> T _invokeClusterExecutable(Object clusterExecutable)
 			throws Exception {
 
@@ -766,7 +775,32 @@ public class TomcatNode {
 
 			method.setAccessible(true);
 
-			return (T)method.invoke(clusterExecutable);
+			try {
+				return (T)method.invoke(clusterExecutable);
+			}
+			catch (InvocationTargetException invocationTargetException) {
+				return ReflectionUtil.throwException(
+					invocationTargetException.getCause());
+			}
+		}
+
+		private static ClusterExecutable<byte[]> _osgiify(
+			ClusterExecutable<?> clusterExecutable) {
+
+			byte[] bytes = _serialize(clusterExecutable);
+
+			return () -> _serialize(
+				_invokeClusterExecutable(_deserialize(bytes)));
+		}
+
+		private static byte[] _serialize(Serializable serializable) {
+			Serializer serializer = new Serializer();
+
+			serializer.writeObject(serializable);
+
+			ByteBuffer byteBuffer = serializer.toByteBuffer();
+
+			return byteBuffer.array();
 		}
 
 	}

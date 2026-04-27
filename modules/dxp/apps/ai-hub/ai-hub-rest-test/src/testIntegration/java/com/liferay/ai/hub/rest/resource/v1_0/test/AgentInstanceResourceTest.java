@@ -10,8 +10,6 @@ import com.liferay.account.model.AccountEntry;
 import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.account.service.AccountEntryUserRelLocalService;
 import com.liferay.ai.hub.cell.configuration.AIHubCellConfiguration;
-import com.liferay.ai.hub.model.VertexAIEmbeddingModel;
-import com.liferay.ai.hub.rest.dto.v1_0.ContentRetriever;
 import com.liferay.ai.hub.rest.manager.v1_0.ContentRetrieverManager;
 import com.liferay.ai.hub.rest.resource.v1_0.test.util.SseEventSourceTestUtil;
 import com.liferay.ai.hub.rest.resource.v1_0.test.util.TokenTestUtil;
@@ -25,7 +23,6 @@ import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
-import com.liferay.object.test.util.ObjectRelationshipTestUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.ConfigurationTestUtil;
@@ -67,16 +64,12 @@ import com.liferay.portal.kernel.workflow.WorkflowInstance;
 import com.liferay.portal.kernel.workflow.WorkflowInstanceManager;
 import com.liferay.portal.kernel.workflow.WorkflowLog;
 import com.liferay.portal.kernel.workflow.WorkflowNode;
-import com.liferay.portal.search.document.DocumentBuilderFactory;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
-import com.liferay.portal.search.engine.adapter.document.IndexDocumentRequest;
-import com.liferay.portal.search.engine.adapter.index.DeleteIndexRequest;
 import com.liferay.portal.search.test.util.IdempotentRetryAssert;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
-import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.workflow.constants.WorkflowDefinitionConstants;
 import com.liferay.portal.workflow.kaleo.runtime.util.WorkflowContextUtil;
 import com.liferay.portal.workflow.manager.WorkflowDefinitionManager;
@@ -88,7 +81,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -292,9 +284,9 @@ public class AgentInstanceResourceTest
 		_testPostAgentInstanceWithTypeFixSpellingAndGrammarWithInstruction();
 		_testPostAgentInstanceWithTypeLLMNodeWithRAGWorkflowDefinition();
 		_testPostAgentInstanceWithTypeLLMNodeWithRAGWorkflowDefinitionWithRestrictedUser();
-		_testPostAgentInstanceWithTypeLiferaySearchWithContentRetriever();
 		_testPostAgentInstanceWithTypeLLMNodeWithToolWorkflowDefinition();
 		_testPostAgentInstanceWithTypeMakeShorter();
+		_testPostAgentInstanceWithTypePageBuilder();
 	}
 
 	private static void _addAgentDefinitionObjectEntry(
@@ -752,82 +744,6 @@ public class AgentInstanceResourceTest
 		SseUtil.closeAll();
 	}
 
-	private void _testPostAgentInstanceWithTypeLiferaySearchWithContentRetriever()
-		throws Exception {
-
-		ContentRetriever contentRetriever =
-			_contentRetrieverManager.postContentRetriever(
-				TestPropsValues.getCompanyId(),
-				new ContentRetriever() {
-					{
-						setCrawlDate(new Date());
-					}
-				},
-				new DefaultDTOConverterContext(
-					false, Map.of(), _dtoConverterRegistry, null,
-					LocaleUtil.getDefault(), null, TestPropsValues.getUser()));
-
-		ObjectEntry agentDefinitionObjectEntry =
-			_objectEntryLocalService.getObjectEntry(
-				"L_LIFERAY_SEARCH", 0L,
-				_agentDefinitionObjectDefinition.getObjectDefinitionId());
-
-		ObjectEntry contentRetrieverObjectEntry =
-			_objectEntryLocalService.getObjectEntry(
-				contentRetriever.getExternalReferenceCode(), 0L,
-				_contentRetrieverObjectDefinition.getObjectDefinitionId());
-
-		ObjectRelationshipTestUtil.relateObjectEntries(
-			agentDefinitionObjectEntry.getObjectEntryId(),
-			contentRetrieverObjectEntry.getObjectEntryId(),
-			_objectRelationshipLocalService.
-				fetchObjectRelationshipByExternalReferenceCode(
-					"L_AI_HUB_AGENT_DEFINITIONS_TO_L_AI_HUB_CONTENT_RETRIEVERS",
-					_agentDefinitionObjectDefinition.getObjectDefinitionId()),
-			TestPropsValues.getUserId());
-
-		String text = "Marinho is Feliphe's last name.";
-
-		IndexDocumentRequest indexDocumentRequest = new IndexDocumentRequest(
-			contentRetriever.getIndexName(),
-			DocumentBuilderFactory.builder(
-			).setString(
-				"text", text
-			).setFloats(
-				"text_embedding_3072",
-				_vertexAIEmbeddingModel.embed(
-					text
-				).toArray(
-					new Float[0]
-				)
-			).build());
-
-		indexDocumentRequest.setRefresh(true);
-
-		_searchEngineAdapter.execute(indexDocumentRequest);
-
-		CountDownLatch countDownLatch = new CountDownLatch(4);
-		List<String> lines = new ArrayList<>();
-
-		_postAgentInstance(
-			"L_LIFERAY_SEARCH", "What do you know about Feliphe?", "request",
-			SseEventSourceTestUtil.open(
-				List.of(countDownLatch), lines, "agent-instances/subscribe"));
-
-		Assert.assertTrue(countDownLatch.await(30, TimeUnit.SECONDS));
-
-		Assert.assertEquals(lines.toString(), 4, lines.size());
-
-		String response = StringUtil.toLowerCase(lines.get(3));
-
-		Assert.assertTrue(response, response.contains("Marinho"));
-
-		_searchEngineAdapter.execute(
-			new DeleteIndexRequest(contentRetriever.getIndexName()));
-
-		SseUtil.closeAll();
-	}
-
 	private void _testPostAgentInstanceWithTypeLLMNodeWithRAGWorkflowDefinition()
 		throws Exception {
 
@@ -1046,6 +962,40 @@ public class AgentInstanceResourceTest
 		SseUtil.closeAll();
 	}
 
+	private void _testPostAgentInstanceWithTypePageBuilder() throws Exception {
+		CountDownLatch countDownLatch = new CountDownLatch(4);
+		List<String> lines = new ArrayList<>();
+
+		String sseEventSinkKey = SseEventSourceTestUtil.open(
+			List.of(countDownLatch), lines, "agent-instances/subscribe");
+
+		_postAgentInstance(
+			"L_PAGE_BUILDER",
+			"Create a page called \"Hello\" with a heading that says \"Hello " +
+				"World\".",
+			"instruction", sseEventSinkKey);
+
+		Assert.assertTrue(countDownLatch.await(10, TimeUnit.SECONDS));
+
+		Assert.assertEquals(lines.toString(), 4, lines.size());
+		Assert.assertEquals("event: L_PAGE_BUILDER", lines.get(2));
+
+		JSONObject outputJSONObject = _jsonFactory.createJSONObject(
+			StringUtil.removeSubstring(lines.get(3), "data: "));
+
+		Assert.assertEquals(
+			"pageBuilder", outputJSONObject.getString("nodeName"));
+
+		String data = outputJSONObject.getString("data");
+
+		Assert.assertTrue(data, data.contains("BASIC_COMPONENT-heading"));
+		Assert.assertTrue(data, data.contains("ContentPage"));
+		Assert.assertTrue(data, data.contains("ContentPageSpecification"));
+		Assert.assertTrue(data, data.contains("Hello World"));
+
+		SseUtil.closeAll();
+	}
+
 	private static AccountEntry _accountEntry;
 
 	@Inject
@@ -1100,9 +1050,6 @@ public class AgentInstanceResourceTest
 
 	@Inject
 	private UserLocalService _userLocalService;
-
-	@Inject
-	private VertexAIEmbeddingModel _vertexAIEmbeddingModel;
 
 	@Inject
 	private WorkflowInstanceManager _workflowInstanceManager;

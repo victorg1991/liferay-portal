@@ -90,7 +90,7 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 
 	@Override
 	public String getKey() {
-		return FragmentRendererConstants.FRAGMENT_ENTRY_FRAGMENT_RENDERER_KEY;
+		return FragmentRendererConstants.FRAGMENT_RENDERER_KEY_FRAGMENT_ENTRY;
 	}
 
 	@Override
@@ -370,10 +370,10 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 					_getInputJSONObject(
 						fragmentEntryLink, fragmentRendererContext,
 						httpServletRequest)));
-			sb.append("; input.value = Liferay.Util.unescapeHTML(input.value");
-			sb.append("); Object.keys(input.valueI18n).forEach(function(key)");
-			sb.append("{ input.valueI18n[key] = Liferay.Util.unescapeHTML(");
-			sb.append("input.valueI18n[key]);})");
+			sb.append("; input.value = Liferay.Util.unescapeHTML(input.value ");
+			sb.append("?? ''); Object.keys(input.valueI18n).forEach(");
+			sb.append("function(key){ input.valueI18n[key] = Liferay.Util.");
+			sb.append("unescapeHTML(input.valueI18n[key] ?? '');})");
 		}
 
 		sb.append("; const layoutMode = '");

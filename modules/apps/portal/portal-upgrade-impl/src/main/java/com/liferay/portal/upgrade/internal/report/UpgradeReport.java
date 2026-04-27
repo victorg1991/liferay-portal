@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.model.ReleaseConstants;
 import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.upgrade.ReleaseManager;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.upgrade.recorder.UpgradeLogProgressTracker;
 import com.liferay.portal.kernel.upgrade.recorder.UpgradeSQLRecorder;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.EnvPropertiesUtil;
@@ -73,6 +74,10 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.felix.cm.PersistenceManager;
@@ -346,23 +351,27 @@ public class UpgradeReport {
 							"\"rootDir\" was not set";
 					}
 
-					_dlSize = 0;
+					FutureTask<Long> dlSizeFutureTask = new FutureTask<>(
+						() -> FileUtils.sizeOfDirectory(new File(_rootDir)));
 
 					try {
-						_dlSizeThread.start();
-						_dlSizeThread.join(
-							PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT *
-								Time.SECOND);
-					}
-					catch (Exception exception) {
-						_log.error(
-							"Unable to determine the document library size",
-							exception);
+						Thread dlSizeThread = new Thread(
+							dlSizeFutureTask, "Liferay DL Size Thread");
 
-						return "Unable to determine";
-					}
+						dlSizeThread.setDaemon(true);
 
-					if (_dlSizeThread.isAlive()) {
+						dlSizeThread.start();
+
+						long dlSize = dlSizeFutureTask.get(
+							PropsValues.UPGRADE_REPORT_DL_STORAGE_SIZE_TIMEOUT,
+							TimeUnit.SECONDS);
+
+						return LanguageUtil.formatStorageSize(
+							dlSize, LocaleUtil.US);
+					}
+					catch (TimeoutException timeoutException) {
+						dlSizeFutureTask.cancel(true);
+
 						if (_log.isInfoEnabled()) {
 							_log.info(
 								"Unable to determine the document library " +
@@ -370,11 +379,22 @@ public class UpgradeReport {
 										"manually.");
 						}
 
-						return "Unable to determine";
+						if (_log.isDebugEnabled()) {
+							_log.debug(timeoutException);
+						}
+					}
+					catch (ExecutionException executionException) {
+						_log.error(
+							"Unable to determine the document library size",
+							executionException.getCause());
+					}
+					catch (Exception exception) {
+						_log.error(
+							"Unable to determine the document library size",
+							exception);
 					}
 
-					return LanguageUtil.formatStorageSize(
-						_dlSize, LocaleUtil.US);
+					return "Unable to determine";
 				}
 			).build()
 		).put(
@@ -554,14 +574,29 @@ public class UpgradeReport {
 		).put(
 			"execution.time", _executionTimeString
 		).put(
-			"data.clean.up",
-			_getMessagesPrinters(
-				false, upgradeRecorder.getDataCleanUpMessages())
-		).put(
 			"errors",
 			_getMessagesPrinters(true, upgradeRecorder.getErrorMessages())
 		).put(
 			"failed.sqls", UpgradeSQLRecorder.getFailedSQLs()
+		).put(
+			"warnings",
+			_getMessagesPrinters(true, upgradeRecorder.getWarningMessages())
+		).put(
+			"last.known.progresses",
+			() -> {
+				Map<String, Long> lastKnownProgresses =
+					UpgradeLogProgressTracker.getLastKnownProgresses();
+
+				if (lastKnownProgresses.isEmpty()) {
+					return null;
+				}
+
+				return TransformUtil.transform(
+					lastKnownProgresses.entrySet(),
+					entry -> StringBundler.concat(
+						entry.getKey(), " processed approximately ",
+						entry.getValue(), " rows"));
+			}
 		).put(
 			"longest.upgrade.processes",
 			() -> {
@@ -639,8 +674,9 @@ public class UpgradeReport {
 					Math.min(_LONGEST_RUNNING_SQLS_COUNT, runningSQLs.size()));
 			}
 		).put(
-			"warnings",
-			_getMessagesPrinters(true, upgradeRecorder.getWarningMessages())
+			"data.clean.up",
+			_getMessagesPrinters(
+				false, upgradeRecorder.getDataCleanUpMessages())
 		).build();
 	}
 
@@ -758,11 +794,10 @@ public class UpgradeReport {
 
 			return rootDir;
 		}
-		catch (IOException ioException) {
+		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(
-					"Unable to get document library store root dir",
-					ioException);
+					"Unable to get document library store root dir", exception);
 			}
 		}
 
@@ -793,7 +828,7 @@ public class UpgradeReport {
 
 						if (resultSet2.next()) {
 							tableCounts.put(
-								tableName, (long)resultSet2.getInt("count"));
+								tableName, resultSet2.getLong("count"));
 						}
 					}
 					catch (SQLException sqlException) {
@@ -1008,22 +1043,11 @@ public class UpgradeReport {
 	private static final Snapshot<ReleaseManager> _releaseManagerSnapshot =
 		new Snapshot<>(UpgradeReport.class, ReleaseManager.class);
 
-	private double _dlSize;
-	private final Thread _dlSizeThread = new DLSizeThread();
 	private String _executionDateString;
 	private String _executionTimeString;
 	private final int _initialBuildNumber;
 	private Map<String, Long> _initialTableCounts;
 	private String _rootDir;
-
-	private class DLSizeThread extends Thread {
-
-		@Override
-		public void run() {
-			_dlSize = FileUtils.sizeOfDirectory(new File(_rootDir));
-		}
-
-	}
 
 	private class MessagesPrinter {
 

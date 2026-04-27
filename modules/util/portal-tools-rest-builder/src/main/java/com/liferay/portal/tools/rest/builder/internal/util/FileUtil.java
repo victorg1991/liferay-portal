@@ -24,9 +24,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -44,7 +44,7 @@ public class FileUtil {
 		System.out.println("Deleting " + file.getCanonicalPath());
 	}
 
-	public static void deleteFiles(String dirName, List<File> files)
+	public static void deleteFiles(String dirName, Collection<File> files)
 		throws Exception {
 
 		Path path = Paths.get(dirName);
@@ -146,6 +146,13 @@ public class FileUtil {
 	}
 
 	public static void write(File file, String content) throws Exception {
+		write(file, content, null);
+	}
+
+	public static void write(
+			File file, String content, Collection<File> modifiedFiles)
+		throws Exception {
+
 		if (!file.exists()) {
 			Path path = file.toPath();
 
@@ -186,6 +193,10 @@ public class FileUtil {
 
 			if (!oldContent.equals(parsedContent)) {
 				System.out.println("Writing " + file.getCanonicalPath());
+
+				if (modifiedFiles != null) {
+					modifiedFiles.add(file);
+				}
 			}
 		}
 		else {
@@ -194,6 +205,10 @@ public class FileUtil {
 
 			if (!oldContent.equals(content)) {
 				System.out.println("Writing " + file.getCanonicalPath());
+
+				if (modifiedFiles != null) {
+					modifiedFiles.add(file);
+				}
 			}
 		}
 	}

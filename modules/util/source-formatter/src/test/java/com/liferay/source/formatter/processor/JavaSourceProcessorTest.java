@@ -120,32 +120,6 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 	}
 
 	@Test
-	public void testCompanyThreadLocalUsage() throws Exception {
-		test(
-			SourceProcessorTestParameters.create(
-				"CompanyThreadLocalUsage.testjava"
-			).addExpectedMessage(
-				StringBundler.concat(
-					"Do not use \"CompanyThreadLocal.setCompanyId\", use ",
-					"\"CompanyThreadLocal.setCompanyIdWithSafeCloseable\" ",
-					"instead"),
-				16
-			).addExpectedMessage(
-				StringBundler.concat(
-					"Missing calling \"close\" to variable ",
-					"\"_safeCloseable1\", use \"_safeCloseable1.close\" or ",
-					"try-with-resources statement instead"),
-				28
-			).addExpectedMessage(
-				StringBundler.concat(
-					"Missing calling \"close\" to variable ",
-					"\"_safeCloseable2\", use \"_safeCloseable2.close\" or ",
-					"try-with-resources statement instead"),
-				29
-			));
-	}
-
-	@Test
 	public void testConstructorParameterOrder() throws Exception {
 		test("ConstructorParameterOrder.testjava");
 	}
@@ -879,13 +853,33 @@ public class JavaSourceProcessorTest extends BaseSourceProcessorTestCase {
 					"calling method \"resultSet.get*\"",
 				60
 			).addExpectedMessage(
-				"Use \"resultSet.getInt\" for count", 74
+				"Use \"resultSet.getLong\" for count", 74
 			));
 	}
 
 	@Test
 	public void testRunSQLStyling() throws Exception {
 		test("RunSQLStyling.testjava");
+	}
+
+	@Test
+	public void testSafeCloseableMissingClose() throws Exception {
+		test(
+			SourceProcessorTestParameters.create(
+				"SafeCloseableMissingClose.testjava"
+			).addExpectedMessage(
+				StringBundler.concat(
+					"Missing calling \"close\" to variable ",
+					"\"_safeCloseable1\", use \"_safeCloseable1.close\" or ",
+					"try-with-resources statement instead"),
+				28
+			).addExpectedMessage(
+				StringBundler.concat(
+					"Missing calling \"close\" to variable ",
+					"\"_safeCloseable2\", use \"_safeCloseable2.close\" or ",
+					"try-with-resources statement instead"),
+				29
+			));
 	}
 
 	@Test

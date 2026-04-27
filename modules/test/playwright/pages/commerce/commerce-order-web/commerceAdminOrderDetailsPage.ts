@@ -39,6 +39,7 @@ export class CommerceAdminOrderDetailsPage extends CommerceDNDTablePage {
 	readonly orderNote: (note: string) => Promise<Locator>;
 	readonly orderNotesLink: Locator;
 	readonly orderNotesTextArea: Locator;
+	readonly orderStatusProcessing: Locator;
 	readonly orderSummaryFrame: FrameLocator;
 	readonly orderSummaryLink: Locator;
 	readonly orderSummarySaveButton: Locator;
@@ -139,6 +140,9 @@ export class CommerceAdminOrderDetailsPage extends CommerceDNDTablePage {
 			name: 'Questions and Answers',
 		});
 		this.orderNotesTextArea = page.getByPlaceholder('Type your note here.');
+		this.orderStatusProcessing = page.getByText('Processing', {
+			exact: true,
+		});
 		this.orderSummaryFrame = page.frameLocator(
 			'iframe[title="Order Summary"]'
 		);
@@ -165,15 +169,19 @@ export class CommerceAdminOrderDetailsPage extends CommerceDNDTablePage {
 		this.recalculateButton = page
 			.getByText('Order Summary')
 			.getByRole('link', {name: 'Recalculate'});
-		this.recalculateOrderSummaryModalTitle = page.getByRole('heading', {
-			name: 'Recalculate Order Summary',
-		});
+		this.recalculateOrderSummaryModalTitle = page
+			.getByRole('heading', {
+				name: 'Recalculate Order Summary',
+			})
+			.last();
 		this.recalculateOrderSummaryModalCancelButton = page
 			.locator('.modal-footer')
-			.getByText('Cancel');
+			.getByText('Cancel')
+			.last();
 		this.recalculateOrderSummaryModalContinueButton = page
 			.locator('.modal-footer')
-			.getByText('Continue');
+			.getByText('Continue')
+			.last();
 		this.reorderButton = page.getByRole('button', {
 			exact: true,
 			name: 'Reorder',

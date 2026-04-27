@@ -17,7 +17,7 @@ resource "google_container_cluster" "primary" {
 		evaluation_mode="PROJECT_SINGLETON_POLICY_ENFORCE"
 	}
 	datapath_provider="ADVANCED_DATAPATH"
-	deletion_protection=false
+	deletion_protection=var.deletion_protection
 	depends_on=[google_compute_subnetwork.subnet]
 	dynamic "authenticator_groups_config" {
 		content {
@@ -133,15 +133,9 @@ resource "google_gke_hub_membership" "membership" {
 	project=var.project_id
 }
 resource "google_project_iam_member" "node_permissions" {
-	for_each=toset(
-		[
-			"roles/artifactregistry.reader",
-			"roles/logging.logWriter",
-			"roles/monitoring.metricWriter",
-		])
 	member="serviceAccount:${google_service_account.node_sa.email}"
 	project=var.project_id
-	role=each.key
+	role="roles/container.defaultNodeServiceAccount"
 }
 resource "google_service_account" "node_sa" {
 	account_id="${var.deployment_name}-node-sa"

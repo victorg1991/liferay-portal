@@ -8,6 +8,7 @@ package com.liferay.portal.tools.rest.builder;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
+import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -21,9 +22,11 @@ import com.liferay.portal.kernel.util.StringUtil_IW;
 import com.liferay.portal.kernel.util.TextFormatter;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.Validator_IW;
+import com.liferay.portal.tools.ArgumentsUtil;
 import com.liferay.portal.tools.rest.builder.internal.freemarker.tool.FreeMarkerTool;
 import com.liferay.portal.tools.rest.builder.internal.freemarker.tool.java.JavaMethodSignature;
 import com.liferay.portal.tools.rest.builder.internal.freemarker.tool.java.parser.util.OpenAPIParserUtil;
+import com.liferay.portal.tools.rest.builder.internal.freemarker.util.ConfigUtil;
 import com.liferay.portal.tools.rest.builder.internal.freemarker.util.FreeMarkerUtil;
 import com.liferay.portal.tools.rest.builder.internal.freemarker.util.OpenAPIUtil;
 import com.liferay.portal.tools.rest.builder.internal.typescript.TypeScriptClientUtil;
@@ -47,20 +50,27 @@ import com.liferay.portal.tools.rest.builder.internal.yaml.openapi.ResponseCode;
 import com.liferay.portal.tools.rest.builder.internal.yaml.openapi.Schema;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.IOException;
 
 import java.net.URL;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +78,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * @author Peter Shin
@@ -75,6 +90,40 @@ import java.util.TreeSet;
 public class RESTBuilder {
 
 	public static void main(String[] args) throws Exception {
+		Map<String, String> arguments = null;
+
+		try {
+			arguments = ArgumentsUtil.parseArguments(args);
+		}
+		catch (IllegalArgumentException illegalArgumentException) {
+		}
+
+		if (arguments != null) {
+			String restConfigDirName = arguments.get("rest.config.dirs");
+
+			if (Validator.isNotNull(restConfigDirName)) {
+				List<String> baselineTasks = _processRESTConfigFiles(
+					restConfigDirName);
+
+				String baselineOutputFileName = arguments.get(
+					"rest.builder.baseline.output.file");
+
+				if (Validator.isNotNull(baselineOutputFileName) &&
+					!baselineTasks.isEmpty()) {
+
+					Files.write(
+						Paths.get(baselineOutputFileName),
+						StringUtil.merge(
+							baselineTasks, StringPool.SPACE
+						).getBytes(
+							StandardCharsets.UTF_8
+						));
+				}
+
+				return;
+			}
+		}
+
 		RESTBuilderArgs restBuilderArgs = new RESTBuilderArgs();
 
 		JCommander jCommander = new JCommander(restBuilderArgs);
@@ -128,16 +177,22 @@ public class RESTBuilder {
 
 		_copyrightFile = copyrightFile;
 
-		_configDir = configDir;
+		_configDir = configDir.getCanonicalFile();
 
 		File configFile = new File(_configDir, "rest-config.yaml");
 
-		try (InputStream inputStream = new FileInputStream(configFile)) {
-			_configYAML = YAMLUtil.loadConfigYAML(StringUtil.read(inputStream));
+		try {
+			_configYAML = YAMLUtil.loadConfigYAML(
+				_configDir.getPath(), configFile);
 
 			if (forceClientVersionDescription != null) {
 				_configYAML.setForceClientVersionDescription(
 					forceClientVersionDescription);
+			}
+
+			if (_configYAML.getForceObjectMethodNameSuffix() == null) {
+				_configYAML.setForceObjectMethodNameSuffix(
+					ConfigUtil.isVersionCompatible(_configYAML, 9));
 			}
 
 			if (forcePredictableOperationId != null) {
@@ -166,6 +221,17 @@ public class RESTBuilder {
 	}
 
 	public void build() throws Exception {
+		_checkOpenAPIYAMLFiles();
+
+		try (AutoCloseable closeable = build(null)) {
+		}
+	}
+
+	public AutoCloseable build(ExecutorService executorService)
+		throws Exception {
+
+		Collection<Future<?>> futures = new ConcurrentLinkedQueue<>();
+
 		FreeMarkerTool freeMarkerTool = FreeMarkerTool.getInstance();
 
 		Map<String, Object> context = HashMapBuilder.<String, Object>put(
@@ -178,42 +244,35 @@ public class RESTBuilder {
 			"validator", Validator_IW.getInstance()
 		).build();
 
-		if (_configYAML.isGenerateREST() &&
-			(_configYAML.getApplication() != null)) {
+		_submit(
+			executorService, futures, context,
+			safeContext -> {
+				if (_configYAML.isGenerateREST() &&
+					(_configYAML.getApplication() != null)) {
 
-			_createApplicationFile(context);
-		}
+					_createApplicationFile(safeContext);
+				}
 
-		if (Validator.isNotNull(_configYAML.getClientDir())) {
-			_createClientAggregationFile(context);
-			_createClientBaseJSONParserFile(context);
-			_createClientFacetFile(context);
-			_createClientHttpInvokerFile(context);
-			_createClientPageFile(context);
-			_createClientPaginationFile(context);
-			_createClientPermissionFile(context);
-			_createClientProblemFile(context);
-			_createClientUnsafeSupplierFile(context);
-		}
+				if (Validator.isNotNull(_configYAML.getClientDir())) {
+					_createClientAggregationFile(safeContext);
+					_createClientBaseJSONParserFile(safeContext);
+					_createClientFacetFile(safeContext);
+					_createClientHttpInvokerFile(safeContext);
+					_createClientPageFile(safeContext);
+					_createClientPaginationFile(safeContext);
+					_createClientPermissionFile(safeContext);
+					_createClientProblemFile(safeContext);
+					_createClientUnsafeSupplierFile(safeContext);
+				}
+			});
 
 		boolean createClientCustomFieldFiles = true;
 		boolean createClientScopeFiles = true;
+		boolean createLiberalPermissionCheckerFile = true;
 		List<String> validationErrorMessages = new ArrayList<>();
 
 		for (File openAPIYAMLFile :
 				FileUtil.getFiles(_configDir, "rest-openapi", ".yaml")) {
-
-			try {
-				_checkOpenAPIYAMLFile(freeMarkerTool, openAPIYAMLFile);
-			}
-			catch (Exception exception) {
-				_log.error(exception);
-
-				throw new RuntimeException(
-					StringBundler.concat(
-						"Error in file \"", openAPIYAMLFile.getName(), "\": ",
-						exception.getMessage()));
-			}
 
 			String yamlString = FileUtil.read(openAPIYAMLFile);
 
@@ -256,9 +315,14 @@ public class RESTBuilder {
 			if (_configYAML.isGenerateGraphQL() &&
 				(_configYAML.getApplication() != null)) {
 
-				_createGraphQLMutationFile(context, escapedVersion);
-				_createGraphQLQueryFile(context, escapedVersion);
-				_createGraphQLServletDataFile(context, escapedVersion);
+				_submit(
+					executorService, futures, context,
+					safeContext -> {
+						_createGraphQLMutationFile(safeContext, escapedVersion);
+						_createGraphQLQueryFile(safeContext, escapedVersion);
+						_createGraphQLServletDataFile(
+							safeContext, escapedVersion);
+					});
 			}
 
 			context.put("schemaName", "openapi");
@@ -266,8 +330,13 @@ public class RESTBuilder {
 			if (_configYAML.isGenerateOpenAPI() &&
 				(_configYAML.getResourceApplicationSelect() == null)) {
 
-				_createOpenAPIResourceFile(context, escapedVersion);
-				_createPropertiesFile(context, escapedVersion, "openapi");
+				_submit(
+					executorService, futures, context,
+					safeContext -> {
+						_createOpenAPIResourceFile(safeContext, escapedVersion);
+						_createPropertiesFile(
+							safeContext, escapedVersion, "openapi");
+					});
 			}
 
 			Map<String, Schema> schemas = freeMarkerTool.getSchemas(
@@ -284,13 +353,18 @@ public class RESTBuilder {
 					context, escapedVersion, javaDataTypeMap, schema,
 					schemaName, Collections.emptySet());
 
-				_createDTOFile(context, escapedVersion, schemaName);
+				_submit(
+					executorService, futures, context,
+					safeContext -> {
+						_createDTOFile(safeContext, escapedVersion, schemaName);
 
-				if (Validator.isNotNull(_configYAML.getClientDir())) {
-					_createClientDTOFile(context, escapedVersion, schemaName);
-					_createClientSerDesFile(
-						context, escapedVersion, schemaName);
-				}
+						if (Validator.isNotNull(_configYAML.getClientDir())) {
+							_createClientDTOFile(
+								safeContext, escapedVersion, schemaName);
+							_createClientSerDesFile(
+								safeContext, escapedVersion, schemaName);
+						}
+					});
 			}
 
 			for (Map.Entry<String, Schema> entry :
@@ -300,12 +374,17 @@ public class RESTBuilder {
 					context, escapedVersion, javaDataTypeMap, entry.getValue(),
 					entry.getKey(), Collections.emptySet());
 
-				_createEnumFile(context, escapedVersion, entry.getKey());
+				_submit(
+					executorService, futures, context,
+					safeContext -> {
+						_createEnumFile(
+							safeContext, escapedVersion, entry.getKey());
 
-				if (Validator.isNotNull(_configYAML.getClientDir())) {
-					_createClientEnumFile(
-						context, escapedVersion, entry.getKey());
-				}
+						if (Validator.isNotNull(_configYAML.getClientDir())) {
+							_createClientEnumFile(
+								safeContext, escapedVersion, entry.getKey());
+						}
+					});
 			}
 
 			schemas = freeMarkerTool.getAllSchemas(
@@ -346,41 +425,52 @@ public class RESTBuilder {
 					schemaName,
 					_getRelatedSchemaNames(allSchemas, javaMethodSignatures));
 
-				_createBaseResourceImplFile(
-					context, escapedVersion, schemaName);
-				_createLiberalPermissionCheckerFile(context);
-				_createPropertiesFile(
-					context, escapedVersion,
-					String.valueOf(context.get("schemaPath")));
+				if (createLiberalPermissionCheckerFile) {
+					_createLiberalPermissionCheckerFile(context);
 
-				if (_configYAML.getApplication() != null) {
-					_createResourceFactoryImplFile(
-						context, escapedVersion, schemaName);
+					createLiberalPermissionCheckerFile = false;
 				}
 
-				_createResourceFile(context, escapedVersion, schemaName);
-				_createResourceImplFile(context, escapedVersion, schemaName);
+				_submit(
+					executorService, futures, context,
+					safeContext -> {
+						_createBaseResourceImplFile(
+							safeContext, escapedVersion, schemaName);
+						_createPropertiesFile(
+							safeContext, escapedVersion,
+							String.valueOf(safeContext.get("schemaPath")));
 
-				if (Validator.isNotNull(_configYAML.getClientDir())) {
-					_createClientResourceFile(
-						context, escapedVersion, schemaName);
-				}
+						if (_configYAML.getApplication() != null) {
+							_createResourceFactoryImplFile(
+								safeContext, escapedVersion, schemaName);
+						}
 
-				if (Validator.isNotNull(_configYAML.getTestDir())) {
-					_createBaseResourceTestCaseFile(
-						context, escapedVersion, schemaName);
-					_createResourceTestFile(
-						context, escapedVersion, schemaName);
-				}
+						_createResourceFile(
+							safeContext, escapedVersion, schemaName);
+						_createResourceImplFile(
+							safeContext, escapedVersion, schemaName);
 
-				if (_configYAML.isGenerateActionProviders()) {
-					_createBaseDTOActionMetadataProviderFile(
-						context, escapedVersion, schemaName);
-					_createDTOActionMetadataProviderFile(
-						context, escapedVersion, schemaName);
-					_createDTOActionProviderFile(
-						context, escapedVersion, schemaName);
-				}
+						if (Validator.isNotNull(_configYAML.getClientDir())) {
+							_createClientResourceFile(
+								safeContext, escapedVersion, schemaName);
+						}
+
+						if (Validator.isNotNull(_configYAML.getTestDir())) {
+							_createBaseResourceTestCaseFile(
+								safeContext, escapedVersion, schemaName);
+							_createResourceTestFile(
+								safeContext, escapedVersion, schemaName);
+						}
+
+						if (_configYAML.isGenerateActionProviders()) {
+							_createBaseDTOActionMetadataProviderFile(
+								safeContext, escapedVersion, schemaName);
+							_createDTOActionMetadataProviderFile(
+								safeContext, escapedVersion, schemaName);
+							_createDTOActionProviderFile(
+								safeContext, escapedVersion, schemaName);
+						}
+					});
 			}
 
 			if (_configYAML.isGenerateClientJS() &&
@@ -399,23 +489,265 @@ public class RESTBuilder {
 				"OpenAPI validation errors:\n" + validationErrorMessagesString);
 		}
 
-		FileUtil.deleteFiles(_configYAML.getApiDir(), _files);
+		return () -> {
+			for (Future<?> future : futures) {
+				future.get();
+			}
 
-		if (Validator.isNotNull(_configYAML.getClientDir())) {
-			FileUtil.deleteFiles(_configYAML.getClientDir(), _files);
+			FileUtil.deleteFiles(_configYAML.getApiDir(), _files);
+
+			if (Validator.isNotNull(_configYAML.getClientDir())) {
+				FileUtil.deleteFiles(_configYAML.getClientDir(), _files);
+			}
+
+			FileUtil.deleteFiles(_configYAML.getImplDir(), _files);
+			FileUtil.deleteFiles(
+				_configYAML.getImplDir() + "/../resources/OSGI-INF/", _files);
+
+			if (Validator.isNotNull(_configYAML.getTestDir())) {
+				FileUtil.deleteFiles(_configYAML.getTestDir(), _files);
+			}
+		};
+	}
+
+	private static String _getBaselineTask(
+		Path baseDirPath, Path restConfigYamlPath) {
+
+		try {
+			String content = new String(
+				Files.readAllBytes(restConfigYamlPath), StandardCharsets.UTF_8);
+
+			int index = content.indexOf("apiDir:");
+
+			if (index == -1) {
+				return null;
+			}
+
+			int startIndex = index + "apiDir:".length();
+
+			int endIndex = content.indexOf('\n', startIndex);
+
+			if (endIndex == -1) {
+				endIndex = content.length();
+			}
+
+			String apiDirValue = content.substring(startIndex, endIndex);
+
+			Path apiDirPath = restConfigYamlPath.resolveSibling(
+				apiDirValue.trim());
+
+			Path apiModuleDirPath = apiDirPath.getParent();
+
+			while (apiModuleDirPath != null) {
+				if (Files.exists(apiModuleDirPath.resolve("bnd.bnd"))) {
+					break;
+				}
+
+				apiModuleDirPath = apiModuleDirPath.getParent();
+			}
+
+			if (apiModuleDirPath == null) {
+				return null;
+			}
+
+			Path relativePath = baseDirPath.relativize(
+				apiModuleDirPath.normalize());
+
+			String gradleProjectPath = StringUtil.replace(
+				relativePath.toString(), File.separatorChar, ':');
+
+			return ":" + gradleProjectPath + ":baseline";
 		}
-
-		FileUtil.deleteFiles(_configYAML.getImplDir(), _files);
-		FileUtil.deleteFiles(
-			_configYAML.getImplDir() + "/../resources/OSGI-INF/", _files);
-
-		if (Validator.isNotNull(_configYAML.getTestDir())) {
-			FileUtil.deleteFiles(_configYAML.getTestDir(), _files);
+		catch (IOException ioException) {
+			return null;
 		}
 	}
 
 	private static void _printHelp(JCommander jCommander) {
 		jCommander.usage();
+	}
+
+	private static Map.Entry<RESTBuilder, AutoCloseable> _processRESTConfigFile(
+			ExecutorService executorService, Path restConfigYamlPath)
+		throws Exception {
+
+		Path moduleDirPath = restConfigYamlPath.getParent();
+
+		System.out.println("Processing " + moduleDirPath.getFileName());
+
+		RESTBuilder restBuilder = new RESTBuilder(
+			null, moduleDirPath.toFile(), null, null, null);
+
+		return new AbstractMap.SimpleImmutableEntry<>(
+			restBuilder, restBuilder.build(executorService));
+	}
+
+	private static List<String> _processRESTConfigFiles(String baseDirName)
+		throws Exception {
+
+		Path baseDirPath = Paths.get(baseDirName);
+
+		Map<Path, Long> openAPIYAMLFileSizes = new HashMap<>();
+
+		List<Path> restConfigYamlPaths = new ArrayList<>();
+
+		Files.walkFileTree(
+			baseDirPath,
+			new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult preVisitDirectory(
+						Path dir, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					String dirName = String.valueOf(dir.getFileName());
+
+					if (dirName.equals("build") || dirName.equals("classes") ||
+						dirName.equals("node_modules") ||
+						dirName.equals("src") ||
+						dirName.equals("test-classes") ||
+						dirName.startsWith(".")) {
+
+						return FileVisitResult.SKIP_SUBTREE;
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult visitFile(
+						Path file, BasicFileAttributes basicFileAttributes)
+					throws IOException {
+
+					if (!Objects.equals(
+							String.valueOf(file.getFileName()),
+							"rest-config.yaml") ||
+						!Files.exists(file.resolveSibling("build.gradle"))) {
+
+						return FileVisitResult.CONTINUE;
+					}
+
+					restConfigYamlPaths.add(file);
+
+					openAPIYAMLFileSizes.put(
+						file,
+						Files.size(file.resolveSibling("rest-openapi.yaml")));
+
+					return FileVisitResult.SKIP_SIBLINGS;
+				}
+
+			});
+
+		if (restConfigYamlPaths.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		restConfigYamlPaths.sort(
+			Comparator.comparingLong(
+				openAPIYAMLFileSizes::get
+			).reversed());
+
+		ExecutorService executorService = Executors.newFixedThreadPool(
+			Runtime.getRuntime(
+			).availableProcessors());
+
+		List<Future<?>> checkFutures = new ArrayList<>();
+
+		for (Path restConfigYamlPath : restConfigYamlPaths) {
+			checkFutures.add(
+				executorService.submit(
+					() -> {
+						Path moduleDirPath = restConfigYamlPath.getParent();
+
+						RESTBuilder restBuilder = new RESTBuilder(
+							null, moduleDirPath.toFile(), null, null, null);
+
+						restBuilder._checkOpenAPIYAMLFiles();
+
+						return null;
+					}));
+		}
+
+		for (Future<?> future : checkFutures) {
+			future.get();
+		}
+
+		List<Future<Map.Entry<RESTBuilder, AutoCloseable>>> restBuilderFutures =
+			new ArrayList<>();
+
+		for (Path restConfigYamlPath : restConfigYamlPaths) {
+			restBuilderFutures.add(
+				executorService.submit(
+					() -> _processRESTConfigFile(
+						executorService, restConfigYamlPath)));
+		}
+
+		List<String> baselineTasks = new ArrayList<>();
+		List<Exception> exceptions = new ArrayList<>();
+
+		for (int i = 0; i < restBuilderFutures.size(); i++) {
+			Future<Map.Entry<RESTBuilder, AutoCloseable>> future =
+				restBuilderFutures.get(i);
+
+			try {
+				Map.Entry<RESTBuilder, AutoCloseable> entry = future.get();
+
+				try (AutoCloseable autoCloseable = entry.getValue()) {
+				}
+
+				RESTBuilder restBuilder = entry.getKey();
+
+				if (!restBuilder._hasApiModifications()) {
+					continue;
+				}
+
+				Path restConfigYamlPath = restConfigYamlPaths.get(i);
+
+				String baselineTask = _getBaselineTask(
+					baseDirPath, restConfigYamlPath);
+
+				if (baselineTask == null) {
+					continue;
+				}
+
+				Path moduleDirPath = restConfigYamlPath.getParent();
+
+				System.out.println(
+					StringBundler.concat(
+						"Baseline will be invoked for ",
+						moduleDirPath.getFileName(), " via ", baselineTask));
+
+				baselineTasks.add(baselineTask);
+			}
+			catch (ExecutionException executionException) {
+				Throwable throwable = executionException.getCause();
+
+				if (throwable instanceof Exception) {
+					exceptions.add((Exception)throwable);
+				}
+				else {
+					exceptions.add(executionException);
+				}
+			}
+			catch (Exception exception) {
+				exceptions.add(exception);
+			}
+		}
+
+		executorService.shutdown();
+
+		if (!exceptions.isEmpty()) {
+			RuntimeException runtimeException = new RuntimeException(
+				"Error processing REST config files");
+
+			for (Exception exception : exceptions) {
+				runtimeException.addSuppressed(exception);
+			}
+
+			throw runtimeException;
+		}
+
+		return baselineTasks;
 	}
 
 	private String _addClientVersionDescription(String yamlString) {
@@ -480,7 +812,9 @@ public class RESTBuilder {
 	private void _checkOpenAPIYAMLFile(FreeMarkerTool freeMarkerTool, File file)
 		throws Exception {
 
-		String yamlString = _fixOpenAPILicense(FileUtil.read(file));
+		String originalYamlString = FileUtil.read(file);
+
+		String yamlString = _fixOpenAPILicense(originalYamlString);
 
 		yamlString = _fixOpenAPIPaths(yamlString);
 
@@ -508,7 +842,29 @@ public class RESTBuilder {
 			_validate(yamlString);
 		}
 
-		FileUtil.write(file, yamlString);
+		if (!originalYamlString.equals(yamlString)) {
+			FileUtil.write(file, yamlString, _modifiedFiles);
+		}
+	}
+
+	private void _checkOpenAPIYAMLFiles() throws Exception {
+		FreeMarkerTool freeMarkerTool = FreeMarkerTool.getInstance();
+
+		for (File openAPIYAMLFile :
+				FileUtil.getFiles(_configDir, "rest-openapi", ".yaml")) {
+
+			try {
+				_checkOpenAPIYAMLFile(freeMarkerTool, openAPIYAMLFile);
+			}
+			catch (Exception exception) {
+				_log.error(exception);
+
+				throw new RuntimeException(
+					StringBundler.concat(
+						"Error in file \"", openAPIYAMLFile.getName(), "\": ",
+						exception.getMessage()));
+			}
+		}
 	}
 
 	private boolean _containsVulcanCustomField(Schema schema) {
@@ -573,11 +929,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file), "application",
-				context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "application",
+			context, file, _modifiedFiles);
 	}
 
 	private void _createBaseDTOActionMetadataProviderFile(
@@ -594,11 +948,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"base_dto_action_metadata_provider", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"base_dto_action_metadata_provider", context, file, _modifiedFiles);
 	}
 
 	private void _createBaseResourceImplFile(
@@ -615,11 +967,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"base_resource_impl", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"base_resource_impl", context, file, _modifiedFiles);
 	}
 
 	private void _createBaseResourceTestCaseFile(
@@ -636,11 +986,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"base_resource_test_case", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"base_resource_test_case", context, file, _modifiedFiles);
 	}
 
 	private void _createClientAggregationFile(Map<String, Object> context)
@@ -705,11 +1053,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file), templateName,
-				context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), templateName,
+			context, file, _modifiedFiles);
 	}
 
 	private void _createClientHttpInvokerFile(Map<String, Object> context)
@@ -797,11 +1143,9 @@ public class RESTBuilder {
 			return;
 		}
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"dto_action_metadata_provider", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"dto_action_metadata_provider", context, file, _modifiedFiles);
 	}
 
 	private void _createDTOActionProviderFile(
@@ -818,11 +1162,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"dto_action_provider", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"dto_action_provider", context, file, _modifiedFiles);
 	}
 
 	private void _createDTOFile(
@@ -838,11 +1180,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file), "dto",
-				context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "dto", context,
+			file, _modifiedFiles);
 	}
 
 	private void _createEnumFile(
@@ -858,11 +1198,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file), "enum",
-				context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "enum", context,
+			file, _modifiedFiles);
 	}
 
 	private void _createExternalSchemaFiles(
@@ -898,11 +1236,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"graphql_mutation", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "graphql_mutation",
+			context, file, _modifiedFiles);
 	}
 
 	private void _createGraphQLQueryFile(
@@ -917,11 +1253,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"graphql_query", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "graphql_query",
+			context, file, _modifiedFiles);
 	}
 
 	private void _createGraphQLServletDataFile(
@@ -937,11 +1271,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"graphql_servlet_data", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"graphql_servlet_data", context, file, _modifiedFiles);
 	}
 
 	private void _createLiberalPermissionCheckerFile(
@@ -956,11 +1288,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"liberal_permission_checker", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"liberal_permission_checker", context, file, _modifiedFiles);
 	}
 
 	private void _createOpenAPIResourceFile(
@@ -976,11 +1306,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"openapi_resource_impl", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"openapi_resource_impl", context, file, _modifiedFiles);
 	}
 
 	private void _createPropertiesFile(
@@ -996,9 +1324,8 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(null, null, "properties", context));
+		FreeMarkerUtil.processTemplate(
+			null, null, "properties", context, file, _modifiedFiles);
 	}
 
 	private void _createResourceFactoryImplFile(
@@ -1015,11 +1342,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"resource_factory_impl", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file),
+			"resource_factory_impl", context, file, _modifiedFiles);
 	}
 
 	private void _createResourceFile(
@@ -1036,11 +1361,9 @@ public class RESTBuilder {
 
 		_files.add(file);
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file), "resource",
-				context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "resource",
+			context, file, _modifiedFiles);
 	}
 
 	private void _createResourceImplFile(
@@ -1061,11 +1384,9 @@ public class RESTBuilder {
 			return;
 		}
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"resource_impl", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "resource_impl",
+			context, file, _modifiedFiles);
 	}
 
 	private void _createResourceTestFile(
@@ -1086,11 +1407,9 @@ public class RESTBuilder {
 			return;
 		}
 
-		FileUtil.write(
-			file,
-			FreeMarkerUtil.processTemplate(
-				_copyrightFile, FileUtil.getCopyrightYear(file),
-				"resource_test", context));
+		FreeMarkerUtil.processTemplate(
+			_copyrightFile, FileUtil.getCopyrightYear(file), "resource_test",
+			context, file, _modifiedFiles);
 	}
 
 	private String _fixOpenAPIContentApplicationXML(
@@ -1800,6 +2119,20 @@ public class RESTBuilder {
 		return freeMarkerTool.getSchemaVarName(reference.substring(index + 1));
 	}
 
+	private boolean _hasApiModifications() {
+		String apiDirName = _configYAML.getApiDir();
+
+		for (File modifiedFile : _modifiedFiles) {
+			String path = modifiedFile.getPath();
+
+			if (path.startsWith(apiDirName)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private void _putSchema(
 		Map<String, Object> context, String escapedVersion,
 		Map<String, String> javaDataTypeMap, Schema schema, String schemaName,
@@ -1834,6 +2167,33 @@ public class RESTBuilder {
 			"schemaVarNames", TextFormatter.formatPlural(schemaVarName));
 
 		context.put("relatedSchemaNames", relatedSchemaNames);
+	}
+
+	private void _submit(
+		ExecutorService executorService, Collection<Future<?>> futures,
+		Map<String, Object> context,
+		UnsafeConsumer<Map<String, Object>, Exception> unsafeConsumer) {
+
+		if (executorService == null) {
+			try {
+				unsafeConsumer.accept(context);
+			}
+			catch (Exception exception) {
+				throw new RuntimeException(exception);
+			}
+
+			return;
+		}
+
+		Map<String, Object> safeContext = new HashMap<>(context);
+
+		futures.add(
+			executorService.submit(
+				() -> {
+					unsafeConsumer.accept(safeContext);
+
+					return null;
+				}));
 	}
 
 	private void _validate(String yamlString) {
@@ -1920,6 +2280,8 @@ public class RESTBuilder {
 	private final File _configDir;
 	private final ConfigYAML _configYAML;
 	private final File _copyrightFile;
-	private final List<File> _files = new ArrayList<>();
+	private final Collection<File> _files = new ConcurrentLinkedQueue<>();
+	private final Collection<File> _modifiedFiles =
+		new ConcurrentLinkedQueue<>();
 
 }

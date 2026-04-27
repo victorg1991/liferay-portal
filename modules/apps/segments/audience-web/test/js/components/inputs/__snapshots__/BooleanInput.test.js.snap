@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BooleanInput renders type boolean 1`] = `
+<DocumentFragment>
+  <select
+    aria-label="Test label: select-option"
+    class="form-control criterion-input form-control"
+    data-testid="options-boolean"
+  >
+    <option
+      value="true"
+    >
+      true
+    </option>
+    <option
+      value="false"
+    >
+      false
+    </option>
+  </select>
+</DocumentFragment>
+`;
