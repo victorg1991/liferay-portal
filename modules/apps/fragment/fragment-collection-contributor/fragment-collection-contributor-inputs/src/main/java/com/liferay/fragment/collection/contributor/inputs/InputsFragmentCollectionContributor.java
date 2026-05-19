@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.util.ListUtil;
 import jakarta.servlet.ServletContext;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.osgi.service.component.annotations.Component;
@@ -51,9 +52,9 @@ public class InputsFragmentCollectionContributor
 	}
 
 	private List<FragmentEntry> _filter(List<FragmentEntry> fragmentEntries) {
-		if (!FeatureFlagManagerUtil.isEnabled(
-				CompanyThreadLocal.getCompanyId(), "LPD-17564")) {
+		long companyId = CompanyThreadLocal.getCompanyId();
 
+		if (!FeatureFlagManagerUtil.isEnabled(companyId, "LPD-17564")) {
 			Set<String> excludedKeys = Set.of(
 				"INPUTS-drag-and-drop-upload", "INPUTS-video-previewer-input");
 
@@ -61,6 +62,14 @@ public class InputsFragmentCollectionContributor
 				fragmentEntries,
 				fragmentEntry -> !excludedKeys.contains(
 					fragmentEntry.getFragmentEntryKey()));
+		}
+
+		if (!FeatureFlagManagerUtil.isEnabled(companyId, "LPD-83570")) {
+			fragmentEntries = ListUtil.filter(
+				fragmentEntries,
+				fragmentEntry -> !Objects.equals(
+					fragmentEntry.getFragmentEntryKey(),
+					"INPUTS-phone-number-input"));
 		}
 
 		return fragmentEntries;
