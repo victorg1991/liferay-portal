@@ -8,18 +8,25 @@ import usePointerDragAndDrop from './usePointerDragAndDrop';
 
 import './useDragAndDrop.scss';
 
-export type DropPosition = 'bottom' | 'top' | null;
+export type DropPosition = 'bottom' | 'middle' | 'top' | null;
 
 interface Props<T> {
+	allowMiddleDrop?: boolean;
 	dragHandlerRef: React.RefObject<HTMLElement>;
 	dropItemRef: React.RefObject<HTMLElement>;
 	item: T;
 	itemIndex: number;
 	items: T[];
-	onDrop: (items: T[]) => void;
+	onDrop: (
+		items: T[],
+		targetId: string,
+		position: DropPosition,
+		sourceId: string
+	) => void;
 }
 
 export default function useDragAndDrop<T extends {id: string; name: string}>({
+	allowMiddleDrop = false,
 	dragHandlerRef,
 	dropItemRef,
 	item,
@@ -30,8 +37,10 @@ export default function useDragAndDrop<T extends {id: string; name: string}>({
 	const {
 		isPointerDragging,
 		isPointerDropBottomPosition,
+		isPointerDropMiddlePosition,
 		isPointerDropTopPosition,
 	} = usePointerDragAndDrop<T>({
+		allowMiddleDrop,
 		dragHandlerRef,
 		dropItemRef,
 		items,
@@ -43,8 +52,10 @@ export default function useDragAndDrop<T extends {id: string; name: string}>({
 		handleKeyboardDragAndDrop,
 		isKeyboardDragging,
 		isKeyboardDropBottomPosition,
+		isKeyboardDropMiddlePosition,
 		isKeyboardDropTopPosition,
 	} = useKeyboardDragAndDrop<T>({
+		allowMiddleDrop,
 		draggedItem: item,
 		draggedItemIndex: itemIndex,
 		items,
@@ -56,6 +67,8 @@ export default function useDragAndDrop<T extends {id: string; name: string}>({
 		isDragging: isPointerDragging || isKeyboardDragging,
 		isDropBottomPosition:
 			isPointerDropBottomPosition || isKeyboardDropBottomPosition,
+		isDropMiddlePosition:
+			isPointerDropMiddlePosition || isKeyboardDropMiddlePosition,
 		isDropTopPosition:
 			isPointerDropTopPosition || isKeyboardDropTopPosition,
 		isKeyboardDragging,

@@ -24,9 +24,9 @@ interface ItemWithId {
 export interface RowBuilderLabels<T> {
 
 	/**
-	 * Label shown in the add button.
+	 * Label shown in the add button. Optional when `hideAddButton` is true.
 	 */
-	add: string;
+	add?: string;
 
 	/**
 	 * Screen reader announcement sent after adding an item.
@@ -76,9 +76,28 @@ interface RowBuilderProps<T extends ItemWithId> {
 	createItem: () => T;
 
 	/**
+	 * Optional dynamic class name added to each row wrapper, derived from
+	 * the item and its index. Useful for drop-position indicators driven
+	 * by external DnD code.
+	 */
+	getItemClassName?: (item: T, index: number) => string | undefined;
+
+	/**
+	 * Hides the built-in add button. Use when the list is populated by
+	 * other means (e.g. drag-and-drop from a sidebar).
+	 */
+	hideAddButton?: boolean;
+
+	/**
 	 * Optional class name applied to each row wrapper.
 	 */
 	itemClassName?: string;
+
+	/**
+	 * Optional callback invoked with each row wrapper's DOM node. Allows
+	 * external code (e.g. a DnD hook) to attach to the row element.
+	 */
+	itemRef?: (item: T, element: HTMLElement | null) => void;
 
 	/**
 	 * Current list of items rendered by the builder.
@@ -100,22 +119,45 @@ interface RowBuilderProps<T extends ItemWithId> {
 	}) => ReactNode;
 
 	/**
+	 * Renders extra action buttons placed before the built-in delete
+	 * button (e.g. a duplicate button).
+	 */
+	renderItemActions?: (props: {index: number; item: T}) => ReactNode;
+
+	/**
+	 * Renders leading content before the item content (e.g. a drag handle).
+	 */
+	renderItemLeading?: (props: {index: number; item: T}) => ReactNode;
+
+	/**
+	 * Renders content between adjacent items (not before the first item).
+	 * Useful for inline separators such as a conjunction picker.
+	 */
+	renderItemSeparator?: (props: {index: number; item: T}) => ReactNode;
+
+	/**
 	 * Updates the full items array after add, delete, or item changes.
 	 */
 	setItems: (items: T[]) => void;
 }
 
 /**
- * Renders a list of items with an "add" button, per-item delete buttons,
- * roving keyboard focus, and screen reader announcements.
+ * Renders a list of items with an optional "add" button, per-item delete
+ * buttons, roving keyboard focus, and screen reader announcements.
  */
 export function RowBuilder<T extends ItemWithId>({
 	canDelete = () => true,
 	createItem,
+	getItemClassName,
+	hideAddButton = false,
 	itemClassName,
+	itemRef,
 	items,
 	labels,
 	renderItem,
+	renderItemActions,
+	renderItemLeading,
+	renderItemSeparator,
 	setItems,
 }: RowBuilderProps<T>) {
 	const {sendMessage} = useContext(ScreenReaderAnnouncerContext);
@@ -228,62 +270,76 @@ export function RowBuilder<T extends ItemWithId>({
 					const ariaLabel = deleteAriaLabel(item, index);
 
 					return (
-						<div
-							aria-label={itemAriaLabel?.(item, index)}
-							className={classNames(
-								'align-items-center d-flex justify-content-between mb-3 p-2 layout__row-builder-item',
-								itemClassName
-							)}
-							key={item.id}
-							onKeyDown={makeKeyDownHandler(item, index)}
-							ref={(element) => {
-								if (element) {
-									itemElementsRef.current.set(
-										item.id,
-										element
-									);
-								}
-								else {
-									itemElementsRef.current.delete(item.id);
-								}
-							}}
-							role="menuitem"
-							tabIndex={0}
-						>
-							<div className="c-gap-2 d-flex flex-grow-1 flex-wrap">
-								{renderItem({
-									index,
-									item,
-									onChange: (newItem) =>
-										handleItemChange(index, newItem),
-								})}
-							</div>
+						<React.Fragment key={item.id}>
+							{index > 0 && renderItemSeparator
+								? renderItemSeparator({index, item})
+								: null}
 
-							{canDelete(item, index, items) ? (
-								<ClayButtonWithIcon
-									aria-label={ariaLabel}
-									borderless
-									className="align-self-baseline layout__row-builder-delete-button lfr-portal-tooltip"
-									displayType="secondary"
-									onClick={() => handleDelete(index)}
-									size="sm"
-									symbol="times-circle"
-									title={deleteLabel}
-								/>
-							) : null}
-						</div>
+							<div
+								aria-label={itemAriaLabel?.(item, index)}
+								className={classNames(
+									'align-items-center d-flex justify-content-between mb-3 p-2 layout__row-builder-item',
+									itemClassName,
+									getItemClassName?.(item, index)
+								)}
+								onKeyDown={makeKeyDownHandler(item, index)}
+								ref={(element) => {
+									if (element) {
+										itemElementsRef.current.set(
+											item.id,
+											element
+										);
+									}
+									else {
+										itemElementsRef.current.delete(item.id);
+									}
+
+									itemRef?.(item, element);
+								}}
+								role="menuitem"
+								tabIndex={0}
+							>
+								{renderItemLeading?.({index, item})}
+
+								<div className="c-gap-2 d-flex flex-grow-1 flex-wrap">
+									{renderItem({
+										index,
+										item,
+										onChange: (newItem) =>
+											handleItemChange(index, newItem),
+									})}
+								</div>
+
+								{renderItemActions?.({index, item})}
+
+								{canDelete(item, index, items) ? (
+									<ClayButtonWithIcon
+										aria-label={ariaLabel}
+										borderless
+										className="align-self-baseline layout__row-builder-delete-button lfr-portal-tooltip"
+										displayType="secondary"
+										onClick={() => handleDelete(index)}
+										size="sm"
+										symbol="times-circle"
+										title={deleteLabel}
+									/>
+								) : null}
+							</div>
+						</React.Fragment>
 					);
 				})}
 			</div>
 
-			<ClayButton
-				className="mt-2"
-				displayType="secondary"
-				onClick={handleAdd}
-				size="sm"
-			>
-				{addLabel}
-			</ClayButton>
+			{!hideAddButton && addLabel ? (
+				<ClayButton
+					className="mt-2"
+					displayType="secondary"
+					onClick={handleAdd}
+					size="sm"
+				>
+					{addLabel}
+				</ClayButton>
+			) : null}
 		</>
 	);
 }

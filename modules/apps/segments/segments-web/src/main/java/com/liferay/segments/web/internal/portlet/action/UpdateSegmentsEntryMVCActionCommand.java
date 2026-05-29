@@ -86,10 +86,20 @@ public class UpdateSegmentsEntryMVCActionCommand extends BaseMVCActionCommand {
 		try {
 			SegmentsEntry segmentsEntry = null;
 
-			Criteria criteria = ActionUtil.getCriteria(
-				actionRequest,
-				_segmentsCriteriaContributorRegistry.
-					getSegmentsCriteriaContributors());
+			boolean audiences = AudiencesPortletUtil.isAudiencesPortlet(
+				actionRequest);
+
+			Criteria criteria = null;
+
+			if (audiences) {
+				criteria = _getAudienceCriteria(actionRequest);
+			}
+			else {
+				criteria = ActionUtil.getCriteria(
+					actionRequest,
+					_segmentsCriteriaContributorRegistry.
+						getSegmentsCriteriaContributors());
+			}
 
 			boolean dynamic = ParamUtil.getBoolean(
 				actionRequest, "dynamic", true);
@@ -102,8 +112,8 @@ public class UpdateSegmentsEntryMVCActionCommand extends BaseMVCActionCommand {
 
 				String source = null;
 
-				if (AudiencesPortletUtil.isAudiencesPortlet(actionRequest)) {
-					source = SegmentsEntryConstants.SOURCE_AUDIENCE;
+				if (audiences) {
+					source = _getAudienceSource(actionRequest);
 				}
 
 				segmentsEntry = _segmentsEntryService.addSegmentsEntry(
@@ -159,6 +169,38 @@ public class UpdateSegmentsEntryMVCActionCommand extends BaseMVCActionCommand {
 				throw exception;
 			}
 		}
+	}
+
+	private Criteria _getAudienceCriteria(ActionRequest actionRequest)
+		throws SegmentsEntryCriteriaException {
+
+		String audienceCriteriaJSON = ParamUtil.getString(
+			actionRequest, "audienceCriteriaJSON");
+
+		if (Validator.isNull(audienceCriteriaJSON)) {
+			throw new SegmentsEntryCriteriaException();
+		}
+
+		String trimmed = audienceCriteriaJSON.trim();
+
+		if (!trimmed.startsWith("{")) {
+			throw new SegmentsEntryCriteriaException();
+		}
+
+		Criteria criteria = new Criteria();
+
+		criteria.addCriterion(
+			"context", Criteria.Type.CONTEXT, audienceCriteriaJSON,
+			Criteria.Conjunction.AND);
+
+		return criteria;
+	}
+
+	private String _getAudienceSource(ActionRequest actionRequest) {
+		String retentionType = ParamUtil.getString(
+			actionRequest, "retentionType", "SESSION");
+
+		return SegmentsEntryConstants.SOURCE_AUDIENCE + ":" + retentionType;
 	}
 
 	private long _getGroupId(

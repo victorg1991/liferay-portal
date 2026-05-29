@@ -230,6 +230,98 @@ public class EditSegmentsEntryDisplayContext {
 		return _title;
 	}
 
+	public boolean isAudiencesPortlet() {
+		return AudiencesPortletUtil.isAudiencesPortlet(_renderRequest);
+	}
+
+	private JSONObject _getAudienceInitialCriteriaJSONObject()
+		throws Exception {
+
+		SegmentsEntry segmentsEntry = _getSegmentsEntry();
+
+		if (segmentsEntry == null) {
+			return null;
+		}
+
+		Criteria criteria = segmentsEntry.getCriteriaObj();
+
+		if (criteria == null) {
+			return null;
+		}
+
+		Criteria.Criterion criterion = criteria.getCriterion("context");
+
+		if (criterion == null) {
+			return null;
+		}
+
+		String filterString = criterion.getFilterString();
+
+		if (Validator.isNull(filterString)) {
+			return null;
+		}
+
+		String trimmed = filterString.trim();
+
+		if (trimmed.startsWith("{")) {
+			return JSONFactoryUtil.createJSONObject(trimmed);
+		}
+
+		return null;
+	}
+
+	private String _getAudienceInitialName() throws Exception {
+		SegmentsEntry segmentsEntry = _getSegmentsEntry();
+
+		if (segmentsEntry == null) {
+			return StringPool.BLANK;
+		}
+
+		return segmentsEntry.getName(_locale);
+	}
+
+	private Map<String, Object> _getAudienceInitialScope() throws Exception {
+		SegmentsEntry segmentsEntry = _getSegmentsEntry();
+
+		if (segmentsEntry == null) {
+			return null;
+		}
+
+		Group group = _groupLocalService.fetchGroup(segmentsEntry.getGroupId());
+
+		if ((group == null) || group.isCompany()) {
+			return null;
+		}
+
+		return HashMapBuilder.<String, Object>put(
+			"groupId", String.valueOf(group.getGroupId())
+		).put(
+			"name", group.getDescriptiveName(_locale)
+		).build();
+	}
+
+	private String _getAudienceRetentionType() throws Exception {
+		SegmentsEntry segmentsEntry = _getSegmentsEntry();
+
+		if (segmentsEntry == null) {
+			return "SESSION";
+		}
+
+		String source = segmentsEntry.getSource();
+
+		if (source == null) {
+			return "SESSION";
+		}
+
+		int index = source.indexOf(':');
+
+		if (index < 0) {
+			return "SESSION";
+		}
+
+		return source.substring(index + 1);
+	}
+
 	private Map<String, String> _getAvailableLocales() throws Exception {
 		Map<String, String> availableLocales = new HashMap<>();
 
@@ -390,9 +482,29 @@ public class EditSegmentsEntryDisplayContext {
 	}
 
 	private Map<String, Object> _getProps() throws Exception {
-		return HashMapBuilder.<String, Object>put(
-			"audiences", AudiencesPortletUtil.isAudiencesPortlet(_renderRequest)
-		).put(
+		boolean audiences = AudiencesPortletUtil.isAudiencesPortlet(
+			_renderRequest);
+
+		HashMapBuilder.HashMapWrapper<String, Object> propsBuilder =
+			HashMapBuilder.<String, Object>put("audiences", audiences);
+
+		if (audiences) {
+			propsBuilder.put(
+				"initialCriteria", _getAudienceInitialCriteriaJSONObject()
+			).put(
+				"initialERC", getSegmentsEntryKey()
+			).put(
+				"initialName", _getAudienceInitialName()
+			).put(
+				"initialRetentionType", _getAudienceRetentionType()
+			).put(
+				"initialScope", _getAudienceInitialScope()
+			).put(
+				"selectScopeURL", _getSelectScopeURL()
+			);
+		}
+
+		return propsBuilder.put(
 			"availableLocales", _getAvailableLocales()
 		).put(
 			"contributors", _getContributorsJSONArray()
@@ -507,6 +619,14 @@ public class EditSegmentsEntryDisplayContext {
 		ResourceURL resourceURL = _renderResponse.createResourceURL();
 
 		resourceURL.setResourceID("/segments/get_segments_field_value_name");
+
+		return resourceURL.toString();
+	}
+
+	private String _getSelectScopeURL() {
+		ResourceURL resourceURL = _renderResponse.createResourceURL();
+
+		resourceURL.setResourceID("/segments/select_audience_scope");
 
 		return resourceURL.toString();
 	}

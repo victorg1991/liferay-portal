@@ -10,6 +10,7 @@ import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
 
 import ThemeContext from './ThemeContext.es';
+import AudienceEdit from './components/audience_edit/AudienceEdit';
 import SegmentEdit from './components/segment_edit/SegmentEdit';
 import {KeyboardMovementContextProvider} from './contexts/KeyboardMovementContext';
 
@@ -26,7 +27,11 @@ export default function ({context, error, props}) {
 						<div className="segments-root">
 							<DragPreview />
 
-							<SegmentEdit {...props} />
+							{props.audiences ? (
+								<AudienceEdit {...props} />
+							) : (
+								<SegmentEdit {...props} />
+							)}
 						</div>
 					)}
 				</ThemeContext.Provider>

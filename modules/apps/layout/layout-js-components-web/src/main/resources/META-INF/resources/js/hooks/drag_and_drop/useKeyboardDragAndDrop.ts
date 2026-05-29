@@ -11,17 +11,30 @@ import {
 	useUpdateKeyboardItem,
 } from '../../contexts/DragAndDropContext';
 import {useScreenReaderAnnounce} from '../../contexts/ScreenReaderContext';
+import {DropPosition} from './useDragAndDrop';
 
 interface Props<T extends {id: string}> {
+	allowMiddleDrop?: boolean;
 	draggedItem: T;
 	draggedItemIndex: number;
 	items: T[];
-	onDrop: (items: T[]) => void;
+	onDrop: (
+		items: T[],
+		targetId: string,
+		position: DropPosition,
+		sourceId: string
+	) => void;
 }
 
 export default function useKeyboardDragAndDrop<
 	T extends {id: string; name: string},
->({draggedItem, draggedItemIndex, items, onDrop}: Props<T>) {
+>({
+	allowMiddleDrop = false,
+	draggedItem,
+	draggedItemIndex,
+	items,
+	onDrop,
+}: Props<T>) {
 	const [isActive, setIsActive] = useState(false);
 
 	const announce = useScreenReaderAnnounce();
@@ -78,15 +91,41 @@ export default function useKeyboardDragAndDrop<
 				newItems.splice(keyboardItem.index!, 0, movedItem);
 
 				if (draggedItemIndex !== keyboardItem.index) {
-					onDrop?.(newItems);
+					const targetItem = items[keyboardItem.index!];
 
-					announce(
-						sub(Liferay.Language.get('x-moved-to-the-x-of-x'), [
-							draggedItem.name,
+					if (keyboardItem.position === 'middle') {
+						onDrop?.(
+							items,
+							targetItem.id,
+							'middle',
+							draggedItem.id
+						);
+
+						announce(
+							sub(
+								Liferay.Language.get(
+									'x-merged-into-a-group-with-x'
+								),
+								[draggedItem.name, targetItem.name]
+							)
+						);
+					}
+					else {
+						onDrop?.(
+							newItems,
+							targetItem.id,
 							keyboardItem.position,
-							items[keyboardItem.index!].name,
-						])
-					);
+							draggedItem.id
+						);
+
+						announce(
+							sub(Liferay.Language.get('x-moved-to-the-x-of-x'), [
+								draggedItem.name,
+								keyboardItem.position,
+								targetItem.name,
+							])
+						);
+					}
 				}
 
 				updateKeyboardItem({
@@ -106,7 +145,19 @@ export default function useKeyboardDragAndDrop<
 			let nextPosition = keyboardItem.position;
 
 			if (key === 'ArrowDown' && nextIndex <= items.length - 1) {
-				if (nextPosition === 'top') {
+				if (allowMiddleDrop) {
+					if (nextPosition === 'top') {
+						nextPosition = 'middle';
+					}
+					else if (nextPosition === 'middle') {
+						nextPosition = 'bottom';
+					}
+					else if (nextIndex < items.length - 1) {
+						nextIndex = nextIndex + 1;
+						nextPosition = 'top';
+					}
+				}
+				else if (nextPosition === 'top') {
 					nextPosition = 'bottom';
 				}
 				else if (nextIndex < items.length - 1) {
@@ -114,7 +165,19 @@ export default function useKeyboardDragAndDrop<
 				}
 			}
 			else if (key === 'ArrowUp' && nextIndex >= 0) {
-				if (nextPosition === 'bottom') {
+				if (allowMiddleDrop) {
+					if (nextPosition === 'bottom') {
+						nextPosition = 'middle';
+					}
+					else if (nextPosition === 'middle') {
+						nextPosition = 'top';
+					}
+					else if (nextIndex > 0) {
+						nextIndex = nextIndex - 1;
+						nextPosition = 'bottom';
+					}
+				}
+				else if (nextPosition === 'bottom') {
 					nextPosition = 'top';
 				}
 				else if (nextIndex > 0) {
@@ -136,6 +199,7 @@ export default function useKeyboardDragAndDrop<
 			});
 		},
 		[
+			allowMiddleDrop,
 			announce,
 			draggedItem,
 			draggedItemIndex,
@@ -153,6 +217,8 @@ export default function useKeyboardDragAndDrop<
 		isKeyboardDragging: isActive,
 		isKeyboardDropBottomPosition:
 			isTarget && keyboardItem.position === 'bottom',
+		isKeyboardDropMiddlePosition:
+			isTarget && keyboardItem.position === 'middle',
 		isKeyboardDropTarget: isTarget,
 		isKeyboardDropTopPosition: isTarget && keyboardItem.position === 'top',
 	};

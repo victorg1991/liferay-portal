@@ -24,6 +24,7 @@ export default function usePointerDragAndDrop<
 		id: string;
 	},
 >({
+	allowMiddleDrop = false,
 	dragHandlerRef,
 	dropItemRef,
 	hoverLimit = HOVER_BORDER_LIMIT,
@@ -31,14 +32,21 @@ export default function usePointerDragAndDrop<
 	onDrop,
 	targetItem,
 }: {
+	allowMiddleDrop?: boolean;
 	dragHandlerRef: React.RefObject<HTMLElement>;
 	dropItemRef: React.RefObject<HTMLElement>;
 	hoverLimit?: number;
 	items: T[];
-	onDrop?: (items: T[]) => void;
+	onDrop?: (
+		items: T[],
+		targetId: string,
+		position: DropPosition,
+		sourceId: string
+	) => void;
 	targetItem: T;
 }) {
 	const dropIndexRef = useRef<number>(0);
+	const dropPositionRef = useRef<DropPosition>(null);
 	const [dropPosition, setDropPosition] = useState<DropPosition>(null);
 
 	const [{isOver}, drop] = useDrop<
@@ -48,6 +56,10 @@ export default function usePointerDragAndDrop<
 	>({
 		accept: ITEM_TYPE,
 		canDrop: (draggedItem) => {
+			if (dropPositionRef.current === 'middle') {
+				return draggedItem.id !== targetItem.id;
+			}
+
 			const draggedItemIndex = items.findIndex(
 				({id}) => id === draggedItem.id
 			);
@@ -63,11 +75,22 @@ export default function usePointerDragAndDrop<
 				return;
 			}
 
+			if (dropPositionRef.current === 'middle') {
+				onDrop?.(items, targetItem.id, 'middle', droppedItem.id);
+
+				return;
+			}
+
 			const newItems = items.filter(({id}) => id !== droppedItem.id);
 
 			newItems.splice(dropIndexRef.current, 0, droppedItem);
 
-			onDrop?.(newItems);
+			onDrop?.(
+				newItems,
+				targetItem.id,
+				dropPositionRef.current,
+				droppedItem.id
+			);
 		},
 		hover(draggedItem, monitor) {
 			if (!dropItemRef.current) {
@@ -80,11 +103,18 @@ export default function usePointerDragAndDrop<
 				dropPosition = getDropPosition(
 					dropItemRef,
 					monitor,
-					hoverLimit
+					hoverLimit,
+					allowMiddleDrop
 				);
 			}
 
 			setDropPosition(dropPosition);
+
+			dropPositionRef.current = dropPosition;
+
+			if (dropPosition === 'middle') {
+				return;
+			}
 
 			const targetIndex = items
 				.filter(({id}) => id !== draggedItem.id)
@@ -123,23 +153,46 @@ export default function usePointerDragAndDrop<
 	return {
 		isPointerDragging: isDragging,
 		isPointerDropBottomPosition: isOver && dropPosition === 'bottom',
+		isPointerDropMiddlePosition: isOver && dropPosition === 'middle',
 		isPointerDropTopPosition: isOver && dropPosition === 'top',
 	};
 }
 
+const MIDDLE_DROP_TOP_RATIO = 0.3;
+const MIDDLE_DROP_BOTTOM_RATIO = 0.7;
+
 function getDropPosition(
 	ref: React.RefObject<HTMLElement>,
 	monitor: DropTargetMonitor,
-	hoverLimit: number
-) {
+	hoverLimit: number,
+	allowMiddleDrop: boolean
+): DropPosition {
 	if (!ref.current) {
 		return null;
 	}
 
 	const clientOffset = monitor.getClientOffset()!;
 	const dropItemBoundingRect = ref.current.getBoundingClientRect();
-	const hoverBottomLimit = dropItemBoundingRect.height - hoverLimit;
 	const hoverClientY = clientOffset.y - dropItemBoundingRect.top;
+
+	if (allowMiddleDrop) {
+		const topThreshold =
+			dropItemBoundingRect.height * MIDDLE_DROP_TOP_RATIO;
+		const bottomThreshold =
+			dropItemBoundingRect.height * MIDDLE_DROP_BOTTOM_RATIO;
+
+		if (hoverClientY < topThreshold) {
+			return 'top';
+		}
+
+		if (hoverClientY > bottomThreshold) {
+			return 'bottom';
+		}
+
+		return 'middle';
+	}
+
+	const hoverBottomLimit = dropItemBoundingRect.height - hoverLimit;
 
 	return hoverClientY > hoverBottomLimit ? 'bottom' : 'top';
 }

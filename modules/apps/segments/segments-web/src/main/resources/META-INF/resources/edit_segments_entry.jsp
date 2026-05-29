@@ -29,10 +29,13 @@ renderResponse.setTitle(editSegmentsEntryDisplayContext.getTitle(locale));
 
 <aui:form action="<%= updateSegmentsEntryActionURL %>" method="post" name="editSegmentFm">
 	<aui:input name="redirect" type="hidden" value="<%= editSegmentsEntryDisplayContext.getRedirect() %>" />
-	<aui:input name="groupId" type="hidden" value="<%= editSegmentsEntryDisplayContext.getGroupId() %>" />
 	<aui:input name="segmentsEntryId" type="hidden" value="<%= editSegmentsEntryDisplayContext.getSegmentsEntryId() %>" />
-	<aui:input name="segmentsEntryKey" type="hidden" value="<%= editSegmentsEntryDisplayContext.getSegmentsEntryKey() %>" />
 	<aui:input name="dynamic" type="hidden" value="<%= true %>" />
+
+	<c:if test="<%= !editSegmentsEntryDisplayContext.isAudiencesPortlet() %>">
+		<aui:input name="groupId" type="hidden" value="<%= editSegmentsEntryDisplayContext.getGroupId() %>" />
+		<aui:input name="segmentsEntryKey" type="hidden" value="<%= editSegmentsEntryDisplayContext.getSegmentsEntryKey() %>" />
+	</c:if>
 
 	<div id="<%= liferayPortletResponse.getNamespace() %>-segment-edit-root">
 		<div class="inline-item my-5 p-5 w-100">
