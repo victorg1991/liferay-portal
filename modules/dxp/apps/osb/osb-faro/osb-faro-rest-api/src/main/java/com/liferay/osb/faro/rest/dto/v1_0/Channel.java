@@ -37,6 +37,9 @@ import java.util.function.Supplier;
 	description = "A logical grouping of data coming from configured data sources (e.g. a website, a CRM connection) under which asset metrics, events, individuals, and segments are scoped. Also known as property.",
 	value = "Channel"
 )
+@io.swagger.v3.oas.annotations.media.Schema(
+	description = "A logical grouping of data coming from configured data sources (e.g. a website, a CRM connection) under which asset metrics, events, individuals, and segments are scoped. Also known as property."
+)
 @JsonFilter("Liferay.Vulcan")
 @XmlRootElement(name = "Channel")
 public class Channel implements Serializable {
@@ -49,7 +52,9 @@ public class Channel implements Serializable {
 		return ObjectMapperUtil.unsafeReadValue(Channel.class, json);
 	}
 
-	@io.swagger.v3.oas.annotations.media.Schema(description = "Channel id.")
+	@io.swagger.v3.oas.annotations.media.Schema(
+		description = "Channel id. Use this with `getWorkspaceGroupChannel` to fetch the channel directly."
+	)
 	public String getId() {
 		if (_idSupplier != null) {
 			id = _idSupplier.get();
@@ -81,7 +86,9 @@ public class Channel implements Serializable {
 		};
 	}
 
-	@GraphQLField(description = "Channel id.")
+	@GraphQLField(
+		description = "Channel id. Use this with `getWorkspaceGroupChannel` to fetch the channel directly."
+	)
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	protected String id;
 
@@ -289,4 +296,4 @@ public class Channel implements Serializable {
 	private Map<String, Serializable> _extendedProperties;
 
 }
-// LIFERAY-REST-BUILDER-HASH:1317663438
+// LIFERAY-REST-BUILDER-HASH:-517044054

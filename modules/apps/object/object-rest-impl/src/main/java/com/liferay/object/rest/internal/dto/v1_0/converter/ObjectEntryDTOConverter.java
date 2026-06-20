@@ -48,6 +48,7 @@ import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryFolderLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.object.service.ObjectEntryService;
+import com.liferay.object.service.ObjectEntryVersionLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.object.service.ObjectRelationshipLocalService;
 import com.liferay.object.system.SystemObjectDefinitionManager;
@@ -333,6 +334,35 @@ public class ObjectEntryDTOConverter
 						serviceBuilderObjectEntry.getObjectEntryId()),
 					AssetTag.NAME_ACCESSOR);
 			});
+		objectEntry.setModifiedBy(
+			() -> NestedFieldsSupplier.supply(
+				"modifiedBy",
+				nestedFieldNames -> {
+					if (objectEntryVersion != null) {
+						return CreatorUtil.toCreator(
+							_portal, dtoConverterContext.getUriInfo(),
+							_userLocalService.fetchUser(
+								objectEntryVersion.getUserId()));
+					}
+
+					if (!objectDefinition.isEnableObjectEntryVersioning()) {
+						return null;
+					}
+
+					ObjectEntryVersion latestObjectEntryVersion =
+						_objectEntryVersionLocalService.
+							fetchLatestObjectEntryVersion(
+								serviceBuilderObjectEntry.getObjectEntryId());
+
+					if (latestObjectEntryVersion == null) {
+						return null;
+					}
+
+					return CreatorUtil.toCreator(
+						_portal, dtoConverterContext.getUriInfo(),
+						_userLocalService.fetchUser(
+							latestObjectEntryVersion.getUserId()));
+				}));
 		objectEntry.setObjectEntryFolderExternalReferenceCode(
 			() -> {
 				ObjectEntryFolder objectEntryFolder =
@@ -913,8 +943,8 @@ public class ObjectEntryDTOConverter
 					_auditEventLocalService.getAuditEvents(
 						0, 0, 0, null, null, null, null, null,
 						String.valueOf(objectEntry.getObjectEntryId()), null,
-						null, null, 0, null, false, QueryUtil.ALL_POS,
-						QueryUtil.ALL_POS),
+						null, null, null, null, 0, null, false,
+						QueryUtil.ALL_POS, QueryUtil.ALL_POS),
 					auditEvent -> {
 						AuditEvent newAuditEvent = new AuditEvent();
 
@@ -1378,6 +1408,9 @@ public class ObjectEntryDTOConverter
 
 	@Reference
 	private ObjectEntryService _objectEntryService;
+
+	@Reference
+	private ObjectEntryVersionLocalService _objectEntryVersionLocalService;
 
 	@Reference
 	private ObjectFieldBusinessTypeRegistry _objectFieldBusinessTypeRegistry;

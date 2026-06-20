@@ -24,6 +24,7 @@ import com.liferay.commerce.service.CommerceOrderLocalServiceUtil;
 import com.liferay.commerce.test.util.CommerceTestUtil;
 import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.depot.constants.DepotConstants;
+import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.document.library.kernel.exception.NoSuchFileEntryException;
@@ -155,6 +156,7 @@ import com.liferay.portal.kernel.exception.ModelListenerException;
 import com.liferay.portal.kernel.exception.NoSuchResourceActionException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.lazy.referencing.LazyReferencingThreadLocal;
 import com.liferay.portal.kernel.model.Address;
@@ -234,6 +236,7 @@ import com.liferay.portal.kernel.workflow.WorkflowInstance;
 import com.liferay.portal.kernel.workflow.WorkflowInstanceManager;
 import com.liferay.portal.kernel.workflow.WorkflowTask;
 import com.liferay.portal.kernel.workflow.WorkflowTaskManager;
+import com.liferay.portal.security.audit.event.generators.constants.EventTypes;
 import com.liferay.portal.security.script.management.test.rule.ScriptManagementConfigurationTestRule;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
@@ -1867,6 +1870,69 @@ public class ObjectEntryLocalServiceTest {
 			_dlAppLocalService.fetchFileEntry(persistedFileEntryId));
 	}
 
+	@Test
+	public void testAddObjectEntryWithDomain() throws Exception {
+		_domainObjectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition(
+				Collections.singletonList(
+					new TextObjectFieldBuilder(
+					).labelMap(
+						RandomTestUtil.randomLocaleStringMap()
+					).name(
+						"a" + RandomTestUtil.randomString()
+					).build()),
+				ObjectDefinitionConstants.SCOPE_DEPOT);
+
+		_objectDefinitionSettingLocalService.addObjectDefinitionSetting(
+			_domainObjectDefinition.getUserId(),
+			_domainObjectDefinition.getObjectDefinitionId(),
+			ObjectDefinitionSettingConstants.NAME_ACCEPT_ALL_GROUPS,
+			StringPool.TRUE);
+
+		ObjectDefinitionSetting objectDefinitionSetting =
+			_objectDefinitionSettingLocalService.addObjectDefinitionSetting(
+				_domainObjectDefinition.getUserId(),
+				_domainObjectDefinition.getObjectDefinitionId(),
+				ObjectDefinitionSettingConstants.NAME_DOMAIN,
+				DepotRolesConstants.SUBTYPE_PROJECT);
+
+		DepotEntry depotEntry1 = _depotEntryLocalService.addDepotEntry(
+			RandomTestUtil.randomLocaleStringMap(),
+			RandomTestUtil.randomLocaleStringMap(), DepotConstants.TYPE_PROJECT,
+			ServiceContextTestUtil.getServiceContext());
+
+		_addObjectEntry(
+			depotEntry1.getGroupId(),
+			_domainObjectDefinition.getObjectDefinitionId(),
+			Collections.emptyMap());
+
+		DepotEntry depotEntry2 = _depotEntryLocalService.addDepotEntry(
+			RandomTestUtil.randomLocaleStringMap(),
+			RandomTestUtil.randomLocaleStringMap(), DepotConstants.TYPE_SPACE,
+			ServiceContextTestUtil.getServiceContext());
+
+		AssertUtils.assertFailure(
+			ObjectEntryGroupIdException.InvalidGroupIdForDomain.class,
+			StringBundler.concat(
+				"Group ID ", depotEntry2.getGroupId(),
+				" is not valid for domain \"",
+				DepotRolesConstants.SUBTYPE_PROJECT, "\""),
+			() -> _addObjectEntry(
+				depotEntry2.getGroupId(),
+				_domainObjectDefinition.getObjectDefinitionId(),
+				Collections.emptyMap()));
+
+		objectDefinitionSetting.setValue(DepotRolesConstants.SUBTYPE_SPACE);
+
+		_objectDefinitionSettingLocalService.updateObjectDefinitionSetting(
+			objectDefinitionSetting);
+
+		_addObjectEntry(
+			depotEntry2.getGroupId(),
+			_domainObjectDefinition.getObjectDefinitionId(),
+			Collections.emptyMap());
+	}
+
 	@FeatureFlag("LPD-17564")
 	@Test
 	public void testAddObjectEntryWithDraftWorkflowDefinition()
@@ -2789,7 +2855,7 @@ public class ObjectEntryLocalServiceTest {
 			Collections.singletonList(
 				new ObjectFieldSettingBuilder(
 				).name(
-					ObjectFieldSettingConstants.NAME_PREFIX_TYPE
+					ObjectFieldSettingConstants.NAME_COUNTRY_SOURCE
 				).value(
 					ObjectFieldSettingConstants.VALUE_DEFINED_BY_USER
 				).build())
@@ -3529,7 +3595,7 @@ public class ObjectEntryLocalServiceTest {
 	public void testAddObjectEntryWithPhoneNumberObjectField()
 		throws Exception {
 
-		// Defined by user prefix type
+		// Defined by user country source
 
 		ObjectField objectField1 = new PhoneNumberObjectFieldBuilder(
 		).labelMap(
@@ -3540,7 +3606,7 @@ public class ObjectEntryLocalServiceTest {
 			Collections.singletonList(
 				new ObjectFieldSettingBuilder(
 				).name(
-					ObjectFieldSettingConstants.NAME_PREFIX_TYPE
+					ObjectFieldSettingConstants.NAME_COUNTRY_SOURCE
 				).value(
 					ObjectFieldSettingConstants.VALUE_DEFINED_BY_USER
 				).build())
@@ -3583,7 +3649,7 @@ public class ObjectEntryLocalServiceTest {
 			"+15551234567", objectField1.getName(), objectDefinition,
 			"+15551234567");
 
-		// Fixed prefix type
+		// Fixed country source
 
 		ObjectField objectField2 = ObjectFieldUtil.addCustomObjectField(
 			new PhoneNumberObjectFieldBuilder(
@@ -3597,13 +3663,13 @@ public class ObjectEntryLocalServiceTest {
 				Arrays.asList(
 					new ObjectFieldSettingBuilder(
 					).name(
-						ObjectFieldSettingConstants.NAME_PREFIX
+						ObjectFieldSettingConstants.NAME_COUNTRY
 					).value(
-						"+1"
+						"US"
 					).build(),
 					new ObjectFieldSettingBuilder(
 					).name(
-						ObjectFieldSettingConstants.NAME_PREFIX_TYPE
+						ObjectFieldSettingConstants.NAME_COUNTRY_SOURCE
 					).value(
 						ObjectFieldSettingConstants.VALUE_FIXED
 					).build())
@@ -3646,7 +3712,7 @@ public class ObjectEntryLocalServiceTest {
 				Arrays.asList(
 					new ObjectFieldSettingBuilder(
 					).name(
-						ObjectFieldSettingConstants.NAME_PREFIX_TYPE
+						ObjectFieldSettingConstants.NAME_COUNTRY_SOURCE
 					).value(
 						ObjectFieldSettingConstants.VALUE_DEFINED_BY_USER
 					).build(),
@@ -4192,9 +4258,8 @@ public class ObjectEntryLocalServiceTest {
 				}
 			).build());
 
-		AuditMessage auditMessage = auditMessages.poll();
-
-		JSONAssert.assertEquals(
+		_assertAuditMessage(
+			auditMessages, 0,
 			JSONUtil.put(
 				"assignee",
 				HashMapBuilder.put(
@@ -4217,11 +4282,9 @@ public class ObjectEntryLocalServiceTest {
 				)
 			).put(
 				"upload", JSONUtil.put("title", "Old Testament")
-			).toString(),
-			String.valueOf(auditMessage.getAdditionalInfo()),
-			JSONCompareMode.STRICT_ORDER);
-
-		auditMessages.clear();
+			),
+			objectEntry.getModelClassName(),
+			String.valueOf(objectEntry.getObjectEntryId()), EventTypes.ADD);
 
 		User user = UserTestUtil.addUser();
 
@@ -4252,9 +4315,8 @@ public class ObjectEntryLocalServiceTest {
 			).build(),
 			ServiceContextTestUtil.getServiceContext());
 
-		auditMessage = auditMessages.poll();
-
-		JSONAssert.assertEquals(
+		_assertAuditMessage(
+			auditMessages, 0,
 			JSONUtil.put(
 				"attributes",
 				JSONUtil.putAll(
@@ -4318,19 +4380,15 @@ public class ObjectEntryLocalServiceTest {
 						"newValue", JSONUtil.put("title", "New Testament")
 					).put(
 						"oldValue", JSONUtil.put("title", "Old Testament")
-					))
-			).toString(),
-			String.valueOf(auditMessage.getAdditionalInfo()),
-			JSONCompareMode.STRICT_ORDER);
-
-		auditMessages.clear();
+					))),
+			objectEntry.getModelClassName(),
+			String.valueOf(objectEntry.getObjectEntryId()), EventTypes.UPDATE);
 
 		_objectEntryLocalService.deleteObjectEntry(
 			objectEntry.getObjectEntryId());
 
-		auditMessage = auditMessages.poll();
-
-		JSONAssert.assertEquals(
+		_assertAuditMessage(
+			auditMessages, 0,
 			JSONUtil.put(
 				"assignee",
 				JSONUtil.put(
@@ -4353,9 +4411,95 @@ public class ObjectEntryLocalServiceTest {
 				)
 			).put(
 				"upload", JSONUtil.put("title", "New Testament")
-			).toString(),
-			String.valueOf(auditMessage.getAdditionalInfo()),
-			JSONCompareMode.STRICT_ORDER);
+			),
+			objectEntry.getModelClassName(),
+			String.valueOf(objectEntry.getObjectEntryId()), EventTypes.DELETE);
+
+		String objectFieldName = "a" + RandomTestUtil.randomString();
+
+		ObjectDefinition objectDefinition = _publishCustomObjectDefinition(
+			Arrays.asList(
+				ObjectFieldUtil.createObjectField(
+					ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+					ObjectFieldConstants.DB_TYPE_STRING,
+					RandomTestUtil.randomString(), objectFieldName)));
+
+		ObjectRelationship objectRelationship =
+			ObjectRelationshipTestUtil.addObjectRelationship(
+				_objectRelationshipLocalService,
+				_objectDefinitionLocalService.fetchObjectDefinition(
+					TestPropsValues.getCompanyId(),
+					AccountEntry.class.getSimpleName()),
+				objectDefinition);
+
+		ObjectField objectField = _objectFieldLocalService.fetchObjectField(
+			objectRelationship.getObjectFieldId2());
+
+		objectDefinition.setAccountEntryRestrictedObjectFieldId(
+			objectField.getObjectFieldId());
+
+		objectDefinition.setAccountEntryRestricted(true);
+		objectDefinition.setEnableObjectEntryHistory(true);
+
+		objectDefinition = _objectDefinitionLocalService.updateObjectDefinition(
+			objectDefinition);
+
+		AccountEntry accountEntry = _accountEntryLocalService.addAccountEntry(
+			StringPool.BLANK, TestPropsValues.getUserId(),
+			AccountConstants.PARENT_ACCOUNT_ENTRY_ID_DEFAULT,
+			RandomTestUtil.randomString(), null, null, null, null, null,
+			AccountConstants.ACCOUNT_ENTRY_TYPE_BUSINESS,
+			WorkflowConstants.STATUS_APPROVED,
+			ServiceContextTestUtil.getServiceContext());
+
+		objectEntry = _addObjectEntry(
+			0, objectDefinition.getObjectDefinitionId(),
+			HashMapBuilder.<String, Serializable>put(
+				objectField.getName(), accountEntry.getAccountEntryId()
+			).put(
+				objectFieldName, "James"
+			).build());
+
+		_assertAuditMessage(
+			auditMessages, accountEntry.getAccountEntryId(),
+			JSONUtil.put(objectFieldName, "James"),
+			objectEntry.getModelClassName(),
+			String.valueOf(objectEntry.getObjectEntryId()), EventTypes.ADD);
+
+		_objectEntryLocalService.updateObjectEntry(
+			TestPropsValues.getUserId(), objectEntry.getObjectEntryId(),
+			objectEntry.getObjectEntryFolderId(),
+			HashMapBuilder.<String, Serializable>put(
+				objectFieldName, "Peter"
+			).build(),
+			ServiceContextTestUtil.getServiceContext());
+
+		_assertAuditMessage(
+			auditMessages, accountEntry.getAccountEntryId(),
+			JSONUtil.put(
+				"attributes",
+				JSONUtil.putAll(
+					JSONUtil.put(
+						"name", objectFieldName
+					).put(
+						"newValue", "Peter"
+					).put(
+						"oldValue", "James"
+					))),
+			objectEntry.getModelClassName(),
+			String.valueOf(objectEntry.getObjectEntryId()), EventTypes.UPDATE);
+
+		_objectEntryLocalService.deleteObjectEntry(
+			objectEntry.getObjectEntryId());
+
+		_assertAuditMessage(
+			auditMessages, accountEntry.getAccountEntryId(),
+			JSONUtil.put(objectFieldName, "Peter"),
+			objectEntry.getModelClassName(),
+			String.valueOf(objectEntry.getObjectEntryId()), EventTypes.DELETE);
+
+		_accountEntryLocalService.deleteAccountEntry(accountEntry);
+		_objectDefinitionLocalService.deleteObjectDefinition(objectDefinition);
 
 		ReflectionTestUtil.setFieldValue(
 			_objectEntryModelListener, "_auditRouter", auditRouter);
@@ -5853,6 +5997,69 @@ public class ObjectEntryLocalServiceTest {
 
 	@FeatureFlag("LPD-17564")
 	@Test
+	public void testMoveObjectEntryToTrashWithObjectDefinitionTree()
+		throws Exception {
+
+		TreeTestUtil.createObjectDefinitionTree(
+			_objectDefinitionLocalService, _objectRelationshipLocalService,
+			true,
+			LinkedHashMapBuilder.put(
+				"A", new String[] {"AA"}
+			).put(
+				"AA", new String[0]
+			).build());
+
+		ObjectDefinition rootObjectDefinition =
+			_objectDefinitionLocalService.getObjectDefinition(
+				TestPropsValues.getCompanyId(), "C_A");
+
+		TreeTestUtil.createObjectEntryTree(
+			"1", _objectDefinitionLocalService, _objectEntryLocalService,
+			_objectFieldLocalService, _objectRelationshipLocalService,
+			rootObjectDefinition.getObjectDefinitionId());
+
+		ObjectDefinition childObjectDefinition =
+			_objectDefinitionLocalService.getObjectDefinition(
+				TestPropsValues.getCompanyId(), "C_AA");
+
+		ObjectEntry childObjectEntry = _objectEntryLocalService.getObjectEntry(
+			"AA1", ObjectDefinitionConstants.GROUP_ID_DEFAULT,
+			childObjectDefinition.getObjectDefinitionId());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_APPROVED, childObjectEntry.getStatus());
+
+		ObjectEntry rootObjectEntry = _objectEntryLocalService.getObjectEntry(
+			"A1", ObjectDefinitionConstants.GROUP_ID_DEFAULT,
+			rootObjectDefinition.getObjectDefinitionId());
+
+		rootObjectEntry = _objectEntryLocalService.moveObjectEntryToTrash(
+			TestPropsValues.getUserId(), rootObjectEntry,
+			ServiceContextTestUtil.getServiceContext());
+
+		childObjectEntry = _objectEntryLocalService.getObjectEntry(
+			childObjectEntry.getObjectEntryId());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_IN_TRASH, childObjectEntry.getStatus());
+
+		_objectEntryLocalService.restoreObjectEntryFromTrash(
+			TestPropsValues.getUserId(), rootObjectEntry,
+			ServiceContextTestUtil.getServiceContext());
+
+		childObjectEntry = _objectEntryLocalService.getObjectEntry(
+			childObjectEntry.getObjectEntryId());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_APPROVED, childObjectEntry.getStatus());
+
+		TreeTestUtil.deleteObjectDefinitionHierarchy(
+			_objectDefinitionLocalService, new String[] {"C_A", "C_AA"},
+			_objectEntryLocalService, _objectRelationshipLocalService);
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
 	public void testMoveObjectEntryToTrashWithObjectEntryFolder()
 		throws Exception {
 
@@ -6719,8 +6926,11 @@ public class ObjectEntryLocalServiceTest {
 		Assert.assertEquals(0, baseModelSearchResult.getLength());
 	}
 
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testUpdateAsset() throws Exception {
+		_objectDefinition = _updateEnableObjectEntryDraft(_objectDefinition);
+
 		ObjectField objectField = _objectFieldLocalService.getObjectField(
 			_objectDefinition.getObjectDefinitionId(), "emailAddressRequired");
 
@@ -6728,22 +6938,48 @@ public class ObjectEntryLocalServiceTest {
 			_objectDefinition.getObjectDefinitionId(),
 			objectField.getObjectFieldId());
 
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext();
+
+		serviceContext.setWorkflowAction(WorkflowConstants.ACTION_SAVE_DRAFT);
+
 		ObjectEntry objectEntry = _addObjectEntry(
 			HashMapBuilder.<String, Serializable>put(
+				"displayDate", new Date()
+			).put(
 				"emailAddressRequired", "john@liferay.com"
+			).put(
+				"expirationDate",
+				new Date(System.currentTimeMillis() + Time.DAY)
+			).put(
+				"listTypeEntryKeyRequired", "listTypeEntryKey1"
+			).build(),
+			serviceContext);
+
+		_assertAssetEntry(
+			objectEntry.getExpirationDate(), null, "john@liferay.com",
+			objectEntry);
+
+		objectEntry = _addObjectEntry(
+			HashMapBuilder.<String, Serializable>put(
+				"displayDate", new Date()
+			).put(
+				"emailAddressRequired", "john@liferay.com"
+			).put(
+				"expirationDate",
+				new Date(System.currentTimeMillis() + Time.DAY)
 			).put(
 				"listTypeEntryKeyRequired", "listTypeEntryKey1"
 			).build());
 
-		AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
-			_objectDefinition.getClassName(), objectEntry.getObjectEntryId());
-
-		Assert.assertEquals("john@liferay.com", assetEntry.getTitle());
+		_assertAssetEntry(
+			objectEntry.getExpirationDate(), objectEntry.getDisplayDate(),
+			"john@liferay.com", objectEntry);
 
 		objectField = _addCustomObjectField(
 			new TextObjectFieldBuilder(
 			).labelMap(
-				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString())
+				RandomTestUtil.randomLocaleStringMap()
 			).localized(
 				true
 			).name(
@@ -6772,13 +7008,11 @@ public class ObjectEntryLocalServiceTest {
 				(Serializable)localizedValues
 			).build());
 
-		assetEntry = _assetEntryLocalService.fetchEntry(
-			_objectDefinition.getClassName(), objectEntry.getObjectEntryId());
-
-		Assert.assertEquals(
+		_assertAssetEntry(
+			null, null,
 			_localization.getXml(
 				localizedValues, objectEntry.getDefaultLanguageId(), "title"),
-			assetEntry.getTitle());
+			objectEntry);
 	}
 
 	@Test
@@ -7395,7 +7629,7 @@ public class ObjectEntryLocalServiceTest {
 					Collections.singletonList(
 						new ObjectFieldSettingBuilder(
 						).name(
-							ObjectFieldSettingConstants.NAME_PREFIX_TYPE
+							ObjectFieldSettingConstants.NAME_COUNTRY_SOURCE
 						).value(
 							ObjectFieldSettingConstants.VALUE_DEFINED_BY_USER
 						).build())
@@ -8177,7 +8411,14 @@ public class ObjectEntryLocalServiceTest {
 		throws Exception {
 
 		return _addObjectEntry(
-			0, _objectDefinition.getObjectDefinitionId(), values);
+			values, ServiceContextTestUtil.getServiceContext());
+	}
+
+	private ObjectEntry _addObjectEntry(
+			Map<String, Serializable> values, ServiceContext serviceContext)
+		throws Exception {
+
+		return _addObjectEntry(_objectDefinition, values, serviceContext);
 	}
 
 	private ObjectEntry _addObjectEntry(
@@ -8285,6 +8526,42 @@ public class ObjectEntryLocalServiceTest {
 			TempFileEntryUtil.getTempFileName(title + ".txt"),
 			FileUtil.createTempFile(DLTestUtil.randomTextFileBytes()),
 			ContentTypes.TEXT_PLAIN);
+	}
+
+	private void _assertAssetEntry(
+			Date expectedExpirationDate, Date expectedPublishDate,
+			String expectedTitle, ObjectEntry objectEntry)
+		throws Exception {
+
+		AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
+			objectEntry.getModelClassName(), objectEntry.getObjectEntryId());
+
+		Assert.assertEquals(
+			expectedExpirationDate, assetEntry.getExpirationDate());
+		Assert.assertEquals(expectedPublishDate, assetEntry.getPublishDate());
+		Assert.assertEquals(expectedTitle, assetEntry.getTitle());
+	}
+
+	private void _assertAuditMessage(
+			Queue<AuditMessage> auditMessages, long expectedAccountEntryId,
+			JSONObject expectedAdditionalInfoJSONObject,
+			String expectedClassName, String expectedClassPK,
+			String expectedEventType)
+		throws Exception {
+
+		AuditMessage auditMessage = auditMessages.poll();
+
+		Assert.assertEquals(
+			expectedAccountEntryId, auditMessage.getAccountEntryId());
+		JSONAssert.assertEquals(
+			expectedAdditionalInfoJSONObject.toString(),
+			String.valueOf(auditMessage.getAdditionalInfo()),
+			JSONCompareMode.STRICT_ORDER);
+		Assert.assertEquals(expectedClassName, auditMessage.getClassName());
+		Assert.assertEquals(expectedClassPK, auditMessage.getClassPK());
+		Assert.assertEquals(expectedEventType, auditMessage.getEventType());
+
+		auditMessages.clear();
 	}
 
 	private void _assertCommentsCount(
@@ -10352,6 +10629,9 @@ public class ObjectEntryLocalServiceTest {
 
 	@Inject
 	private DLFileEntryLocalService _dlFileEntryLocalService;
+
+	@DeleteAfterTestRun
+	private ObjectDefinition _domainObjectDefinition;
 
 	@DeleteAfterTestRun
 	private ObjectDefinition _draftObjectDefinition;

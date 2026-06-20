@@ -76,8 +76,9 @@ public class LazyBlobEntryPersistenceImpl
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION =
 		FINDER_CLASS_NAME_ENTITY + ".List2";
 
-	private CollectionPersistenceFinder<LazyBlobEntry>
-		_collectionPersistenceFinderByUuid;
+	private CollectionPersistenceFinder
+		<LazyBlobEntry, NoSuchLazyBlobEntryException>
+			_collectionPersistenceFinderByUuid;
 
 	/**
 	 * Returns an ordered range of all the lazy blob entries where uuid = &#63;.
@@ -117,16 +118,8 @@ public class LazyBlobEntryPersistenceImpl
 			String uuid, OrderByComparator<LazyBlobEntry> orderByComparator)
 		throws NoSuchLazyBlobEntryException {
 
-		LazyBlobEntry lazyBlobEntry = fetchByUuid_First(
-			uuid, orderByComparator);
-
-		if (lazyBlobEntry != null) {
-			return lazyBlobEntry;
-		}
-
-		throw new NoSuchLazyBlobEntryException(
-			_collectionPersistenceFinderByUuid.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {uuid}));
+		return _collectionPersistenceFinderByUuid.findFirst(
+			finderCache, new Object[] {uuid}, orderByComparator);
 	}
 
 	/**
@@ -167,7 +160,7 @@ public class LazyBlobEntryPersistenceImpl
 			finderCache, new Object[] {uuid});
 	}
 
-	private UniquePersistenceFinder<LazyBlobEntry>
+	private UniquePersistenceFinder<LazyBlobEntry, NoSuchLazyBlobEntryException>
 		_uniquePersistenceFinderByUUID_G;
 
 	/**
@@ -182,21 +175,8 @@ public class LazyBlobEntryPersistenceImpl
 	public LazyBlobEntry findByUUID_G(String uuid, long groupId)
 		throws NoSuchLazyBlobEntryException {
 
-		LazyBlobEntry lazyBlobEntry = fetchByUUID_G(uuid, groupId);
-
-		if (lazyBlobEntry == null) {
-			String message =
-				_uniquePersistenceFinderByUUID_G.buildNoSuchKeyMessage(
-					_NO_SUCH_ENTITY_WITH_KEY, new Object[] {uuid, groupId});
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(message);
-			}
-
-			throw new NoSuchLazyBlobEntryException(message);
-		}
-
-		return lazyBlobEntry;
+		return _uniquePersistenceFinderByUUID_G.find(
+			finderCache, new Object[] {uuid, groupId});
 	}
 
 	/**
@@ -464,8 +444,8 @@ public class LazyBlobEntryPersistenceImpl
 			_SQL_SELECT_LAZYBLOBENTRY_WHERE, _SQL_COUNT_LAZYBLOBENTRY_WHERE,
 			LazyBlobEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 			new FinderColumn<>(
-				"lazyBlobEntry.", "uuid", FinderColumn.Type.STRING, "=", true,
-				true, LazyBlobEntry::getUuid));
+				"lazyBlobEntry.", "uuid", "uuid_", FinderColumn.Type.STRING,
+				"=", true, true, LazyBlobEntry::getUuid));
 
 		_uniquePersistenceFinderByUUID_G = new UniquePersistenceFinder<>(
 			this,
@@ -477,8 +457,8 @@ public class LazyBlobEntryPersistenceImpl
 				LazyBlobEntry::getGroupId),
 			_SQL_SELECT_LAZYBLOBENTRY_WHERE, "",
 			new FinderColumn<>(
-				"lazyBlobEntry.", "uuid", FinderColumn.Type.STRING, "=", true,
-				true, LazyBlobEntry::getUuid),
+				"lazyBlobEntry.", "uuid", "uuid_", FinderColumn.Type.STRING,
+				"=", true, true, LazyBlobEntry::getUuid),
 			new FinderColumn<>(
 				"lazyBlobEntry.", "groupId", FinderColumn.Type.LONG, "=", true,
 				true, LazyBlobEntry::getGroupId));
@@ -552,4 +532,4 @@ public class LazyBlobEntryPersistenceImpl
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-105483517
+// LIFERAY-SERVICE-BUILDER-HASH:2132809462

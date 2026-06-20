@@ -40,11 +40,11 @@ public class AccountResourceImpl extends BaseAccountResourceImpl {
 				contextAcceptLanguage.getPreferredLocale()),
 			_contactsEngineClient.getAccount(
 				_faroProjectLocalService.getFaroProjectByGroupId(groupId),
-				accountId));
+				accountId, null));
 	}
 
 	@Override
-	public Page<Account> getWorkspaceGroupAccountsPage(
+	public Page<Account> getWorkspaceGroupChannelAccountsPage(
 			Long groupId, String channelId, String search,
 			Pagination pagination, Sort[] sorts)
 		throws Exception {

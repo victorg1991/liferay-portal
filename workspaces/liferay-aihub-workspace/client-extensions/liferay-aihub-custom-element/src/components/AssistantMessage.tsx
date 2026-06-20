@@ -7,16 +7,23 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 
 import ChatbotAvatar from './ChatbotAvatar';
+import FeedbackActions from './FeedbackActions';
 import {StarsIcon} from './Icons';
 
 interface AssistantMessageProps {
-	companyLogo?: string;
+	avatar?: string;
+	feedbackGiven?: boolean;
+	onThumbsDown?: () => void;
+	onThumbsUp?: () => void;
 	text: string;
 	title: string;
 }
 
 export default function AssistantMessage({
-	companyLogo,
+	avatar,
+	feedbackGiven,
+	onThumbsDown,
+	onThumbsUp,
 	text,
 	title,
 }: AssistantMessageProps) {
@@ -24,8 +31,8 @@ export default function AssistantMessage({
 		<div className="aihub-msg-assistant">
 			<div className="aihub-msg-assistant-icon">
 				<ChatbotAvatar
+					avatar={avatar}
 					className="aihub-msg-assistant-company-logo"
-					companyLogo={companyLogo}
 					fallback={<StarsIcon />}
 					title={title}
 				/>
@@ -33,6 +40,14 @@ export default function AssistantMessage({
 
 			<div className="aihub-msg-assistant-text">
 				<ReactMarkdown>{text}</ReactMarkdown>
+
+				{onThumbsDown && onThumbsUp && (
+					<FeedbackActions
+						feedbackGiven={feedbackGiven}
+						onThumbsDown={onThumbsDown}
+						onThumbsUp={onThumbsUp}
+					/>
+				)}
 			</div>
 		</div>
 	);

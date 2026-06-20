@@ -24,6 +24,7 @@ import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.model.DLFileVersion;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.document.library.kernel.processor.RawMetadataProcessorUtil;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
 import com.liferay.document.library.kernel.service.DLFolderLocalService;
@@ -476,7 +477,7 @@ public class ObjectEntryResourceTest {
 							ObjectFieldSettingConstants.
 								NAME_ACCEPTED_FILE_EXTENSIONS
 						).value(
-							"txt"
+							"jpg, txt"
 						).build(),
 						new ObjectFieldSettingBuilder(
 						).name(
@@ -7827,6 +7828,41 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
+	@TestInfo("LPD-85194")
+	public void testGetObjectEntryWithAttachmentObjectFieldImageMetadata()
+		throws Exception {
+
+		_testGetObjectEntryWithAttachmentObjectFieldImageMetadata(
+			_addFileEntry(
+				FileUtil.getBytes(
+					getClass(),
+					"dependencies/sample_large_square_1500x1500.jpg"),
+				RandomTestUtil.randomString() + ".jpg",
+				ContentTypes.IMAGE_JPEG),
+			"Square", "Large (Bigger Than 1024)");
+		_testGetObjectEntryWithAttachmentObjectFieldImageMetadata(
+			_addFileEntry(
+				FileUtil.getBytes(
+					getClass(), "dependencies/sample_medium_tall_600x800.jpg"),
+				RandomTestUtil.randomString() + ".jpg",
+				ContentTypes.IMAGE_JPEG),
+			"Tall", "Medium (Up to 1024x768)");
+		_testGetObjectEntryWithAttachmentObjectFieldImageMetadata(
+			_addFileEntry(
+				FileUtil.getBytes(
+					getClass(), "dependencies/sample_small_wide_400x300.jpg"),
+				RandomTestUtil.randomString() + ".jpg",
+				ContentTypes.IMAGE_JPEG),
+			"Wide", "Small (Up to 400x300)");
+		_testGetObjectEntryWithAttachmentObjectFieldImageMetadata(
+			_addFileEntry(
+				RandomTestUtil.randomBytes(),
+				RandomTestUtil.randomString() + ".txt",
+				ContentTypes.TEXT_PLAIN),
+			null, null);
+	}
+
+	@Test
 	public void testGetObjectEntryWithAuditEvents() throws Exception {
 		ListTypeDefinition listTypeDefinition =
 			_listTypeDefinitionLocalService.addListTypeDefinition(
@@ -9121,7 +9157,11 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
-	public void testPatchObjectEntryWithFriendlyURL() throws Exception {
+	public void testPatchObjectEntryWithFriendlyURLCustomizationEnabled()
+		throws Exception {
+
+		// With friendly URL
+
 		_objectDefinition1.setEnableFriendlyURLCustomization(true);
 
 		_objectDefinition1 =
@@ -9147,6 +9187,34 @@ public class ObjectEntryResourceTest {
 
 		Assert.assertEquals(
 			"test-url", jsonObject.getString("friendlyUrlPath"));
+
+		// Without friendly URL
+
+		String friendlyURL = StringUtil.toLowerCase(
+			RandomTestUtil.randomString());
+		String objectFieldValue = RandomTestUtil.randomString();
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, objectFieldValue
+			).put(
+				"friendlyUrlPath_i18n",
+				HashMapBuilder.put(
+					"en_US", friendlyURL
+				).build()
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, objectFieldValue
+			).toString(),
+			_objectDefinition1.getRESTContextPath() + StringPool.SLASH +
+				jsonObject.getString("id"),
+			Http.Method.PATCH);
+
+		Assert.assertEquals(
+			friendlyURL, jsonObject.getString("friendlyUrlPath"));
 	}
 
 	@Test
@@ -15635,6 +15703,18 @@ public class ObjectEntryResourceTest {
 			fileEntry.getFileEntryId());
 	}
 
+	private FileEntry _addFileEntry(
+			byte[] content, String fileName, String contentType)
+		throws Exception {
+
+		return _dlAppLocalService.addFileEntry(
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
+			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, fileName, contentType,
+			StringUtil.randomString(), StringUtil.randomString(),
+			StringUtil.randomString(), StringUtil.randomString(), content, null,
+			null, null, ServiceContextTestUtil.getServiceContext());
+	}
+
 	private ObjectEntry _addLocalizedObjectEntry(
 			ObjectDefinition objectDefinition, String objectFieldName,
 			String[] objectFieldValues)
@@ -16833,6 +16913,36 @@ public class ObjectEntryResourceTest {
 			null, null);
 	}
 
+	private JSONObject _getObjectEntryFileMetadataJSONObject(
+			FileEntry fileEntry)
+		throws Exception {
+
+		JSONObject objectEntryJSONObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				_OBJECT_FIELD_NAME_1, RandomTestUtil.randomString()
+			).put(
+				_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_TO_DOCS_AND_MEDIA_SOURCE_1,
+				fileEntry.getFileEntryId()
+			).toString(),
+			_objectDefinition1.getRESTContextPath(), Http.Method.POST);
+
+		RawMetadataProcessorUtil.saveMetadata(fileEntry.getFileVersion());
+
+		JSONObject responseJSONObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			StringBundler.concat(
+				_objectDefinition1.getRESTContextPath(), "/",
+				objectEntryJSONObject.getString("id"), "?nestedFields=",
+				_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_TO_DOCS_AND_MEDIA_SOURCE_1,
+				".metadata"),
+			Http.Method.GET);
+
+		JSONObject jsonObject = responseJSONObject.getJSONObject(
+			_OBJECT_FIELD_NAME_ATTACHMENT_USER_COMPUTER_TO_DOCS_AND_MEDIA_SOURCE_1);
+
+		return jsonObject.getJSONObject("metadata");
+	}
+
 	private JSONObject _getObjectEntryJSONObject(
 			Integer nestedFieldDepth, String nestedFieldName,
 			ObjectDefinition objectDefinition)
@@ -17701,6 +17811,32 @@ public class ObjectEntryResourceTest {
 		}
 
 		Assert.assertEquals(tempFilesCount, _getTempFilesCount());
+	}
+
+	private void _testGetObjectEntryWithAttachmentObjectFieldImageMetadata(
+			FileEntry fileEntry, String expectedAspectRatio,
+			String expectedResolution)
+		throws Exception {
+
+		JSONObject metadataJSONObject = _getObjectEntryFileMetadataJSONObject(
+			fileEntry);
+
+		if (expectedAspectRatio != null) {
+			Assert.assertEquals(
+				expectedAspectRatio,
+				metadataJSONObject.getString("aspectRatio"));
+		}
+		else {
+			Assert.assertNull(metadataJSONObject.opt("aspectRatio"));
+		}
+
+		if (expectedResolution != null) {
+			Assert.assertEquals(
+				expectedResolution, metadataJSONObject.getString("resolution"));
+		}
+		else {
+			Assert.assertNull(metadataJSONObject.opt("resolution"));
+		}
 	}
 
 	private void _testGetObjectEntryWithObjectActions(

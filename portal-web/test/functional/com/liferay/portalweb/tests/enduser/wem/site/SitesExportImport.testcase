@@ -352,6 +352,11 @@ definition {
 
 			LexiconEntry.gotoAdd();
 
+			Type(
+				inputFieldId = "ExportPortlet_name",
+				locator1 = "TextInput#INPUT_ID",
+				value1 = "Test Site Name");
+
 			LAR.exportWithAssertionOnSuccess();
 
 			LAR.downloadLar();
@@ -613,6 +618,8 @@ definition {
 			LAR.openExportAdmin(siteScopeName = "test-site-name");
 
 			LexiconEntry.gotoAdd();
+
+			LAR.configureExportOptions();
 
 			LAR.exportWithAssertionOnSuccess();
 

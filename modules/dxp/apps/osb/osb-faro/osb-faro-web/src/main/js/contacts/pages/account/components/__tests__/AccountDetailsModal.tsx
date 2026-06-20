@@ -2,14 +2,30 @@ import AccountDetailsModal from '../AccountDetailsModal';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {act, cleanup, render, screen} from '@testing-library/react';
-import {useFDSState} from 'shared/hooks/useFDSState';
 import {useRequest} from 'shared/hooks/useRequest';
 
 jest.unmock('react-dom');
 
-jest.mock('shared/hooks/useFrontendDataSet', () => ({
-	useFrontendDataSet: () => {
-		const FakeDataSet = ({id, items}: {id: string; items: any[]}) => (
+let lastOnItemsPropSearch: ((item: any, query: string) => boolean) | undefined;
+let lastViews: any[] | undefined;
+
+jest.mock('@liferay/frontend-data-set-web', () => ({
+	...jest.requireActual('@liferay/frontend-data-set-web'),
+	FrontendDataSet: ({
+		id,
+		items,
+		onItemsPropSearch,
+		views
+	}: {
+		id: string;
+		items: any[];
+		onItemsPropSearch?: (item: any, query: string) => boolean;
+		views?: any[];
+	}) => {
+		lastOnItemsPropSearch = onItemsPropSearch;
+		lastViews = views;
+
+		return (
 			<div data-testid='fds-component' id={id}>
 				{(items ?? []).map((item: any) => (
 					<div data-testid='fds-item' key={item.name}>
@@ -18,13 +34,7 @@ jest.mock('shared/hooks/useFrontendDataSet', () => ({
 				))}
 			</div>
 		);
-
-		return FakeDataSet;
 	}
-}));
-
-jest.mock('shared/hooks/useFDSState', () => ({
-	useFDSState: jest.fn(() => ({filters: [], search: ''}))
 }));
 
 jest.mock('shared/hooks/useRequest', () => ({
@@ -36,7 +46,6 @@ jest.mock('react-router-dom', () => ({
 	useParams: () => ({channelId: '456', groupId: '23'})
 }));
 
-const mockedUseFDSState = useFDSState as jest.Mock;
 const mockedUseRequest = useRequest as jest.Mock;
 
 const mockFields = [
@@ -90,8 +99,8 @@ describe('AccountDetailsModal', () => {
 
 	beforeEach(() => {
 		jest.clearAllMocks();
-		mockedUseFDSState.mockReturnValue({filters: [], search: ''});
-		mockedUseRequest.mockReturnValue({data: {fields: mockFields}});
+		lastOnItemsPropSearch = undefined;
+		mockedUseRequest.mockReturnValue({data: {items: mockFields}});
 	});
 
 	afterEach(cleanup);
@@ -132,25 +141,42 @@ describe('AccountDetailsModal', () => {
 		expect(screen.queryAllByTestId('fds-item')).toHaveLength(0);
 	});
 
-	it('should filter items by name when the data set search has a query', () => {
-		mockedUseFDSState.mockReturnValue({filters: [], search: 'industry'});
+	it('should render a loading indicator instead of the data set while the request is loading', () => {
+		mockedUseRequest.mockReturnValue({data: undefined, loading: true});
 
+		const {container} = renderModal();
+
+		expect(screen.queryByTestId('fds-component')).not.toBeInTheDocument();
+		expect(container.querySelector('.loading-root')).toBeInTheDocument();
+	});
+
+	it('should not offer any column as sortable since the data set is fed a static items array', () => {
 		renderModal();
 
-		const items = screen.getAllByTestId('fds-item');
+		const fields = lastViews![0].schema.fields;
 
-		expect(items).toHaveLength(1);
-		expect(items[0]).toHaveTextContent('industry');
+		expect(fields.every((field: any) => !field.sortable)).toBe(true);
+	});
+
+	it('should match items by name when the data set search has a query', () => {
+		renderModal();
+
+		const matches = mockFields.filter(field =>
+			lastOnItemsPropSearch!(field, 'industry')
+		);
+
+		expect(matches).toHaveLength(1);
+		expect(matches[0].name).toBe('industry');
 	});
 
 	it('should match the name filter case-insensitively', () => {
-		mockedUseFDSState.mockReturnValue({filters: [], search: 'WEB'});
-
 		renderModal();
 
-		const items = screen.getAllByTestId('fds-item');
+		const matches = mockFields.filter(field =>
+			lastOnItemsPropSearch!(field, 'WEB')
+		);
 
-		expect(items).toHaveLength(1);
-		expect(items[0]).toHaveTextContent('website');
+		expect(matches).toHaveLength(1);
+		expect(matches[0].name).toBe('website');
 	});
 });

@@ -7,7 +7,7 @@ package com.liferay.exportimport.rest.internal.resource.v1_0;
 
 import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
 import com.liferay.exportimport.rest.dto.v1_0.ExportProcess;
-import com.liferay.exportimport.rest.dto.v1_0.ExportRequest;
+import com.liferay.exportimport.rest.dto.v1_0.ExportProcessRequest;
 import com.liferay.exportimport.rest.resource.v1_0.ExportProcessResource;
 import com.liferay.petra.function.UnsafeBiConsumer;
 import com.liferay.petra.function.UnsafeConsumer;
@@ -73,7 +73,7 @@ public abstract class BaseExportProcessResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/asset-libraries/{assetLibraryExternalReferenceCode}/export-processes' -d $'{"endDate": ___, "fileName": ___, "last": ___, "range": ___, "requestPortletDataHandlers": ___, "startDate": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/asset-libraries/{assetLibraryExternalReferenceCode}/export-processes' -d $'{"comments": ___, "deletions": ___, "endDate": ___, "last": ___, "logo": ___, "name": ___, "permissions": ___, "range": ___, "ratings": ___, "requestPortletDataHandlers": ___, "sitePagesSettings": ___, "siteTemplateSettings": ___, "startDate": ___, "themeSettings": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -100,7 +100,7 @@ public abstract class BaseExportProcessResourceImpl
 			@jakarta.validation.constraints.NotNull
 			@jakarta.ws.rs.PathParam("assetLibraryExternalReferenceCode")
 			String assetLibraryExternalReferenceCode,
-			ExportRequest exportRequest)
+			ExportProcessRequest exportProcessRequest)
 		throws Exception {
 
 		return new ExportProcess();
@@ -109,7 +109,7 @@ public abstract class BaseExportProcessResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/asset-libraries/{assetLibraryExternalReferenceCode}/export-processes/batch' -d $'{"endDate": ___, "fileName": ___, "last": ___, "range": ___, "requestPortletDataHandlers": ___, "startDate": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/asset-libraries/{assetLibraryExternalReferenceCode}/export-processes/batch' -d $'{"comments": ___, "deletions": ___, "endDate": ___, "last": ___, "logo": ___, "name": ___, "permissions": ___, "range": ___, "ratings": ___, "requestPortletDataHandlers": ___, "sitePagesSettings": ___, "siteTemplateSettings": ___, "startDate": ___, "themeSettings": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -140,7 +140,7 @@ public abstract class BaseExportProcessResourceImpl
 			@jakarta.validation.constraints.NotNull
 			@jakarta.ws.rs.PathParam("assetLibraryExternalReferenceCode")
 			String assetLibraryExternalReferenceCode,
-			ExportRequest exportRequest,
+			ExportProcessRequest exportProcessRequest,
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
 			@jakarta.ws.rs.QueryParam("callbackURL")
 			String callbackURL,
@@ -166,7 +166,7 @@ public abstract class BaseExportProcessResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/export-processes' -d $'{"endDate": ___, "fileName": ___, "last": ___, "range": ___, "requestPortletDataHandlers": ___, "startDate": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/export-processes' -d $'{"comments": ___, "deletions": ___, "endDate": ___, "last": ___, "logo": ___, "name": ___, "permissions": ___, "range": ___, "ratings": ___, "requestPortletDataHandlers": ___, "sitePagesSettings": ___, "siteTemplateSettings": ___, "startDate": ___, "themeSettings": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.tags.Tags(
 		value = {
@@ -178,7 +178,8 @@ public abstract class BaseExportProcessResourceImpl
 	@jakarta.ws.rs.POST
 	@jakarta.ws.rs.Produces({"application/json", "application/xml"})
 	@Override
-	public ExportProcess postExportProcess(ExportRequest exportRequest)
+	public ExportProcess postExportProcess(
+			ExportProcessRequest exportProcessRequest)
 		throws Exception {
 
 		return new ExportProcess();
@@ -187,7 +188,7 @@ public abstract class BaseExportProcessResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/export-processes/batch' -d $'{"endDate": ___, "fileName": ___, "last": ___, "range": ___, "requestPortletDataHandlers": ___, "startDate": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/export-processes/batch' -d $'{"comments": ___, "deletions": ___, "endDate": ___, "last": ___, "logo": ___, "name": ___, "permissions": ___, "range": ___, "ratings": ___, "requestPortletDataHandlers": ___, "sitePagesSettings": ___, "siteTemplateSettings": ___, "startDate": ___, "themeSettings": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -208,7 +209,7 @@ public abstract class BaseExportProcessResourceImpl
 	@jakarta.ws.rs.Produces("application/json")
 	@Override
 	public Response postExportProcessBatch(
-			ExportRequest exportRequest,
+			ExportProcessRequest exportProcessRequest,
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
 			@jakarta.ws.rs.QueryParam("callbackURL")
 			String callbackURL,
@@ -234,7 +235,7 @@ public abstract class BaseExportProcessResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/sites/{siteExternalReferenceCode}/export-processes' -d $'{"endDate": ___, "fileName": ___, "last": ___, "range": ___, "requestPortletDataHandlers": ___, "startDate": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/sites/{siteExternalReferenceCode}/export-processes' -d $'{"comments": ___, "deletions": ___, "endDate": ___, "last": ___, "logo": ___, "name": ___, "permissions": ___, "range": ___, "ratings": ___, "requestPortletDataHandlers": ___, "sitePagesSettings": ___, "siteTemplateSettings": ___, "startDate": ___, "themeSettings": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -259,7 +260,7 @@ public abstract class BaseExportProcessResourceImpl
 			@jakarta.validation.constraints.NotNull
 			@jakarta.ws.rs.PathParam("siteExternalReferenceCode")
 			String siteExternalReferenceCode,
-			ExportRequest exportRequest)
+			ExportProcessRequest exportProcessRequest)
 		throws Exception {
 
 		return new ExportProcess();
@@ -268,7 +269,7 @@ public abstract class BaseExportProcessResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/sites/{siteExternalReferenceCode}/export-processes/batch' -d $'{"endDate": ___, "fileName": ___, "last": ___, "range": ___, "requestPortletDataHandlers": ___, "startDate": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/export-import/v1.0/sites/{siteExternalReferenceCode}/export-processes/batch' -d $'{"comments": ___, "deletions": ___, "endDate": ___, "last": ___, "logo": ___, "name": ___, "permissions": ___, "range": ___, "ratings": ___, "requestPortletDataHandlers": ___, "sitePagesSettings": ___, "siteTemplateSettings": ___, "startDate": ___, "themeSettings": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -299,7 +300,7 @@ public abstract class BaseExportProcessResourceImpl
 			@jakarta.validation.constraints.NotNull
 			@jakarta.ws.rs.PathParam("siteExternalReferenceCode")
 			String siteExternalReferenceCode,
-			ExportRequest exportRequest,
+			ExportProcessRequest exportProcessRequest,
 			@io.swagger.v3.oas.annotations.Parameter(hidden = true)
 			@jakarta.ws.rs.QueryParam("callbackURL")
 			String callbackURL,
@@ -341,18 +342,21 @@ public abstract class BaseExportProcessResourceImpl
 					exportProcess -> postAssetLibraryExportProcess(
 						(String)parameters.get(
 							"assetLibraryExternalReferenceCode"),
-						(ExportRequest)parameters.get("exportRequest"));
+						(ExportProcessRequest)parameters.get(
+							"exportProcessRequest"));
 			}
 			else if (parameters.containsKey("siteExternalReferenceCode")) {
 				exportProcessUnsafeFunction =
 					exportProcess -> postSiteExportProcess(
 						(String)parameters.get("siteExternalReferenceCode"),
-						(ExportRequest)parameters.get("exportRequest"));
+						(ExportProcessRequest)parameters.get(
+							"exportProcessRequest"));
 			}
 			else {
 				exportProcessUnsafeFunction =
 					exportProcess -> postExportProcess(
-						(ExportRequest)parameters.get("exportRequest"));
+						(ExportProcessRequest)parameters.get(
+							"exportProcessRequest"));
 			}
 		}
 
@@ -1026,4 +1030,4 @@ public abstract class BaseExportProcessResourceImpl
 		LogFactoryUtil.getLog(BaseExportProcessResourceImpl.class);
 
 }
-// LIFERAY-REST-BUILDER-HASH:-85188058
+// LIFERAY-REST-BUILDER-HASH:393253071

@@ -6,9 +6,18 @@
 package com.liferay.exportimport.rest.internal.resource.v1_0;
 
 import com.liferay.exportimport.kernel.background.task.BackgroundTaskExecutorNames;
+import com.liferay.exportimport.kernel.configuration.ExportImportConfigurationSettingsMapFactory;
+import com.liferay.exportimport.kernel.configuration.constants.ExportImportConfigurationConstants;
+import com.liferay.exportimport.kernel.lar.ExportImportHelper;
+import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
+import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalService;
+import com.liferay.exportimport.kernel.service.ExportImportLocalService;
 import com.liferay.exportimport.rest.dto.v1_0.ImportProcess;
+import com.liferay.exportimport.rest.dto.v1_0.ImportProcessRequest;
 import com.liferay.exportimport.rest.dto.v1_0.Status;
+import com.liferay.exportimport.rest.internal.util.ParameterMapUtil;
 import com.liferay.exportimport.rest.internal.util.PermissionUtil;
+import com.liferay.exportimport.rest.resource.v1_0.ImportPreviewResource;
 import com.liferay.exportimport.rest.resource.v1_0.ImportProcessResource;
 import com.liferay.headless.delivery.dto.v1_0.util.CreatorUtil;
 import com.liferay.portal.background.task.model.BackgroundTask;
@@ -21,16 +30,25 @@ import com.liferay.portal.kernel.exception.NoSuchBackgroundTaskException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.staging.StagingGroupHelper;
 
+import jakarta.ws.rs.NotFoundException;
+
+import java.io.InputStream;
+import java.io.Serializable;
+
 import java.util.List;
+import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -38,6 +56,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 
 /**
  * @author Petteri Karttunen
+ * @author Daniel Raposo
  */
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/import-process.properties",
@@ -117,6 +136,53 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 				_getDynamicQuery(creatorId, siteId, search, status)));
 	}
 
+	@Override
+	public ImportProcess postAssetLibraryImportProcess(
+			String assetLibraryExternalReferenceCode,
+			ImportProcessRequest importProcessRequest)
+		throws Exception {
+
+		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
+			assetLibraryExternalReferenceCode, contextCompany.getCompanyId());
+
+		if ((group == null) || !group.isDepot()) {
+			throw new NotFoundException();
+		}
+
+		return _postImportProcess(group, importProcessRequest);
+	}
+
+	@Override
+	public ImportProcess postImportProcess(
+			ImportProcessRequest importProcessRequest)
+		throws Exception {
+
+		Group group = _stagingGroupHelper.fetchCompanyGroup(
+			contextCompany.getCompanyId());
+
+		if (group == null) {
+			throw new NotFoundException();
+		}
+
+		return _postImportProcess(group, importProcessRequest);
+	}
+
+	@Override
+	public ImportProcess postSiteImportProcess(
+			String siteExternalReferenceCode,
+			ImportProcessRequest importProcessRequest)
+		throws Exception {
+
+		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
+			siteExternalReferenceCode, contextCompany.getCompanyId());
+
+		if ((group == null) || !group.isSite()) {
+			throw new NotFoundException();
+		}
+
+		return _postImportProcess(group, importProcessRequest);
+	}
+
 	private List<BackgroundTask> _getBackgroundTasks(
 			Long creatorId, long groupId, Pagination pagination, String search,
 			Sort[] sorts, Integer status)
@@ -175,6 +241,61 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 		}
 
 		return dynamicQuery;
+	}
+
+	private ImportProcess _postImportProcess(
+			Group group, ImportProcessRequest importProcessRequest)
+		throws Exception {
+
+		long groupId = group.getGroupId();
+
+		PermissionUtil.checkImportPermission(
+			contextCompany.getCompanyId(), groupId);
+
+		FileEntry fileEntry = _exportImportHelper.getTempFileEntry(
+			groupId, contextUser.getUserId(),
+			ImportPreviewResource.class.getName());
+
+		if (fileEntry == null) {
+			throw new NotFoundException();
+		}
+
+		Map<String, String[]> parameterMap = ParameterMapUtil.toParameterMap(
+			importProcessRequest);
+
+		Map<String, Serializable> settingsMap =
+			_exportImportConfigurationSettingsMapFactory.
+				buildImportLayoutSettingsMap(
+					contextUser.getUserId(), groupId,
+					MapUtil.getBoolean(parameterMap, "privateLayout"), null,
+					parameterMap, contextAcceptLanguage.getPreferredLocale(),
+					contextUser.getTimeZone());
+
+		String name = importProcessRequest.getName();
+
+		if (Validator.isBlank(name)) {
+			name = fileEntry.getFileName();
+		}
+
+		ExportImportConfiguration exportImportConfiguration =
+			_exportImportConfigurationLocalService.
+				addDraftExportImportConfiguration(
+					contextUser.getUserId(), name,
+					ExportImportConfigurationConstants.TYPE_IMPORT_LAYOUT,
+					settingsMap);
+
+		try (InputStream inputStream = fileEntry.getContentStream()) {
+			long backgroundTaskId =
+				_exportImportLocalService.importLayoutsInBackground(
+					contextUser.getUserId(), exportImportConfiguration,
+					inputStream);
+
+			TempFileEntryUtil.deleteTempFileEntry(fileEntry.getFileEntryId());
+
+			return _toImportProcess(
+				_backgroundTaskLocalService.getBackgroundTask(
+					backgroundTaskId));
+		}
 	}
 
 	private void _setSorts(DynamicQuery dynamicQuery, Sort[] sorts) {
@@ -244,6 +365,20 @@ public class ImportProcessResourceImpl extends BaseImportProcessResourceImpl {
 
 	@Reference
 	private BackgroundTaskLocalService _backgroundTaskLocalService;
+
+	@Reference
+	private ExportImportConfigurationLocalService
+		_exportImportConfigurationLocalService;
+
+	@Reference
+	private ExportImportConfigurationSettingsMapFactory
+		_exportImportConfigurationSettingsMapFactory;
+
+	@Reference
+	private ExportImportHelper _exportImportHelper;
+
+	@Reference
+	private ExportImportLocalService _exportImportLocalService;
 
 	@Reference
 	private Language _language;

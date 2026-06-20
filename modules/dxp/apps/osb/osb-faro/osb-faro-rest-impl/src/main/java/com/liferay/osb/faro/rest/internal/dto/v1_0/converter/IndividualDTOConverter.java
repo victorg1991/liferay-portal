@@ -8,6 +8,7 @@ package com.liferay.osb.faro.rest.internal.dto.v1_0.converter;
 import com.liferay.osb.faro.engine.client.model.Field;
 import com.liferay.osb.faro.rest.dto.v1_0.Individual;
 import com.liferay.osb.faro.rest.dto.v1_0.IndividualDemographicField;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
 
@@ -57,7 +58,9 @@ public class IndividualDTOConverter
 				setId(individual::getId);
 				setLastActivityDate(individual::getLastActivityDate);
 				setLastSessionCountry(individual::getLastSessionCountry);
-				setProfileType(individual::getProfileType);
+				setProfileType(
+					() -> ProfileType.create(
+						StringUtil.toUpperCase(individual.getProfileType())));
 			}
 		};
 	}

@@ -1,11 +1,10 @@
 import * as API from 'shared/api';
 import ClayModal, {useModal} from '@clayui/modal';
-import React, {useMemo} from 'react';
-import {columns} from 'shared/util/frontend-data-set';
+import Loading from 'shared/components/Loading';
+import React from 'react';
+import {columns, FrontendDataSet} from 'shared/components/FrontendDataSet';
 import {Routes} from 'shared/util/router';
 import {sub} from 'shared/util/lang';
-import {useFDSState} from 'shared/hooks/useFDSState';
-import {useFrontendDataSet} from 'shared/hooks/useFrontendDataSet';
 import {useParams} from 'react-router-dom';
 import {useRequest} from 'shared/hooks/useRequest';
 
@@ -36,25 +35,13 @@ const AccountDetailsModal: React.FC<IAccountDetailsModalProps> = ({
 		groupId: string;
 	}>();
 	const {observer} = useModal({onClose});
-	const FrontendDataSet = useFrontendDataSet();
-	const {search} = useFDSState(FDS_ID);
 
-	const {data} = useRequest({
+	const {data, loading} = useRequest({
 		dataSourceFn: API.accounts.fetchDetails,
 		variables: {accountId, channelId, groupId}
 	});
 
-	const items: IAccountDetailsField[] = data?.fields ?? [];
-
-	const filteredItems = useMemo(() => {
-		if (!search) {
-			return items;
-		}
-
-		const query = search.toLowerCase();
-
-		return items.filter(item => item.name.toLowerCase().includes(query));
-	}, [items, search]);
+	const items: IAccountDetailsField[] = data?.items ?? [];
 
 	return (
 		<ClayModal observer={observer} size='lg'>
@@ -65,9 +52,15 @@ const AccountDetailsModal: React.FC<IAccountDetailsModalProps> = ({
 			</ClayModal.Header>
 
 			<ClayModal.Body className='px-0'>
-				{FrontendDataSet && (
+				{loading ? (
+					<div
+						className='align-items-center d-flex justify-content-center'
+						style={{minHeight: 400}}
+					>
+						<Loading center={false} />
+					</div>
+				) : (
 					<FrontendDataSet
-						configInURLBehavior='off'
 						customDataRenderers={{
 							attributeNameAndValueRenderer: ({
 								itemData,
@@ -103,7 +96,15 @@ const AccountDetailsModal: React.FC<IAccountDetailsModalProps> = ({
 								})
 						}}
 						id={FDS_ID}
-						items={filteredItems}
+						items={items}
+						onItemsPropSearch={(
+							item: IAccountDetailsField,
+							query: string
+						) =>
+							item.name
+								.toLowerCase()
+								.includes(query.toLowerCase())
+						}
 						views={[
 							{
 								contentRenderer: 'table',
@@ -113,7 +114,6 @@ const AccountDetailsModal: React.FC<IAccountDetailsModalProps> = ({
 								schema: {
 									fields: [
 										{
-											_key: 'name',
 											contentRenderer:
 												'attributeNameAndValueRenderer',
 											fieldName: 'name',
@@ -124,27 +124,23 @@ const AccountDetailsModal: React.FC<IAccountDetailsModalProps> = ({
 											)}`
 										},
 										{
-											_key: 'sourceName',
 											fieldName: 'sourceName',
 											label: Liferay.Language.get(
 												'source-name'
 											)
 										},
 										{
-											_key: 'dataSourceName',
 											contentRenderer:
 												'dataSourceRenderer',
 											fieldName: 'dataSourceName',
 											label: Liferay.Language.get(
 												'data-source'
-											),
-											sortable: true
+											)
 										},
 										{
-											_key: 'lastModified',
 											contentRenderer:
 												'lastModifiedRenderer',
-											fieldName: 'lastModified',
+											fieldName: 'modifiedDate',
 											label: Liferay.Language.get(
 												'last-modified'
 											)

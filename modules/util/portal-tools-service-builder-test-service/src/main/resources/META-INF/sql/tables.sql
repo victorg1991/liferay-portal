@@ -68,6 +68,16 @@ create table DefinedDefaultOrderEntry (
 	name VARCHAR(75) null
 );
 
+create table DynamicQueryEntry (
+	dynamicQueryEntryId LONG not null primary key,
+	createDate DATE null,
+	modifiedDate DATE null,
+	amount LONG,
+	description VARCHAR(75) null,
+	name VARCHAR(75) null,
+	status INTEGER
+);
+
 create table ERCCompanyEntry (
 	uuid_ VARCHAR(75) null,
 	externalReferenceCode VARCHAR(75) null,
@@ -187,6 +197,7 @@ create table LVEntryVersion (
 );
 
 create table LazyBlobEntry (
+	mvccVersion LONG default 0 not null,
 	uuid_ VARCHAR(75) null,
 	lazyBlobEntryId LONG not null primary key,
 	groupId LONG,
@@ -320,6 +331,12 @@ create table UADPartialEntry (
 
 create table UndefinedDefaultOrderEntry (
 	undefinedDefaultOrderEntryId LONG not null primary key,
+	modifiedDate DATE null,
+	name VARCHAR(75) null
+);
+
+create table UniqueFinderEntry (
+	uniqueFinderEntryId LONG not null primary key,
 	modifiedDate DATE null,
 	name VARCHAR(75) null
 );

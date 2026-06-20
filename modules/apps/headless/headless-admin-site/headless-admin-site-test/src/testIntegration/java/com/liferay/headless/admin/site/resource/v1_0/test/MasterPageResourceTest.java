@@ -23,6 +23,7 @@ import com.liferay.headless.admin.site.client.pagination.Page;
 import com.liferay.headless.admin.site.client.problem.Problem;
 import com.liferay.headless.admin.site.client.resource.v1_0.MasterPageResource;
 import com.liferay.headless.admin.site.resource.v1_0.test.util.AssetTestUtil;
+import com.liferay.headless.admin.site.resource.v1_0.test.util.FileEntryTestUtil;
 import com.liferay.headless.admin.site.resource.v1_0.test.util.LayoutPageTemplateEntryTestUtil;
 import com.liferay.headless.admin.site.resource.v1_0.test.util.PageElementsTestUtil;
 import com.liferay.headless.admin.site.resource.v1_0.test.util.PageExperiencesTestUtil;
@@ -58,6 +59,7 @@ import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.search.test.util.IdempotentRetryAssert;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
@@ -77,6 +79,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -136,7 +139,8 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 
 		MasterPage liveGroupMasterPage =
 			testGetSiteMasterPagesPage_addMasterPage(
-				irrelevantGroup.getExternalReferenceCode(), randomMasterPage());
+				irrelevantGroup.getExternalReferenceCode(),
+				_randomMasterPage(irrelevantGroup));
 
 		_enableLocalStaging(irrelevantGroup);
 
@@ -177,12 +181,8 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 
 		MasterPage randomMasterPage = randomMasterPage();
 
-		Repository repository = _portletFileRepository.addPortletRepository(
-			testGroup.getGroupId(), RandomTestUtil.randomString(),
-			ServiceContextTestUtil.getServiceContext(
-				testGroup, TestPropsValues.getUserId()));
-
-		FileEntry fileEntry = _addPortletFileEntry(repository.getDlFolderId());
+		FileEntry fileEntry = FileEntryTestUtil.addPreviewFileEntry(
+			testGroup, _portletFileRepository, getClass());
 
 		randomMasterPage.setThumbnailURLReference(
 			() -> ThumbnailURLReferenceUtil.getThumbnailURLReference(
@@ -192,6 +192,21 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 			randomMasterPage);
 
 		MasterPageResource masterPageResource = _getMasterPageResource();
+
+		IdempotentRetryAssert.retryAssert(
+			30, TimeUnit.SECONDS, 500, TimeUnit.MILLISECONDS,
+			() -> {
+				MasterPage getMasterPage = masterPageResource.getSiteMasterPage(
+					testGroup.getExternalReferenceCode(),
+					postMasterPage.getExternalReferenceCode());
+
+				ThumbnailURLReference thumbnailURLReference =
+					getMasterPage.getThumbnailURLReference();
+
+				Assert.assertNotNull(thumbnailURLReference);
+
+				return thumbnailURLReference.getUrl();
+			});
 
 		Page<MasterPage> page = masterPageResource.getSiteMasterPagesPage(
 			testGroup.getExternalReferenceCode(), null, null, null, null, null);
@@ -293,7 +308,7 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 			Boolean.FALSE,
 			_getMasterPage(
 				Boolean.FALSE, masterPage.getExternalReferenceCode(),
-				StringPool.BLANK, thumbnailURL));
+				StringPool.BLANK, StringPool.BLANK));
 
 		_testPatchSiteMasterPageWithPageSpecifications();
 		_testPatchSiteMasterPageWithThumbnail();
@@ -408,6 +423,8 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 
 		_enableLocalStaging();
 
+		_assertStagingGroupMasterPageThumbnail(fileEntry, masterPage);
+
 		_assertProblemException(
 			"BAD_REQUEST", null,
 			() -> masterPageResource.putSiteMasterPage(
@@ -437,20 +454,7 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 
 	@Override
 	protected MasterPage randomMasterPage() throws Exception {
-		MasterPage masterPage = super.randomMasterPage();
-
-		ServiceContext serviceContext =
-			ServiceContextTestUtil.getServiceContext(
-				testGroup, TestPropsValues.getUserId());
-
-		masterPage.setKeywords(AssetTestUtil.randomKeywords(serviceContext));
-
-		masterPage.setMarkedAsDefault(Boolean.FALSE);
-		masterPage.setTaxonomyCategoryBriefs(
-			AssetTestUtil.randomTaxonomyCategoryBriefs(
-				testCompany.getGroupId(), serviceContext));
-
-		return masterPage;
+		return _randomMasterPage(testGroup);
 	}
 
 	@Override
@@ -605,6 +609,28 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 		}
 	}
 
+	private void _assertStagingGroupMasterPageThumbnail(
+			FileEntry liveGroupFileEntry, MasterPage masterPage)
+		throws Exception {
+
+		Group stagingGroup = testGroup.getStagingGroup();
+
+		FileEntry stagingGroupFileEntry =
+			_portletFileRepository.getPortletFileEntryByExternalReferenceCode(
+				liveGroupFileEntry.getExternalReferenceCode(),
+				stagingGroup.getGroupId());
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			_layoutPageTemplateEntryLocalService.
+				getLayoutPageTemplateEntryByExternalReferenceCode(
+					masterPage.getExternalReferenceCode(),
+					stagingGroup.getGroupId());
+
+		Assert.assertEquals(
+			stagingGroupFileEntry.getFileEntryId(),
+			layoutPageTemplateEntry.getPreviewFileEntryId());
+	}
+
 	private void _assertThumbnailFileEntryId(
 			Boolean defaultValue, String masterPageExternalReferenceCode,
 			String thumbnailExternalReferenceCode)
@@ -635,10 +661,18 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 	}
 
 	private void _enableLocalStaging(Group group) throws Exception {
-		_stagingLocalService.enableLocalStaging(
-			TestPropsValues.getUserId(), group, true, false,
-			ServiceContextTestUtil.getServiceContext(
-				group, TestPropsValues.getUserId()));
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.batch.engine.internal." +
+					"BatchEngineImportTaskExecutorImpl",
+				LoggerTestUtil.OFF)) {
+
+			_stagingLocalService.enableLocalStaging(
+				TestPropsValues.getUserId(), group, true, false,
+				ServiceContextTestUtil.getServiceContext(
+					group, TestPropsValues.getUserId()));
+		}
+
+		Assert.assertTrue(group.hasStagingGroup());
 	}
 
 	private PageElement _getContainerPageElement() {
@@ -738,7 +772,7 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 		).locale(
 			LocaleUtil.getDefault()
 		).parameters(
-			"nestedFields", "pageSpecifications,thumbnail"
+			"nestedFields", "pageSpecifications,thumbnailURLReference"
 		).build();
 	}
 
@@ -766,6 +800,23 @@ public class MasterPageResourceTest extends BaseMasterPageResourceTestCase {
 			testGroup.getGroupId(), postMasterPage.getPageSpecifications());
 
 		return postMasterPage;
+	}
+
+	private MasterPage _randomMasterPage(Group group) throws Exception {
+		MasterPage masterPage = super.randomMasterPage();
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(
+				group, TestPropsValues.getUserId());
+
+		masterPage.setKeywords(AssetTestUtil.randomKeywords(serviceContext));
+
+		masterPage.setMarkedAsDefault(Boolean.FALSE);
+		masterPage.setTaxonomyCategoryBriefs(
+			AssetTestUtil.randomTaxonomyCategoryBriefs(
+				testCompany.getGroupId(), serviceContext));
+
+		return masterPage;
 	}
 
 	private void _testGetSiteMasterPage(MasterPage masterPage)

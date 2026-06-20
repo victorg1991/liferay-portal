@@ -40,29 +40,53 @@ components:
                     $ref: "#/components/schemas/Status"
                     readOnly: true
             type: object
-        ExportRequest:
+        ExportProcessRequest:
             properties:
+                comments:
+                    default: false
+                    type: boolean
+                deletions:
+                    default: false
+                    type: boolean
                 endDate:
                     format: date-time
-                    type: string
-                fileName:
                     type: string
                 last:
                     format: int32
                     type: integer
+                logo:
+                    default: false
+                    type: boolean
+                name:
+                    type: string
+                permissions:
+                    default: false
+                    type: boolean
                 range:
                     default: all
                     enum: [all, dateRange, last]
                     type: string
+                ratings:
+                    default: false
+                    type: boolean
                 requestPortletDataHandlers:
                     items:
                         $ref: "#/components/schemas/RequestPortletDataHandler"
                     type: array
+                sitePagesSettings:
+                    default: false
+                    type: boolean
+                siteTemplateSettings:
+                    default: false
+                    type: boolean
                 startDate:
                     format: date-time
                     type: string
+                themeSettings:
+                    default: false
+                    type: boolean
             required:
-                -   fileName
+                -   name
             type: object
         ImportPreview:
             properties:
@@ -81,10 +105,6 @@ components:
                     format: date-time
                     readOnly: true
                     type: string
-                fileEntryId:
-                    format: int64
-                    readOnly: true
-                    type: integer
                 fileName:
                     readOnly: true
                     type: string
@@ -132,6 +152,47 @@ components:
                         The import process's end status.
                     readOnly: true
             type: object
+        ImportProcessRequest:
+            properties:
+                comments:
+                    default: false
+                    type: boolean
+                dataStrategy:
+                    default: MIRROR
+                    enum: [MIRROR, MIRROR_OVERWRITE, COPY_AS_NEW]
+                    type: string
+                deletions:
+                    default: false
+                    type: boolean
+                logo:
+                    default: false
+                    type: boolean
+                name:
+                    type: string
+                permissions:
+                    default: false
+                    type: boolean
+                ratings:
+                    default: false
+                    type: boolean
+                requestPortletDataHandlers:
+                    items:
+                        $ref: "#/components/schemas/RequestPortletDataHandler"
+                    type: array
+                sitePagesSettings:
+                    default: false
+                    type: boolean
+                siteTemplateSettings:
+                    default: false
+                    type: boolean
+                themeSettings:
+                    default: false
+                    type: boolean
+                userIdStrategy:
+                    default: CURRENT_USER_ID
+                    enum: [CURRENT_USER_ID, ALWAYS_CURRENT_USER_ID]
+                    type: string
+            type: object
         Origin:
             properties:
                 code:
@@ -140,38 +201,35 @@ components:
                 label:
                     type: string
             type: object
-        PortletDataHandler:
+        PreviewPortletDataHandler:
             properties:
+                additionCount:
+                    format: int64
+                    readOnly: true
+                    type: integer
+                deletionCount:
+                    format: int64
+                    readOnly: true
+                    type: integer
+                description:
+                    readOnly: true
+                    type: string
+                label:
+                    readOnly: true
+                    type: string
                 name:
                     description:
                         The handler's portlet ID.
+                    readOnly: true
                     type: string
-            type: object
-        PortletDataHandlerControl:
-            properties:
-                name:
+                previewPortletDataHandlerControls:
+                    items:
+                        $ref: "#/components/schemas/PreviewPortletDataHandlerControl"
+                    readOnly: true
+                    type: array
+                tag:
+                    readOnly: true
                     type: string
-            type: object
-        PreviewPortletDataHandler:
-            allOf:
-                -   $ref: "#/components/schemas/PortletDataHandler"
-                -   properties:
-                        additionCount:
-                            format: int64
-                            readOnly: true
-                            type: integer
-                        deletionCount:
-                            format: int64
-                            readOnly: true
-                            type: integer
-                        label:
-                            readOnly: true
-                            type: string
-                        previewPortletDataHandlerControls:
-                            items:
-                                $ref: "#/components/schemas/PreviewPortletDataHandlerControl"
-                            readOnly: true
-                            type: array
             type: object
         PreviewPortletDataHandlerBoolean:
             allOf:
@@ -215,25 +273,26 @@ components:
                             type: string
             type: object
         PreviewPortletDataHandlerControl:
-            allOf:
-                -   $ref: "#/components/schemas/PortletDataHandlerControl"
-                -   properties:
-                        disabled:
-                            readOnly: true
-                            type: boolean
-                        label:
-                            readOnly: true
-                            type: string
-                        type:
-                            enum: [Boolean, Choice, Setting]
-                            readOnly: true
-                            type: string
             discriminator:
                 mapping:
                     Boolean: "#/components/schemas/PreviewPortletDataHandlerBoolean"
                     Choice: "#/components/schemas/PreviewPortletDataHandlerChoice"
                     Setting: "#/components/schemas/PreviewPortletDataHandlerSetting"
                 propertyName: type
+            properties:
+                disabled:
+                    readOnly: true
+                    type: boolean
+                label:
+                    readOnly: true
+                    type: string
+                name:
+                    readOnly: true
+                    type: string
+                type:
+                    enum: [Boolean, Choice, Setting]
+                    readOnly: true
+                    type: string
             required:
                 -   type
             type: object
@@ -356,28 +415,28 @@ components:
                     readOnly: true
             type: object
         RequestPortletDataHandler:
-            allOf:
-                -   $ref: "#/components/schemas/PortletDataHandler"
-                -   properties:
-                        requestPortletDataHandlerControls:
-                            items:
-                                $ref: "#/components/schemas/RequestPortletDataHandlerControl"
-                            type: array
+            properties:
+                name:
+                    description:
+                        The handler's portlet ID.
+                    type: string
+                requestPortletDataHandlerControls:
+                    items:
+                        $ref: "#/components/schemas/RequestPortletDataHandlerControl"
+                    type: array
             type: object
         RequestPortletDataHandlerControl:
-            allOf:
-                -   $ref: "#/components/schemas/PortletDataHandlerControl"
-                -   properties:
-                        requestPortletDataHandlerControls:
-                            items:
-                                $ref: "#/components/schemas/RequestPortletDataHandlerControl"
-                            type: array
-                        value:
-                            type: string
-                        values:
-                            items:
-                                type: string
-                            type: array
+            properties:
+                name:
+                    type: string
+                requestPortletDataHandlerControls:
+                    items:
+                        $ref: "#/components/schemas/RequestPortletDataHandlerControl"
+                    type: array
+                values:
+                    items:
+                        type: string
+                    type: array
             type: object
         Status:
             properties:
@@ -396,9 +455,7 @@ components:
             type: object
 info:
     description:
-        "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID
-        'com.liferay.exportimport.report.rest', and version '1.0.0'.. A Java client JAR is available for use with the
-        group ID 'com.liferay', artifact ID 'com.liferay.exportimport.rest.client', and version '1.0.6'."
+        "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID 'com.liferay.exportimport.report.rest', and version '1.0.0'.. A Java client JAR is available for use with the group ID 'com.liferay', artifact ID 'com.liferay.exportimport.rest.client', and version '1.0.8'."
     license:
         name: Apache 2.0
         url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -459,10 +516,10 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/ExportRequest"
+                            $ref: "#/components/schemas/ExportProcessRequest"
                     application/xml:
                         schema:
-                            $ref: "#/components/schemas/ExportRequest"
+                            $ref: "#/components/schemas/ExportProcessRequest"
             responses:
                 200:
                     content:
@@ -501,6 +558,33 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ImportPreview"
             tags: ["ImportPreview"]
+    "/asset-libraries/{assetLibraryExternalReferenceCode}/import-processes":
+        post:
+            operationId: postAssetLibraryImportProcess
+            parameters:
+                -   in: path
+                    name: assetLibraryExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/ImportProcessRequest"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/ImportProcessRequest"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ImportProcess"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/ImportProcess"
+            tags: ["ImportProcess"]
     "/asset-libraries/{assetLibraryId}/import-processes":
         description:
             Retrieves the import process entries for the specified asset library.
@@ -606,10 +690,10 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/ExportRequest"
+                            $ref: "#/components/schemas/ExportProcessRequest"
                     application/xml:
                         schema:
-                            $ref: "#/components/schemas/ExportRequest"
+                            $ref: "#/components/schemas/ExportProcessRequest"
             responses:
                 200:
                     content:
@@ -698,6 +782,26 @@ paths:
                                 items:
                                     $ref: "#/components/schemas/ImportProcess"
                                 type: array
+            tags: ["ImportProcess"]
+        post:
+            operationId: postImportProcess
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/ImportProcessRequest"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/ImportProcessRequest"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ImportProcess"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/ImportProcess"
             tags: ["ImportProcess"]
     "/import-processes/{importProcessId}":
         get:
@@ -878,10 +982,10 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: "#/components/schemas/ExportRequest"
+                            $ref: "#/components/schemas/ExportProcessRequest"
                     application/xml:
                         schema:
-                            $ref: "#/components/schemas/ExportRequest"
+                            $ref: "#/components/schemas/ExportProcessRequest"
             responses:
                 200:
                     content:
@@ -920,6 +1024,33 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/ImportPreview"
             tags: ["ImportPreview"]
+    "/sites/{siteExternalReferenceCode}/import-processes":
+        post:
+            operationId: postSiteImportProcess
+            parameters:
+                -   in: path
+                    name: siteExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/ImportProcessRequest"
+                    application/xml:
+                        schema:
+                            $ref: "#/components/schemas/ImportProcessRequest"
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ImportProcess"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/ImportProcess"
+            tags: ["ImportProcess"]
     "/sites/{siteId}/import-processes":
         description:
             Retrieves the import process entries for the specified site.

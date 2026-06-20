@@ -229,22 +229,10 @@ public class StagedLayoutSetStagedModelDataHandler
 
 		// Remove layouts that were deleted from the layout set prototype
 
-		Set<Layout> modifiedLayouts = new HashSet<>();
-
-		_checkLayoutSetPrototypeLayouts(portletDataContext, modifiedLayouts);
+		_checkLayoutSetPrototypeLayouts(portletDataContext);
 
 		_updateLayoutSetSettingsProperties(
 			portletDataContext, importedStagedLayoutSet);
-
-		// Last merge time
-
-		LayoutSet importedLayoutSet = importedStagedLayoutSet.getLayoutSet();
-
-		Group group = importedLayoutSet.getGroup();
-
-		if (!group.isLayoutSetPrototype()) {
-			_updateLastMergeTime(portletDataContext, modifiedLayouts);
-		}
 
 		Element stagedLayoutSetElement =
 			portletDataContext.getImportDataStagedModelElement(stagedLayoutSet);
@@ -260,7 +248,7 @@ public class StagedLayoutSetStagedModelDataHandler
 	}
 
 	private void _checkLayoutSetPrototypeLayouts(
-			PortletDataContext portletDataContext, Set<Layout> modifiedLayouts)
+			PortletDataContext portletDataContext)
 		throws Exception {
 
 		boolean layoutSetPrototypeLinkEnabled = MapUtil.getBoolean(
@@ -289,12 +277,6 @@ public class StagedLayoutSetStagedModelDataHandler
 				continue;
 			}
 
-			if (_sites.isLayoutModifiedSinceLastMerge(layout)) {
-				modifiedLayouts.add(layout);
-
-				continue;
-			}
-
 			Layout sourcePrototypeLayout =
 				_layoutLocalService.fetchLayoutByExternalReferenceCode(
 					layout.getLayoutSetPrototypeLayoutERC(),
@@ -305,14 +287,6 @@ public class StagedLayoutSetStagedModelDataHandler
 					layout.getUuid(), layout.getGroupId(),
 					layout.isPrivateLayout())) {
 
-				continue;
-			}
-
-			LayoutSet layoutSet = layout.getLayoutSet();
-
-			String settings = layoutSet.getSettings();
-
-			if (settings.contains(Sites.MERGE_FAIL_FRIENDLY_URL_LAYOUTS)) {
 				continue;
 			}
 
@@ -751,70 +725,6 @@ public class StagedLayoutSetStagedModelDataHandler
 			layoutSet, LayoutSet.class, StagedLayoutSet.class);
 	}
 
-	private void _updateLastMergeTime(
-			PortletDataContext portletDataContext, Set<Layout> modifiedLayouts)
-		throws Exception {
-
-		String layoutsImportMode = MapUtil.getString(
-			portletDataContext.getParameterMap(),
-			PortletDataHandlerKeys.LAYOUTS_IMPORT_MODE,
-			PortletDataHandlerKeys.LAYOUTS_IMPORT_MODE_MERGE_BY_LAYOUT_UUID);
-
-		if (!layoutsImportMode.equals(
-				PortletDataHandlerKeys.
-					LAYOUTS_IMPORT_MODE_CREATED_FROM_PROTOTYPE)) {
-
-			return;
-		}
-
-		// Last merge time is updated only if there aren not any modified
-		// layouts
-
-		Map<Long, Layout> layouts =
-			(Map<Long, Layout>)portletDataContext.getNewPrimaryKeysMap(
-				Layout.class + ".layout");
-
-		long lastMergeTime = System.currentTimeMillis();
-
-		for (Layout layout : layouts.values()) {
-			layout = _layoutLocalService.getLayout(layout.getPlid());
-
-			if (modifiedLayouts.contains(layout)) {
-				continue;
-			}
-
-			UnicodeProperties typeSettingsUnicodeProperties =
-				layout.getTypeSettingsProperties();
-
-			typeSettingsUnicodeProperties.setProperty(
-				Sites.LAST_MERGE_TIME, String.valueOf(lastMergeTime));
-
-			_layoutLocalService.updateLayout(layout);
-		}
-
-		// The layout set may be stale because LayoutUtil#update(layout)
-		// triggers LayoutSetPrototypeLayoutModelListener and that may have
-		// updated this layout set
-
-		LayoutSet layoutSet = _layoutSetLocalService.getLayoutSet(
-			portletDataContext.getGroupId(),
-			portletDataContext.isPrivateLayout());
-
-		UnicodeProperties settingsUnicodeProperties =
-			layoutSet.getSettingsProperties();
-
-		settingsUnicodeProperties.setProperty(
-			Sites.LAST_MERGE_TIME, String.valueOf(lastMergeTime));
-
-		long lastMergeVersion = MapUtil.getLong(
-			portletDataContext.getParameterMap(), "lastMergeVersion");
-
-		settingsUnicodeProperties.setProperty(
-			Sites.LAST_MERGE_VERSION, String.valueOf(lastMergeVersion));
-
-		_layoutSetLocalService.updateLayoutSet(layoutSet);
-	}
-
 	private void _updateLayoutPriorities(
 			PortletDataContext portletDataContext, List<Element> layoutElements,
 			boolean privateLayout)
@@ -970,66 +880,57 @@ public class StagedLayoutSetStagedModelDataHandler
 		UnicodeProperties settingsUnicodeProperties =
 			layoutSet.getSettingsProperties();
 
-		String mergeFailFriendlyURLLayouts =
-			settingsUnicodeProperties.getProperty(
-				Sites.MERGE_FAIL_FRIENDLY_URL_LAYOUTS);
+		boolean changed = false;
 
-		if (Validator.isNull(mergeFailFriendlyURLLayouts)) {
-			boolean changed = false;
+		LayoutSet stagedLayoutSet = importedLayoutSet.getLayoutSet();
 
-			LayoutSet stagedLayoutSet = importedLayoutSet.getLayoutSet();
+		UnicodeProperties importedSettingsUnicodeProperties =
+			stagedLayoutSet.getSettingsProperties();
 
-			UnicodeProperties importedSettingsUnicodeProperties =
-				stagedLayoutSet.getSettingsProperties();
+		Theme importedTheme = stagedLayoutSet.getTheme();
 
-			Theme importedTheme = stagedLayoutSet.getTheme();
+		Map<String, ThemeSetting> themeSettings =
+			importedTheme.getConfigurableSettings();
 
-			Map<String, ThemeSetting> themeSettings =
-				importedTheme.getConfigurableSettings();
+		Map<String, String> defaultsMap = new HashMap<>();
 
-			Map<String, String> defaultsMap = new HashMap<>();
+		for (Map.Entry<String, ThemeSetting> entry : themeSettings.entrySet()) {
+			ThemeSetting themeSetting = entry.getValue();
 
-			for (Map.Entry<String, ThemeSetting> entry :
-					themeSettings.entrySet()) {
+			defaultsMap.put(
+				ThemeSettingImpl.namespaceProperty("regular", entry.getKey()),
+				themeSetting.getValue());
+		}
 
-				ThemeSetting themeSetting = entry.getValue();
+		defaultsMap.put(Sites.SHOW_SITE_NAME, Boolean.TRUE.toString());
+		defaultsMap.put("javascript", null);
 
-				defaultsMap.put(
-					ThemeSettingImpl.namespaceProperty(
-						"regular", entry.getKey()),
-					themeSetting.getValue());
-			}
+		for (Map.Entry<String, String> entry : defaultsMap.entrySet()) {
+			String propertyKey = entry.getKey();
+			String defaultValue = entry.getValue();
 
-			defaultsMap.put(Sites.SHOW_SITE_NAME, Boolean.TRUE.toString());
-			defaultsMap.put("javascript", null);
+			String currentValue = settingsUnicodeProperties.getProperty(
+				propertyKey, defaultValue);
 
-			for (Map.Entry<String, String> entry : defaultsMap.entrySet()) {
-				String propertyKey = entry.getKey();
-				String defaultValue = entry.getValue();
-
-				String currentValue = settingsUnicodeProperties.getProperty(
+			String importedValue =
+				importedSettingsUnicodeProperties.getProperty(
 					propertyKey, defaultValue);
 
-				String importedValue =
-					importedSettingsUnicodeProperties.getProperty(
-						propertyKey, defaultValue);
-
-				if (!Objects.equals(currentValue, importedValue)) {
-					if (Objects.equals(defaultValue, importedValue)) {
-						settingsUnicodeProperties.remove(propertyKey);
-					}
-					else {
-						settingsUnicodeProperties.setProperty(
-							propertyKey, importedValue);
-					}
-
-					changed = true;
+			if (!Objects.equals(currentValue, importedValue)) {
+				if (Objects.equals(defaultValue, importedValue)) {
+					settingsUnicodeProperties.remove(propertyKey);
 				}
-			}
+				else {
+					settingsUnicodeProperties.setProperty(
+						propertyKey, importedValue);
+				}
 
-			if (changed) {
-				_layoutSetLocalService.updateLayoutSet(layoutSet);
+				changed = true;
 			}
+		}
+
+		if (changed) {
+			_layoutSetLocalService.updateLayoutSet(layoutSet);
 		}
 	}
 
@@ -1074,9 +975,6 @@ public class StagedLayoutSetStagedModelDataHandler
 
 	@Reference
 	private Portal _portal;
-
-	@Reference
-	private Sites _sites;
 
 	@Reference(
 		target = "(model.class.name=com.liferay.layout.set.model.adapter.StagedLayoutSet)"

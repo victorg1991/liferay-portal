@@ -1683,6 +1683,166 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 		).toBeHidden();
 	});
 
+	test(
+		'can update relationship field label on system object',
+		{tag: '@LPS-135406'},
+		async ({apiHelpers, objectFieldsPage, page}) => {
+			const objectDefinition =
+				await apiHelpers.objectAdmin.postRandomObjectDefinition({
+					status: {code: 0},
+				});
+
+			apiHelpers.data.push({
+				id: objectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			const objectRelationshipAPIClient =
+				await apiHelpers.buildRestClient(ObjectRelationshipAPI);
+
+			const relationshipLabel = 'Relationship' + getRandomInt();
+
+			const {body: objectRelationship} =
+				await objectRelationshipAPIClient.postObjectDefinitionByExternalReferenceCodeObjectRelationship(
+					'L_USER',
+					{
+						label: {en_US: relationshipLabel},
+						name: 'relationship' + getRandomInt(),
+						objectDefinitionExternalReferenceCode2:
+							objectDefinition.externalReferenceCode,
+						objectDefinitionId2: objectDefinition.id,
+						objectDefinitionName2: objectDefinition.name,
+						type: 'oneToMany',
+					}
+				);
+
+			apiHelpers.data.push({
+				id: objectRelationship.id,
+				type: 'objectRelationship',
+			});
+
+			await objectFieldsPage.goto(objectDefinition.label['en_US']);
+
+			await objectFieldsPage.openObjectField(relationshipLabel);
+
+			const iframeLocator = page.frameLocator('iframe');
+			const newLabel = 'New Relationship' + getRandomInt();
+
+			await iframeLocator.getByLabel('LabelMandatory').clear();
+			await iframeLocator.getByLabel('LabelMandatory').fill(newLabel);
+
+			await objectFieldsPage.editFieldSaveButton.click();
+
+			await waitForAlert(
+				page,
+				'The object field was updated successfully'
+			);
+
+			await page.reload();
+
+			await expect(page.getByText(newLabel)).toBeVisible();
+		}
+	);
+
+	test(
+		'can view description for each field business type',
+		{tag: '@LPD-93353'},
+		async ({apiHelpers, objectFieldsPage, page}) => {
+			const objectDefinition =
+				await apiHelpers.objectAdmin.postRandomObjectDefinition({
+					status: {code: 0},
+				});
+
+			apiHelpers.data.push({
+				id: objectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			await objectFieldsPage.goto(objectDefinition.label.en_US);
+
+			await objectFieldsPage.addObjectFieldButton.click();
+
+			await objectFieldsPage.objectFieldLabelInput.waitFor();
+
+			await objectFieldsPage.objectFieldOptionsDropdown.click();
+
+			const fieldTypeDescriptions = [
+				{
+					description: 'Assign the entry to a user or role.',
+					type: 'Assignee',
+				},
+				{
+					description:
+						'Upload files or select from Documents and Media.',
+					type: 'Attachment',
+				},
+				{
+					description:
+						'Automatically generate a unique value when a new entry is added.',
+					type: 'Auto Increment',
+				},
+				{
+					description: 'Select between true or false.',
+					type: 'Boolean',
+				},
+				{description: 'Add a date.', type: 'Date'},
+				{
+					description: 'Add date and time values.',
+					type: 'Date and Time',
+				},
+				{
+					description:
+						'Add a decimal number that supports fractional portions.',
+					type: 'Decimal',
+				},
+				{
+					description: 'Store content as encrypted text.',
+					type: 'Encrypted',
+				},
+				{
+					description:
+						'Add an algorithm that derives its value from other fields.',
+					type: 'Formula',
+				},
+				{
+					description: 'Add an integer up to nine digits.',
+					type: 'Integer',
+				},
+				{
+					description: 'Add a long integer up to 16 digits.',
+					type: 'Long Integer',
+				},
+				{
+					description: 'Add text up to 65,000 characters.',
+					type: 'Long Text',
+				},
+				{
+					description: 'Choose from a picklist.',
+					type: 'Picklist',
+				},
+				{
+					description:
+						'Add a high precision decimal number without rounding.',
+					type: 'Precision Decimal',
+				},
+				{
+					description: 'Create rich text content.',
+					type: 'Rich Text',
+				},
+				{
+					description: 'Add text up to 280 characters.',
+					type: 'Text',
+				},
+			];
+
+			for (const {description, type} of fieldTypeDescriptions) {
+				await expect(
+					page.getByRole('option', {exact: true, name: type})
+				).toContainText(description);
+			}
+		}
+	);
+
 	test('can view more than 20 picklists in the picklist drop-down', async ({
 		apiHelpers,
 		objectFieldsPage,
@@ -2436,12 +2596,12 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 	});
 
 	test(
-		'can edit the prefix type and prefix for a phone number field',
+		'can edit the country source and country for a phone number field',
 		{tag: ['@LPD-83570']},
 		async ({apiHelpers, objectFieldsPage}) => {
 			let objectDefinition: ObjectDefinition;
-			let selectedPrefixType: string;
-			let selectedPrefix: string;
+			let selectedCountry: string;
+			let selectedCountrySource: string;
 
 			const objectFieldLabel = `phoneNumber${getRandomInt()}`;
 
@@ -2474,44 +2634,44 @@ test.describe('Manage objectFields through Objects Admin UI', () => {
 				});
 			});
 
-			await test.step('Edit the prefix type and prefix for the phone number field', async () => {
+			await test.step('Edit the country source and country for the phone number field', async () => {
 				await objectFieldsPage.openObjectField(objectFieldLabel);
 
-				await objectFieldsPage.prefixTypeDropdown.click();
+				await objectFieldsPage.countrySourceDropdown.click();
 
-				const prefixTypeOption =
+				const countrySourceOption =
 					objectFieldsPage.iframeLocator.getByRole('option', {
 						exact: true,
 						name: 'Fixed',
 					});
 
-				selectedPrefixType = await prefixTypeOption.innerText();
+				selectedCountrySource = await countrySourceOption.innerText();
 
-				await prefixTypeOption.click();
+				await countrySourceOption.click();
 
-				await objectFieldsPage.prefixDropdown.click();
+				await objectFieldsPage.countryPicker.click();
 
-				const prefixOption = objectFieldsPage.iframeLocator
+				const countryOption = objectFieldsPage.iframeLocator
 					.getByRole('option')
 					.nth(1);
 
-				await prefixOption.click();
+				await countryOption.click();
 
-				selectedPrefix =
-					await objectFieldsPage.prefixDropdown.innerText();
+				selectedCountry =
+					await objectFieldsPage.countryPicker.innerText();
 
 				await objectFieldsPage.saveObjectField();
 			});
 
-			await test.step('Verify the updated prefix type and prefix are saved', async () => {
+			await test.step('Verify the updated country source and country are saved', async () => {
 				await objectFieldsPage.openObjectField(objectFieldLabel);
 
-				await expect(objectFieldsPage.prefixTypeDropdown).toHaveText(
-					selectedPrefixType
+				await expect(objectFieldsPage.countrySourceDropdown).toHaveText(
+					selectedCountrySource
 				);
 
-				await expect(objectFieldsPage.prefixDropdown).toHaveText(
-					selectedPrefix
+				await expect(objectFieldsPage.countryPicker).toHaveText(
+					selectedCountry
 				);
 			});
 		}

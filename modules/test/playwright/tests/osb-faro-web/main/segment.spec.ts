@@ -19,7 +19,7 @@ import performLogin, {
 	userData,
 } from '../../../utils/performLogin';
 import {waitForAlert} from '../../../utils/waitForAlert';
-import {syncAnalyticsCloud} from '../../analytics-settings-web/main/utils/analytics-settings';
+import {syncAnalyticsCloudViaAPI} from '../../analytics-settings-web/main/utils/analytics-settings';
 import {faroConfig} from './faro.config';
 import {switchChannel} from './utils/channel';
 import {
@@ -423,7 +423,6 @@ test.skip(
 	{
 		tag: '@Legacy',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
 		const knownIndividualName = 'ac';
 		const knownIndividual = [
@@ -622,7 +621,6 @@ test.skip(
 	{
 		tag: '@Legacy',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
 		const firstIndividualsName = 'ac';
 		const secondIndividualsName = 'dxp';
@@ -744,7 +742,6 @@ test.skip(
 	{
 		tag: '@Legacy',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
 		const knownIndividualName = 'ac';
 		const knownIndividual = [
@@ -1297,11 +1294,9 @@ test.skip(
 	{
 		tag: '@Legacy',
 	},
-	async ({apiHelpers, page}) => {
+	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
 
 		// Remove the .skip from the test after it has been analyzed and fixed
-
-		const channelName = 'My Property - ' + getRandomString();
 
 		const organization =
 			await apiHelpers.headlessAdminUser.postOrganization();
@@ -1320,11 +1315,11 @@ test.skip(
 			);
 		});
 
-		const {channel, project} = await syncAnalyticsCloud({
+		await syncAnalyticsCloudViaAPI({
 			apiHelpers,
-			channelName,
-			organizationName: organization.name,
-			page,
+			channel,
+			project,
+			syncedOrganizationIds: [Number(organization.id)],
 		});
 
 		await test.step('Interact with the user that is not part of the organization', async () => {
@@ -1424,15 +1419,15 @@ test.skip(
 		tag: '@Legacy',
 	},
 	async ({
+		analyticsChannel: channel,
 		apiHelpers,
 		defaultUserAssociationsPage,
 		instanceSettingsPage,
 		page,
+		project,
 	}) => {
 
 		// Remove the .skip from the test after it has been analyzed and fixed
-
-		const channelName = 'My Property - ' + getRandomString();
 
 		const userGroup = await apiHelpers.headlessAdminUser.postUserGroup();
 
@@ -1458,11 +1453,11 @@ test.skip(
 			surname: user.familyName,
 		};
 
-		const {channel, project} = await syncAnalyticsCloud({
+		await syncAnalyticsCloudViaAPI({
 			apiHelpers,
-			channelName,
-			page,
-			userGroupName: userGroup.name,
+			channel,
+			project,
+			syncedUserGroupIds: [Number(userGroup.id)],
 		});
 
 		await test.step('Interact with the user that is not part of the user group', async () => {
@@ -2576,6 +2571,208 @@ test(
 		await expect(
 			page.getByText('There are no segments found.')
 		).toBeVisible();
+	}
+);
+
+test(
+	`Save a batch segment with a Viewed Document & Media Web Behavior criterion`,
+	{
+		tag: '@LRAC-9224',
+	},
+	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
+		const individual = generateIndividual({
+			name: 'webbehavior' + getRandomString(),
+		});
+
+		await createIndividuals({apiHelpers, individuals: [individual]});
+
+		await apiHelpers.jsonWebServicesOSBAsah.createEvents([
+			{
+				applicationId: 'Document',
+				assetId: '1',
+				assetTitle: 'DM AC Title',
+				canonicalUrl: 'https://www.liferay.com',
+				channelId: channel.id,
+				dataSourceId: 0,
+				eventDate: new Date().toISOString(),
+				eventId: 'documentPreviewed',
+				title: 'DM AC Title',
+				userId: individual.id,
+			},
+		]);
+
+		await navigateToACPageViaURL({
+			acPage: ACPage.segmentPage,
+			channelID: channel.id,
+			page,
+			projectID: project.groupId,
+		});
+
+		await createBatchSegment(page);
+
+		const segmentName = getRandomString();
+
+		await setSegmentName({page, segmentName});
+
+		await addSegmentField({
+			criterionName: 'Viewed Document & Media',
+			criterionType: 'Events',
+			page,
+		});
+
+		await selectAsset({assetName: 'DM AC Title', page});
+
+		await saveSegment(page);
+
+		await expect(page.locator('.criteria-card-root')).toContainText(
+			'DM AC Title'
+		);
+
+		await navigateToACPageViaURL({
+			acPage: ACPage.segmentPage,
+			channelID: channel.id,
+			page,
+			projectID: project.groupId,
+		});
+
+		await viewNameOnTableList({itemNames: segmentName, page});
+	}
+);
+
+test(
+	'Save a batch segment with a Viewed Web Content criterion filtered to a Last 7 days time period',
+	{
+		tag: '@LRAC-9222',
+	},
+	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
+		const assetTitle = 'Web Content AC Title';
+
+		const individual = generateIndividual({
+			name: 'wcviewer' + getRandomString(),
+		});
+
+		await createIndividuals({apiHelpers, individuals: [individual]});
+
+		await apiHelpers.jsonWebServicesOSBAsah.createEvents([
+			{
+				applicationId: 'WebContent',
+				assetId: '1',
+				assetTitle,
+				canonicalUrl: 'https://www.liferay.com',
+				channelId: channel.id,
+				dataSourceId: 0,
+				eventDate: new Date().toISOString(),
+				eventId: 'webContentViewed',
+				title: assetTitle,
+				userId: individual.id,
+			},
+		]);
+
+		await navigateToACPageViaURL({
+			acPage: ACPage.segmentPage,
+			channelID: channel.id,
+			page,
+			projectID: project.groupId,
+		});
+
+		await createBatchSegment(page);
+
+		const segmentName = getRandomString();
+
+		await setSegmentName({page, segmentName});
+
+		await addSegmentField({
+			criterionName: 'Viewed Web Content',
+			criterionType: 'Events',
+			page,
+		});
+
+		await selectAsset({assetName: assetTitle, page});
+
+		// Switch the time period dropdown to Last 7 days
+
+		await page
+			.locator('button[data-testid="clay-select"]', {
+				hasText: 'Last 24 hours',
+			})
+			.click();
+
+		await page.getByText('Last 7 days').click();
+
+		await saveSegment(page);
+
+		await expect(page.locator('.criteria-card-root')).toContainText(
+			'Last 7 days'
+		);
+	}
+);
+
+test(
+	'Save a batch segment with a Viewed Blog Has Not Web Behavior criterion',
+	{
+		tag: '@LRAC-Legacy-HasNot',
+	},
+	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
+		const assetTitle = 'Blogs AC Title';
+
+		const individual = generateIndividual({
+			name: 'blognothad' + getRandomString(),
+		});
+
+		await createIndividuals({apiHelpers, individuals: [individual]});
+
+		await apiHelpers.jsonWebServicesOSBAsah.createEvents([
+			{
+				applicationId: 'Blog',
+				assetId: '1',
+				assetTitle,
+				canonicalUrl: 'https://www.liferay.com',
+				channelId: channel.id,
+				dataSourceId: 0,
+				eventDate: new Date().toISOString(),
+				eventId: 'blogViewed',
+				title: assetTitle,
+				userId: individual.id,
+			},
+		]);
+
+		await navigateToACPageViaURL({
+			acPage: ACPage.segmentPage,
+			channelID: channel.id,
+			page,
+			projectID: project.groupId,
+		});
+
+		await createBatchSegment(page);
+
+		const segmentName = getRandomString();
+
+		await setSegmentName({page, segmentName});
+
+		await addSegmentField({
+			criterionName: 'Viewed Blog',
+			criterionType: 'Events',
+			page,
+		});
+
+		await selectAsset({assetName: assetTitle, page});
+
+		// Switch the "has" operator to "has not"
+
+		await page
+			.locator('.criteria-statement button.form-control')
+			.first()
+			.click();
+
+		await page
+			.locator('button.dropdown-item', {hasText: /^has not$/})
+			.click();
+
+		await saveSegment(page);
+
+		await expect(page.locator('.criteria-card-root')).toContainText(
+			'has not'
+		);
 	}
 );
 

@@ -305,10 +305,10 @@ module.exports = {
 					pageViewsLimit: 5000000,
 					price: 250
 				},
-				['Liferay Data Platform']: {
+				['Liferay Data Platform (Private Beta)']: {
 					baseSubscriptionPlan: null,
 					individualsLimit: 1000,
-					name: 'Liferay Data Platform',
+					name: 'Liferay Data Platform (Private Beta)',
 					pageViewsLimit: 300000,
 					price: 0
 				},
@@ -637,6 +637,8 @@ module.exports = {
 		}
 	},
 	moduleNameMapper: {
+		'^@liferay/frontend-data-set-web$':
+			'<rootDir>/src/main/js/test/__mocks__/@liferay/frontend-data-set-web.js',
 		'^@react-dnd/invariant$':
 			'<rootDir>/src/main/js/test/__mocks__/@react-dnd/invariant.js',
 		'^assets(.*)$': '<rootDir>/src/main/js/assets$1',

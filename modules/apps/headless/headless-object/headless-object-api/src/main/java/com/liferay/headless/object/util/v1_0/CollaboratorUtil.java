@@ -8,6 +8,7 @@ package com.liferay.headless.object.util.v1_0;
 import com.liferay.headless.object.dto.v1_0.Collaborator;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.NoSuchGroupException;
 import com.liferay.portal.kernel.exception.NoSuchModelException;
@@ -35,6 +36,7 @@ import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.util.GroupUtil;
+import com.liferay.sharing.configuration.SharingEntryCollaborationEmailConfiguration;
 import com.liferay.sharing.exception.DuplicateSharingEntryException;
 import com.liferay.sharing.model.SharingEntry;
 import com.liferay.sharing.security.permission.SharingEntryAction;
@@ -63,7 +65,7 @@ public class CollaboratorUtil {
 	public static Collaborator addOrUpdateCollaborator(
 			AcceptLanguage acceptLanguage, String className, long classNameId,
 			long classPK, Collaborator collaborator, long collaboratorId,
-			long companyId,
+			long companyId, ConfigurationProvider configurationProvider,
 			DTOConverter<SharingEntry, Collaborator> dtoConverter,
 			DTOConverterRegistry dtoConverterRegistry, long groupId,
 			HttpServletRequest httpServletRequest,
@@ -78,10 +80,10 @@ public class CollaboratorUtil {
 		if (StringUtil.equals("Email", type)) {
 			return addOrUpdateCollaboratorByEmailAddress(
 				acceptLanguage, className, classNameId, classPK, collaborator,
-				companyId, dtoConverter, dtoConverterRegistry,
-				collaborator.getEmailAddress(), groupId, httpServletRequest,
-				sharingEntryService, ticketLocalService, uriInfo, user,
-				userGroupLocalService, userLocalService);
+				companyId, configurationProvider, dtoConverter,
+				dtoConverterRegistry, collaborator.getEmailAddress(), groupId,
+				httpServletRequest, sharingEntryService, ticketLocalService,
+				uriInfo, user, userGroupLocalService, userLocalService);
 		}
 
 		return toCollaborator(
@@ -96,6 +98,7 @@ public class CollaboratorUtil {
 	public static Collaborator addOrUpdateCollaboratorByEmailAddress(
 			AcceptLanguage acceptLanguage, String className, long classNameId,
 			long classPK, Collaborator collaborator, long companyId,
+			ConfigurationProvider configurationProvider,
 			DTOConverter<SharingEntry, Collaborator> dtoConverter,
 			DTOConverterRegistry dtoConverterRegistry, String emailAddress,
 			long groupId, HttpServletRequest httpServletRequest,
@@ -147,7 +150,8 @@ public class CollaboratorUtil {
 		}
 
 		Ticket ticket = _addOrUpdateTicket(
-			className, classPK, collaborator, companyId, emailAddress,
+			className, classPK, companyId, emailAddress,
+			_getExpirationDate(companyId, configurationProvider),
 			_fetchTicketByEmailAddress(
 				className, classPK, companyId, emailAddress,
 				ticketLocalService),
@@ -165,6 +169,7 @@ public class CollaboratorUtil {
 	public static Page<Collaborator> addOrUpdateCollaborators(
 			AcceptLanguage acceptLanguage, String className, long classNameId,
 			long classPK, Collaborator[] collaborators, long companyId,
+			ConfigurationProvider configurationProvider,
 			DTOConverter<SharingEntry, Collaborator> dtoConverter,
 			DTOConverterRegistry dtoConverterRegistry, long groupId,
 			HttpServletRequest httpServletRequest,
@@ -174,11 +179,12 @@ public class CollaboratorUtil {
 			UserLocalService userLocalService)
 		throws Exception {
 
+		Date expirationDate = _getExpirationDate(
+			companyId, configurationProvider);
 		List<SharingEntry> oldSharingEntries =
 			sharingEntryService.getSharingEntries(
 				classNameId, classPK, groupId, QueryUtil.ALL_POS,
 				QueryUtil.ALL_POS, null);
-
 		List<SharingEntry> newSharingEntries = new ArrayList<>();
 		Set<Long> sharingEntryIds = new HashSet<>();
 		Set<Long> ticketIds = new HashSet<>();
@@ -211,8 +217,8 @@ public class CollaboratorUtil {
 				}
 				else {
 					Ticket ticket = _addOrUpdateTicket(
-						className, classPK, collaborator, companyId,
-						emailAddress,
+						className, classPK, companyId, emailAddress,
+						expirationDate,
 						_fetchTicketByEmailAddress(
 							className, classPK, companyId, emailAddress,
 							ticketLocalService),
@@ -527,28 +533,19 @@ public class CollaboratorUtil {
 	}
 
 	private static Ticket _addOrUpdateTicket(
-		String className, long classPK, Collaborator collaborator,
-		long companyId, String emailAddress, Ticket ticket,
+		String className, long classPK, long companyId, String emailAddress,
+		Date expirationDate, Ticket ticket,
 		TicketLocalService ticketLocalService) {
 
 		if (ticket == null) {
 			return ticketLocalService.addTicket(
 				companyId, className, classPK,
-				TicketConstants.TYPE_INVITE_COLLABORATOR, emailAddress,
-				GetterUtil.getObject(
-					collaborator.getDateExpired(),
-					() -> new Date(
-						System.currentTimeMillis() +
-							TimeUnit.HOURS.toMillis(
-								_DEFAULT_INVITATION_EXPIRATION_HOURS))),
-				null);
+				TicketConstants.TYPE_INVITE_COLLABORATOR, emailAddress, null,
+				expirationDate, null);
 		}
 
-		if (collaborator.getDateExpired() != null) {
-			ticket.setExpirationDate(collaborator.getDateExpired());
-		}
-
-		ticket.setExtraInfo(emailAddress);
+		ticket.setEmailAddress(emailAddress);
+		ticket.setExpirationDate(expirationDate);
 
 		return ticketLocalService.updateTicket(ticket);
 	}
@@ -558,16 +555,34 @@ public class CollaboratorUtil {
 		TicketLocalService ticketLocalService) {
 
 		List<Ticket> tickets = ticketLocalService.getTickets(
-			companyId, className, classPK,
-			TicketConstants.TYPE_INVITE_COLLABORATOR);
+			companyId, TicketConstants.TYPE_INVITE_COLLABORATOR, emailAddress);
 
 		for (Ticket ticket : tickets) {
-			if (StringUtil.equals(emailAddress, ticket.getExtraInfo())) {
+			if (StringUtil.equals(className, ticket.getClassName()) &&
+				(ticket.getClassPK() == classPK)) {
+
 				return ticket;
 			}
 		}
 
 		return null;
+	}
+
+	private static Date _getExpirationDate(
+			long companyId, ConfigurationProvider configurationProvider)
+		throws Exception {
+
+		SharingEntryCollaborationEmailConfiguration
+			sharingEntryCollaborationEmailConfiguration =
+				configurationProvider.getCompanyConfiguration(
+					SharingEntryCollaborationEmailConfiguration.class,
+					companyId);
+
+		return new Date(
+			System.currentTimeMillis() +
+				TimeUnit.HOURS.toMillis(
+					sharingEntryCollaborationEmailConfiguration.
+						invitationToCollaborateTokenExpirationTime()));
 	}
 
 	private static boolean _hasViewPermission(User user) throws Exception {
@@ -650,7 +665,5 @@ public class CollaboratorUtil {
 				"Collaborator type must be \"User\" or \"UserGroup\"");
 		}
 	}
-
-	private static final int _DEFAULT_INVITATION_EXPIRATION_HOURS = 48;
 
 }

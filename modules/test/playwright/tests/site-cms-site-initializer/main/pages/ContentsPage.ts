@@ -140,8 +140,12 @@ export class ContentsPage {
 		await this.page.getByLabel('NameRequired').fill(folderName);
 
 		if (spaceName) {
-			await this.page.getByLabel('SpaceMandatory').click();
-			await this.page.getByRole('option', {name: spaceName}).click();
+			const spaceSelector = this.page.getByLabel('SpaceMandatory');
+
+			if (await spaceSelector.isVisible()) {
+				await spaceSelector.click();
+				await this.page.getByRole('option', {name: spaceName}).click();
+			}
 		}
 
 		await this.page.getByRole('button', {name: 'Save'}).click();
@@ -187,14 +191,16 @@ export class ContentsPage {
 
 		await this.page.getByRole('menuitem', {name: 'Delete'}).click();
 
-		await this.page.getByRole('button', {name: 'Delete Folder'}).click();
-
 		if (recycleBinEnabled) {
 			await waitForAlert(this.page, `Success:${folderName} was moved`, {
 				autoClose: false,
 			});
 		}
 		else {
+			await this.page
+				.getByRole('button', {name: 'Delete Folder'})
+				.click();
+
 			await waitForAlert(
 				this.page,
 				`Success:${folderName} has been permanently deleted.`

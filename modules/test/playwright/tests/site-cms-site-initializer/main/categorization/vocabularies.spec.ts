@@ -28,6 +28,22 @@ const test = mergeTests(
 	loginTest()
 );
 
+const createdVocabularyNames: string[] = [];
+
+test.afterEach(async ({vocabulariesPage}) => {
+	if (!createdVocabularyNames.length) {
+		return;
+	}
+
+	await vocabulariesPage.goto();
+
+	for (const name of createdVocabularyNames) {
+		await vocabulariesPage.deleteVocabulary(name);
+	}
+
+	createdVocabularyNames.length = 0;
+});
+
 const createScopedVocabularyAndContent = async ({
 	apiHelpers,
 	assetLibraries,
@@ -96,6 +112,10 @@ test(
 			page.getByRole('heading', {name: `Delete "${name}"`})
 		).toBeVisible();
 
+		await expect(page.locator('.liferay-modal .modal-dialog')).toHaveClass(
+			/modal-dialog-centered/
+		);
+
 		await clickAndExpectToBeVisible({
 			target: page.getByText(
 				'Success:Your request completed successfully.'
@@ -122,9 +142,11 @@ test(
 	'Assert can edit vocabulary from dropdown actions',
 	{tag: '@LPD-32750'},
 	async ({editVocabularyPage, page, vocabulariesPage}) => {
-		await editVocabularyPage.goto();
-
 		const name = `Vocabulary${getRandomInt()}`;
+
+		createdVocabularyNames.push(name);
+
+		await editVocabularyPage.goto();
 
 		await editVocabularyPage.changeGeneralInfo({
 			description: getRandomString(),
@@ -151,9 +173,11 @@ test(
 	'Assert can edit vocabulary permissions from dropdown actions',
 	{tag: '@LPD-32750'},
 	async ({editVocabularyPage, page, vocabulariesPage}) => {
-		editVocabularyPage.goto();
-
 		const name = `Vocabulary${getRandomInt()}`;
+
+		createdVocabularyNames.push(name);
+
+		editVocabularyPage.goto();
 
 		await editVocabularyPage.changeGeneralInfo({
 			description: getRandomString(),
@@ -233,9 +257,11 @@ test(
 	'Can create and update vocabulary',
 	{tag: ['@LPD-32750', '@LPD-66358']},
 	async ({editVocabularyPage, page, vocabulariesPage}) => {
-		editVocabularyPage.goto();
+		let name = `Vocabulary${getRandomInt()}`;
 
-		const name = `Vocabulary${getRandomInt()}`;
+		createdVocabularyNames.push(name);
+
+		editVocabularyPage.goto();
 
 		await editVocabularyPage.changeGeneralInfo({
 			description: getRandomString(),
@@ -307,11 +333,11 @@ test(
 
 		await expect(spacesInputLocator).toHaveAttribute('value', 'All Spaces');
 
-		const newName = `Vocabulary${getRandomInt()}`;
+		name = `Vocabulary${getRandomInt()}`;
 
 		await editVocabularyPage.changeGeneralInfo({
 			description: getRandomString(),
-			name: newName,
+			name,
 		});
 
 		await editVocabularyPage.assetTypesButton.click();
@@ -323,13 +349,13 @@ test(
 		await expect(editVocabularyPage.assetTypeToggle).toBeChecked();
 
 		await clickAndExpectToBeVisible({
-			target: page.getByText(
-				`Success:${newName} was updated successfully.`
-			),
+			target: page.getByText(`Success:${name} was updated successfully.`),
 			trigger: editVocabularyPage.saveButton,
 		});
 
-		await expect(vocabulariesPage.getItem(newName)).toBeVisible();
+		createdVocabularyNames[createdVocabularyNames.length - 1] = name;
+
+		await expect(vocabulariesPage.getItem(name)).toBeVisible();
 	}
 );
 
@@ -337,9 +363,11 @@ test(
 	'Validate change asset types when saving',
 	{tag: '@LPD-52591'},
 	async ({editVocabularyPage, page, vocabulariesPage}) => {
-		editVocabularyPage.goto();
-
 		const name = `Vocabulary${getRandomInt()}`;
+
+		createdVocabularyNames.push(name);
+
+		editVocabularyPage.goto();
 
 		await editVocabularyPage.changeGeneralInfo({
 			description: getRandomString(),
@@ -393,9 +421,11 @@ test(
 	'Validate change spaces when saving',
 	{tag: '@LPD-52592'},
 	async ({editVocabularyPage, page, vocabulariesPage}) => {
-		editVocabularyPage.goto();
-
 		const name = `Vocabulary${getRandomInt()}`;
+
+		createdVocabularyNames.push(name);
+
+		editVocabularyPage.goto();
 
 		await editVocabularyPage.changeGeneralInfo({
 			description: getRandomString(),
@@ -668,6 +698,8 @@ test(
 	async ({editVocabularyPage, page}) => {
 		const externalReferenceCode = `ERC${getRandomInt()}`;
 		const name = `Vocabulary${getRandomInt()}`;
+
+		createdVocabularyNames.push(name);
 
 		await editVocabularyPage.goto();
 

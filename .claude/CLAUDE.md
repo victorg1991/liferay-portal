@@ -58,6 +58,8 @@ Logs are available at `<bundles>/logs/liferay.<yyyy-MM-dd>.log`. Check them when
 
 	Then copy the resulting `com.liferay.<name>.test.util.jar` from `<bundles>/osgi/test` to `<bundles>/osgi/modules`.
 
+- **`*-test` modules** — Do not deploy. The `testIntegration` task wires the test bundle into the runtime itself, so a manual deploy is redundant and slows the cycle.
+
 - **Gradle plugin modules** (under `modules/sdk/gradle-plugins*`):
 
 	```bash
@@ -90,6 +92,8 @@ ant test-package -Dtest.package=com.liferay.portal.kernel.util
 cd <module-root> && yarn test
 cd <module-root> && yarn test <test-file-path>
 ```
+
+Read `.claude/rules/jest-testing.md` before creating a frontend unit test.
 
 #### Integration Tests
 

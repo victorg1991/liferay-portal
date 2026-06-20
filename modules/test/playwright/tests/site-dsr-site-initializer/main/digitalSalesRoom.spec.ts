@@ -120,6 +120,73 @@ test(
 );
 
 test(
+	'Update a digital sales room name, ERC and friendly URL from settings',
+	{tag: '@LPD-94454'},
+	async ({
+		apiHelpers,
+		digitalSalesRoomSettingsPage,
+		digitalSalesRoomsPage,
+		editDigitalSalesRoomPage,
+		page,
+	}) => {
+		const account = await apiHelpers.headlessAdminUser.postAccount({
+			type: 'business',
+		});
+
+		const roomName = `A${getRandomInt()}`;
+		const updatedExternalReferenceCode = `erc${getRandomInt()}`;
+		const updatedFriendlyURL = `furl${getRandomInt()}`;
+		const updatedName = `B${getRandomInt()}`;
+
+		await digitalSalesRoomsPage.goToRoomsPage();
+
+		await expect(
+			digitalSalesRoomsPage.digitalSalesRoomsTable.searchInput
+		).toBeVisible();
+
+		await digitalSalesRoomsPage.digitalSalesRoomsTable.newButton.click();
+
+		await editDigitalSalesRoomPage.addDigitalSalesRoom({
+			accountName: account.name,
+			roomName,
+		});
+
+		await digitalSalesRoomsPage.goToRoomsPage();
+
+		await digitalSalesRoomsPage.clickRowActionsMenuItem(
+			roomName,
+			digitalSalesRoomsPage.settingsMenuItem
+		);
+
+		await expect(digitalSalesRoomSettingsPage.nameInput).toBeVisible();
+
+		await digitalSalesRoomSettingsPage.updateRoomSettings({
+			externalReferenceCode: updatedExternalReferenceCode,
+			friendlyURL: updatedFriendlyURL,
+			name: updatedName,
+		});
+
+		await waitForAlert(page);
+
+		await digitalSalesRoomsPage.clickRowActionsMenuItem(
+			updatedName,
+			digitalSalesRoomsPage.settingsMenuItem
+		);
+
+		await expect(
+			digitalSalesRoomSettingsPage.externalReferenceCodeInput
+		).toHaveValue(updatedExternalReferenceCode);
+		await expect(digitalSalesRoomSettingsPage.friendlyURLInput).toHaveValue(
+			updatedFriendlyURL
+		);
+		await expect(digitalSalesRoomSettingsPage.nameInput).toHaveValue(
+			updatedName
+		);
+		await expect(digitalSalesRoomSettingsPage.siteIdValue).toBeVisible();
+	}
+);
+
+test(
 	'Edit a digital sales room',
 	{tag: '@LPD-69528'},
 	async ({
@@ -565,7 +632,7 @@ test(
 );
 
 test(
-	'A viewer cannot upload files but make comments',
+	'A viewer cannot upload files nor share but can make comments',
 	{tag: '@LPD-87116'},
 	async ({
 		apiHelpers,
@@ -623,6 +690,8 @@ test(
 		await performUserSwitch(page, userAccount.alternateName);
 
 		await page.goto(`/web/${roomName}`);
+
+		await expect(digitalSalesRoomUsersPage.shareButton).not.toBeVisible();
 
 		const comment = getRandomString();
 
@@ -693,7 +762,7 @@ test(
 		);
 		await digitalSalesRoomUsersPage.userEmailAddressesInput.press('Enter');
 		await editDigitalSalesRoomPage.roleKeyButton.click();
-		await editDigitalSalesRoomPage.contributorRoleButton.click();
+		await editDigitalSalesRoomPage.contributorRoleInputButton.click();
 		await digitalSalesRoomUsersPage.inviteButton.click();
 
 		await waitForAlert(page, 'Success:User was invited successfully.');
@@ -717,6 +786,90 @@ test(
 		await expect(
 			editDigitalSalesRoomPage.noDocumentsMessage
 		).not.toBeVisible();
+
+		await performUserSwitch(page, 'test');
+	}
+);
+
+test(
+	'A contributor can update created invitations',
+	{tag: '@LPD-87116'},
+	async ({
+		apiHelpers,
+		digitalSalesRoomUsersPage,
+		digitalSalesRoomsPage,
+		editDigitalSalesRoomPage,
+		page,
+	}) => {
+		const account = await apiHelpers.headlessAdminUser.postAccount({
+			type: 'business',
+		});
+
+		const userAccount =
+			await apiHelpers.headlessAdminUser.postUserAccount();
+
+		userData[userAccount.alternateName] = {
+			name: userAccount.givenName,
+			password: 'test',
+			surname: userAccount.familyName,
+		};
+
+		const email = `invited-${getRandomInt()}@liferay.com`;
+		const roomName = `A${getRandomInt()}`;
+
+		await digitalSalesRoomsPage.goToRoomsPage();
+
+		await expect(
+			digitalSalesRoomsPage.digitalSalesRoomsTable.searchInput
+		).toBeVisible();
+
+		await digitalSalesRoomsPage.digitalSalesRoomsTable.newButton.click();
+		await editDigitalSalesRoomPage.addDigitalSalesRoom({
+			accountName: account.name,
+			roomName,
+		});
+
+		await digitalSalesRoomsPage.goToRoomsPage();
+		await digitalSalesRoomsPage.clickRowActionsMenuItem(
+			roomName,
+			digitalSalesRoomsPage.shareMenuItem
+		);
+
+		await expect(
+			digitalSalesRoomUsersPage.userEmailAddressesInput
+		).toBeVisible();
+
+		await digitalSalesRoomUsersPage.userEmailAddressesInput.fill(
+			userAccount.emailAddress
+		);
+		await digitalSalesRoomUsersPage.userEmailAddressesInput.press('Enter');
+		await editDigitalSalesRoomPage.roleKeyButton.click();
+		await editDigitalSalesRoomPage.contributorRoleInputButton.click();
+		await digitalSalesRoomUsersPage.inviteButton.click();
+
+		await waitForAlert(page, 'Success:User was invited successfully.');
+
+		await performUserSwitch(page, userAccount.alternateName);
+
+		await page.goto(`/web/${roomName}`);
+
+		await digitalSalesRoomUsersPage.shareButton.click();
+		await digitalSalesRoomUsersPage.userEmailAddressesInput.fill(email);
+		await digitalSalesRoomUsersPage.userEmailAddressesInput.press('Enter');
+		await digitalSalesRoomUsersPage.inviteButton.click();
+
+		await waitForAlert(page, 'Success:User was invited successfully.');
+
+		await expect(
+			digitalSalesRoomUsersPage.roleText(email, 'Viewer')
+		).toBeVisible();
+
+		await digitalSalesRoomUsersPage.roleDropdown(email).click();
+		await editDigitalSalesRoomPage.contributorRoleButton.click();
+
+		await expect(
+			digitalSalesRoomUsersPage.roleText(email, 'Contributor')
+		).toBeVisible();
 
 		await performUserSwitch(page, 'test');
 	}
@@ -837,5 +990,166 @@ test(
 		).not.toBeVisible();
 
 		await performUserSwitch(page, 'test');
+	}
+);
+
+test(
+	'An image uploaded from a page fragment is not listed in the Documents widget',
+	{tag: '@LPD-92365'},
+	async ({
+		apiHelpers,
+		digitalSalesRoomsPage,
+		editDigitalSalesRoomPage,
+		page,
+	}) => {
+		const filePath = path.join(__dirname, 'dependencies', 'liferay.png');
+
+		const account = await apiHelpers.headlessAdminUser.postAccount({
+			type: 'business',
+		});
+
+		const roomName = `A${getRandomInt()}`;
+
+		await digitalSalesRoomsPage.goToRoomsPage();
+
+		await digitalSalesRoomsPage.digitalSalesRoomsTable.newButton.click();
+
+		await editDigitalSalesRoomPage.addDigitalSalesRoom({
+			accountName: account.name,
+			roomName,
+		});
+
+		await page.goto(`/web/${roomName}/onboarding?p_l_mode=edit`);
+
+		await editDigitalSalesRoomPage.uploadFragmentImage(filePath);
+
+		await page.goto(`/web/${roomName}`);
+
+		await editDigitalSalesRoomPage.documentsMenuItem.click();
+
+		await expect(editDigitalSalesRoomPage.noDocumentsMessage).toBeVisible();
+
+		const fileChooserPromise = page.waitForEvent('filechooser');
+
+		await editDigitalSalesRoomPage.newButton.click();
+		await editDigitalSalesRoomPage.fileUploadButton.click();
+		await editDigitalSalesRoomPage.selectFileButton.click();
+
+		const fileChooser = await fileChooserPromise;
+
+		await fileChooser.setFiles(filePath);
+
+		await editDigitalSalesRoomPage.publishButton.click();
+
+		await waitForAlert(page);
+
+		await expect(
+			editDigitalSalesRoomPage.noDocumentsMessage
+		).not.toBeVisible();
+	}
+);
+
+test(
+	'A seller can duplicate a room copying only the selected documents',
+	{tag: '@LPD-92370'},
+	async ({
+		apiHelpers,
+		digitalSalesRoomsPage,
+		editDigitalSalesRoomPage,
+		page,
+	}) => {
+		const account = await apiHelpers.headlessAdminUser.postAccount({
+			type: 'business',
+		});
+		const roomName = `A${getRandomInt()}`;
+		const userAccount =
+			await apiHelpers.headlessAdminUser.postUserAccount();
+
+		userData[userAccount.alternateName] = {
+			name: userAccount.givenName,
+			password: 'test',
+			surname: userAccount.familyName,
+		};
+
+		await apiHelpers.headlessAdminUser.postRoleByExternalReferenceCodeUserAccountAssociation(
+			'L_DSR_SELLER',
+			userAccount.id
+		);
+
+		await apiHelpers.headlessAdminUser.assignUserToAccountByEmailAddress(
+			account.id,
+			[userAccount.emailAddress]
+		);
+
+		await performUserSwitch(page, userAccount.alternateName);
+
+		await test.step('Create a room with two documents', async () => {
+			await digitalSalesRoomsPage.goToRoomsPageAsSeller();
+
+			await digitalSalesRoomsPage.digitalSalesRoomsTable.newButton.click();
+
+			await editDigitalSalesRoomPage.addDigitalSalesRoom({
+				accountName: account.name,
+				roomName,
+			});
+
+			await digitalSalesRoomsPage.goToRoomsPageAsSeller();
+
+			await digitalSalesRoomsPage.clickRowActionsMenuItem(
+				roomName,
+				digitalSalesRoomsPage.viewMenuItem
+			);
+
+			await editDigitalSalesRoomPage.uploadDocument(
+				path.join(__dirname, 'dependencies', 'document1.png')
+			);
+			await editDigitalSalesRoomPage.uploadDocument(
+				path.join(__dirname, 'dependencies', 'liferay.png')
+			);
+		});
+
+		await test.step('Duplicate the room selecting only one document', async () => {
+			await digitalSalesRoomsPage.goToRoomsPageAsSeller();
+
+			await digitalSalesRoomsPage.clickRowActionsMenuItem(
+				roomName,
+				digitalSalesRoomsPage.duplicateMenuItem
+			);
+
+			await expect(
+				digitalSalesRoomsPage.duplicateModalHeading
+			).toBeVisible();
+			await expect(
+				digitalSalesRoomsPage.documentRow('document1')
+			).toBeVisible();
+			await expect(
+				digitalSalesRoomsPage.documentRow('liferay')
+			).toBeVisible();
+
+			await digitalSalesRoomsPage.documentRowCheckbox('liferay').check();
+			await digitalSalesRoomsPage.duplicateButton.click();
+
+			await expect(digitalSalesRoomsPage.duplicateModal).not.toBeVisible({
+				timeout: 60000,
+			});
+		});
+
+		await test.step('Verify the duplicated room contains only the selected document', async () => {
+			await digitalSalesRoomsPage.goToRoomsPageAsSeller();
+
+			await digitalSalesRoomsPage.clickRowActionsMenuItem(
+				`${roomName} (Copy)`,
+				digitalSalesRoomsPage.viewMenuItem
+			);
+
+			await editDigitalSalesRoomPage.documentsMenuItem.click();
+
+			await expect(
+				editDigitalSalesRoomPage.documentCard('document1')
+			).not.toBeVisible();
+			await expect(
+				editDigitalSalesRoomPage.documentCard('liferay')
+			).toBeVisible();
+		});
 	}
 );

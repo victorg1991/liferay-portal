@@ -62,7 +62,6 @@ test(
 	{
 		tag: '@LRAC-8112 Legacy',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const individualName = 'user1';
 
@@ -171,7 +170,6 @@ test(
 	{
 		tag: '@LRAC-14813',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const pageTitle = 'My Page ' + randomString;
 
@@ -259,7 +257,6 @@ test(
 	{
 		tag: '@Legacy',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const pageTitle1 = 'My Page 1';
 		const pageTitle2 = 'My Page 2';
@@ -612,7 +609,6 @@ test.skip(
 	{
 		tag: '@LRAC-8988',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const pageTitle = 'Snúið Vinsælar þú';
 
@@ -692,7 +688,6 @@ test(
 	{
 		tag: '@Legacy',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
 		const firstIndividual = 'user1';
 		const secondIndividual = 'user2';
@@ -815,7 +810,6 @@ test(
 	{
 		tag: '@Legacy',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const individualName = 'user1';
 		const individuals = [
@@ -911,7 +905,6 @@ test.skip(
 	{
 		tag: '@LRAC-14827',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const individualName = 'user1';
 		const individuals = [
@@ -1008,7 +1001,6 @@ test.skip(
 	{
 		tag: '@LRAC-14827',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const pageTitle1 = 'My Page 1';
 		const pageTitle2 = 'My Page 2';
@@ -1122,7 +1114,6 @@ test.skip(
 	{
 		tag: '@LRAC-14836',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
 		const individualName = 'user1';
 		const individuals = [
@@ -1255,7 +1246,6 @@ test(
 	{
 		tag: '@LRAC-14794',
 	},
-
 	async ({analyticsChannel: channel, apiHelpers, page}) => {
 		const individualName = 'user1';
 		const individuals = [
@@ -1316,5 +1306,106 @@ test(
 				page.getByRole('link', {name: `${pageTitle}`})
 			).toBeVisible();
 		});
+	}
+);
+
+test(
+	'Path filter segment dropdown lists existing segments and reflects deletions',
+	{
+		tag: ['@LRAC-15060', '@LRAC-15061'],
+	},
+	async ({analyticsChannel: channel, apiHelpers, page, project}) => {
+		const individuals = [generateIndividual({name: 'user1'})];
+
+		await createIndividuals({apiHelpers, individuals});
+
+		const date = new Date();
+
+		await apiHelpers.jsonWebServicesOSBAsah.createEvents(
+			individuals.map((individual) => ({
+				applicationId: 'Page',
+				canonicalUrl: 'https://www.liferay.com',
+				channelId: channel.id,
+				eventDate: date.toISOString(),
+				eventId: 'pageViewed',
+				title: pageTitle,
+				userId: individual.id,
+			}))
+		);
+
+		const segmentNames = ['1', '2', '3', '4'].map(
+			(n) => `Path Filter Segment ${n}`
+		);
+
+		const segments: Array<{id: string}> = [];
+
+		for (const name of segmentNames) {
+			const segment =
+				await apiHelpers.jsonWebServicesOSBFaro.createIndividualSegment(
+					{
+						channelId: channel.id,
+						groupId: project.groupId,
+						name,
+					}
+				);
+
+			segments.push(segment);
+		}
+
+		await navigateToACPageViaURL({
+			acPage: ACPage.sitePage,
+			channelID: channel.id,
+			page,
+			projectID: project.groupId,
+		});
+
+		await navigateTo({page, pageName: 'Pages'});
+
+		await changeTimeFilter({page, timeFilterPeriod: 'Last 24 hours'});
+
+		await navigateTo({page, pageName: pageTitle});
+
+		await navigateTo({page, pageName: 'Path'});
+
+		// Open the filter and assert all 4 segments are listed
+
+		await page.getByRole('button', {name: 'Filter'}).click();
+
+		for (const name of segmentNames) {
+			await expect(page.getByRole('menuitem', {name})).toBeVisible();
+		}
+
+		await page.keyboard.press('Escape');
+
+		// Delete the last segment via API and reload the path view
+
+		await apiHelpers.jsonWebServicesOSBFaro.deleteIndividualSegments(
+			`[${segments[3].id}]`,
+			project.groupId
+		);
+
+		await page.reload();
+
+		await navigateTo({page, pageName: 'Pages'});
+
+		await changeTimeFilter({page, timeFilterPeriod: 'Last 24 hours'});
+
+		await navigateTo({page, pageName: pageTitle});
+
+		await navigateTo({page, pageName: 'Path'});
+
+		await page.getByRole('button', {name: 'Filter'}).click();
+
+		for (const name of segmentNames.slice(0, 3)) {
+			await expect(page.getByRole('menuitem', {name})).toBeVisible();
+		}
+
+		// Search for the deleted segment and assert it is no longer listed
+
+		await page.getByPlaceholder('Search').last().fill(segmentNames[3]);
+
+		await expect(
+			page.getByRole('menuitem', {name: segmentNames[3]})
+		).toHaveCount(0);
 	}
 );

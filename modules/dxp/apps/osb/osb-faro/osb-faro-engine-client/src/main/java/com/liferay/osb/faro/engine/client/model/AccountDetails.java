@@ -23,7 +23,7 @@ public class AccountDetails {
 
 	public static class Field {
 
-		public Long getDataSourceId() {
+		public String getDataSourceId() {
 			return _dataSourceId;
 		}
 
@@ -39,11 +39,15 @@ public class AccountDetails {
 			return _name;
 		}
 
+		public String getSourceName() {
+			return _sourceName;
+		}
+
 		public String getValue() {
 			return _value;
 		}
 
-		public void setDataSourceId(Long dataSourceId) {
+		public void setDataSourceId(String dataSourceId) {
 			_dataSourceId = dataSourceId;
 		}
 
@@ -59,14 +63,19 @@ public class AccountDetails {
 			_name = name;
 		}
 
+		public void setSourceName(String sourceName) {
+			_sourceName = sourceName;
+		}
+
 		public void setValue(String value) {
 			_value = value;
 		}
 
-		private Long _dataSourceId;
+		private String _dataSourceId;
 		private String _dataSourceName;
 		private Date _modifiedDate;
 		private String _name;
+		private String _sourceName;
 		private String _value;
 
 	}

@@ -89,7 +89,7 @@ public class RegionPersistenceImpl
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION =
 		FINDER_CLASS_NAME_ENTITY + ".List2";
 
-	private CollectionPersistenceFinder<Region>
+	private CollectionPersistenceFinder<Region, NoSuchRegionException>
 		_collectionPersistenceFinderByUuid;
 
 	/**
@@ -129,15 +129,9 @@ public class RegionPersistenceImpl
 			String uuid, OrderByComparator<Region> orderByComparator)
 		throws NoSuchRegionException {
 
-		Region region = fetchByUuid_First(uuid, orderByComparator);
-
-		if (region != null) {
-			return region;
-		}
-
-		throw new NoSuchRegionException(
-			_collectionPersistenceFinderByUuid.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {uuid}));
+		return _collectionPersistenceFinderByUuid.findFirst(
+			FinderCacheUtil.getFinderCache(), new Object[] {uuid},
+			orderByComparator);
 	}
 
 	/**
@@ -179,7 +173,7 @@ public class RegionPersistenceImpl
 			FinderCacheUtil.getFinderCache(), new Object[] {uuid});
 	}
 
-	private CollectionPersistenceFinder<Region>
+	private CollectionPersistenceFinder<Region, NoSuchRegionException>
 		_collectionPersistenceFinderByUuid_C;
 
 	/**
@@ -222,15 +216,9 @@ public class RegionPersistenceImpl
 			OrderByComparator<Region> orderByComparator)
 		throws NoSuchRegionException {
 
-		Region region = fetchByUuid_C_First(uuid, companyId, orderByComparator);
-
-		if (region != null) {
-			return region;
-		}
-
-		throw new NoSuchRegionException(
-			_collectionPersistenceFinderByUuid_C.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {uuid, companyId}));
+		return _collectionPersistenceFinderByUuid_C.findFirst(
+			FinderCacheUtil.getFinderCache(), new Object[] {uuid, companyId},
+			orderByComparator);
 	}
 
 	/**
@@ -276,7 +264,7 @@ public class RegionPersistenceImpl
 			FinderCacheUtil.getFinderCache(), new Object[] {uuid, companyId});
 	}
 
-	private CollectionPersistenceFinder<Region>
+	private CollectionPersistenceFinder<Region, NoSuchRegionException>
 		_collectionPersistenceFinderByCountryId;
 
 	/**
@@ -316,15 +304,9 @@ public class RegionPersistenceImpl
 			long countryId, OrderByComparator<Region> orderByComparator)
 		throws NoSuchRegionException {
 
-		Region region = fetchByCountryId_First(countryId, orderByComparator);
-
-		if (region != null) {
-			return region;
-		}
-
-		throw new NoSuchRegionException(
-			_collectionPersistenceFinderByCountryId.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {countryId}));
+		return _collectionPersistenceFinderByCountryId.findFirst(
+			FinderCacheUtil.getFinderCache(), new Object[] {countryId},
+			orderByComparator);
 	}
 
 	/**
@@ -366,7 +348,7 @@ public class RegionPersistenceImpl
 			FinderCacheUtil.getFinderCache(), new Object[] {countryId});
 	}
 
-	private CollectionPersistenceFinder<Region>
+	private CollectionPersistenceFinder<Region, NoSuchRegionException>
 		_collectionPersistenceFinderByActive;
 
 	/**
@@ -406,15 +388,9 @@ public class RegionPersistenceImpl
 			boolean active, OrderByComparator<Region> orderByComparator)
 		throws NoSuchRegionException {
 
-		Region region = fetchByActive_First(active, orderByComparator);
-
-		if (region != null) {
-			return region;
-		}
-
-		throw new NoSuchRegionException(
-			_collectionPersistenceFinderByActive.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {active}));
+		return _collectionPersistenceFinderByActive.findFirst(
+			FinderCacheUtil.getFinderCache(), new Object[] {active},
+			orderByComparator);
 	}
 
 	/**
@@ -456,7 +432,7 @@ public class RegionPersistenceImpl
 			FinderCacheUtil.getFinderCache(), new Object[] {active});
 	}
 
-	private CollectionPersistenceFinder<Region>
+	private CollectionPersistenceFinder<Region, NoSuchRegionException>
 		_collectionPersistenceFinderByC_A;
 
 	/**
@@ -499,15 +475,9 @@ public class RegionPersistenceImpl
 			OrderByComparator<Region> orderByComparator)
 		throws NoSuchRegionException {
 
-		Region region = fetchByC_A_First(countryId, active, orderByComparator);
-
-		if (region != null) {
-			return region;
-		}
-
-		throw new NoSuchRegionException(
-			_collectionPersistenceFinderByC_A.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {countryId, active}));
+		return _collectionPersistenceFinderByC_A.findFirst(
+			FinderCacheUtil.getFinderCache(), new Object[] {countryId, active},
+			orderByComparator);
 	}
 
 	/**
@@ -553,7 +523,8 @@ public class RegionPersistenceImpl
 			FinderCacheUtil.getFinderCache(), new Object[] {countryId, active});
 	}
 
-	private UniquePersistenceFinder<Region> _uniquePersistenceFinderByC_R;
+	private UniquePersistenceFinder<Region, NoSuchRegionException>
+		_uniquePersistenceFinderByC_R;
 
 	/**
 	 * Returns the region where countryId = &#63; and regionCode = &#63; or throws a <code>NoSuchRegionException</code> if it could not be found.
@@ -567,22 +538,9 @@ public class RegionPersistenceImpl
 	public Region findByC_R(long countryId, String regionCode)
 		throws NoSuchRegionException {
 
-		Region region = fetchByC_R(countryId, regionCode);
-
-		if (region == null) {
-			String message =
-				_uniquePersistenceFinderByC_R.buildNoSuchKeyMessage(
-					_NO_SUCH_ENTITY_WITH_KEY,
-					new Object[] {countryId, regionCode});
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(message);
-			}
-
-			throw new NoSuchRegionException(message);
-		}
-
-		return region;
+		return _uniquePersistenceFinderByC_R.find(
+			FinderCacheUtil.getFinderCache(),
+			new Object[] {countryId, regionCode});
 	}
 
 	/**
@@ -632,7 +590,8 @@ public class RegionPersistenceImpl
 			new Object[] {countryId, regionCode});
 	}
 
-	private UniquePersistenceFinder<Region> _uniquePersistenceFinderByERC_C;
+	private UniquePersistenceFinder<Region, NoSuchRegionException>
+		_uniquePersistenceFinderByERC_C;
 
 	/**
 	 * Returns the region where externalReferenceCode = &#63; and companyId = &#63; or throws a <code>NoSuchRegionException</code> if it could not be found.
@@ -646,22 +605,9 @@ public class RegionPersistenceImpl
 	public Region findByERC_C(String externalReferenceCode, long companyId)
 		throws NoSuchRegionException {
 
-		Region region = fetchByERC_C(externalReferenceCode, companyId);
-
-		if (region == null) {
-			String message =
-				_uniquePersistenceFinderByERC_C.buildNoSuchKeyMessage(
-					_NO_SUCH_ENTITY_WITH_KEY,
-					new Object[] {externalReferenceCode, companyId});
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(message);
-			}
-
-			throw new NoSuchRegionException(message);
-		}
-
-		return region;
+		return _uniquePersistenceFinderByERC_C.find(
+			FinderCacheUtil.getFinderCache(),
+			new Object[] {externalReferenceCode, companyId});
 	}
 
 	/**
@@ -1086,8 +1032,8 @@ public class RegionPersistenceImpl
 			_SQL_SELECT_REGION_WHERE, _SQL_COUNT_REGION_WHERE,
 			RegionModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 			new FinderColumn<>(
-				"region.", "uuid", FinderColumn.Type.STRING, "=", true, true,
-				Region::getUuid));
+				"region.", "uuid", "uuid_", FinderColumn.Type.STRING, "=", true,
+				true, Region::getUuid));
 
 		_collectionPersistenceFinderByUuid_C =
 			new CollectionPersistenceFinder<>(
@@ -1111,8 +1057,8 @@ public class RegionPersistenceImpl
 				_SQL_SELECT_REGION_WHERE, _SQL_COUNT_REGION_WHERE,
 				RegionModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 				new FinderColumn<>(
-					"region.", "uuid", FinderColumn.Type.STRING, "=", true,
-					true, Region::getUuid),
+					"region.", "uuid", "uuid_", FinderColumn.Type.STRING, "=",
+					true, true, Region::getUuid),
 				new FinderColumn<>(
 					"region.", "companyId", FinderColumn.Type.LONG, "=", true,
 					true, Region::getCompanyId));
@@ -1164,8 +1110,8 @@ public class RegionPersistenceImpl
 				_SQL_SELECT_REGION_WHERE, _SQL_COUNT_REGION_WHERE,
 				RegionModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 				new FinderColumn<>(
-					"region.", "active", FinderColumn.Type.BOOLEAN, "=", true,
-					true, Region::isActive));
+					"region.", "active", "active_", FinderColumn.Type.BOOLEAN,
+					"=", true, true, Region::isActive));
 
 		_collectionPersistenceFinderByC_A = new CollectionPersistenceFinder<>(
 			this,
@@ -1191,8 +1137,8 @@ public class RegionPersistenceImpl
 				"region.", "countryId", FinderColumn.Type.LONG, "=", true, true,
 				Region::getCountryId),
 			new FinderColumn<>(
-				"region.", "active", FinderColumn.Type.BOOLEAN, "=", true, true,
-				Region::isActive));
+				"region.", "active", "active_", FinderColumn.Type.BOOLEAN, "=",
+				true, true, Region::isActive));
 
 		_uniquePersistenceFinderByC_R = new UniquePersistenceFinder<>(
 			this,
@@ -1265,4 +1211,4 @@ public class RegionPersistenceImpl
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1359261315
+// LIFERAY-SERVICE-BUILDER-HASH:-521795158

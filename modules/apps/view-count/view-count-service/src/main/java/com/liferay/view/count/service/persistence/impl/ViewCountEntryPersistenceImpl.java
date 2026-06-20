@@ -72,7 +72,7 @@ public class ViewCountEntryPersistenceImpl
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION =
 		FINDER_CLASS_NAME_ENTITY + ".List2";
 
-	private CollectionPersistenceFinder<ViewCountEntry>
+	private CollectionPersistenceFinder<ViewCountEntry, NoSuchEntryException>
 		_collectionPersistenceFinderByC_CN;
 
 	/**
@@ -116,17 +116,9 @@ public class ViewCountEntryPersistenceImpl
 			OrderByComparator<ViewCountEntry> orderByComparator)
 		throws NoSuchEntryException {
 
-		ViewCountEntry viewCountEntry = fetchByC_CN_First(
-			companyId, classNameId, orderByComparator);
-
-		if (viewCountEntry != null) {
-			return viewCountEntry;
-		}
-
-		throw new NoSuchEntryException(
-			_collectionPersistenceFinderByC_CN.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY,
-				new Object[] {companyId, classNameId}));
+		return _collectionPersistenceFinderByC_CN.findFirst(
+			finderCache, new Object[] {companyId, classNameId},
+			orderByComparator);
 	}
 
 	/**
@@ -374,11 +366,13 @@ public class ViewCountEntryPersistenceImpl
 			_SQL_SELECT_VIEWCOUNTENTRY_WHERE, _SQL_COUNT_VIEWCOUNTENTRY_WHERE,
 			ViewCountEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 			new FinderColumn<>(
-				"viewCountEntry.", "id.companyId", FinderColumn.Type.LONG, "=",
-				true, true, ViewCountEntry::getCompanyId),
+				"viewCountEntry.", "id.companyId", "companyId",
+				FinderColumn.Type.LONG, "=", true, true,
+				ViewCountEntry::getCompanyId),
 			new FinderColumn<>(
-				"viewCountEntry.", "id.classNameId", FinderColumn.Type.LONG,
-				"=", true, true, ViewCountEntry::getClassNameId));
+				"viewCountEntry.", "id.classNameId", "classNameId",
+				FinderColumn.Type.LONG, "=", true, true,
+				ViewCountEntry::getClassNameId));
 
 		ViewCountEntryUtil.setPersistence(this);
 	}
@@ -446,4 +440,4 @@ public class ViewCountEntryPersistenceImpl
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-1164351307
+// LIFERAY-SERVICE-BUILDER-HASH:1970292107

@@ -13,6 +13,8 @@ import com.liferay.poshi.core.pql.PQLEntityFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -134,11 +136,11 @@ public class JenkinsResultsParserUtil {
 	public static boolean debug;
 
 	public static void addRedactToken(String token) {
-		if (_forbiddenRedactTokens.contains(token)) {
+		if (isNullOrEmpty(token) || _forbiddenRedactTokens.contains(token)) {
 			return;
 		}
 
-		_redactTokens.add(token);
+		_redactTokens.addAll(_getRedactTokenVariants(token));
 	}
 
 	public static void append(File file, String content) throws IOException {
@@ -564,128 +566,11 @@ public class JenkinsResultsParserUtil {
 			long timeout, String... commands)
 		throws IOException, TimeoutException {
 
-		if (printCommands) {
-			System.out.print("Executing commands: ");
+		Shell.ExecutionResult executionResult = Shell.execute(
+			new Shell.ExecutionRequest(
+				baseDir, commands, exitOnFirstFail, printCommands, timeout));
 
-			for (String command : commands) {
-				System.out.println(command);
-			}
-		}
-
-		String[] bashCommands = new String[3];
-
-		if (isWindows()) {
-			bashCommands[0] = "C:\\Program Files\\Git\\bin\\sh.exe";
-		}
-		else {
-			bashCommands[0] = "/bin/sh";
-		}
-
-		bashCommands[1] = "-c";
-
-		String commandTerminator = ";";
-
-		if (exitOnFirstFail) {
-			commandTerminator = "&&";
-		}
-
-		StringBuffer sb = new StringBuffer();
-
-		if (isWindows()) {
-			sb.append("export GIT_ASK_YESNO=false");
-			sb.append(commandTerminator);
-			sb.append(" ");
-		}
-
-		for (String command : commands) {
-			if (isWindows()) {
-				command = command.replaceAll("\\(", "\\\\\\\\(");
-				command = command.replaceAll("\\)", "\\\\\\\\)");
-			}
-
-			sb.append(command);
-			sb.append(commandTerminator);
-			sb.append(" ");
-		}
-
-		sb.append("echo Finished executing Bash commands.\n");
-
-		bashCommands[2] = sb.toString();
-
-		ProcessBuilder processBuilder = new ProcessBuilder(bashCommands);
-
-		processBuilder.directory(baseDir.getAbsoluteFile());
-
-		Process process = new BufferedProcess(processBuilder.start());
-
-		Thread currentThread = Thread.currentThread();
-		long duration = 0;
-		long start = System.currentTimeMillis();
-		int returnCode = -1;
-
-		while (true) {
-			try {
-				if (currentThread.isInterrupted()) {
-					returnCode = 1;
-
-					process.destroyForcibly();
-
-					break;
-				}
-
-				returnCode = process.exitValue();
-
-				if (returnCode == 0) {
-					String standardOut = readInputStream(
-						process.getInputStream(), true);
-
-					duration = System.currentTimeMillis() - start;
-
-					while (!standardOut.contains(
-								"Finished executing Bash commands.") &&
-						   (duration < timeout)) {
-
-						sleep(10);
-
-						standardOut = readInputStream(
-							process.getInputStream(), true);
-
-						duration = System.currentTimeMillis() - start;
-					}
-				}
-
-				break;
-			}
-			catch (IllegalThreadStateException illegalThreadStateException) {
-				duration = System.currentTimeMillis() - start;
-
-				if (duration >= timeout) {
-					process.destroy();
-
-					throw new TimeoutException(
-						"Timeout occurred while executing Bash commands: " +
-							Arrays.toString(commands));
-				}
-
-				returnCode = -1;
-
-				sleep(100);
-			}
-		}
-
-		if (debug) {
-			System.out.println(
-				"Output stream: " +
-					readInputStream(process.getInputStream(), true));
-		}
-
-		if (debug && (returnCode != 0)) {
-			System.out.println(
-				"Error stream: " +
-					readInputStream(process.getErrorStream(), true));
-		}
-
-		return process;
+		return new ExecutionResultProcess(executionResult);
 	}
 
 	public static Process executeBashCommands(File baseDir, String... commands)
@@ -1243,7 +1128,7 @@ public class JenkinsResultsParserUtil {
 	}
 
 	public static String getBuildDirPath() {
-		String topLevelBuildURL = System.getenv("TOP_LEVEL_BUILD_URL");
+		String topLevelBuildURL = Environment.get("TOP_LEVEL_BUILD_URL");
 
 		if (topLevelBuildURL != null) {
 			String buildDirPath = getBuildDirPath(topLevelBuildURL);
@@ -1253,9 +1138,9 @@ public class JenkinsResultsParserUtil {
 			}
 		}
 
-		String buildNumber = System.getenv("BUILD_NUMBER");
-		String jobName = System.getenv("JOB_NAME");
-		String masterHostname = System.getenv("MASTER_HOSTNAME");
+		String buildNumber = Environment.get("BUILD_NUMBER");
+		String jobName = Environment.get("JOB_NAME");
+		String masterHostname = Environment.get("MASTER_HOSTNAME");
 
 		return getBuildDirPath(buildNumber, jobName, masterHostname);
 	}
@@ -1443,7 +1328,7 @@ public class JenkinsResultsParserUtil {
 				_buildPropertiesURLs = _getDefaultBuildPropertiesURLs();
 			}
 
-			Map<String, String> map = System.getenv();
+			Map<String, String> map = Environment.getAll();
 
 			for (Map.Entry<String, String> entry : map.entrySet()) {
 				properties.setProperty(entry.getKey(), entry.getValue());
@@ -1462,11 +1347,11 @@ public class JenkinsResultsParserUtil {
 					new EnvironmentBuildProperties(getLocalURL(url)));
 			}
 
-			String s3BucketName = System.getenv("S3_BUCKET_NAME");
+			String s3BucketName = Environment.get("S3_BUCKET_NAME");
 
 			if (!isNullOrEmpty(s3BucketName)) {
 				properties.setProperty(
-					"env.S3_BUCKET_NAME", System.getenv("S3_BUCKET_NAME"));
+					"env.S3_BUCKET_NAME", Environment.get("S3_BUCKET_NAME"));
 			}
 
 			if (!properties.containsKey("user.home")) {
@@ -1742,7 +1627,7 @@ public class JenkinsResultsParserUtil {
 	}
 
 	public static String getCohortName() {
-		String jenkinsURL = System.getenv("JENKINS_URL");
+		String jenkinsURL = Environment.get("JENKINS_URL");
 
 		return getCohortName(jenkinsURL);
 	}
@@ -1929,7 +1814,7 @@ public class JenkinsResultsParserUtil {
 	public static String getEnvironmentVariable(
 		String environmentVariableName) {
 
-		String environmentVariableValue = System.getenv(
+		String environmentVariableValue = Environment.get(
 			environmentVariableName);
 
 		if ((environmentVariableValue == null) ||
@@ -2670,6 +2555,16 @@ public class JenkinsResultsParserUtil {
 		return (Properties)_jenkinsProperties;
 	}
 
+	public static File getJenkinsRepositoryDir() {
+		String cacheDirPath = Environment.get("CACHE_DIR");
+
+		if (cacheDirPath == null) {
+			cacheDirPath = "/opt/dev/projects/github";
+		}
+
+		return new File(cacheDirPath, JENKINS_REPOSITORY_NAME);
+	}
+
 	public static String getJenkinsTempMapURL() {
 		try {
 			String jenkinsOSBJenkinsWebURL = getBuildProperty(
@@ -2702,7 +2597,7 @@ public class JenkinsResultsParserUtil {
 
 		if (jenkinsMaster.isBlackListed()) {
 			jenkinsMaster = JenkinsMaster.getInstance(
-				System.getenv("MASTER_HOSTNAME"));
+				Environment.get("MASTER_HOSTNAME"));
 		}
 
 		String key = jenkinsMaster.getName() + "_" + jobName;
@@ -2908,25 +2803,20 @@ public class JenkinsResultsParserUtil {
 	}
 
 	public static JenkinsMaster getMostAvailableJenkinsMaster(
-		String baseInvocationURL, int invokedBatchSize,
-		String labelExpression) {
+		String baseInvocationURL, int invokedBatchSize) {
 
 		String mostAvailableMasterURL = getMostAvailableMasterURL(
-			baseInvocationURL, null, invokedBatchSize, null, labelExpression,
-			JenkinsMaster.getSlaveRAMMinimumDefault(),
-			JenkinsMaster.getSlavesPerHostDefault());
+			baseInvocationURL, null, invokedBatchSize);
 
 		return JenkinsMaster.getInstance(
 			mostAvailableMasterURL.replaceAll("http://(.+)", "$1"));
 	}
 
 	public static JenkinsMaster getMostAvailableJenkinsMaster(
-		String baseInvocationURL, String blacklist, int invokedBatchSize,
-		int minimumRAM, int maximumSlavesPerHost) {
+		String baseInvocationURL, String blacklist, int invokedBatchSize) {
 
 		String mostAvailableMasterURL = getMostAvailableMasterURL(
-			baseInvocationURL, blacklist, invokedBatchSize, minimumRAM,
-			maximumSlavesPerHost);
+			baseInvocationURL, blacklist, invokedBatchSize);
 
 		return JenkinsMaster.getInstance(
 			mostAvailableMasterURL.replaceAll("http://(.+)", "$1"));
@@ -2936,42 +2826,19 @@ public class JenkinsResultsParserUtil {
 		String baseInvocationURL, int invokedBatchSize) {
 
 		return getMostAvailableMasterURL(
-			baseInvocationURL, null, invokedBatchSize,
-			JenkinsMaster.getSlaveRAMMinimumDefault(),
-			JenkinsMaster.getSlavesPerHostDefault());
+			baseInvocationURL, null, invokedBatchSize);
 	}
 
 	public static String getMostAvailableMasterURL(
-		String baseInvocationURL, int invokedBatchSize, int minimumRAM,
-		int maximumSlavesPerHost) {
+		String baseInvocationURL, String blacklist, int invokedBatchSize) {
 
 		return getMostAvailableMasterURL(
-			baseInvocationURL, null, invokedBatchSize, minimumRAM,
-			maximumSlavesPerHost);
+			baseInvocationURL, blacklist, invokedBatchSize, null);
 	}
 
 	public static String getMostAvailableMasterURL(
 		String baseInvocationURL, String blacklist, int invokedBatchSize,
-		int minimumRAM, int maximumSlavesPerHost) {
-
-		return getMostAvailableMasterURL(
-			baseInvocationURL, blacklist, invokedBatchSize, null, minimumRAM,
-			maximumSlavesPerHost);
-	}
-
-	public static String getMostAvailableMasterURL(
-		String baseInvocationURL, String blacklist, int invokedBatchSize,
-		String jobName, int minimumRAM, int maximumSlavesPerHost) {
-
-		return getMostAvailableMasterURL(
-			baseInvocationURL, blacklist, invokedBatchSize, jobName, null,
-			minimumRAM, maximumSlavesPerHost);
-	}
-
-	public static String getMostAvailableMasterURL(
-		String baseInvocationURL, String blacklist, int invokedBatchSize,
-		String jobName, String labelExpression, int minimumRAM,
-		int maximumSlavesPerHost) {
+		String jobName) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -2994,16 +2861,6 @@ public class JenkinsResultsParserUtil {
 			sb.append(fixURL(jobName));
 		}
 
-		if (!isNullOrEmpty(labelExpression)) {
-			sb.append("&labelExpression=");
-			sb.append(fixURL(labelExpression));
-		}
-
-		if (minimumRAM > 0) {
-			sb.append("&minimumRAM=");
-			sb.append(minimumRAM);
-		}
-
 		try {
 			JSONObject jsonObject = toJSONObject(sb.toString(), false);
 
@@ -3024,8 +2881,8 @@ public class JenkinsResultsParserUtil {
 
 			List<JenkinsMaster> availableJenkinsMasters =
 				LoadBalancerUtil.getAvailableJenkinsMasters(
+					blacklist,
 					LoadBalancerUtil.getMasterPrefix(baseInvocationURL),
-					blacklist, false, jobName, minimumRAM, maximumSlavesPerHost,
 					buildProperties, true);
 
 			Random random = new Random(getCurrentTimeMillis());
@@ -3828,7 +3685,7 @@ public class JenkinsResultsParserUtil {
 			return false;
 		}
 
-		String buildCachingEnabled = System.getenv("BUILD_CACHING_ENABLED");
+		String buildCachingEnabled = Environment.get("BUILD_CACHING_ENABLED");
 
 		if (!isNullOrEmpty(buildCachingEnabled)) {
 			return Objects.equals(buildCachingEnabled, "true");
@@ -3851,8 +3708,8 @@ public class JenkinsResultsParserUtil {
 
 	public static boolean isCINode() {
 		if (_ciNode == null) {
-			if (isNullOrEmpty(System.getenv("JENKINS_URL")) &&
-				isNullOrEmpty(System.getenv("MASTER_NETWORK_NAME"))) {
+			if (isNullOrEmpty(Environment.get("JENKINS_URL")) &&
+				isNullOrEmpty(Environment.get("MASTER_NETWORK_NAME"))) {
 
 				_ciNode = false;
 			}
@@ -3869,7 +3726,7 @@ public class JenkinsResultsParserUtil {
 			return false;
 		}
 
-		String masterNetworkName = System.getenv("MASTER_NETWORK_NAME");
+		String masterNetworkName = Environment.get("MASTER_NETWORK_NAME");
 
 		if (!isNullOrEmpty(masterNetworkName) &&
 			(masterNetworkName.equals("aws-network") ||
@@ -4171,7 +4028,7 @@ public class JenkinsResultsParserUtil {
 			return _topLevelJobNames.contains(jobName);
 		}
 
-		String masterHostname = System.getenv("MASTER_HOSTNAME");
+		String masterHostname = Environment.get("MASTER_HOSTNAME");
 
 		if (isNullOrEmpty(masterHostname)) {
 			return false;
@@ -4643,7 +4500,7 @@ public class JenkinsResultsParserUtil {
 		File baseDir, String[] excludedDockerImageNames,
 		String ecrRegistryName) {
 
-		String dockerEnabled = System.getenv("LIFERAY_DOCKER_ENABLED");
+		String dockerEnabled = Environment.get("LIFERAY_DOCKER_ENABLED");
 
 		if (isNullOrEmpty(dockerEnabled) || !dockerEnabled.equals("true")) {
 			return;
@@ -4767,9 +4624,9 @@ public class JenkinsResultsParserUtil {
 
 		String timeStamp = getDistinctTimeStamp();
 
-		File tempFile = new File(System.getenv("WORKSPACE"), timeStamp);
+		File tempFile = new File(Environment.get("WORKSPACE"), timeStamp);
 		File tempGzipFile = new File(
-			System.getenv("WORKSPACE"), timeStamp + ".gz");
+			Environment.get("WORKSPACE"), timeStamp + ".gz");
 
 		try {
 			copy(file, tempGzipFile);
@@ -6736,17 +6593,13 @@ public class JenkinsResultsParserUtil {
 			return _cacheURL;
 		}
 
-		String cacheDirPath = System.getenv("CACHE_DIR");
+		File jenkinsRepositoryDir = getJenkinsRepositoryDir();
 
-		if (cacheDirPath == null) {
-			cacheDirPath = "/opt/dev/projects/github";
-		}
+		File cacheDir = jenkinsRepositoryDir.getParentFile();
 
-		File cacheDir = new File(cacheDirPath);
+		if (cacheDir.exists() && jenkinsRepositoryDir.exists()) {
+			String cacheDirPath = cacheDir.getPath();
 
-		File cacheRepositoryDir = new File(cacheDir, JENKINS_REPOSITORY_NAME);
-
-		if (cacheDir.exists() && cacheRepositoryDir.exists()) {
 			System.out.println("Using " + cacheDirPath + " for cached files");
 
 			_cacheURL = "file://" + cacheDirPath;
@@ -7077,8 +6930,8 @@ public class JenkinsResultsParserUtil {
 		String basePropertiesFileName = basePropertiesFile.getName();
 
 		String[] environments = {
-			System.getenv("HOSTNAME"), System.getenv("HOST"),
-			System.getenv("COMPUTERNAME"), System.getProperty("user.name")
+			Environment.get("HOSTNAME"), Environment.get("HOST"),
+			Environment.get("COMPUTERNAME"), System.getProperty("user.name")
 		};
 
 		for (String environment : environments) {
@@ -7280,6 +7133,30 @@ public class JenkinsResultsParserUtil {
 		return "github.message.redact.token[" + index + "]";
 	}
 
+	private static Set<String> _getRedactTokenVariants(String token) {
+		Set<String> redactTokenVariants = new HashSet<>();
+
+		redactTokenVariants.add(token);
+
+		String quotedToken = JSONObject.quote(token);
+
+		redactTokenVariants.add(
+			quotedToken.substring(1, quotedToken.length() - 1));
+
+		try {
+			String urlEncodedToken = URLEncoder.encode(
+				token, StandardCharsets.UTF_8.name());
+
+			redactTokenVariants.add(urlEncodedToken);
+			redactTokenVariants.add(urlEncodedToken.replace("+", "%20"));
+		}
+		catch (UnsupportedEncodingException unsupportedEncodingException) {
+			throw new RuntimeException(unsupportedEncodingException);
+		}
+
+		return redactTokenVariants;
+	}
+
 	private static String _getRyncPath(String hostName, String filePath) {
 		if (hostName == null) {
 			return filePath;
@@ -7311,13 +7188,7 @@ public class JenkinsResultsParserUtil {
 				continue;
 			}
 
-			if (!redactToken.isEmpty()) {
-				_redactTokens.add(redactToken);
-
-				if (redactToken.contains("\\")) {
-					_redactTokens.add(redactToken.replace("\\", "\\\\"));
-				}
-			}
+			addRedactToken(redactToken);
 		}
 	}
 
@@ -7508,6 +7379,49 @@ public class JenkinsResultsParserUtil {
 		}
 		catch (Exception exception) {
 		}
+	}
+
+	private static class ExecutionResultProcess extends Process {
+
+		@Override
+		public void destroy() {
+		}
+
+		@Override
+		public int exitValue() {
+			return _executionResult.getExitValue();
+		}
+
+		@Override
+		public InputStream getErrorStream() {
+			String standardError = _executionResult.getStandardError();
+
+			return new ByteArrayInputStream(standardError.getBytes());
+		}
+
+		@Override
+		public InputStream getInputStream() {
+			String standardOut = _executionResult.getStandardOut();
+
+			return new ByteArrayInputStream(standardOut.getBytes());
+		}
+
+		@Override
+		public OutputStream getOutputStream() {
+			return new ByteArrayOutputStream();
+		}
+
+		@Override
+		public int waitFor() {
+			return _executionResult.getExitValue();
+		}
+
+		private ExecutionResultProcess(Shell.ExecutionResult executionResult) {
+			_executionResult = executionResult;
+		}
+
+		private final Shell.ExecutionResult _executionResult;
+
 	}
 
 }

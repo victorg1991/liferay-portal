@@ -81,6 +81,8 @@ public abstract class BaseTopLevelBuildReport
 		jsonArray.put(String.valueOf(testrayAttachmentURL));
 
 		buildReportJSONObject.put("testrayAttachmentURLs", jsonArray);
+
+		clearTestrayAttachmentURLCaches();
 	}
 
 	@Override
@@ -135,6 +137,10 @@ public abstract class BaseTopLevelBuildReport
 
 	@Override
 	public TestrayCloudObject getBuildReportTestrayCloudObject() {
+		if (!TestrayCloudBucket.hasGoogleApplicationCredentials()) {
+			return null;
+		}
+
 		JenkinsMaster jenkinsMaster = getJenkinsMaster();
 
 		TestrayCloudBucket testrayCloudBucket =

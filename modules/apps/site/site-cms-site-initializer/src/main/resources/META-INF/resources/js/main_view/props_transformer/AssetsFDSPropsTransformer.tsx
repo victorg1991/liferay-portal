@@ -130,6 +130,7 @@ const additionalAPIURLParametersTransformer = (
 export interface IBreadcrumbProps {
 	breadcrumbItems: IBreadcrumbItem[];
 	displayType: string;
+	hideSpace?: boolean;
 	size: string;
 }
 
@@ -158,6 +159,7 @@ export type AdditionalProps = {
 	rootFolder?: boolean;
 	rootObjectEntryFolderExternalReferenceCode: string;
 	showAdditionalItemInfo?: boolean;
+	trashEnabled?: boolean;
 };
 
 export default function AssetsFDSPropsTransformer({
@@ -710,6 +712,7 @@ export default function AssetsFDSPropsTransformer({
 								apiURL: bulkActionAPIURL,
 								dataSetId: otherProps.id,
 								selectedData,
+								trashEnabled: additionalProps.trashEnabled,
 							});
 						},
 						selectAll: selectedData.selectAll,
@@ -719,6 +722,7 @@ export default function AssetsFDSPropsTransformer({
 					deleteAssetEntriesBulkAction({
 						apiURL: bulkActionAPIURL,
 						selectedData,
+						trashEnabled: additionalProps.trashEnabled,
 					});
 				}
 			}

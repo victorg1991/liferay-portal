@@ -43,6 +43,7 @@ import com.liferay.portal.kernel.upgrade.data.cleanup.util.OrphanReferencesDataC
 import com.liferay.portal.kernel.upgrade.recorder.UpgradeLogProgressTracker;
 import com.liferay.portal.kernel.upgrade.recorder.UpgradeSQLRecorder;
 import com.liferay.portal.kernel.upgrade.util.UpgradeProcessUtil;
+import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
@@ -75,12 +76,17 @@ import java.net.URI;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
+import java.text.DateFormat;
+
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -380,19 +386,18 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 				_appender, "_upgradeReport");
 
 			ReflectionTestUtil.setFieldValue(
-				upgradeReport, "_dlSizeThread",
-				new Thread() {
+				upgradeReport, "_dlSizeSupplier",
+				(Supplier<Long>)() -> {
+					try {
+						Thread.sleep(5 * Time.SECOND);
+					}
+					catch (InterruptedException interruptedException) {
+						Thread currentThread = Thread.currentThread();
 
-					@Override
-					public void run() {
-						try {
-							sleep(5 * Time.SECOND);
-						}
-						catch (InterruptedException interruptedException) {
-							throw new RuntimeException(interruptedException);
-						}
+						currentThread.interrupt();
 					}
 
+					return 0L;
 				});
 
 			_appender.stop();
@@ -403,8 +408,8 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 						"Increase the timeout or check it manually."));
 			_assertLogContext(
 				"upgrade.report.document.library.storage.size",
-				"Unable to determine");
-			_assertReport("Document library storage size: Unable to determine");
+				"unable to determine");
+			_assertReport("Document library storage size: unable to determine");
 		}
 	}
 
@@ -418,8 +423,8 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_appender.stop();
 
 			_assertLogContext(
-				"upgrade.report.document.library.storage.size", "Disabled");
-			_assertReport("Document library storage size: Disabled");
+				"upgrade.report.document.library.storage.size", "disabled");
+			_assertReport("Document library storage size: disabled");
 		}
 	}
 
@@ -431,16 +436,8 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_appender, "_upgradeReport");
 
 		ReflectionTestUtil.setFieldValue(
-			upgradeReport, "_dlSizeThread",
-			new Thread() {
-
-				@Override
-				public void run() {
-					ReflectionTestUtil.setFieldValue(
-						upgradeReport, "_dlSize", 1073742000);
-				}
-
-			});
+			upgradeReport, "_dlSizeSupplier",
+			(Supplier<Long>)() -> 1073742000L);
 
 		_appender.stop();
 
@@ -458,16 +455,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 			_appender, "_upgradeReport");
 
 		ReflectionTestUtil.setFieldValue(
-			upgradeReport, "_dlSizeThread",
-			new Thread() {
-
-				@Override
-				public void run() {
-					ReflectionTestUtil.setFieldValue(
-						upgradeReport, "_dlSize", 1048576);
-				}
-
-			});
+			upgradeReport, "_dlSizeSupplier", (Supplier<Long>)() -> 1048576L);
 
 		_appender.stop();
 
@@ -1220,8 +1208,12 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 
 		_appender.stop();
 
+		DateFormat dateFormat = DateFormatFactoryUtil.getSimpleDateFormat(
+			"yyyyMMdd_HHmmss", LocaleUtil.US, TimeZone.getTimeZone("UTC"));
+
 		reportFile = _getReportFile(
-			reportFileName + "." + reportFile1LastModified);
+			reportFileName + "." +
+				dateFormat.format(new Date(reportFile1LastModified)));
 
 		Assert.assertTrue(reportFile.exists());
 
@@ -1461,7 +1453,6 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 		"com.liferay.test.SampleUpgradeProcess";
 
 	private static DB _db;
-	private static Appender _logContextAppender;
 	private static final Pattern _logContextTablesInitialFinalRowsPattern =
 		Pattern.compile("(\\w+_?):(\\d+|-):(\\d+|-)");
 	private static boolean _originalNewRelease;
@@ -1469,14 +1460,6 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	private static boolean _originalUpgradeLogContextEnabled;
 	private static final Pattern _pattern = Pattern.compile(
 		"(\\w+_?)\\s+(\\d+|-)\\s+(\\d+|-)\n");
-
-	@Inject(
-		filter = "component.name=com.liferay.portal.upgrade.internal.recorder.UpgradeRecorder",
-		type = Inject.NoType.class
-	)
-	private static Object _upgradeRecorder;
-
-	private static Logger _upgradeReportLogger;
 
 	@Inject(filter = "appender.name=UpgradeLogAppender")
 	private Appender _appender;
@@ -1488,6 +1471,7 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	private CompanyLocalService _companyLocalService;
 
 	private String _diagnosticsReportContent;
+	private Appender _logContextAppender;
 
 	@Inject
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;
@@ -1498,7 +1482,15 @@ public abstract class BaseUpgradeLogAppenderTestCase {
 	private String _reportContent;
 	private final UnsyncStringWriter _unsyncStringWriter =
 		new UnsyncStringWriter();
+
+	@Inject(
+		filter = "component.name=com.liferay.portal.upgrade.internal.recorder.UpgradeRecorder",
+		type = Inject.NoType.class
+	)
+	private Object _upgradeRecorder;
+
 	private String _upgradeReportDir = "";
+	private Logger _upgradeReportLogger;
 
 	private class TestDataCleanupPreupgradeProcess
 		extends DataCleanupPreupgradeProcess {

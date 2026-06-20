@@ -15,6 +15,7 @@ import {
 	Range,
 	normalizeDateFilter,
 } from '../../components/date_filter';
+import {ContentSelection} from '../../components/forms/content_selector/ContentSelector';
 import {FormikDebug} from '../../components/forms/formik';
 import {
 	ExportPreviewParams,
@@ -22,6 +23,7 @@ import {
 } from '../../services/getExportPreview';
 import {postExportProcess} from '../../services/postExportProcess';
 import {ExportPreview} from '../../types/exportImportPreview';
+import {toProcessRequestFlags} from '../../utils/contentSelection';
 import {toRequestPortletDataHandlers} from '../../utils/toRequestPortletDataHandlers';
 import DataSelection from './components/DataSelection';
 import {PageTreeModalConfiguration} from './components/PageTreeModal';
@@ -29,15 +31,19 @@ import Setup from './components/Setup';
 
 export function NewExport({
 	backURL,
+	commentsAndRatingsEnabled = false,
 	exportPreview,
 	exportPreviewAPIURL,
 	exportProcessAPIURL,
+	lookAndFeelEnabled = false,
 	pageTreeModalConfiguration,
 }: {
 	backURL: string;
+	commentsAndRatingsEnabled?: boolean;
 	exportPreview?: ExportPreview;
 	exportPreviewAPIURL: string;
 	exportProcessAPIURL: string;
+	lookAndFeelEnabled?: boolean;
 	pageTreeModalConfiguration: PageTreeModalConfiguration;
 }) {
 	const [preview, setPreview] = useState<ExportPreview | undefined>(
@@ -103,13 +109,21 @@ export function NewExport({
 				contentSelection: undefined,
 				dateFilter: {range: Range.All} as DateFilterValues,
 				deletions: false,
-				fileName: '',
+				name: '',
+				permissions: false,
 			}}
 			onSubmit={async (values) => {
+				const contentSelection = values.contentSelection as
+					| ContentSelection
+					| undefined;
+
 				const result = await postExportProcess({
-					exportRequest: {
+					exportProcessRequest: {
 						...normalizeDateFilter(values.dateFilter),
-						fileName: values.fileName,
+						...toProcessRequestFlags(contentSelection),
+						deletions: !!values.deletions,
+						name: values.name,
+						permissions: !!values.permissions,
 						requestPortletDataHandlers:
 							toRequestPortletDataHandlers(
 								sections,
@@ -128,13 +142,13 @@ export function NewExport({
 					return;
 				}
 
-				window.location.href = backURL;
+				Liferay.Util.navigate(backURL);
 			}}
 			validate={(values: FormikValues) => {
 				const errors: {[key: string]: string} = {};
 
-				if (!values?.fileName) {
-					errors.fileName = Liferay.Language.get(
+				if (!values?.name) {
+					errors.name = Liferay.Language.get(
 						'this-field-is-required'
 					);
 				}
@@ -154,9 +168,11 @@ export function NewExport({
 					<Setup />
 
 					<DataSelection
+						commentsAndRatingsEnabled={commentsAndRatingsEnabled}
 						deletionCount={preview?.deletionCount}
 						itemsCount={preview?.additionCount}
 						loading={loading}
+						lookAndFeelEnabled={lookAndFeelEnabled}
 						onApplyFilter={handleApplyFilter}
 						pageTreeModalConfiguration={pageTreeModalConfiguration}
 						sections={sections}

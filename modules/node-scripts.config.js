@@ -10,7 +10,7 @@
  */
 
 module.exports = {
-	hash: '5fa062d41a6b1b034a7f3c4311b7f4bc285eebba4fd95a0dbd33736a920d78b1',
+	hash: 'bbe163195b8e26a750c27d0870829988501c9c6aef0caf6d2900240d2330b409',
 	imports: {
 		'@liferay/accessibility-menu-web': [],
 		'@liferay/accessibility-settings-state-web': [],
@@ -91,8 +91,10 @@ module.exports = {
 		'@liferay/frontend-data-set-sample-web': [],
 		'@liferay/frontend-data-set-taglib': [],
 		'@liferay/frontend-data-set-web': [],
-		'@liferay/frontend-editor-ckeditor-sample-web': [],
+		'@liferay/frontend-editor-ckeditor4-sample-web': [],
+		'@liferay/frontend-editor-ckeditor5-sample-web': [],
 		'@liferay/frontend-icons-web': [],
+		'@liferay/frontend-js-audiences-web': ['./custom-attributes'],
 		'@liferay/frontend-js-bootstrap-support-web': [],
 		'@liferay/frontend-js-clay-web': [
 			'@clayui/alert',
@@ -163,6 +165,7 @@ module.exports = {
 			'clipboard',
 			'cropperjs',
 			'dagre',
+			'date-fns',
 			'dom-align',
 			'fuzzy',
 			'highlight.js',
@@ -181,6 +184,7 @@ module.exports = {
 			'react-text-mask',
 			'text-mask-addons',
 			'text-mask-core',
+			'ua-parser-js',
 		],
 		'@liferay/frontend-js-importmaps-extender': [],
 		'@liferay/frontend-js-item-selector-sample-web': [],
@@ -210,6 +214,7 @@ module.exports = {
 		'@liferay/image-uploader-web': [],
 		'@liferay/journal-content-web': [],
 		'@liferay/journal-taglib': [],
+		'@liferay/launch-web': [],
 		'@liferay/layout-content-page-editor-web': [],
 		'@liferay/layout-js-components-web': [],
 		'@liferay/layout-locked-layouts-web': [],
@@ -218,7 +223,6 @@ module.exports = {
 		'@liferay/layout-type-controller-embedded': [],
 		'@liferay/layout-type-controller-panel': [],
 		'@liferay/layout-utility-page-terms-of-use': [],
-		'@liferay/liferay-ai-hub-theme': [],
 		'@liferay/liferay-cms-theme': [],
 		'@liferay/locked-items-web': [],
 		'@liferay/login-web': [],
@@ -521,6 +525,7 @@ module.exports = {
 			'Heading',
 			'Icon',
 			'IconSelector',
+			'KeyboardArrowsIndicator',
 			'LanguagePicker',
 			'Modal',
 			'ModalContext',
@@ -555,6 +560,7 @@ module.exports = {
 		'clipboard': ['*', 'default'],
 		'cropperjs': ['*', 'default'],
 		'dagre': ['*', 'default'],
+		'date-fns': ['*'],
 		'fuzzy': ['*', 'default'],
 		'graphql-hooks-memcache': ['*', 'default'],
 		'highlight.js': ['*', 'default'],

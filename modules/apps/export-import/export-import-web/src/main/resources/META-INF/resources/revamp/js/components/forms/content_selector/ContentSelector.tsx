@@ -7,18 +7,25 @@ import ClayAlert from '@clayui/alert';
 import React from 'react';
 
 import {PageTreeModalConfiguration} from '../../../pages/export/components/PageTreeModal';
+import {ExportImportProcess} from '../../../types/exportImportProcess';
 import {PreviewPortletDataHandlerSection} from '../../../types/portletDataHandler';
-import {updateSelection} from '../../../utils/contentSelection';
+import {
+	updateSelection,
+	withSiteBuilderSection,
+} from '../../../utils/contentSelection';
 import ContentSection, {SectionSelection} from './ContentSection';
 
 export type ContentSelection = Record<string, SectionSelection>;
 
 interface ContentSelectorProps {
 	'aria-labelledby'?: string;
+	'commentsAndRatingsEnabled'?: boolean;
 	'errorMessage'?: string;
+	'lookAndFeelEnabled'?: boolean;
 	'name': string;
 	'onChange': (value: ContentSelection | undefined) => void;
 	'pageTreeModalConfiguration'?: PageTreeModalConfiguration;
+	'process'?: ExportImportProcess;
 	'sections': PreviewPortletDataHandlerSection[];
 	'showDeletions'?: boolean;
 	'value': ContentSelection | undefined;
@@ -26,10 +33,13 @@ interface ContentSelectorProps {
 
 export default function ContentSelector({
 	'aria-labelledby': ariaLabelledby,
+	commentsAndRatingsEnabled = false,
 	errorMessage,
+	lookAndFeelEnabled = false,
 	name,
 	onChange,
 	pageTreeModalConfiguration,
+	process = 'export',
 	sections,
 	showDeletions,
 	value,
@@ -42,6 +52,13 @@ export default function ContentSelector({
 			showDeletions || !!section.additionCount || !section.deletionCount
 	);
 
+	const renderedSections = lookAndFeelEnabled
+		? withSiteBuilderSection(
+				visibleSections,
+				Liferay.Language.get('category.site_administration.build')
+			)
+		: visibleSections;
+
 	return (
 		<div
 			aria-describedby={errorId}
@@ -50,10 +67,12 @@ export default function ContentSelector({
 			className="c-gap-4 d-flex flex-column mt-4"
 			role="group"
 		>
-			{visibleSections.map(
+			{renderedSections.map(
 				(section: PreviewPortletDataHandlerSection) => (
 					<ContentSection
+						commentsAndRatingsEnabled={commentsAndRatingsEnabled}
 						key={section.name}
+						lookAndFeelEnabled={lookAndFeelEnabled}
 						onChange={(sectionValue) =>
 							onChange(
 								updateSelection(
@@ -64,6 +83,7 @@ export default function ContentSelector({
 							)
 						}
 						pageTreeModalConfiguration={pageTreeModalConfiguration}
+						process={process}
 						section={section}
 						showDeletions={showDeletions}
 						value={currentValue[section.name]}

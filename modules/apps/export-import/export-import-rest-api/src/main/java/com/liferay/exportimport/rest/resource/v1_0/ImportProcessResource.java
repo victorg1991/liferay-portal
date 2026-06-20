@@ -6,6 +6,7 @@
 package com.liferay.exportimport.rest.resource.v1_0;
 
 import com.liferay.exportimport.rest.dto.v1_0.ImportProcess;
+import com.liferay.exportimport.rest.dto.v1_0.ImportProcessRequest;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
@@ -67,16 +68,47 @@ public interface ImportProcessResource {
 			com.liferay.portal.kernel.search.Sort[] sorts)
 		throws Exception;
 
+	public ImportProcess postAssetLibraryImportProcess(
+			String assetLibraryExternalReferenceCode,
+			ImportProcessRequest importProcessRequest)
+		throws Exception;
+
+	public Response postAssetLibraryImportProcessBatch(
+			String assetLibraryExternalReferenceCode,
+			ImportProcessRequest importProcessRequest, String callbackURL,
+			Object object)
+		throws Exception;
+
 	public Response postAssetLibraryImportProcessesPageExportBatch(
 			Long assetLibraryId, Long creatorId, String search, Integer status,
 			com.liferay.portal.kernel.search.Sort[] sorts, String callbackURL,
 			String contentType, String fieldNames)
 		throws Exception;
 
+	public ImportProcess postImportProcess(
+			ImportProcessRequest importProcessRequest)
+		throws Exception;
+
+	public Response postImportProcessBatch(
+			ImportProcessRequest importProcessRequest, String callbackURL,
+			Object object)
+		throws Exception;
+
 	public Response postImportProcessesPageExportBatch(
 			Long creatorId, String search, Integer status,
 			com.liferay.portal.kernel.search.Sort[] sorts, String callbackURL,
 			String contentType, String fieldNames)
+		throws Exception;
+
+	public ImportProcess postSiteImportProcess(
+			String siteExternalReferenceCode,
+			ImportProcessRequest importProcessRequest)
+		throws Exception;
+
+	public Response postSiteImportProcessBatch(
+			String siteExternalReferenceCode,
+			ImportProcessRequest importProcessRequest, String callbackURL,
+			Object object)
 		throws Exception;
 
 	public Response postSiteImportProcessesPageExportBatch(
@@ -181,4 +213,4 @@ public interface ImportProcessResource {
 	}
 
 }
-// LIFERAY-REST-BUILDER-HASH:-1878846972
+// LIFERAY-REST-BUILDER-HASH:862013812

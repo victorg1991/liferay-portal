@@ -7,7 +7,7 @@ package com.liferay.exportimport.rest.resource.v1_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.exportimport.rest.client.dto.v1_0.ExportProcess;
-import com.liferay.exportimport.rest.client.dto.v1_0.ExportRequest;
+import com.liferay.exportimport.rest.client.dto.v1_0.ExportProcessRequest;
 import com.liferay.exportimport.rest.client.dto.v1_0.RequestPortletDataHandler;
 import com.liferay.exportimport.rest.client.http.HttpInvoker;
 import com.liferay.exportimport.rest.client.resource.v1_0.ExportProcessResource;
@@ -45,7 +45,6 @@ import com.liferay.staging.StagingGroupHelper;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -72,24 +71,6 @@ public class ExportProcessResourceTest
 	public void setUp() throws Exception {
 		super.setUp();
 
-		_companyObjectDefinition = _publishObjectDefinition(
-			ObjectDefinitionConstants.SCOPE_COMPANY);
-
-		_companyObjectEntries = _addObjectEntries(
-			_companyObjectDefinition, GroupConstants.DEFAULT_PARENT_GROUP_ID);
-
-		_depotObjectDefinition = _publishObjectDefinition(
-			ObjectDefinitionConstants.SCOPE_DEPOT);
-
-		_depotObjectEntries = _addObjectEntries(
-			_depotObjectDefinition, testDepotEntryGroup.getGroupId());
-
-		_siteObjectDefinition = _publishObjectDefinition(
-			ObjectDefinitionConstants.SCOPE_SITE);
-
-		_siteObjectEntries = _addObjectEntries(
-			_siteObjectDefinition, testGroup.getGroupId());
-
 		String password = RandomTestUtil.randomString();
 
 		_user = UserTestUtil.addUser(testCompany, password);
@@ -110,24 +91,6 @@ public class ExportProcessResourceTest
 	public void tearDown() throws Exception {
 		super.tearDown();
 
-		for (long backgroundTaskId : _backgroundTaskIds) {
-			BackgroundTask backgroundTask =
-				_backgroundTaskLocalService.fetchBackgroundTask(
-					backgroundTaskId);
-
-			if (backgroundTask != null) {
-				_backgroundTaskLocalService.deleteBackgroundTask(
-					backgroundTask);
-			}
-		}
-
-		_objectDefinitionLocalService.deleteObjectDefinition(
-			_companyObjectDefinition);
-		_objectDefinitionLocalService.deleteObjectDefinition(
-			_depotObjectDefinition);
-		_objectDefinitionLocalService.deleteObjectDefinition(
-			_siteObjectDefinition);
-
 		_userLocalService.deleteUser(_user);
 	}
 
@@ -138,24 +101,35 @@ public class ExportProcessResourceTest
 			403,
 			_exportProcessResource.postAssetLibraryExportProcessHttpResponse(
 				testDepotEntryGroup.getExternalReferenceCode(),
-				new ExportRequest() {
+				new ExportProcessRequest() {
 					{
-						fileName = RandomTestUtil.randomString() + ".lar";
+						name = RandomTestUtil.randomString();
 					}
 				}));
 
 		_testPostExportProcessWithInvalidDateRange(
-			exportRequest ->
+			exportProcessRequest ->
 				exportProcessResource.postAssetLibraryExportProcessHttpResponse(
 					testDepotEntryGroup.getExternalReferenceCode(),
-					exportRequest));
-		_testPostExportProcessWithObjectDefinition(
-			exportRequest ->
-				exportProcessResource.postAssetLibraryExportProcess(
-					testDepotEntryGroup.getExternalReferenceCode(),
-					exportRequest),
-			testDepotEntryGroup.getGroupId(), _depotObjectDefinition,
-			_depotObjectEntries);
+					exportProcessRequest));
+
+		ObjectDefinition objectDefinition = _publishObjectDefinition(
+			ObjectDefinitionConstants.SCOPE_DEPOT);
+
+		try {
+			_testPostExportProcessWithObjectDefinition(
+				exportProcessRequest ->
+					exportProcessResource.postAssetLibraryExportProcess(
+						testDepotEntryGroup.getExternalReferenceCode(),
+						exportProcessRequest),
+				testDepotEntryGroup.getGroupId(), objectDefinition,
+				_addObjectEntries(
+					objectDefinition, testDepotEntryGroup.getGroupId()));
+		}
+		finally {
+			_objectDefinitionLocalService.deleteObjectDefinition(
+				objectDefinition);
+		}
 	}
 
 	@Override
@@ -164,9 +138,9 @@ public class ExportProcessResourceTest
 		assertHttpResponseStatusCode(
 			403,
 			_exportProcessResource.postExportProcessHttpResponse(
-				new ExportRequest() {
+				new ExportProcessRequest() {
 					{
-						fileName = RandomTestUtil.randomString() + ".lar";
+						name = RandomTestUtil.randomString();
 					}
 				}));
 
@@ -175,9 +149,21 @@ public class ExportProcessResourceTest
 
 		_testPostExportProcessWithInvalidDateRange(
 			exportProcessResource::postExportProcessHttpResponse);
-		_testPostExportProcessWithObjectDefinition(
-			exportProcessResource::postExportProcess, companyGroup.getGroupId(),
-			_companyObjectDefinition, _companyObjectEntries);
+
+		ObjectDefinition objectDefinition = _publishObjectDefinition(
+			ObjectDefinitionConstants.SCOPE_COMPANY);
+
+		try {
+			_testPostExportProcessWithObjectDefinition(
+				exportProcessResource::postExportProcess,
+				companyGroup.getGroupId(), objectDefinition,
+				_addObjectEntries(
+					objectDefinition, GroupConstants.DEFAULT_PARENT_GROUP_ID));
+		}
+		finally {
+			_objectDefinitionLocalService.deleteObjectDefinition(
+				objectDefinition);
+		}
 	}
 
 	@Override
@@ -187,20 +173,34 @@ public class ExportProcessResourceTest
 			403,
 			_exportProcessResource.postSiteExportProcessHttpResponse(
 				testGroup.getExternalReferenceCode(),
-				new ExportRequest() {
+				new ExportProcessRequest() {
 					{
-						fileName = RandomTestUtil.randomString() + ".lar";
+						name = RandomTestUtil.randomString();
 					}
 				}));
 
 		_testPostExportProcessWithInvalidDateRange(
-			exportRequest ->
+			exportProcessRequest ->
 				exportProcessResource.postSiteExportProcessHttpResponse(
-					testGroup.getExternalReferenceCode(), exportRequest));
-		_testPostExportProcessWithObjectDefinition(
-			exportRequest -> exportProcessResource.postSiteExportProcess(
-				testGroup.getExternalReferenceCode(), exportRequest),
-			testGroup.getGroupId(), _siteObjectDefinition, _siteObjectEntries);
+					testGroup.getExternalReferenceCode(),
+					exportProcessRequest));
+
+		ObjectDefinition objectDefinition = _publishObjectDefinition(
+			ObjectDefinitionConstants.SCOPE_SITE);
+
+		try {
+			_testPostExportProcessWithObjectDefinition(
+				exportProcessRequest ->
+					exportProcessResource.postSiteExportProcess(
+						testGroup.getExternalReferenceCode(),
+						exportProcessRequest),
+				testGroup.getGroupId(), objectDefinition,
+				_addObjectEntries(objectDefinition, testGroup.getGroupId()));
+		}
+		finally {
+			_objectDefinitionLocalService.deleteObjectDefinition(
+				objectDefinition);
+		}
 	}
 
 	@Override
@@ -254,8 +254,9 @@ public class ExportProcessResourceTest
 	}
 
 	private void _testPostExportProcessWithInvalidDateRange(
-			UnsafeFunction<ExportRequest, HttpInvoker.HttpResponse, Exception>
-				unsafeFunction)
+			UnsafeFunction
+				<ExportProcessRequest, HttpInvoker.HttpResponse, Exception>
+					unsafeFunction)
 		throws Exception {
 
 		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
@@ -263,37 +264,39 @@ public class ExportProcessResourceTest
 					"WebApplicationExceptionMapper",
 				LoggerTestUtil.WARN)) {
 
-			ExportRequest dateRangeExportRequest = new ExportRequest();
+			ExportProcessRequest dateRangeExportProcessRequest =
+				new ExportProcessRequest();
 
-			dateRangeExportRequest.setFileName(
-				RandomTestUtil.randomString() + ".lar");
-			dateRangeExportRequest.setRange(ExportRequest.Range.DATE_RANGE);
-
-			assertHttpResponseStatusCode(
-				400, unsafeFunction.apply(dateRangeExportRequest));
-
-			ExportRequest lastExportRequest = new ExportRequest();
-
-			lastExportRequest.setFileName(
-				RandomTestUtil.randomString() + ".lar");
-			lastExportRequest.setRange(ExportRequest.Range.LAST);
+			dateRangeExportProcessRequest.setName(
+				RandomTestUtil.randomString());
+			dateRangeExportProcessRequest.setRange(
+				ExportProcessRequest.Range.DATE_RANGE);
 
 			assertHttpResponseStatusCode(
-				400, unsafeFunction.apply(lastExportRequest));
+				400, unsafeFunction.apply(dateRangeExportProcessRequest));
+
+			ExportProcessRequest lastExportProcessRequest =
+				new ExportProcessRequest();
+
+			lastExportProcessRequest.setName(RandomTestUtil.randomString());
+			lastExportProcessRequest.setRange(ExportProcessRequest.Range.LAST);
+
+			assertHttpResponseStatusCode(
+				400, unsafeFunction.apply(lastExportProcessRequest));
 		}
 	}
 
 	private void _testPostExportProcessWithObjectDefinition(
-			UnsafeFunction<ExportRequest, ExportProcess, Exception>
+			UnsafeFunction<ExportProcessRequest, ExportProcess, Exception>
 				unsafeFunction,
 			long groupId, ObjectDefinition objectDefinition,
 			ObjectEntry[] objectEntries)
 		throws Exception {
 
-		ExportRequest exportRequest = new ExportRequest();
+		ExportProcessRequest exportProcessRequest = new ExportProcessRequest();
 
-		exportRequest.setFileName(RandomTestUtil.randomString() + ".lar");
-		exportRequest.setRequestPortletDataHandlers(
+		exportProcessRequest.setName(RandomTestUtil.randomString());
+		exportProcessRequest.setRequestPortletDataHandlers(
 			new RequestPortletDataHandler[] {
 				new RequestPortletDataHandler() {
 					{
@@ -310,11 +313,9 @@ public class ExportProcessResourceTest
 					"BatchEngineExportTaskExecutorImpl",
 				LoggerTestUtil.WARN)) {
 
-			exportProcess = unsafeFunction.apply(exportRequest);
+			exportProcess = unsafeFunction.apply(exportProcessRequest);
 
 			assertValid(exportProcess);
-
-			_backgroundTaskIds.add(exportProcess.getId());
 
 			ExportProcess finalExportProcess = exportProcess;
 
@@ -356,15 +357,9 @@ public class ExportProcessResourceTest
 			JSONCompareMode.LENIENT);
 	}
 
-	private final List<Long> _backgroundTaskIds = new ArrayList<>();
-
 	@Inject
 	private BackgroundTaskLocalService _backgroundTaskLocalService;
 
-	private ObjectDefinition _companyObjectDefinition;
-	private ObjectEntry[] _companyObjectEntries;
-	private ObjectDefinition _depotObjectDefinition;
-	private ObjectEntry[] _depotObjectEntries;
 	private ExportProcessResource _exportProcessResource;
 
 	@Inject
@@ -373,9 +368,6 @@ public class ExportProcessResourceTest
 	@Inject
 	private ObjectDefinitionSettingLocalService
 		_objectDefinitionSettingLocalService;
-
-	private ObjectDefinition _siteObjectDefinition;
-	private ObjectEntry[] _siteObjectEntries;
 
 	@Inject
 	private StagingGroupHelper _stagingGroupHelper;

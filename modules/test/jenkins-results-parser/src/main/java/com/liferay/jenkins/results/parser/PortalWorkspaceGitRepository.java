@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -132,15 +133,31 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 	}
 
 	public void setUpPortalProfile() {
-		String upstreamBranchName = getUpstreamBranchName();
+		String setupProfileDXPBranchNamesString = null;
 
-		if (upstreamBranchName.startsWith("ee-")) {
+		try {
+			setupProfileDXPBranchNamesString =
+				JenkinsResultsParserUtil.getBuildProperty(
+					"portal.setup.profile.dxp.branch.names");
+
+			if (JenkinsResultsParserUtil.isNullOrEmpty(
+					setupProfileDXPBranchNamesString)) {
+
+				return;
+			}
+		}
+		catch (IOException ioException) {
 			return;
 		}
 
-		Retryable<Object> setupProfileDXPRetryable = new Retryable<Object>(
-			true, _SETUP_PROFILE_DXP_RETRY_COUNT,
-			_SETUP_PROFILE_DXP_RETRY_DELAY, true) {
+		List<String> setupProfileDXPBranchNames = Arrays.asList(
+			setupProfileDXPBranchNamesString.split(","));
+
+		if (!setupProfileDXPBranchNames.contains(getUpstreamBranchName())) {
+			return;
+		}
+
+		Retryable<Object> retryable = new Retryable<Object>(true, 2, 5, true) {
 
 			@Override
 			public Object execute() {
@@ -157,7 +174,7 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 
 		};
 
-		setupProfileDXPRetryable.executeWithRetries();
+		retryable.executeWithRetries();
 	}
 
 	public void setUpTCKHome() {
@@ -218,8 +235,8 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 		try {
 			return Boolean.parseBoolean(
 				JenkinsResultsParserUtil.getBuildProperty(
-					"binaries.cache.enabled", System.getenv("CI_TEST_SUITE"),
-					System.getenv("JOB_NAME")));
+					"binaries.cache.enabled", Environment.get("CI_TEST_SUITE"),
+					Environment.get("JOB_NAME")));
 		}
 		catch (IOException ioException) {
 			return true;
@@ -258,7 +275,7 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 	private Properties _getPortalTestProperties() {
 		Properties testProperties = getProperties("portal.test.properties");
 
-		String companyDefaultLocale = System.getenv(
+		String companyDefaultLocale = Environment.get(
 			"TEST_COMPANY_DEFAULT_LOCALE");
 
 		if (!JenkinsResultsParserUtil.isNullOrEmpty(companyDefaultLocale)) {
@@ -266,7 +283,7 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 				"test.company.default.locale", companyDefaultLocale);
 		}
 
-		String portalLatestBundleVersion = System.getenv(
+		String portalLatestBundleVersion = Environment.get(
 			"PORTAL_LATEST_BUNDLE_VERSION");
 
 		if (!JenkinsResultsParserUtil.isNullOrEmpty(
@@ -381,7 +398,7 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 			new File(
 				getDirectory(),
 				JenkinsResultsParserUtil.combine(
-					"app.server.", System.getenv("HOSTNAME"), ".properties")),
+					"app.server.", Environment.get("HOSTNAME"), ".properties")),
 			getProperties("portal.app.server.properties"), true);
 	}
 
@@ -390,7 +407,7 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 			new File(
 				getDirectory(),
 				JenkinsResultsParserUtil.combine(
-					"build.", System.getenv("HOSTNAME"), ".properties")),
+					"build.", Environment.get("HOSTNAME"), ".properties")),
 			getProperties("portal.build.properties"), true);
 	}
 
@@ -399,7 +416,7 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 			new File(
 				getDirectory(),
 				JenkinsResultsParserUtil.combine(
-					"release.", System.getenv("HOSTNAME"), ".properties")),
+					"release.", Environment.get("HOSTNAME"), ".properties")),
 			getProperties("portal.release.properties"), true);
 	}
 
@@ -408,7 +425,7 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 			new File(
 				getDirectory(),
 				JenkinsResultsParserUtil.combine(
-					"sql/sql.", System.getenv("HOSTNAME"), ".properties")),
+					"sql/sql.", Environment.get("HOSTNAME"), ".properties")),
 			getProperties("portal.sql.properties"), true);
 	}
 
@@ -417,13 +434,9 @@ public class PortalWorkspaceGitRepository extends BaseWorkspaceGitRepository {
 			new File(
 				getDirectory(),
 				JenkinsResultsParserUtil.combine(
-					"test.", System.getenv("HOSTNAME"), ".properties")),
+					"test.", Environment.get("HOSTNAME"), ".properties")),
 			_getPortalTestProperties(), true);
 	}
-
-	private static final int _SETUP_PROFILE_DXP_RETRY_COUNT = 2;
-
-	private static final int _SETUP_PROFILE_DXP_RETRY_DELAY = 5;
 
 	private Properties _appServerProperties;
 	private boolean _setUpBinariesCache;

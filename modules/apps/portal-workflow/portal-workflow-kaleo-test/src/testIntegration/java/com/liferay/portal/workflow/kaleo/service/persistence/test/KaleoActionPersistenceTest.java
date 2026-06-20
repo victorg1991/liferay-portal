@@ -110,11 +110,7 @@ public class KaleoActionPersistenceTest {
 
 	@Test
 	public void testUpdateExisting() throws Exception {
-		long pk = RandomTestUtil.nextLong();
-
-		KaleoAction newKaleoAction = _persistence.create(pk);
-
-		newKaleoAction.setMvccVersion(RandomTestUtil.nextLong());
+		KaleoAction newKaleoAction = addKaleoAction();
 
 		newKaleoAction.setCtCollectionId(RandomTestUtil.nextLong());
 
@@ -246,6 +242,15 @@ public class KaleoActionPersistenceTest {
 		_persistence.countByKCN_KCPK("null", 0L);
 
 		_persistence.countByKCN_KCPK((String)null, 0L);
+	}
+
+	@Test
+	public void testCountByKCN_KDVI() throws Exception {
+		_persistence.countByKCN_KDVI("", RandomTestUtil.nextLong());
+
+		_persistence.countByKCN_KDVI("null", 0L);
+
+		_persistence.countByKCN_KDVI((String)null, 0L);
 	}
 
 	@Test
@@ -507,8 +512,6 @@ public class KaleoActionPersistenceTest {
 
 		KaleoAction kaleoAction = _persistence.create(pk);
 
-		kaleoAction.setMvccVersion(RandomTestUtil.nextLong());
-
 		kaleoAction.setCtCollectionId(RandomTestUtil.nextLong());
 
 		kaleoAction.setGroupId(RandomTestUtil.nextLong());
@@ -561,4 +564,4 @@ public class KaleoActionPersistenceTest {
 	private ClassLoader _dynamicQueryClassLoader;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-1865184119
+// LIFERAY-SERVICE-BUILDER-HASH:1958458401

@@ -99,7 +99,7 @@ public class SegmentsEntryPersistenceImpl
 	public static final String FINDER_CLASS_NAME_LIST_WITHOUT_PAGINATION =
 		FINDER_CLASS_NAME_ENTITY + ".List2";
 
-	private CollectionPersistenceFinder<SegmentsEntry>
+	private CollectionPersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_collectionPersistenceFinderByUuid;
 
 	/**
@@ -140,16 +140,8 @@ public class SegmentsEntryPersistenceImpl
 			String uuid, OrderByComparator<SegmentsEntry> orderByComparator)
 		throws NoSuchEntryException {
 
-		SegmentsEntry segmentsEntry = fetchByUuid_First(
-			uuid, orderByComparator);
-
-		if (segmentsEntry != null) {
-			return segmentsEntry;
-		}
-
-		throw new NoSuchEntryException(
-			_collectionPersistenceFinderByUuid.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {uuid}));
+		return _collectionPersistenceFinderByUuid.findFirst(
+			finderCache, new Object[] {uuid}, orderByComparator);
 	}
 
 	/**
@@ -190,7 +182,7 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {uuid});
 	}
 
-	private UniquePersistenceFinder<SegmentsEntry>
+	private UniquePersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_uniquePersistenceFinderByUUID_G;
 
 	/**
@@ -205,21 +197,8 @@ public class SegmentsEntryPersistenceImpl
 	public SegmentsEntry findByUUID_G(String uuid, long groupId)
 		throws NoSuchEntryException {
 
-		SegmentsEntry segmentsEntry = fetchByUUID_G(uuid, groupId);
-
-		if (segmentsEntry == null) {
-			String message =
-				_uniquePersistenceFinderByUUID_G.buildNoSuchKeyMessage(
-					_NO_SUCH_ENTITY_WITH_KEY, new Object[] {uuid, groupId});
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(message);
-			}
-
-			throw new NoSuchEntryException(message);
-		}
-
-		return segmentsEntry;
+		return _uniquePersistenceFinderByUUID_G.find(
+			finderCache, new Object[] {uuid, groupId});
 	}
 
 	/**
@@ -267,7 +246,7 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {uuid, groupId});
 	}
 
-	private CollectionPersistenceFinder<SegmentsEntry>
+	private CollectionPersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_collectionPersistenceFinderByUuid_C;
 
 	/**
@@ -311,16 +290,8 @@ public class SegmentsEntryPersistenceImpl
 			OrderByComparator<SegmentsEntry> orderByComparator)
 		throws NoSuchEntryException {
 
-		SegmentsEntry segmentsEntry = fetchByUuid_C_First(
-			uuid, companyId, orderByComparator);
-
-		if (segmentsEntry != null) {
-			return segmentsEntry;
-		}
-
-		throw new NoSuchEntryException(
-			_collectionPersistenceFinderByUuid_C.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {uuid, companyId}));
+		return _collectionPersistenceFinderByUuid_C.findFirst(
+			finderCache, new Object[] {uuid, companyId}, orderByComparator);
 	}
 
 	/**
@@ -365,7 +336,7 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {uuid, companyId});
 	}
 
-	private CollectionPersistenceFinder<SegmentsEntry>
+	private CollectionPersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_collectionPersistenceFinderBySegmentsEntryId;
 
 	/**
@@ -505,8 +476,9 @@ public class SegmentsEntryPersistenceImpl
 			new Object[] {ArrayUtil.sortedUnique(segmentsEntryIds)});
 	}
 
-	private FilterCollectionPersistenceFinder<SegmentsEntry>
-		_collectionPersistenceFinderByGroupId;
+	private FilterCollectionPersistenceFinder
+		<SegmentsEntry, NoSuchEntryException>
+			_collectionPersistenceFinderByGroupId;
 
 	/**
 	 * Returns an ordered range of all the segments entries where groupId = &#63;.
@@ -715,7 +687,7 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {groupIds}, groupIds);
 	}
 
-	private CollectionPersistenceFinder<SegmentsEntry>
+	private CollectionPersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_collectionPersistenceFinderByActive;
 
 	/**
@@ -756,16 +728,8 @@ public class SegmentsEntryPersistenceImpl
 			boolean active, OrderByComparator<SegmentsEntry> orderByComparator)
 		throws NoSuchEntryException {
 
-		SegmentsEntry segmentsEntry = fetchByActive_First(
-			active, orderByComparator);
-
-		if (segmentsEntry != null) {
-			return segmentsEntry;
-		}
-
-		throw new NoSuchEntryException(
-			_collectionPersistenceFinderByActive.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {active}));
+		return _collectionPersistenceFinderByActive.findFirst(
+			finderCache, new Object[] {active}, orderByComparator);
 	}
 
 	/**
@@ -806,7 +770,7 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {active});
 	}
 
-	private CollectionPersistenceFinder<SegmentsEntry>
+	private CollectionPersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_collectionPersistenceFinderBySource;
 
 	/**
@@ -847,16 +811,8 @@ public class SegmentsEntryPersistenceImpl
 			String source, OrderByComparator<SegmentsEntry> orderByComparator)
 		throws NoSuchEntryException {
 
-		SegmentsEntry segmentsEntry = fetchBySource_First(
-			source, orderByComparator);
-
-		if (segmentsEntry != null) {
-			return segmentsEntry;
-		}
-
-		throw new NoSuchEntryException(
-			_collectionPersistenceFinderBySource.buildNoSuchKeyMessage(
-				_NO_SUCH_ENTITY_WITH_KEY, new Object[] {source}));
+		return _collectionPersistenceFinderBySource.findFirst(
+			finderCache, new Object[] {source}, orderByComparator);
 	}
 
 	/**
@@ -897,7 +853,7 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {source});
 	}
 
-	private UniquePersistenceFinder<SegmentsEntry>
+	private UniquePersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_uniquePersistenceFinderByG_S;
 
 	/**
@@ -912,22 +868,8 @@ public class SegmentsEntryPersistenceImpl
 	public SegmentsEntry findByG_S(long groupId, String segmentsEntryKey)
 		throws NoSuchEntryException {
 
-		SegmentsEntry segmentsEntry = fetchByG_S(groupId, segmentsEntryKey);
-
-		if (segmentsEntry == null) {
-			String message =
-				_uniquePersistenceFinderByG_S.buildNoSuchKeyMessage(
-					_NO_SUCH_ENTITY_WITH_KEY,
-					new Object[] {groupId, segmentsEntryKey});
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(message);
-			}
-
-			throw new NoSuchEntryException(message);
-		}
-
-		return segmentsEntry;
+		return _uniquePersistenceFinderByG_S.find(
+			finderCache, new Object[] {groupId, segmentsEntryKey});
 	}
 
 	/**
@@ -976,8 +918,8 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {groupId, segmentsEntryKey});
 	}
 
-	private FilterCollectionPersistenceFinder<SegmentsEntry>
-		_collectionPersistenceFinderByG_A;
+	private FilterCollectionPersistenceFinder
+		<SegmentsEntry, NoSuchEntryException> _collectionPersistenceFinderByG_A;
 
 	/**
 	 * Returns an ordered range of all the segments entries where groupId = &#63; and active = &#63;.
@@ -1204,8 +1146,9 @@ public class SegmentsEntryPersistenceImpl
 			finderCache, new Object[] {groupIds, active}, groupIds);
 	}
 
-	private FilterCollectionPersistenceFinder<SegmentsEntry>
-		_collectionPersistenceFinderByG_SRC;
+	private FilterCollectionPersistenceFinder
+		<SegmentsEntry, NoSuchEntryException>
+			_collectionPersistenceFinderByG_SRC;
 
 	/**
 	 * Returns an ordered range of all the segments entries where groupId = &#63; and source = &#63;.
@@ -1229,7 +1172,8 @@ public class SegmentsEntryPersistenceImpl
 		boolean useFinderCache) {
 
 		return _collectionPersistenceFinderByG_SRC.find(
-			finderCache, new Object[] {new long[] {groupId}, source}, start,
+			finderCache,
+			new Object[] {new long[] {groupId}, new String[] {source}}, start,
 			end, orderByComparator, useFinderCache);
 	}
 
@@ -1284,7 +1228,8 @@ public class SegmentsEntryPersistenceImpl
 		OrderByComparator<SegmentsEntry> orderByComparator) {
 
 		return _collectionPersistenceFinderByG_SRC.fetchFirst(
-			finderCache, new Object[] {new long[] {groupId}, source},
+			finderCache,
+			new Object[] {new long[] {groupId}, new String[] {source}},
 			orderByComparator);
 	}
 
@@ -1308,19 +1253,20 @@ public class SegmentsEntryPersistenceImpl
 		OrderByComparator<SegmentsEntry> orderByComparator) {
 
 		return _collectionPersistenceFinderByG_SRC.filterFind(
-			finderCache, new Object[] {new long[] {groupId}, source}, start,
+			finderCache,
+			new Object[] {new long[] {groupId}, new String[] {source}}, start,
 			end, orderByComparator, groupId);
 	}
 
 	/**
-	 * Returns an ordered range of all the segments entries that the user has permission to view where groupId = any &#63; and source = &#63;.
+	 * Returns an ordered range of all the segments entries that the user has permission to view where groupId = any &#63; and source = any &#63;.
 	 *
 	 * <p>
 	 * Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to <code>com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS</code> will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent, then the query will include the default ORDER BY logic from <code>SegmentsEntryModelImpl</code>.
 	 * </p>
 	 *
 	 * @param groupIds the group IDs
-	 * @param source the source
+	 * @param sources the sources
 	 * @param start the lower bound of the range of segments entries
 	 * @param end the upper bound of the range of segments entries (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
@@ -1328,14 +1274,15 @@ public class SegmentsEntryPersistenceImpl
 	 */
 	@Override
 	public List<SegmentsEntry> filterFindByG_SRC(
-		long[] groupIds, String source, int start, int end,
+		long[] groupIds, String[] sources, int start, int end,
 		OrderByComparator<SegmentsEntry> orderByComparator) {
 
 		groupIds = ArrayUtil.sortedUnique(groupIds);
 
 		return _collectionPersistenceFinderByG_SRC.filterFind(
-			finderCache, new Object[] {groupIds, source}, start, end,
-			orderByComparator, groupIds);
+			finderCache,
+			new Object[] {groupIds, ArrayUtil.sortedUnique(sources)}, start,
+			end, orderByComparator, groupIds);
 	}
 
 	/**
@@ -1346,7 +1293,7 @@ public class SegmentsEntryPersistenceImpl
 	 * </p>
 	 *
 	 * @param groupIds the group IDs
-	 * @param source the source
+	 * @param sources the sources
 	 * @param start the lower bound of the range of segments entries
 	 * @param end the upper bound of the range of segments entries (not inclusive)
 	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
@@ -1355,14 +1302,17 @@ public class SegmentsEntryPersistenceImpl
 	 */
 	@Override
 	public List<SegmentsEntry> findByG_SRC(
-		long[] groupIds, String source, int start, int end,
+		long[] groupIds, String[] sources, int start, int end,
 		OrderByComparator<SegmentsEntry> orderByComparator,
 		boolean useFinderCache) {
 
 		return _collectionPersistenceFinderByG_SRC.find(
 			finderCache,
-			new Object[] {ArrayUtil.sortedUnique(groupIds), source}, start, end,
-			orderByComparator, useFinderCache);
+			new Object[] {
+				ArrayUtil.sortedUnique(groupIds),
+				ArrayUtil.sortedUnique(sources)
+			},
+			start, end, orderByComparator, useFinderCache);
 	}
 
 	/**
@@ -1374,7 +1324,8 @@ public class SegmentsEntryPersistenceImpl
 	@Override
 	public void removeByG_SRC(long groupId, String source) {
 		_collectionPersistenceFinderByG_SRC.remove(
-			finderCache, new Object[] {new long[] {groupId}, source});
+			finderCache,
+			new Object[] {new long[] {groupId}, new String[] {source}});
 	}
 
 	/**
@@ -1387,21 +1338,25 @@ public class SegmentsEntryPersistenceImpl
 	@Override
 	public int countByG_SRC(long groupId, String source) {
 		return _collectionPersistenceFinderByG_SRC.count(
-			finderCache, new Object[] {new long[] {groupId}, source});
+			finderCache,
+			new Object[] {new long[] {groupId}, new String[] {source}});
 	}
 
 	/**
-	 * Returns the number of segments entries where groupId = any &#63; and source = &#63;.
+	 * Returns the number of segments entries where groupId = any &#63; and source = any &#63;.
 	 *
 	 * @param groupIds the group IDs
-	 * @param source the source
+	 * @param sources the sources
 	 * @return the number of matching segments entries
 	 */
 	@Override
-	public int countByG_SRC(long[] groupIds, String source) {
+	public int countByG_SRC(long[] groupIds, String[] sources) {
 		return _collectionPersistenceFinderByG_SRC.count(
 			finderCache,
-			new Object[] {ArrayUtil.sortedUnique(groupIds), source});
+			new Object[] {
+				ArrayUtil.sortedUnique(groupIds),
+				ArrayUtil.sortedUnique(sources)
+			});
 	}
 
 	/**
@@ -1414,26 +1369,30 @@ public class SegmentsEntryPersistenceImpl
 	@Override
 	public int filterCountByG_SRC(long groupId, String source) {
 		return _collectionPersistenceFinderByG_SRC.filterCount(
-			finderCache, new Object[] {new long[] {groupId}, source}, groupId);
+			finderCache,
+			new Object[] {new long[] {groupId}, new String[] {source}},
+			groupId);
 	}
 
 	/**
-	 * Returns the number of segments entries that the user has permission to view where groupId = any &#63; and source = &#63;.
+	 * Returns the number of segments entries that the user has permission to view where groupId = any &#63; and source = any &#63;.
 	 *
 	 * @param groupIds the group IDs
-	 * @param source the source
+	 * @param sources the sources
 	 * @return the number of matching segments entries that the user has permission to view
 	 */
 	@Override
-	public int filterCountByG_SRC(long[] groupIds, String source) {
+	public int filterCountByG_SRC(long[] groupIds, String[] sources) {
 		groupIds = ArrayUtil.sortedUnique(groupIds);
 
 		return _collectionPersistenceFinderByG_SRC.filterCount(
-			finderCache, new Object[] {groupIds, source}, groupIds);
+			finderCache,
+			new Object[] {groupIds, ArrayUtil.sortedUnique(sources)}, groupIds);
 	}
 
-	private FilterCollectionPersistenceFinder<SegmentsEntry>
-		_collectionPersistenceFinderByG_A_SRC;
+	private FilterCollectionPersistenceFinder
+		<SegmentsEntry, NoSuchEntryException>
+			_collectionPersistenceFinderByG_A_SRC;
 
 	/**
 	 * Returns an ordered range of all the segments entries where groupId = &#63; and active = &#63; and source = &#63;.
@@ -1696,7 +1655,7 @@ public class SegmentsEntryPersistenceImpl
 			groupIds);
 	}
 
-	private UniquePersistenceFinder<SegmentsEntry>
+	private UniquePersistenceFinder<SegmentsEntry, NoSuchEntryException>
 		_uniquePersistenceFinderByERC_G;
 
 	/**
@@ -1711,23 +1670,8 @@ public class SegmentsEntryPersistenceImpl
 	public SegmentsEntry findByERC_G(String externalReferenceCode, long groupId)
 		throws NoSuchEntryException {
 
-		SegmentsEntry segmentsEntry = fetchByERC_G(
-			externalReferenceCode, groupId);
-
-		if (segmentsEntry == null) {
-			String message =
-				_uniquePersistenceFinderByERC_G.buildNoSuchKeyMessage(
-					_NO_SUCH_ENTITY_WITH_KEY,
-					new Object[] {externalReferenceCode, groupId});
-
-			if (_log.isDebugEnabled()) {
-				_log.debug(message);
-			}
-
-			throw new NoSuchEntryException(message);
-		}
-
-		return segmentsEntry;
+		return _uniquePersistenceFinderByERC_G.find(
+			finderCache, new Object[] {externalReferenceCode, groupId});
 	}
 
 	/**
@@ -2170,8 +2114,8 @@ public class SegmentsEntryPersistenceImpl
 			_SQL_SELECT_SEGMENTSENTRY_WHERE, _SQL_COUNT_SEGMENTSENTRY_WHERE,
 			SegmentsEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 			new FinderColumn<>(
-				"segmentsEntry.", "uuid", FinderColumn.Type.STRING, "=", true,
-				true, SegmentsEntry::getUuid));
+				"segmentsEntry.", "uuid", "uuid_", FinderColumn.Type.STRING,
+				"=", true, true, SegmentsEntry::getUuid));
 
 		_uniquePersistenceFinderByUUID_G = new UniquePersistenceFinder<>(
 			this,
@@ -2183,8 +2127,8 @@ public class SegmentsEntryPersistenceImpl
 				SegmentsEntry::getGroupId),
 			_SQL_SELECT_SEGMENTSENTRY_WHERE, "",
 			new FinderColumn<>(
-				"segmentsEntry.", "uuid", FinderColumn.Type.STRING, "=", true,
-				true, SegmentsEntry::getUuid),
+				"segmentsEntry.", "uuid", "uuid_", FinderColumn.Type.STRING,
+				"=", true, true, SegmentsEntry::getUuid),
 			new FinderColumn<>(
 				"segmentsEntry.", "groupId", FinderColumn.Type.LONG, "=", true,
 				true, SegmentsEntry::getGroupId));
@@ -2211,8 +2155,8 @@ public class SegmentsEntryPersistenceImpl
 				_SQL_SELECT_SEGMENTSENTRY_WHERE, _SQL_COUNT_SEGMENTSENTRY_WHERE,
 				SegmentsEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 				new FinderColumn<>(
-					"segmentsEntry.", "uuid", FinderColumn.Type.STRING, "=",
-					true, true, SegmentsEntry::getUuid),
+					"segmentsEntry.", "uuid", "uuid_", FinderColumn.Type.STRING,
+					"=", true, true, SegmentsEntry::getUuid),
 				new FinderColumn<>(
 					"segmentsEntry.", "companyId", FinderColumn.Type.LONG, "=",
 					true, true, SegmentsEntry::getCompanyId));
@@ -2266,16 +2210,6 @@ public class SegmentsEntryPersistenceImpl
 					new String[] {"groupId"}, false),
 				_SQL_SELECT_SEGMENTSENTRY_WHERE, _SQL_COUNT_SEGMENTSENTRY_WHERE,
 				SegmentsEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
-				new FilterCollectionPersistenceFinder.FilterMetadata<>(
-					SegmentsEntryImpl.class, SegmentsEntry.class,
-					"segmentsEntry", "SegmentsEntry",
-					"segmentsEntry.segmentsEntryId",
-					"SELECT DISTINCT {segmentsEntry.*} FROM SegmentsEntry segmentsEntry WHERE ",
-					"SELECT {SegmentsEntry.*} FROM (SELECT DISTINCT segmentsEntry.segmentsEntryId FROM SegmentsEntry segmentsEntry WHERE ",
-					") TEMP_TABLE INNER JOIN SegmentsEntry ON TEMP_TABLE.segmentsEntryId = SegmentsEntry.segmentsEntryId",
-					"SELECT COUNT(DISTINCT segmentsEntry.segmentsEntryId) AS COUNT_VALUE FROM SegmentsEntry segmentsEntry WHERE ",
-					SegmentsEntryModelImpl.ORDER_BY_SQL,
-					SegmentsEntryModelImpl.ORDER_BY_SQL_INLINE_DISTINCT),
 				new ArrayableFinderColumn<>(
 					"segmentsEntry.", "groupId", FinderColumn.Type.LONG, "=",
 					false, true, true, SegmentsEntry::getGroupId));
@@ -2302,8 +2236,9 @@ public class SegmentsEntryPersistenceImpl
 				_SQL_SELECT_SEGMENTSENTRY_WHERE, _SQL_COUNT_SEGMENTSENTRY_WHERE,
 				SegmentsEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
 				new FinderColumn<>(
-					"segmentsEntry.", "active", FinderColumn.Type.BOOLEAN, "=",
-					true, true, SegmentsEntry::isActive));
+					"segmentsEntry.", "active", "active_",
+					FinderColumn.Type.BOOLEAN, "=", true, true,
+					SegmentsEntry::isActive));
 
 		_collectionPersistenceFinderBySource =
 			new CollectionPersistenceFinder<>(
@@ -2371,22 +2306,13 @@ public class SegmentsEntryPersistenceImpl
 					new String[] {"groupId", "active_"}, false),
 				_SQL_SELECT_SEGMENTSENTRY_WHERE, _SQL_COUNT_SEGMENTSENTRY_WHERE,
 				SegmentsEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
-				new FilterCollectionPersistenceFinder.FilterMetadata<>(
-					SegmentsEntryImpl.class, SegmentsEntry.class,
-					"segmentsEntry", "SegmentsEntry",
-					"segmentsEntry.segmentsEntryId",
-					"SELECT DISTINCT {segmentsEntry.*} FROM SegmentsEntry segmentsEntry WHERE ",
-					"SELECT {SegmentsEntry.*} FROM (SELECT DISTINCT segmentsEntry.segmentsEntryId FROM SegmentsEntry segmentsEntry WHERE ",
-					") TEMP_TABLE INNER JOIN SegmentsEntry ON TEMP_TABLE.segmentsEntryId = SegmentsEntry.segmentsEntryId",
-					"SELECT COUNT(DISTINCT segmentsEntry.segmentsEntryId) AS COUNT_VALUE FROM SegmentsEntry segmentsEntry WHERE ",
-					SegmentsEntryModelImpl.ORDER_BY_SQL,
-					SegmentsEntryModelImpl.ORDER_BY_SQL_INLINE_DISTINCT),
 				new ArrayableFinderColumn<>(
 					"segmentsEntry.", "groupId", FinderColumn.Type.LONG, "=",
 					false, true, true, SegmentsEntry::getGroupId),
 				new FinderColumn<>(
-					"segmentsEntry.", "active", FinderColumn.Type.BOOLEAN, "=",
-					true, true, SegmentsEntry::isActive));
+					"segmentsEntry.", "active", "active_",
+					FinderColumn.Type.BOOLEAN, "=", true, true,
+					SegmentsEntry::isActive));
 
 		_collectionPersistenceFinderByG_SRC =
 			new FilterCollectionPersistenceFinder<>(
@@ -2409,22 +2335,12 @@ public class SegmentsEntryPersistenceImpl
 					new String[] {"groupId", "source"}, 0, 2, false, null),
 				_SQL_SELECT_SEGMENTSENTRY_WHERE, _SQL_COUNT_SEGMENTSENTRY_WHERE,
 				SegmentsEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
-				new FilterCollectionPersistenceFinder.FilterMetadata<>(
-					SegmentsEntryImpl.class, SegmentsEntry.class,
-					"segmentsEntry", "SegmentsEntry",
-					"segmentsEntry.segmentsEntryId",
-					"SELECT DISTINCT {segmentsEntry.*} FROM SegmentsEntry segmentsEntry WHERE ",
-					"SELECT {SegmentsEntry.*} FROM (SELECT DISTINCT segmentsEntry.segmentsEntryId FROM SegmentsEntry segmentsEntry WHERE ",
-					") TEMP_TABLE INNER JOIN SegmentsEntry ON TEMP_TABLE.segmentsEntryId = SegmentsEntry.segmentsEntryId",
-					"SELECT COUNT(DISTINCT segmentsEntry.segmentsEntryId) AS COUNT_VALUE FROM SegmentsEntry segmentsEntry WHERE ",
-					SegmentsEntryModelImpl.ORDER_BY_SQL,
-					SegmentsEntryModelImpl.ORDER_BY_SQL_INLINE_DISTINCT),
 				new ArrayableFinderColumn<>(
 					"segmentsEntry.", "groupId", FinderColumn.Type.LONG, "=",
 					false, true, true, SegmentsEntry::getGroupId),
-				new FinderColumn<>(
+				new ArrayableFinderColumn<>(
 					"segmentsEntry.", "source", FinderColumn.Type.STRING, "=",
-					true, true, SegmentsEntry::getSource));
+					false, true, true, SegmentsEntry::getSource));
 
 		_collectionPersistenceFinderByG_A_SRC =
 			new FilterCollectionPersistenceFinder<>(
@@ -2456,22 +2372,13 @@ public class SegmentsEntryPersistenceImpl
 					null),
 				_SQL_SELECT_SEGMENTSENTRY_WHERE, _SQL_COUNT_SEGMENTSENTRY_WHERE,
 				SegmentsEntryModelImpl.ORDER_BY_JPQL, _ENTITY_ALIAS_PREFIX, "",
-				new FilterCollectionPersistenceFinder.FilterMetadata<>(
-					SegmentsEntryImpl.class, SegmentsEntry.class,
-					"segmentsEntry", "SegmentsEntry",
-					"segmentsEntry.segmentsEntryId",
-					"SELECT DISTINCT {segmentsEntry.*} FROM SegmentsEntry segmentsEntry WHERE ",
-					"SELECT {SegmentsEntry.*} FROM (SELECT DISTINCT segmentsEntry.segmentsEntryId FROM SegmentsEntry segmentsEntry WHERE ",
-					") TEMP_TABLE INNER JOIN SegmentsEntry ON TEMP_TABLE.segmentsEntryId = SegmentsEntry.segmentsEntryId",
-					"SELECT COUNT(DISTINCT segmentsEntry.segmentsEntryId) AS COUNT_VALUE FROM SegmentsEntry segmentsEntry WHERE ",
-					SegmentsEntryModelImpl.ORDER_BY_SQL,
-					SegmentsEntryModelImpl.ORDER_BY_SQL_INLINE_DISTINCT),
 				new ArrayableFinderColumn<>(
 					"segmentsEntry.", "groupId", FinderColumn.Type.LONG, "=",
 					false, true, true, SegmentsEntry::getGroupId),
 				new FinderColumn<>(
-					"segmentsEntry.", "active", FinderColumn.Type.BOOLEAN, "=",
-					true, true, SegmentsEntry::isActive),
+					"segmentsEntry.", "active", "active_",
+					FinderColumn.Type.BOOLEAN, "=", true, true,
+					SegmentsEntry::isActive),
 				new ArrayableFinderColumn<>(
 					"segmentsEntry.", "source", FinderColumn.Type.STRING, "=",
 					false, true, true, SegmentsEntry::getSource));
@@ -2565,4 +2472,4 @@ public class SegmentsEntryPersistenceImpl
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:955747373
+// LIFERAY-SERVICE-BUILDER-HASH:1952987523

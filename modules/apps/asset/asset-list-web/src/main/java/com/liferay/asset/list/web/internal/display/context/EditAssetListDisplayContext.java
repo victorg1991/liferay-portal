@@ -26,7 +26,7 @@ import com.liferay.asset.list.service.AssetListEntryLocalServiceUtil;
 import com.liferay.asset.list.service.AssetListEntrySegmentsEntryRelLocalServiceUtil;
 import com.liferay.asset.list.util.comparator.ClassNameModelResourceComparator;
 import com.liferay.asset.list.web.internal.constants.AssetListWebKeys;
-import com.liferay.asset.list.web.internal.portlet.action.GetTypePropertiesMVCResourceCommand;
+import com.liferay.asset.list.web.internal.util.AssetListTypePropertiesUtil;
 import com.liferay.asset.tags.item.selector.AssetTagsItemSelectorCriterion;
 import com.liferay.asset.tags.item.selector.AssetTagsItemSelectorReturnType;
 import com.liferay.asset.util.AssetRendererFactoryClassProvider;
@@ -504,7 +504,14 @@ public class EditAssetListDisplayContext {
 		}
 
 		_availableSegmentsEntries = ListUtil.filter(
-			SegmentsEntryServiceUtil.getSegmentsEntries(group.getGroupId()),
+			SegmentsEntryServiceUtil.getSegmentsEntries(
+				group.getGroupId(),
+				new String[] {
+					SegmentsEntryConstants.SOURCE_ASAH_FARO_BACKEND,
+					SegmentsEntryConstants.SOURCE_DEFAULT,
+					SegmentsEntryConstants.SOURCE_REFERRED
+				},
+				QueryUtil.ALL_POS, QueryUtil.ALL_POS, null),
 			segmentsEntry -> !ArrayUtil.contains(
 				getSelectedSegmentsEntryIds(),
 				segmentsEntry.getSegmentsEntryId()));
@@ -1072,27 +1079,23 @@ public class EditAssetListDisplayContext {
 	}
 
 	public JSONArray getTypePropertiesJSONArray() {
-		long[] classNameIds = GetterUtil.getLongValues(
-			StringUtil.split(
-				_unicodeProperties.getProperty("classNameIds", null)));
+		long[] classNameIds = new long[0];
+		long[] classTypeIds = new long[0];
 
-		List<Long> classTypeIdsList = new ArrayList<>();
+		boolean anyAssetType = GetterUtil.getBoolean(
+			_unicodeProperties.getProperty(
+				"anyAssetType", Boolean.TRUE.toString()));
+		String selectionStyle = _unicodeProperties.getProperty(
+			"selectionStyle", "dynamic");
 
-		for (String entryKey : _unicodeProperties.keySet()) {
-			if (!entryKey.startsWith("classTypeIds")) {
-				continue;
-			}
-
-			for (String classTypeId :
-					StringUtil.split(
-						_unicodeProperties.getProperty(entryKey))) {
-
-				classTypeIdsList.add(GetterUtil.getLong(classTypeId));
-			}
+		if (!anyAssetType && !selectionStyle.equals("manual")) {
+			classNameIds = getClassNameIds();
+			classTypeIds = getClassTypeIds();
 		}
 
-		return GetTypePropertiesMVCResourceCommand.getTypePropertiesJSONArray(
-			classNameIds, ArrayUtil.toLongArray(classTypeIdsList));
+		return AssetListTypePropertiesUtil.getTypePropertiesJSONArray(
+			classNameIds, classTypeIds, _themeDisplay.getCompanyId(),
+			_themeDisplay.getLocale());
 	}
 
 	public String getTypePropertiesURL() {

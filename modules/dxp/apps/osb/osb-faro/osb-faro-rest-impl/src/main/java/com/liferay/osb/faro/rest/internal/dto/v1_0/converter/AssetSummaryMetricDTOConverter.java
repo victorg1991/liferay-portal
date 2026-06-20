@@ -6,7 +6,8 @@
 package com.liferay.osb.faro.rest.internal.dto.v1_0.converter;
 
 import com.liferay.osb.faro.rest.dto.v1_0.AssetSummaryMetric;
-import com.liferay.osb.faro.rest.internal.graphql.dto.GetWorkspaceGroupAssetSummariesPageResponse;
+import com.liferay.osb.faro.rest.internal.graphql.dto.GetWorkspaceGroupChannelAssetSummariesPageResponse;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
 
@@ -16,12 +17,12 @@ import org.osgi.service.component.annotations.Component;
  * @author Leslie Wong
  */
 @Component(
-	property = "dto.class.name=com.liferay.osb.faro.rest.internal.graphql.dto.GetWorkspaceGroupAssetSummariesPageResponse$AssetSummaryMetric",
+	property = "dto.class.name=com.liferay.osb.faro.rest.internal.graphql.dto.GetWorkspaceGroupChannelAssetSummariesPageResponse$AssetSummaryMetric",
 	service = DTOConverter.class
 )
 public class AssetSummaryMetricDTOConverter
 	implements DTOConverter
-		<GetWorkspaceGroupAssetSummariesPageResponse.AssetSummaryMetric,
+		<GetWorkspaceGroupChannelAssetSummariesPageResponse.AssetSummaryMetric,
 		 AssetSummaryMetric> {
 
 	@Override
@@ -32,7 +33,7 @@ public class AssetSummaryMetricDTOConverter
 	@Override
 	public AssetSummaryMetric toDTO(
 		DTOConverterContext dtoConverterContext,
-		GetWorkspaceGroupAssetSummariesPageResponse.AssetSummaryMetric
+		GetWorkspaceGroupChannelAssetSummariesPageResponse.AssetSummaryMetric
 			assetSummaryMetric) {
 
 		if (assetSummaryMetric == null) {
@@ -43,7 +44,10 @@ public class AssetSummaryMetricDTOConverter
 			{
 				setAssetId(assetSummaryMetric::getAssetId);
 				setAssetTitle(assetSummaryMetric::getAssetTitle);
-				setAssetType(assetSummaryMetric::getAssetType);
+				setAssetType(
+					() -> AssetType.create(
+						StringUtil.toUpperCase(
+							assetSummaryMetric.getAssetType())));
 				setDownloads(
 					() -> _value(assetSummaryMetric.getDownloadsMetric()));
 				setDownloadsTrendPercentage(
@@ -67,7 +71,7 @@ public class AssetSummaryMetricDTOConverter
 	}
 
 	private Double _trendPercentage(
-		GetWorkspaceGroupAssetSummariesPageResponse.Metric metric) {
+		GetWorkspaceGroupChannelAssetSummariesPageResponse.Metric metric) {
 
 		if ((metric == null) || (metric.getTrend() == null)) {
 			return null;
@@ -78,7 +82,7 @@ public class AssetSummaryMetricDTOConverter
 	}
 
 	private Double _value(
-		GetWorkspaceGroupAssetSummariesPageResponse.Metric metric) {
+		GetWorkspaceGroupChannelAssetSummariesPageResponse.Metric metric) {
 
 		if (metric == null) {
 			return null;

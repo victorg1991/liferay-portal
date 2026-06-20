@@ -5678,7 +5678,12 @@ test.describe('Manage object entries through View Object Entries', () => {
 			const prefix = '+1';
 
 			const objectFields = generateObjectFields({
-				objectFieldBusinessTypes: ['PhoneNumber'],
+				objectFieldBusinessTypes: [
+					{
+						businessType: 'PhoneNumber',
+						required: true,
+					},
+				],
 			});
 
 			const objectFieldLabel = objectFields[0].label!['en_US'];
@@ -5686,6 +5691,8 @@ test.describe('Manage object entries through View Object Entries', () => {
 			const fieldContainer = page.getByRole('group', {
 				name: objectFieldLabel,
 			});
+
+			const phoneNumberInput = fieldContainer.getByLabel('Phone Number');
 
 			let objectDefinition: ObjectDefinition;
 
@@ -5710,6 +5717,43 @@ test.describe('Manage object entries through View Object Entries', () => {
 				);
 			});
 
+			await test.step('Verify the validation error messages are displayed', async () => {
+				const formGroup = page.locator('.form-group', {
+					has: fieldContainer,
+				});
+
+				const formatErrorMessage = formGroup.getByText(
+					'Please enter a valid phone number.'
+				);
+				const requiredErrorMessage = formGroup.getByText(
+					'This field is required.'
+				);
+
+				await phoneNumberInput.focus();
+
+				await phoneNumberInput.blur();
+
+				await expect(requiredErrorMessage).toBeVisible();
+
+				await page.reload();
+
+				await viewObjectEntriesPage.saveObjectEntryButton.click();
+
+				await expect(requiredErrorMessage).toBeVisible();
+
+				await phoneNumberInput.fill('1');
+
+				await phoneNumberInput.blur();
+
+				await expect(formatErrorMessage).toBeVisible();
+
+				await phoneNumberInput.clear();
+
+				await expect(formatErrorMessage).not.toBeVisible();
+
+				await expect(requiredErrorMessage).toBeVisible();
+			});
+
 			await test.step('Select the "United States" prefix, fill the phone number field, and save the entry', async () => {
 				await fieldContainer.getByLabel('Country Code').click();
 
@@ -5717,9 +5761,7 @@ test.describe('Manage object entries through View Object Entries', () => {
 
 				await expect(fieldContainer.getByText(prefix)).toBeVisible();
 
-				await fieldContainer
-					.getByLabel('Phone Number')
-					.fill(localNumber);
+				await phoneNumberInput.fill(localNumber);
 
 				await viewObjectEntriesPage.saveObjectEntryButton.click();
 
@@ -5739,9 +5781,7 @@ test.describe('Manage object entries through View Object Entries', () => {
 					fieldContainer.getByLabel('Country Code')
 				).toHaveText(prefix);
 
-				await expect(
-					fieldContainer.getByLabel('Phone Number')
-				).toHaveValue(localNumber);
+				await expect(phoneNumberInput).toHaveValue(localNumber);
 			});
 
 			await test.step('Verify that the country code icon is correct for the local number entered', async () => {
@@ -5755,9 +5795,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 	);
 
 	test(
-		'can add an entry with phone number object field where prefix type is fixed',
-		{tag: ['@LPD-83570']},
+		'can add an entry with phone number object field where country source is fixed',
+		{tag: ['@LPD-83570', '@LPD-91322']},
 		async ({apiHelpers, page, viewObjectEntriesPage}) => {
+			const country = 'US';
 			const localNumber = '11987654321';
 			const prefix = '+1';
 
@@ -5767,14 +5808,15 @@ test.describe('Manage object entries through View Object Entries', () => {
 						businessType: 'PhoneNumber',
 						objectFieldSettings: [
 							{
-								name: 'prefixType',
+								name: 'countrySource',
 								value: 'fixed',
 							},
 							{
-								name: 'prefix',
-								value: prefix,
+								name: 'country',
+								value: country,
 							},
 						],
+						required: true,
 					},
 				],
 			});
@@ -5784,6 +5826,10 @@ test.describe('Manage object entries through View Object Entries', () => {
 			const fieldContainer = page.getByRole('group', {
 				name: objectFieldLabel,
 			});
+
+			const phoneNumberInput = fieldContainer.getByLabel('Phone Number');
+
+			const usFlagIcon = fieldContainer.locator('svg.lexicon-icon-en-us');
 
 			let objectDefinition: ObjectDefinition;
 
@@ -5808,28 +5854,49 @@ test.describe('Manage object entries through View Object Entries', () => {
 				);
 			});
 
-			await test.step('Verify the error message is displayed', async () => {
-				const errorMessage = page
-					.locator('.form-group', {has: fieldContainer})
-					.getByText('Please enter a valid phone number.');
+			await test.step('Verify the validation error messages are displayed', async () => {
+				const formGroup = page.locator('.form-group', {
+					has: fieldContainer,
+				});
 
-				await fieldContainer.getByLabel('Phone Number').fill('1');
+				const formatErrorMessage = formGroup.getByText(
+					'Please enter a valid phone number.'
+				);
+				const requiredErrorMessage = formGroup.getByText(
+					'This field is required.'
+				);
 
-				await fieldContainer.getByLabel('Phone Number').blur();
+				await phoneNumberInput.focus();
 
-				await expect(errorMessage).toBeVisible();
+				await phoneNumberInput.blur();
 
-				await fieldContainer.getByLabel('Phone Number').clear();
+				await expect(requiredErrorMessage).toBeVisible();
 
-				await expect(errorMessage).not.toBeVisible();
+				await page.reload();
+
+				await viewObjectEntriesPage.saveObjectEntryButton.click();
+
+				await expect(requiredErrorMessage).toBeVisible();
+
+				await phoneNumberInput.fill('1');
+
+				await phoneNumberInput.blur();
+
+				await expect(formatErrorMessage).toBeVisible();
+
+				await phoneNumberInput.clear();
+
+				await expect(formatErrorMessage).not.toBeVisible();
+
+				await expect(requiredErrorMessage).toBeVisible();
 			});
 
 			await test.step('Fill the phone number field and save the entry', async () => {
 				await expect(fieldContainer.getByText(prefix)).toBeVisible();
 
-				await fieldContainer
-					.getByLabel('Phone Number')
-					.fill(localNumber);
+				await expect(usFlagIcon).toBeVisible();
+
+				await phoneNumberInput.fill(localNumber);
 
 				await viewObjectEntriesPage.saveObjectEntryButton.click();
 
@@ -5847,9 +5914,9 @@ test.describe('Manage object entries through View Object Entries', () => {
 
 				await expect(fieldContainer.getByText(prefix)).toBeVisible();
 
-				await expect(
-					fieldContainer.getByLabel('Phone Number')
-				).toHaveValue(localNumber);
+				await expect(usFlagIcon).toBeVisible();
+
+				await expect(phoneNumberInput).toHaveValue(localNumber);
 			});
 		}
 	);
@@ -6171,6 +6238,124 @@ test.describe('Manage object entries through Workflow', () => {
 					'input[placeholder="__/__/____ __:__ _"][value="10/05/2025 09:00 AM"]'
 				)
 			).toHaveValue('10/05/2025 09:00 AM');
+		}
+	);
+});
+
+test.describe('Manage object entries with custom Object Layout', () => {
+	test(
+		'verify that friendly URL is preserved when updating an entry through a custom layout without the Friendly URL field',
+		{tag: ['@LPD-90363']},
+		async ({
+			apiHelpers,
+			objectLayoutsPage,
+			page,
+			viewObjectEntriesPage,
+		}) => {
+			test.slow();
+
+			const objectDefinitionLabel =
+				'ObjectDefinitionLabel' + getRandomInt();
+			const objectDefinitionName =
+				'ObjectDefinitionName' + getRandomInt();
+
+			const objectFields = generateObjectFields({
+				objectFieldBusinessTypes: ['Text'],
+			});
+
+			const objectField = objectFields[0];
+
+			const objectDefinitionAPIClient =
+				await apiHelpers.buildRestClient(ObjectDefinitionAPI);
+
+			const {body: objectDefinition} =
+				await objectDefinitionAPIClient.postObjectDefinition({
+					active: true,
+					enableFriendlyURLCustomization: true,
+					label: {
+						en_US: objectDefinitionLabel,
+					},
+					name: objectDefinitionName,
+					objectFields,
+					pluralLabel: {
+						en_US: objectDefinitionLabel,
+					},
+					portlet: true,
+					scope: 'company',
+					status: {
+						code: 0,
+					},
+				});
+
+			apiHelpers.data.push({
+				id: objectDefinition.id,
+				type: 'objectDefinition',
+			});
+
+			const applicationName =
+				'c/' + objectDefinition.name.toLowerCase() + 's';
+
+			const preservedURL = 'preserved-url';
+
+			const objectEntry = await apiHelpers.objectEntry.postObjectEntry(
+				{friendlyUrlPath: preservedURL},
+				applicationName
+			);
+
+			await objectLayoutsPage.goto(objectDefinitionLabel);
+
+			const objectLayoutName = getRandomString();
+
+			await objectLayoutsPage.createObjectLayout(objectLayoutName);
+
+			await page.getByRole('link', {name: objectLayoutName}).click();
+
+			await objectLayoutsPage.markAsDefaultButton.check();
+
+			await objectLayoutsPage.layoutTab.click();
+
+			await objectLayoutsPage.createObjectLayoutTab(getRandomString());
+
+			await objectLayoutsPage.createObjectLayoutBlock({
+				objectLayoutRegularBlockName: getRandomString(),
+			});
+
+			await objectLayoutsPage.openObjectLayoutObjectField();
+
+			await objectLayoutsPage.iframeLocator
+				.getByRole('option', {name: objectField.label.en_US})
+				.click();
+
+			await objectLayoutsPage.saveAddFieldButton.click();
+
+			await objectLayoutsPage.saveUpdateLayoutButton.click();
+
+			await viewObjectEntriesPage.goto(objectDefinition.className);
+
+			await page
+				.getByRole('link', {name: String(objectEntry.id)})
+				.click();
+
+			await expect(page.getByLabel('Friendly URL')).not.toBeVisible();
+
+			await page
+				.getByLabel(objectField.label.en_US)
+				.fill('updated value');
+
+			await viewObjectEntriesPage.saveObjectEntryButton.click();
+
+			await expect(viewObjectEntriesPage.successMessage).toBeVisible();
+
+			const updatedEntry =
+				await apiHelpers.objectEntry.getObjectEntryByExternalReferenceCode(
+					{
+						applicationName,
+						externalReferenceCode:
+							objectEntry.externalReferenceCode,
+					}
+				);
+
+			expect(updatedEntry.friendlyUrlPath).toBe(preservedURL);
 		}
 	);
 });

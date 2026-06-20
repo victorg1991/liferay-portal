@@ -12,10 +12,10 @@ import com.liferay.exportimport.kernel.model.ExportImportConfiguration;
 import com.liferay.exportimport.kernel.service.ExportImportConfigurationLocalService;
 import com.liferay.exportimport.kernel.service.ExportImportLocalService;
 import com.liferay.exportimport.rest.dto.v1_0.ExportProcess;
-import com.liferay.exportimport.rest.dto.v1_0.ExportRequest;
+import com.liferay.exportimport.rest.dto.v1_0.ExportProcessRequest;
 import com.liferay.exportimport.rest.dto.v1_0.Status;
 import com.liferay.exportimport.rest.internal.util.DateRangeUtil;
-import com.liferay.exportimport.rest.internal.util.ExportRequestParameterMapUtil;
+import com.liferay.exportimport.rest.internal.util.ParameterMapUtil;
 import com.liferay.exportimport.rest.internal.util.PermissionUtil;
 import com.liferay.exportimport.rest.resource.v1_0.ExportProcessResource;
 import com.liferay.headless.delivery.dto.v1_0.util.CreatorUtil;
@@ -55,46 +55,52 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 	@Override
 	public ExportProcess postAssetLibraryExportProcess(
 			String assetLibraryExternalReferenceCode,
-			ExportRequest exportRequest)
+			ExportProcessRequest exportProcessRequest)
 		throws Exception {
 
-		Group group = groupLocalService.getGroupByExternalReferenceCode(
+		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
 			assetLibraryExternalReferenceCode, contextCompany.getCompanyId());
 
-		if (!group.isDepot()) {
+		if ((group == null) || !group.isDepot()) {
 			throw new NotFoundException();
 		}
 
-		return _postExportProcess(group, exportRequest);
+		return _postExportProcess(group, exportProcessRequest);
 	}
 
 	@Override
-	public ExportProcess postExportProcess(ExportRequest exportRequest)
+	public ExportProcess postExportProcess(
+			ExportProcessRequest exportProcessRequest)
 		throws Exception {
 
 		Group group = _stagingGroupHelper.fetchCompanyGroup(
 			contextCompany.getCompanyId());
 
-		return _postExportProcess(group, exportRequest);
+		if (group == null) {
+			throw new NotFoundException();
+		}
+
+		return _postExportProcess(group, exportProcessRequest);
 	}
 
 	@Override
 	public ExportProcess postSiteExportProcess(
-			String siteExternalReferenceCode, ExportRequest exportRequest)
+			String siteExternalReferenceCode,
+			ExportProcessRequest exportProcessRequest)
 		throws Exception {
 
-		Group group = groupLocalService.getGroupByExternalReferenceCode(
+		Group group = groupLocalService.fetchGroupByExternalReferenceCode(
 			siteExternalReferenceCode, contextCompany.getCompanyId());
 
-		if (!group.isSite()) {
+		if ((group == null) || !group.isSite()) {
 			throw new NotFoundException();
 		}
 
-		return _postExportProcess(group, exportRequest);
+		return _postExportProcess(group, exportProcessRequest);
 	}
 
 	private ExportProcess _postExportProcess(
-			Group group, ExportRequest exportRequest)
+			Group group, ExportProcessRequest exportProcessRequest)
 		throws Exception {
 
 		long groupId = group.getGroupId();
@@ -102,13 +108,13 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 		PermissionUtil.checkExportPermission(
 			contextCompany.getCompanyId(), groupId);
 
-		Map<String, String[]> parameterMap =
-			ExportRequestParameterMapUtil.toParameterMap(exportRequest);
+		Map<String, String[]> parameterMap = ParameterMapUtil.toParameterMap(
+			exportProcessRequest);
 
 		long[] layoutIds = GetterUtil.getLongValues(
 			parameterMap.get("layoutIds"));
-		boolean privateLayout = GetterUtil.getBoolean(
-			parameterMap.get("privateLayout"));
+		boolean privateLayout = MapUtil.getBoolean(
+			parameterMap, "privateLayout");
 
 		if (ArrayUtil.isEmpty(layoutIds) &&
 			MapUtil.getBoolean(
@@ -126,12 +132,12 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 					parameterMap, contextAcceptLanguage.getPreferredLocale(),
 					contextUser.getTimeZone());
 
-		_putDateRange(exportRequest, settingsMap);
+		_putDateRange(exportProcessRequest, settingsMap);
 
 		ExportImportConfiguration exportImportConfiguration =
 			_exportImportConfigurationLocalService.
 				addDraftExportImportConfiguration(
-					contextUser.getUserId(), exportRequest.getFileName(),
+					contextUser.getUserId(), exportProcessRequest.getName(),
 					ExportImportConfigurationConstants.TYPE_EXPORT_LAYOUT,
 					settingsMap);
 
@@ -144,11 +150,13 @@ public class ExportProcessResourceImpl extends BaseExportProcessResourceImpl {
 	}
 
 	private void _putDateRange(
-		ExportRequest exportRequest, Map<String, Serializable> settingsMap) {
+		ExportProcessRequest exportProcessRequest,
+		Map<String, Serializable> settingsMap) {
 
 		DateRange dateRange = DateRangeUtil.toDateRange(
-			exportRequest.getEndDate(), exportRequest.getLast(),
-			exportRequest.getRangeAsString(), exportRequest.getStartDate());
+			exportProcessRequest.getEndDate(), exportProcessRequest.getLast(),
+			exportProcessRequest.getRangeAsString(),
+			exportProcessRequest.getStartDate());
 
 		if (dateRange.getStartDate() == null) {
 			return;

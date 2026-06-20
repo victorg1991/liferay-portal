@@ -1,4 +1,7 @@
 {
+	"masterPage": {
+		"key": "liferay-one"
+	},
 	"pageElement": {
 		"pageElements": [
 			{
@@ -11,41 +14,41 @@
 				"pageElements": [
 					{
 						"definition": {
-							"gutters": true,
+							"gutters": false,
 							"indexed": true,
-							"modulesPerRow": 2,
-							"numberOfColumns": 2,
-							"reverseOrder": false,
-							"verticalAlignment": "top"
+							"modulesPerRow": 1,
+							"numberOfColumns": 1
 						},
 						"pageElements": [
 							{
 								"definition": {
-									"size": 3
+									"size": 12
 								},
 								"pageElements": [
 									{
 										"definition": {
-											"widgetInstance": {
-												"widgetConfig": {
-													"displayStyle": "ddmTemplate_LO_SIDE_NAV",
-													"siteNavigationMenuExternalReferenceCode": "LO_MARKETPLACE_NAV",
-													"siteNavigationMenuName": "Marketplace Navigation",
-													"siteNavigationMenuType": "-1"
-												},
-												"widgetName": "com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet"
-											}
+											"fragment": {
+												"key": "marketplace-landing-page-hero-banner",
+												"siteKey": "[$GROUP_KEY$]"
+											},
+											"fragmentConfig": {
+											},
+											"fragmentFields": [
+												{
+													"id": "main-content",
+													"value": {
+														"text": {
+															"value_i18n": {
+																"en_US": "Browse Liferay's Marketplace"
+															}
+														}
+													}
+												}
+											],
+											"indexed": true
 										},
-										"type": "Widget"
+										"type": "Fragment"
 									}
-								],
-								"type": "Column"
-							},
-							{
-								"definition": {
-									"size": 9
-								},
-								"pageElements": [
 								],
 								"type": "Column"
 							}
@@ -57,5 +60,10 @@
 			}
 		],
 		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "liferay-one"
+		}
 	}
 }
