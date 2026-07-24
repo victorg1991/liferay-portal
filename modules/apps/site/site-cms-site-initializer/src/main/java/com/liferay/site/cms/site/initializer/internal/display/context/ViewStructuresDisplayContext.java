@@ -72,7 +72,30 @@ public class ViewStructuresDisplayContext {
 					"export-content-structures", _themeDisplay),
 				ExportImportUtil.getImportActionItemJSONObject(
 					_httpServletRequest, ObjectPortletKeys.OBJECT_DEFINITIONS,
-					"import-content-structures", _themeDisplay))
+					"import-content-structures", _themeDisplay),
+				JSONUtil.put(
+					"apiURL",
+					"/o/object-admin/v1.0/object-definitions" +
+						"/by-external-reference-code/"
+				).put(
+					"href",
+					PortletURLBuilder.create(
+						PortletURLFactoryUtil.create(
+							_httpServletRequest,
+							ObjectPortletKeys.OBJECT_DEFINITIONS,
+							PortletRequest.ACTION_PHASE)
+					).setActionName(
+						"/object_definitions/import_object_definition"
+					).buildString()
+				).put(
+					"label",
+					LanguageUtil.format(
+						_httpServletRequest, "import-from-x", "JSON")
+				).put(
+					"redirect", _themeDisplay.getURLCurrent()
+				).put(
+					"target", "importStructureModal"
+				))
 		).put(
 			"breadcrumbItems", jsonArray
 		).put(
@@ -146,25 +169,11 @@ public class ViewStructuresDisplayContext {
 				).setParameter(
 					"objectDefinitionId", "{id}"
 				).setResourceID(
-					"/object_definitions/export_object_definition"
+					"/object_definitions/export_bound_object_definitions"
 				).buildString(),
 				"export", "export",
 				LanguageUtil.get(_httpServletRequest, "export-as-json"), "get",
-				"exportObjectDefinition", null),
-			new FDSActionDropdownItem(
-				PortletURLBuilder.create(
-					PortletURLFactoryUtil.create(
-						_httpServletRequest,
-						ObjectPortletKeys.OBJECT_DEFINITIONS,
-						PortletRequest.ACTION_PHASE)
-				).setActionName(
-					"/object_definitions/import_object_definition"
-				).setParameter(
-					"externalReferenceCode", "{externalReferenceCode}"
-				).buildString(),
-				"import", "import",
-				LanguageUtil.get(_httpServletRequest, "import-and-override"),
-				"get", "update", null),
+				"get", null),
 			new FDSActionDropdownItem(
 				PortletURLBuilder.create(
 					PortalUtil.getControlPanelPortletURL(

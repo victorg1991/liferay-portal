@@ -156,7 +156,9 @@ public class ImportObjectDefinitionMVCActionCommand
 			ObjectDefinition objectDefinition = ObjectDefinition.toDTO(
 				jsonObject.toString());
 
-			objectDefinition.setActive(() -> false);
+			if (!ParamUtil.getBoolean(uploadPortletRequest, "keepActive")) {
+				objectDefinition.setActive(() -> false);
+			}
 
 			String externalReferenceCode = ParamUtil.getString(
 				actionRequest, "externalReferenceCode");
@@ -172,9 +174,13 @@ public class ImportObjectDefinitionMVCActionCommand
 				objectDefinition.setName(() -> name);
 			}
 
-			objectDefinition.setObjectFolderExternalReferenceCode(
-				() -> ParamUtil.getString(
-					uploadPortletRequest, "objectFolderExternalReferenceCode"));
+			String objectFolderExternalReferenceCode = ParamUtil.getString(
+				uploadPortletRequest, "objectFolderExternalReferenceCode");
+
+			if (Validator.isNotNull(objectFolderExternalReferenceCode)) {
+				objectDefinition.setObjectFolderExternalReferenceCode(
+					() -> objectFolderExternalReferenceCode);
+			}
 
 			try {
 				ObjectDefinition putObjectDefinition =

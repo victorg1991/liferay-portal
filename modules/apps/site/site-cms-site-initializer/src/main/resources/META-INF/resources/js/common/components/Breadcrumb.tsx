@@ -14,6 +14,7 @@ import React, {ComponentProps} from 'react';
 import {manageMembersAction} from '../../index';
 import DefaultPermissionModalContent from '../../main_view/default_permission/DefaultPermissionModalContent';
 import {DefaultPermissionModalContentProps} from '../../main_view/default_permission/DefaultPermissionTypes';
+import importStructureAction from '../../main_view/props_transformer/actions/importStructureAction';
 import manageConnectedSitesAction, {
 	ManageConnectedSitesData,
 } from '../../main_view/props_transformer/actions/manageConnectedSitesAction';
@@ -25,6 +26,7 @@ import {displayErrorToast} from '../utils/toastUtil';
 import SpaceSticker from './SpaceSticker';
 
 export interface ActionDropdownItemProps {
+	apiURL?: string;
 	confirmationMessage?: string;
 	confirmationTitle?: string;
 	defaultPermissionAdditionalProps?: DefaultPermissionModalContentProps;
@@ -39,6 +41,7 @@ export interface ActionDropdownItemProps {
 		| 'asyncPost'
 		| 'asyncPut'
 		| 'defaultPermissionsModal'
+		| 'importStructureModal'
 		| 'link'
 		| 'manageConnectedSitesModal'
 		| 'manageMembersModal'
@@ -62,6 +65,7 @@ export interface BreadcrumbItem {
 }
 
 function ActionDropdownItem({
+	apiURL = '',
 	confirmationMessage,
 	confirmationTitle,
 	defaultPermissionAdditionalProps,
@@ -129,6 +133,11 @@ function ActionDropdownItem({
 						closeModal,
 					}),
 				size: 'full-screen',
+			});
+		}
+		else if (target === 'importStructureModal') {
+			importStructureAction(apiURL, href, () => {
+				navigate(redirect || window.location.href);
 			});
 		}
 		else if (

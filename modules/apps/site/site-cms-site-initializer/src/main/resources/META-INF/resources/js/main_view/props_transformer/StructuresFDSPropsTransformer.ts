@@ -16,7 +16,6 @@ import {StructureWorkflowItem} from '../modal/AssignDefaultWorkflowModalContent'
 import assignStructureDefaultWorkflowBulkAction from './actions/AssignStructureDefaultWorkflowBulkSelectionAction';
 import defaultWorkflowStructureAction from './actions/defaultWorkflowStructureAction';
 import deleteStructureAction from './actions/deleteStructureAction';
-import importStructureAction from './actions/importStructureAction';
 import AuthorRenderer from './cell_renderers/AuthorRenderer';
 import SimpleActionLinkRenderer from './cell_renderers/SimpleActionLinkRenderer';
 import StructureScopeRenderer from './cell_renderers/StructureScopeRenderer';
@@ -94,18 +93,7 @@ export default function StructuresFDSPropsTransformer({
 			};
 			loadData: () => {};
 		}) {
-			if (action.data.id === 'import') {
-				event.preventDefault();
-
-				const target = event.target as HTMLAnchorElement;
-
-				importStructureAction(
-					target.href,
-					itemData.objectFolderExternalReferenceCode,
-					loadData
-				);
-			}
-			else if (action.data.id === 'delete') {
+			if (action.data.id === 'delete') {
 				event.preventDefault();
 				const target = event.target as HTMLAnchorElement;
 

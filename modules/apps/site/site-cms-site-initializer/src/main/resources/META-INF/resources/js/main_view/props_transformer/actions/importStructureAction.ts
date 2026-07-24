@@ -7,17 +7,17 @@ import {openCMSModal} from '../../../common/utils/openCMSModal';
 import ImportStructureModalContent from '../../modal/ImportStructureModalContent';
 
 export default function importStructureAction(
+	apiURL: string,
 	importURL: string,
-	objectFolderExternalReferenceCode: string,
-	loadData?: () => {}
+	loadData?: () => void
 ) {
 	openCMSModal({
 		contentComponent: ({closeModal}: {closeModal: () => void}) =>
 			ImportStructureModalContent({
+				apiURL,
 				closeModal,
 				importURL,
 				loadData,
-				objectFolderExternalReferenceCode,
 			}),
 		size: 'md',
 	});
