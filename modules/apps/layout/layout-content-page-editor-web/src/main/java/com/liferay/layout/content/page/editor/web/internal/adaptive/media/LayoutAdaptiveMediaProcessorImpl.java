@@ -156,7 +156,27 @@ public class LayoutAdaptiveMediaProcessorImpl
 		parentElement.prependChild(sourceElement);
 	}
 
-	private String _getMediaQuery(String elementId, long fileEntryId)
+	private String _getCSSSelector(Element styledElement) {
+		String elementId = styledElement.attr("id");
+
+		if (Validator.isNotNull(elementId)) {
+			return StringPool.POUND + elementId;
+		}
+
+		for (String cssClass : styledElement.classNames()) {
+			if (cssClass.startsWith(_UNIQUE_CSS_CLASS_PREFIX)) {
+				return StringPool.PERIOD + cssClass;
+			}
+		}
+
+		elementId = StringUtil.randomId();
+
+		styledElement.attr("id", elementId);
+
+		return StringPool.POUND + elementId;
+	}
+
+	private String _getMediaQuery(String cssSelector, long fileEntryId)
 		throws PortalException {
 
 		StringBundler sb = new StringBundler();
@@ -182,8 +202,7 @@ public class LayoutAdaptiveMediaProcessorImpl
 			}
 
 			sb.append(StringPool.OPEN_CURLY_BRACE);
-			sb.append(StringPool.POUND);
-			sb.append(elementId);
+			sb.append(cssSelector);
 			sb.append("{background-image: url(");
 			sb.append(mediaQuery.getSrc());
 			sb.append(") !important;}}");
@@ -216,20 +235,14 @@ public class LayoutAdaptiveMediaProcessorImpl
 
 			StringBundler sb = new StringBundler();
 
-			String elementId = styledElement.attr("id");
-
-			if (Validator.isNull(elementId)) {
-				elementId = StringUtil.randomId();
-
-				styledElement.attr("id", elementId);
-			}
+			String cssSelector = _getCSSSelector(styledElement);
 
 			Matcher matcher = _cssPropertyPattern.matcher(styleText);
 
 			while (matcher.find()) {
 				sb.append(
 					_getMediaQuery(
-						elementId, GetterUtil.getLong(matcher.group(1))));
+						cssSelector, GetterUtil.getLong(matcher.group(1))));
 			}
 
 			if (sb.length() > 0) {
@@ -239,6 +252,9 @@ public class LayoutAdaptiveMediaProcessorImpl
 			}
 		}
 	}
+
+	private static final String _UNIQUE_CSS_CLASS_PREFIX =
+		"lfr-layout-structure-item-";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutAdaptiveMediaProcessorImpl.class);
