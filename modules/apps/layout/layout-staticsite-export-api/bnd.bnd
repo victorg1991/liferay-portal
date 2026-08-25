@@ -1,0 +1,4 @@
+Bundle-Name: Liferay Layout Staticsite Export API
+Bundle-SymbolicName: com.liferay.layout.staticsite.export.api
+Bundle-Version: 1.0.0
+Export-Package: com.liferay.layout.staticsite.export
