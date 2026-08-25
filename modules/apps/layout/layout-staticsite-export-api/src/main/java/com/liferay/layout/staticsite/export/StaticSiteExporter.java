@@ -10,8 +10,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.io.OutputStream;
-
 import java.util.Locale;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -24,8 +22,7 @@ public interface StaticSiteExporter {
 
 	public StaticSiteExportResult exportSite(
 			long groupId, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse, Locale locale,
-			OutputStream outputStream)
+			HttpServletResponse httpServletResponse, Locale locale)
 		throws PortalException;
 
 }

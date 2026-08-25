@@ -5,6 +5,8 @@
 
 package com.liferay.layout.staticsite.export;
 
+import java.io.File;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +41,10 @@ public class StaticSiteExportResult {
 		return _failures;
 	}
 
+	public File getFile() {
+		return _file;
+	}
+
 	public Map<String, String> getResourceFileNames() {
 		return _resourceFileNames;
 	}
@@ -49,6 +55,10 @@ public class StaticSiteExportResult {
 
 	public boolean hasResource(String url) {
 		return _resourceFileNames.containsKey(url);
+	}
+
+	public void setFile(File file) {
+		_file = file;
 	}
 
 	public static class Failure {
@@ -74,6 +84,7 @@ public class StaticSiteExportResult {
 	private final Map<String, String> _exportedPageFileNames =
 		new LinkedHashMap<>();
 	private final List<Failure> _failures = new ArrayList<>();
+	private File _file;
 	private final Map<String, String> _resourceFileNames =
 		new LinkedHashMap<>();
 	private final List<Failure> _skippedPages = new ArrayList<>();
