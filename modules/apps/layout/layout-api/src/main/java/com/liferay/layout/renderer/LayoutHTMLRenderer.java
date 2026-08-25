@@ -5,6 +5,7 @@
 
 package com.liferay.layout.renderer;
 
+import com.liferay.info.item.InfoItemReference;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.User;
 
@@ -20,6 +21,13 @@ import org.osgi.annotation.versioning.ProviderType;
  */
 @ProviderType
 public interface LayoutHTMLRenderer {
+
+	public String renderHTML(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse,
+			InfoItemReference infoItemReference, Layout layout, Locale locale,
+			User user)
+		throws Exception;
 
 	public String renderHTML(
 			HttpServletRequest httpServletRequest,
