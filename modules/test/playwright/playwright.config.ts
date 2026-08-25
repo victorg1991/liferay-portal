@@ -127,6 +127,7 @@ import {config as layoutContentWebConfig} from './tests/layout-content-web/main/
 import {config as layoutLockedLayoutsWebConfig} from './tests/layout-locked-layouts-web/main/config';
 import {config as layoutPageTemplateAdminWebConfig} from './tests/layout-page-template-admin-web/main/config';
 import {config as layoutSetPrototypeWebConfig} from './tests/layout-set-prototype-web/main/config';
+import {config as layoutStaticsiteExportImplConfig} from './tests/layout-staticsite-export-impl/main/config';
 import {config as lockedItemsWebConfig} from './tests/locked-items-web/main/config';
 import {config as loginWebMainCaptchaEnableConfig} from './tests/login-web/main-captcha-enable/config';
 import {config as loginWebConfig} from './tests/login-web/main/config';
@@ -385,6 +386,7 @@ export default defineConfig({
 		journalWebConfig,
 		knowledgeBaseWebConfig,
 		layoutAdminWebConfig,
+		layoutStaticsiteExportImplConfig,
 		layoutContentPageEditorWebConfig,
 		layoutContentPageEditorWebFormContainerConfig,
 		layoutContentPageEditorWebFragmentsConfig,

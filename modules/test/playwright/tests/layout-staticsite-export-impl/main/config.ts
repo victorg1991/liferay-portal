@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-type StructuredContent = {
-	friendlyUrlPath: string;
-	id: number;
-	key: string;
+export const config = {
+	name: 'layout-staticsite-export-impl.main',
+	testDir: 'tests/layout-staticsite-export-impl/main',
+	timeout: 300 * 1000,
 };
