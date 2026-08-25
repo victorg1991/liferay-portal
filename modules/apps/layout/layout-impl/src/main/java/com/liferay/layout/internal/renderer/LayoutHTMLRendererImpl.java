@@ -5,10 +5,20 @@
 
 package com.liferay.layout.internal.renderer;
 
+import com.liferay.info.constants.InfoDisplayWebKeys;
+import com.liferay.info.item.InfoItemDetails;
+import com.liferay.info.item.InfoItemReference;
+import com.liferay.info.item.InfoItemServiceRegistry;
+import com.liferay.info.item.provider.InfoItemDetailsProvider;
+import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
+import com.liferay.layout.display.page.LayoutDisplayPageProvider;
+import com.liferay.layout.display.page.LayoutDisplayPageProviderRegistry;
+import com.liferay.layout.display.page.constants.LayoutDisplayPageWebKeys;
 import com.liferay.layout.renderer.LayoutHTMLRenderer;
 import com.liferay.layout.util.LayoutServiceContextHelper;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.model.User;
@@ -54,73 +64,60 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 	@Override
 	public String renderHTML(
 			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse,
+			InfoItemReference infoItemReference, Layout layout, Locale locale,
+			User user)
+		throws Exception {
+
+		LayoutDisplayPageProvider<?> layoutDisplayPageProvider =
+			_layoutDisplayPageProviderRegistry.
+				getLayoutDisplayPageProviderByClassName(
+					layout.getCompanyId(), infoItemReference.getClassName());
+
+		if (layoutDisplayPageProvider == null) {
+			throw new PortalException(
+				"No layout display page provider for " +
+					infoItemReference.getClassName());
+		}
+
+		LayoutDisplayPageObjectProvider<?> layoutDisplayPageObjectProvider =
+			layoutDisplayPageProvider.getLayoutDisplayPageObjectProvider(
+				infoItemReference);
+
+		if (layoutDisplayPageObjectProvider == null) {
+			throw new PortalException(
+				"Unable to get the display object for " + infoItemReference);
+		}
+
+		Object infoItem = layoutDisplayPageObjectProvider.getDisplayObject();
+
+		InfoItemDetailsProvider<Object> infoItemDetailsProvider =
+			_infoItemServiceRegistry.getFirstInfoItemService(
+				InfoItemDetailsProvider.class,
+				layoutDisplayPageObjectProvider.getClassName());
+
+		InfoItemDetails infoItemDetails = null;
+
+		if (infoItemDetailsProvider != null) {
+			infoItemDetails = infoItemDetailsProvider.getInfoItemDetails(
+				infoItem);
+		}
+
+		return _renderHTML(
+			httpServletRequest, httpServletResponse, infoItem, infoItemDetails,
+			layout, layoutDisplayPageObjectProvider, locale, null, user);
+	}
+
+	@Override
+	public String renderHTML(
+			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse, Layout layout,
 			Locale locale, String segmentsExperienceKey, User user)
 		throws Exception {
 
-		try (AutoCloseable autoCloseable =
-				_layoutServiceContextHelper.getServiceContextAutoCloseable(
-					layout, user)) {
-
-			ServiceContext serviceContext =
-				ServiceContextThreadLocal.getServiceContext();
-
-			httpServletRequest = _portal.getOriginalServletRequest(
-				httpServletRequest);
-
-			httpServletRequest = DynamicServletRequest.addQueryString(
-				httpServletRequest, "p_l_id=" + layout.getPlid(), false);
-
-			serviceContext.setRequest(httpServletRequest);
-
-			ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
-
-			String portalURL = _portal.getPortalURL(httpServletRequest);
-
-			themeDisplay.setLanguageId(LocaleUtil.toLanguageId(locale));
-			themeDisplay.setLocale(locale);
-			themeDisplay.setPortalDomain(
-				HttpComponentsUtil.getDomain(portalURL));
-			themeDisplay.setPortalURL(portalURL);
-			themeDisplay.setRequest(httpServletRequest);
-			themeDisplay.setSecure(
-				_portal.isForwardedSecure(httpServletRequest));
-			themeDisplay.setServerName(
-				_portal.getForwardedHost(httpServletRequest));
-			themeDisplay.setServerPort(
-				_portal.getForwardedPort(httpServletRequest));
-
-			httpServletRequest.setAttribute(WebKeys.LOCALE, locale);
-
-			SegmentsExperience segmentsExperience = _getSegmentsExperience(
-				httpServletRequest, layout, segmentsExperienceKey, user);
-
-			if (segmentsExperience != null) {
-				httpServletRequest.setAttribute(
-					SegmentsWebKeys.SEGMENTS_EXPERIENCE_IDS,
-					new long[] {segmentsExperience.getSegmentsExperienceId()});
-			}
-
-			layout.includeLayoutContent(
-				httpServletRequest, httpServletResponse);
-
-			StringBundler sb = (StringBundler)httpServletRequest.getAttribute(
-				WebKeys.LAYOUT_CONTENT);
-
-			LayoutSet layoutSet = layout.getLayoutSet();
-
-			Document document = Jsoup.parse(
-				ThemeUtil.include(
-					ServletContextPool.get(StringPool.BLANK),
-					httpServletRequest, httpServletResponse,
-					"portal_normal.ftl", layoutSet.getTheme(), false));
-
-			Element bodyElement = document.body();
-
-			bodyElement.html(sb.toString());
-
-			return document.html();
-		}
+		return _renderHTML(
+			httpServletRequest, httpServletResponse, null, null, layout, null,
+			locale, segmentsExperienceKey, user);
 	}
 
 	private SegmentsExperience _getSegmentsExperience(
@@ -158,6 +155,97 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 		return _segmentsExperienceLocalService.getSegmentsExperience(
 			segmentsExperienceIds[0]);
 	}
+
+	private String _renderHTML(
+			HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse, Object infoItem,
+			InfoItemDetails infoItemDetails, Layout layout,
+			LayoutDisplayPageObjectProvider<?> layoutDisplayPageObjectProvider,
+			Locale locale, String segmentsExperienceKey, User user)
+		throws Exception {
+
+		try (AutoCloseable autoCloseable =
+				_layoutServiceContextHelper.getServiceContextAutoCloseable(
+					layout, user)) {
+
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
+
+			httpServletRequest = _portal.getOriginalServletRequest(
+				httpServletRequest);
+
+			httpServletRequest = DynamicServletRequest.addQueryString(
+				httpServletRequest, "p_l_id=" + layout.getPlid(), false);
+
+			serviceContext.setRequest(httpServletRequest);
+
+			ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
+
+			String portalURL = _portal.getPortalURL(httpServletRequest);
+
+			themeDisplay.setLanguageId(LocaleUtil.toLanguageId(locale));
+			themeDisplay.setLocale(locale);
+			themeDisplay.setPortalDomain(
+				HttpComponentsUtil.getDomain(portalURL));
+			themeDisplay.setPortalURL(portalURL);
+			themeDisplay.setRequest(httpServletRequest);
+			themeDisplay.setSecure(
+				_portal.isForwardedSecure(httpServletRequest));
+			themeDisplay.setServerName(
+				_portal.getForwardedHost(httpServletRequest));
+			themeDisplay.setServerPort(
+				_portal.getForwardedPort(httpServletRequest));
+
+			httpServletRequest.setAttribute(WebKeys.LOCALE, locale);
+
+			if (layoutDisplayPageObjectProvider != null) {
+				httpServletRequest.setAttribute(
+					InfoDisplayWebKeys.INFO_ITEM, infoItem);
+				httpServletRequest.setAttribute(
+					InfoDisplayWebKeys.INFO_ITEM_DETAILS, infoItemDetails);
+				httpServletRequest.setAttribute(
+					LayoutDisplayPageWebKeys.
+						LAYOUT_DISPLAY_PAGE_OBJECT_PROVIDER,
+					layoutDisplayPageObjectProvider);
+			}
+
+			SegmentsExperience segmentsExperience = _getSegmentsExperience(
+				httpServletRequest, layout, segmentsExperienceKey, user);
+
+			if (segmentsExperience != null) {
+				httpServletRequest.setAttribute(
+					SegmentsWebKeys.SEGMENTS_EXPERIENCE_IDS,
+					new long[] {segmentsExperience.getSegmentsExperienceId()});
+			}
+
+			layout.includeLayoutContent(
+				httpServletRequest, httpServletResponse);
+
+			StringBundler sb = (StringBundler)httpServletRequest.getAttribute(
+				WebKeys.LAYOUT_CONTENT);
+
+			LayoutSet layoutSet = layout.getLayoutSet();
+
+			Document document = Jsoup.parse(
+				ThemeUtil.include(
+					ServletContextPool.get(StringPool.BLANK),
+					httpServletRequest, httpServletResponse,
+					"portal_normal.ftl", layoutSet.getTheme(), false));
+
+			Element bodyElement = document.body();
+
+			bodyElement.html(sb.toString());
+
+			return document.html();
+		}
+	}
+
+	@Reference
+	private InfoItemServiceRegistry _infoItemServiceRegistry;
+
+	@Reference
+	private LayoutDisplayPageProviderRegistry
+		_layoutDisplayPageProviderRegistry;
 
 	@Reference
 	private LayoutServiceContextHelper _layoutServiceContextHelper;
