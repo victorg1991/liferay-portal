@@ -42,7 +42,13 @@ public class StaticSiteResourceHarvester {
 				url = matcher.group(2);
 			}
 
-			_addURL(urls, _resolve(_unquote(url), cssURL));
+			url = _unquote(url);
+
+			if (url.startsWith(StringPool.POUND)) {
+				continue;
+			}
+
+			_addURL(urls, _resolve(url, cssURL));
 		}
 
 		return urls;
@@ -132,7 +138,7 @@ public class StaticSiteResourceHarvester {
 			_addURL(urls, StringPool.SLASH + matcher.group(1));
 		}
 
-		matcher = _jsRelativeModulePathPattern.matcher(js);
+		matcher = _jsRelativeModulePathPattern.matcher(_stripBlockComments(js));
 
 		while (matcher.find()) {
 			_addURL(urls, _resolve(matcher.group(1), jsURL));
@@ -343,6 +349,18 @@ public class StaticSiteResourceHarvester {
 		return path + url;
 	}
 
+	/**
+	 * Removes block comments, so that an import written inside documentation
+	 * is not mistaken for one the script actually makes.
+	 */
+	private String _stripBlockComments(String js) {
+		return _blockCommentPattern.matcher(
+			js
+		).replaceAll(
+			StringPool.BLANK
+		);
+	}
+
 	private String _unquote(String url) {
 		if (Validator.isNull(url)) {
 			return url;
@@ -361,6 +379,8 @@ public class StaticSiteResourceHarvester {
 		"/combo", "/documents/", "/image/", "/o/", "/webserver/"
 	};
 
+	private static final Pattern _blockCommentPattern = Pattern.compile(
+		"/\\*.*?\\*/", Pattern.DOTALL);
 	private static final Pattern _cssURLPattern = Pattern.compile(
 		"url\\(([^)]+)\\)|@import\\s+[\"']([^\"']+)[\"']");
 	private static final Pattern _identifierPattern = Pattern.compile(

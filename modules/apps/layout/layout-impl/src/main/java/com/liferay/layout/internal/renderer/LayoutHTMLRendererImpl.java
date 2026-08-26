@@ -20,9 +20,13 @@ import com.liferay.layout.util.LayoutServiceContextHelper;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
@@ -36,6 +40,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.webserver.WebServerServletToken;
 import com.liferay.portal.struts.Definition;
 import com.liferay.portal.struts.TilesUtil;
 import com.liferay.segments.SegmentsEntryRetriever;
@@ -124,6 +129,42 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 		return _renderHTML(
 			httpServletRequest, httpServletResponse, null, null, layout, null,
 			locale, segmentsExperienceKey, user, wholePage);
+	}
+
+	private String _getCompanyLogo(Company company, String imagePath) {
+		String companyLogo = imagePath + "/company_logo";
+
+		long companyLogoId = company.getLogoId();
+
+		if (companyLogoId <= 0) {
+			return companyLogo;
+		}
+
+		return StringBundler.concat(
+			companyLogo, "?img_id=", companyLogoId, "&t=",
+			_webServerServletToken.getToken(companyLogoId));
+	}
+
+	private String _getLayoutSetLogo(
+		Company company, String imagePath, LayoutSet layoutSet) {
+
+		if (!company.isSiteLogo() || !layoutSet.isLogo()) {
+			return null;
+		}
+
+		long logoId = layoutSet.getLogoId();
+
+		if (logoId == 0) {
+			logoId = layoutSet.getLiveLogoId();
+		}
+
+		if (logoId <= 0) {
+			return null;
+		}
+
+		return StringBundler.concat(
+			imagePath, "/layout_set_logo?img_id=", logoId, "&t=",
+			_webServerServletToken.getToken(logoId));
 	}
 
 	private SegmentsExperience _getSegmentsExperience(
@@ -233,6 +274,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			httpServletRequest.removeAttribute(LayoutWebKeys.LAYOUT_STRUCTURE);
 
 			if (wholePage) {
+				_setWholePageThemeDisplay(layout, themeDisplay);
+
 				httpServletRequest.setAttribute(
 					TilesUtil.DEFINITION,
 					new Definition(
@@ -276,7 +319,42 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 		}
 	}
 
+	/**
+	 * Fills in what a page needs only when it is rendered whole: the logo the
+	 * theme shows and the layouts it builds its navigation from.
+	 */
+	private void _setWholePageThemeDisplay(
+			Layout layout, ThemeDisplay themeDisplay)
+		throws Exception {
+
+		Company company = _companyLocalService.getCompany(
+			layout.getCompanyId());
+
+		String imagePath = _portal.getPathImage();
+
+		themeDisplay.setPathImage(imagePath);
+
+		String layoutSetLogo = _getLayoutSetLogo(
+			company, imagePath, layout.getLayoutSet());
+
+		if (layoutSetLogo == null) {
+			themeDisplay.setCompanyLogo(_getCompanyLogo(company, imagePath));
+		}
+		else {
+			themeDisplay.setCompanyLogo(layoutSetLogo);
+			themeDisplay.setLayoutSetLogo(layoutSetLogo);
+		}
+
+		themeDisplay.setLayouts(
+			_layoutLocalService.getLayouts(
+				layout.getGroupId(), layout.isPrivateLayout(),
+				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID));
+	}
+
 	private static final String _PATH_PORTAL_LAYOUT = "/portal/layout.jsp";
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private InfoItemServiceRegistry _infoItemServiceRegistry;
@@ -284,6 +362,9 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 	@Reference
 	private LayoutDisplayPageProviderRegistry
 		_layoutDisplayPageProviderRegistry;
+
+	@Reference
+	private LayoutLocalService _layoutLocalService;
 
 	@Reference
 	private LayoutServiceContextHelper _layoutServiceContextHelper;
@@ -306,5 +387,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 	@Reference
 	private SegmentsExperienceService _segmentsExperienceService;
+
+	@Reference
+	private WebServerServletToken _webServerServletToken;
 
 }

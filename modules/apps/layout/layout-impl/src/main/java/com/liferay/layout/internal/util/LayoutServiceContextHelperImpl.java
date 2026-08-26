@@ -6,7 +6,6 @@
 package com.liferay.layout.internal.util;
 
 import com.liferay.layout.util.LayoutServiceContextHelper;
-import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -49,7 +48,6 @@ import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.ProxyFactory;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.kernel.webserver.WebServerServletTokenUtil;
 import com.liferay.portal.theme.ThemeDisplayFactory;
 
 import jakarta.servlet.RequestDispatcher;
@@ -368,42 +366,6 @@ public class LayoutServiceContextHelperImpl
 				ProxyFactory.newDummyInstance(HttpServletRequest.class));
 		}
 
-		private String _getCompanyLogo(Company company, String imagePath) {
-			String companyLogo = imagePath + "/company_logo";
-
-			long companyLogoId = company.getLogoId();
-
-			if (companyLogoId <= 0) {
-				return companyLogo;
-			}
-
-			return StringBundler.concat(
-				companyLogo, "?img_id=", companyLogoId, "&t=",
-				WebServerServletTokenUtil.getToken(companyLogoId));
-		}
-
-		private String _getLayoutSetLogo(
-			Company company, String imagePath, LayoutSet layoutSet) {
-
-			if (!company.isSiteLogo() || !layoutSet.isLogo()) {
-				return null;
-			}
-
-			long logoId = layoutSet.getLogoId();
-
-			if (logoId == 0) {
-				logoId = layoutSet.getLiveLogoId();
-			}
-
-			if (logoId <= 0) {
-				return null;
-			}
-
-			return StringBundler.concat(
-				imagePath, "/layout_set_logo?img_id=", logoId, "&t=",
-				WebServerServletTokenUtil.getToken(logoId));
-		}
-
 		private ThemeDisplay _getThemeDisplay(
 				Company company, PermissionChecker permissionChecker, User user)
 			throws PortalException {
@@ -411,11 +373,6 @@ public class LayoutServiceContextHelperImpl
 			ThemeDisplay themeDisplay = ThemeDisplayFactory.create();
 
 			themeDisplay.setCompany(company);
-
-			String imagePath = _portal.getPathImage();
-
-			themeDisplay.setCompanyLogo(_getCompanyLogo(company, imagePath));
-			themeDisplay.setPathImage(imagePath);
 
 			boolean secure = _isSecure();
 
@@ -436,19 +393,6 @@ public class LayoutServiceContextHelperImpl
 				LayoutSet layoutSet = _layout.getLayoutSet();
 
 				themeDisplay.setLayoutSet(layoutSet);
-
-				String layoutSetLogo = _getLayoutSetLogo(
-					company, imagePath, layoutSet);
-
-				if (layoutSetLogo != null) {
-					themeDisplay.setCompanyLogo(layoutSetLogo);
-					themeDisplay.setLayoutSetLogo(layoutSetLogo);
-				}
-
-				themeDisplay.setLayouts(
-					_layoutLocalService.getLayouts(
-						_layout.getGroupId(), _layout.isPrivateLayout(),
-						LayoutConstants.DEFAULT_PARENT_LAYOUT_ID));
 
 				themeDisplay.setLayoutTypePortlet(
 					(LayoutTypePortlet)_layout.getLayoutType());
