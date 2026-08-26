@@ -727,7 +727,7 @@ public class SitePageResourceImpl
 			contextHttpServletRequest, contextHttpServletResponse,
 			_getLayout(groupId, friendlyUrlPath),
 			contextAcceptLanguage.getPreferredLocale(), segmentsExperienceKey,
-			contextUser);
+			contextUser, false);
 	}
 
 	private SitePage _toSitePage(boolean embeddedPageDefinition, Layout layout)

@@ -30,11 +30,14 @@ import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.theme.ThemeUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.struts.Definition;
+import com.liferay.portal.struts.TilesUtil;
 import com.liferay.segments.SegmentsEntryRetriever;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
 import com.liferay.segments.constants.SegmentsWebKeys;
@@ -67,7 +70,7 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse,
 			InfoItemReference infoItemReference, Layout layout, Locale locale,
-			User user)
+			User user, boolean wholePage)
 		throws Exception {
 
 		LayoutDisplayPageProvider<?> layoutDisplayPageProvider =
@@ -106,19 +109,21 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 		return _renderHTML(
 			httpServletRequest, httpServletResponse, infoItem, infoItemDetails,
-			layout, layoutDisplayPageObjectProvider, locale, null, user);
+			layout, layoutDisplayPageObjectProvider, locale, null, user,
+			wholePage);
 	}
 
 	@Override
 	public String renderHTML(
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse, Layout layout,
-			Locale locale, String segmentsExperienceKey, User user)
+			Locale locale, String segmentsExperienceKey, User user,
+			boolean wholePage)
 		throws Exception {
 
 		return _renderHTML(
 			httpServletRequest, httpServletResponse, null, null, layout, null,
-			locale, segmentsExperienceKey, user);
+			locale, segmentsExperienceKey, user, wholePage);
 	}
 
 	private SegmentsExperience _getSegmentsExperience(
@@ -162,7 +167,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			HttpServletResponse httpServletResponse, Object infoItem,
 			InfoItemDetails infoItemDetails, Layout layout,
 			LayoutDisplayPageObjectProvider<?> layoutDisplayPageObjectProvider,
-			Locale locale, String segmentsExperienceKey, User user)
+			Locale locale, String segmentsExperienceKey, User user,
+			boolean wholePage)
 		throws Exception {
 
 		try (AutoCloseable autoCloseable =
@@ -226,19 +232,36 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			httpServletRequest.removeAttribute(WebKeys.LAYOUT_CONTENT);
 			httpServletRequest.removeAttribute(LayoutWebKeys.LAYOUT_STRUCTURE);
 
+			if (wholePage) {
+				httpServletRequest.setAttribute(
+					TilesUtil.DEFINITION,
+					new Definition(
+						StringPool.BLANK,
+						HashMapBuilder.put(
+							"content", _PATH_PORTAL_LAYOUT
+						).put(
+							"selectable", Boolean.TRUE.toString()
+						).build()));
+			}
+
 			layout.includeLayoutContent(
 				httpServletRequest, httpServletResponse);
+
+			LayoutSet layoutSet = layout.getLayoutSet();
+
+			String html = ThemeUtil.include(
+				ServletContextPool.get(StringPool.BLANK), httpServletRequest,
+				httpServletResponse, "portal_normal.ftl", layoutSet.getTheme(),
+				false);
+
+			if (wholePage) {
+				return html;
+			}
 
 			StringBundler sb = (StringBundler)httpServletRequest.getAttribute(
 				WebKeys.LAYOUT_CONTENT);
 
-			LayoutSet layoutSet = layout.getLayoutSet();
-
-			Document document = Jsoup.parse(
-				ThemeUtil.include(
-					ServletContextPool.get(StringPool.BLANK),
-					httpServletRequest, httpServletResponse,
-					"portal_normal.ftl", layoutSet.getTheme(), false));
+			Document document = Jsoup.parse(html);
 
 			Element bodyElement = document.body();
 
@@ -252,6 +275,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			return document.html();
 		}
 	}
+
+	private static final String _PATH_PORTAL_LAYOUT = "/portal/layout.jsp";
 
 	@Reference
 	private InfoItemServiceRegistry _infoItemServiceRegistry;

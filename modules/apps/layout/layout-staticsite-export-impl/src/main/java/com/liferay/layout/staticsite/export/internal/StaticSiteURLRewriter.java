@@ -59,10 +59,17 @@ public class StaticSiteURLRewriter {
 
 			String replacement = StringPool.SLASH + entry.getValue();
 
-			for (char delimiter : _URL_DELIMITERS) {
-				html = StringUtil.replace(
-					html, "\"" + friendlyURL + delimiter,
-					"\"" + replacement + delimiter);
+			for (char quote : _URL_QUOTES) {
+				char[] terminators = {CharPool.POUND, CharPool.QUESTION, quote};
+
+				for (char terminator : terminators) {
+					String prefix = String.valueOf(quote);
+					String suffix = String.valueOf(terminator);
+
+					html = StringUtil.replace(
+						html, prefix + friendlyURL + suffix,
+						prefix + replacement + suffix);
+				}
 			}
 		}
 
@@ -102,8 +109,8 @@ public class StaticSiteURLRewriter {
 		return entries;
 	}
 
-	private static final char[] _URL_DELIMITERS = {
-		CharPool.POUND, CharPool.QUESTION, CharPool.QUOTE
+	private static final char[] _URL_QUOTES = {
+		CharPool.QUOTE, CharPool.APOSTROPHE
 	};
 
 	private static final Pattern _alternateLinkPattern = Pattern.compile(
