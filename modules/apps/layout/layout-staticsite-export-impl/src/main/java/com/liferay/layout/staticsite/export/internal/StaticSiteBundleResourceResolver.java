@@ -7,6 +7,7 @@ package com.liferay.layout.staticsite.export.internal;
 
 import com.liferay.petra.io.StreamUtil;
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -15,8 +16,11 @@ import java.io.InputStream;
 
 import java.net.URL;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.osgi.framework.Bundle;
@@ -76,6 +80,102 @@ public class StaticSiteBundleResourceResolver {
 		}
 	}
 
+	/**
+	 * Lists every module a runtime loader can build a URL for under the
+	 * directory the given module sits in, which no page or script states
+	 * literally.
+	 */
+	public List<String> resolveSiblingModuleURLs(String path) {
+		if (!path.startsWith(_MODULE_PATH_PREFIX)) {
+			return Collections.emptyList();
+		}
+
+		int index = path.indexOf(CharPool.SLASH, _MODULE_PATH_PREFIX.length());
+
+		if (index == -1) {
+			return Collections.emptyList();
+		}
+
+		String webContextPath = path.substring(
+			_MODULE_PATH_PREFIX.length(), index);
+
+		Bundle bundle = _bundles.get(webContextPath);
+
+		if (bundle == null) {
+			return Collections.emptyList();
+		}
+
+		String bundlePath = path.substring(index);
+
+		int fileNameIndex = bundlePath.lastIndexOf(CharPool.SLASH);
+
+		if (fileNameIndex <= 0) {
+			return Collections.emptyList();
+		}
+
+		String fileName = bundlePath.substring(fileNameIndex + 1);
+
+		int moduleNameIndex = bundlePath.lastIndexOf(
+			CharPool.SLASH, fileNameIndex - 1);
+
+		if (moduleNameIndex == -1) {
+			return Collections.emptyList();
+		}
+
+		String moduleName = bundlePath.substring(
+			moduleNameIndex + 1, fileNameIndex);
+
+		if (!fileName.equals(moduleName + _MODULE_FILE_NAME_SUFFIX)) {
+			return Collections.emptyList();
+		}
+
+		String dirPath = bundlePath.substring(0, moduleNameIndex);
+
+		List<String> urls = new ArrayList<>();
+
+		for (String prefix : _ENTRY_PREFIXES) {
+			Enumeration<URL> enumeration = bundle.findEntries(
+				prefix + dirPath, StringPool.STAR + _MODULE_FILE_NAME_SUFFIX,
+				true);
+
+			while ((enumeration != null) && enumeration.hasMoreElements()) {
+				URL url = enumeration.nextElement();
+
+				String siblingModuleName = _getSiblingModuleName(
+					url.getPath(), prefix + dirPath);
+
+				if (siblingModuleName == null) {
+					continue;
+				}
+
+				String modulePath = StringBundler.concat(
+					_MODULE_PATH_PREFIX, webContextPath, dirPath,
+					StringPool.SLASH, siblingModuleName);
+
+				urls.add(
+					StringBundler.concat(
+						modulePath, StringPool.SLASH, siblingModuleName,
+						_MODULE_FILE_NAME_SUFFIX));
+
+				String skinPath = StringBundler.concat(
+					dirPath, StringPool.SLASH, siblingModuleName,
+					_SKIN_DIR_NAME, siblingModuleName, ".css");
+
+				if (bundle.getEntry(prefix + skinPath) != null) {
+					urls.add(
+						StringBundler.concat(
+							_MODULE_PATH_PREFIX, webContextPath, skinPath));
+				}
+			}
+
+			if (!urls.isEmpty()) {
+				return urls;
+			}
+		}
+
+		return urls;
+	}
+
 	private URL _getEntryURL(Bundle bundle, String path) {
 		for (String prefix : _ENTRY_PREFIXES) {
 			URL url = bundle.getEntry(prefix + path);
@@ -126,6 +226,34 @@ public class StaticSiteBundleResourceResolver {
 		return null;
 	}
 
+	private String _getSiblingModuleName(String urlPath, String dirPath) {
+		int index = urlPath.indexOf(dirPath + StringPool.SLASH);
+
+		if (index == -1) {
+			return null;
+		}
+
+		String relativePath = urlPath.substring(index + dirPath.length() + 1);
+
+		int slashIndex = relativePath.indexOf(CharPool.SLASH);
+
+		if (slashIndex == -1) {
+			return null;
+		}
+
+		String moduleName = relativePath.substring(0, slashIndex);
+
+		if (!relativePath.equals(
+				StringBundler.concat(
+					moduleName, StringPool.SLASH, moduleName,
+					_MODULE_FILE_NAME_SUFFIX))) {
+
+			return null;
+		}
+
+		return moduleName;
+	}
+
 	private String _unhash(String path) {
 		int index = path.indexOf(".(");
 
@@ -146,7 +274,11 @@ public class StaticSiteBundleResourceResolver {
 		"META-INF/resources", StringPool.BLANK
 	};
 
+	private static final String _MODULE_FILE_NAME_SUFFIX = "-min.js";
+
 	private static final String _MODULE_PATH_PREFIX = "/o/";
+
+	private static final String _SKIN_DIR_NAME = "/assets/skins/sam/";
 
 	private final Map<String, Bundle> _bundles = new HashMap<>();
 

@@ -6,12 +6,15 @@
 package com.liferay.layout.staticsite.export.internal;
 
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -138,6 +141,48 @@ public class StaticSiteResourceHarvester {
 		return urls;
 	}
 
+	/**
+	 * Collects the modules a legacy loader configuration declares, whose URLs
+	 * are a group base joined to a relative path and so never appear whole.
+	 */
+	public Set<String> harvestLoaderModules(String js) {
+		Set<String> urls = new LinkedHashSet<>();
+
+		List<Integer> indexes = new ArrayList<>();
+		List<String> expressions = new ArrayList<>();
+
+		Matcher matcher = _loaderBasePattern.matcher(js);
+
+		while (matcher.find()) {
+			indexes.add(matcher.end());
+			expressions.add(matcher.group(1));
+		}
+
+		for (int i = 0; i < indexes.size(); i++) {
+			String base = _getLoaderBase(
+				js, indexes.get(i), expressions.get(i));
+
+			if (base == null) {
+				continue;
+			}
+
+			int endIndex = js.length();
+
+			if ((i + 1) < indexes.size()) {
+				endIndex = indexes.get(i + 1);
+			}
+
+			Matcher pathMatcher = _loaderPathPattern.matcher(
+				js.substring(indexes.get(i), endIndex));
+
+			while (pathMatcher.find()) {
+				_addURL(urls, base + pathMatcher.group(1));
+			}
+		}
+
+		return urls;
+	}
+
 	public Set<String> harvestModuleSpecifiers(
 		String content, Map<String, String> prefixes) {
 
@@ -188,6 +233,56 @@ public class StaticSiteResourceHarvester {
 		if (isHarvestableURL(url)) {
 			urls.add(url);
 		}
+	}
+
+	private String _getLoaderBase(String js, int index, String expression) {
+		StringBundler sb = new StringBundler();
+
+		for (String operand : StringUtil.split(expression, CharPool.PLUS)) {
+			operand = operand.trim();
+
+			Matcher matcher = _quotedLiteralPattern.matcher(operand);
+
+			if (matcher.matches()) {
+				sb.append(matcher.group(1));
+
+				continue;
+			}
+
+			if (!_identifierPattern.matcher(
+					operand
+				).matches()) {
+
+				continue;
+			}
+
+			matcher = Pattern.compile(
+				"\\b(?:const|let|var)\\s+" + Pattern.quote(operand) +
+					"\\s*=\\s*[\"']([^\"']+)[\"']"
+			).matcher(
+				js
+			);
+
+			String value = null;
+
+			while (matcher.find() && (matcher.end() <= index)) {
+				value = matcher.group(1);
+			}
+
+			if (value != null) {
+				sb.append(value);
+			}
+		}
+
+		String base = sb.toString();
+
+		if (!base.startsWith(_MODULE_PATH_PREFIX) ||
+			!base.endsWith(StringPool.SLASH)) {
+
+			return null;
+		}
+
+		return base;
 	}
 
 	private Set<String> _harvestImportMap(Document document) {
@@ -260,12 +355,16 @@ public class StaticSiteResourceHarvester {
 
 	private static final String[] _ATTRIBUTE_NAMES = {"href", "poster", "src"};
 
+	private static final String _MODULE_PATH_PREFIX = "/o/";
+
 	private static final String[] _RESOURCE_PREFIXES = {
 		"/combo", "/documents/", "/image/", "/o/", "/webserver/"
 	};
 
 	private static final Pattern _cssURLPattern = Pattern.compile(
 		"url\\(([^)]+)\\)|@import\\s+[\"']([^\"']+)[\"']");
+	private static final Pattern _identifierPattern = Pattern.compile(
+		"[$_A-Za-z][$_\\w]*");
 	private static final Pattern _jsModulePathPattern = Pattern.compile(
 		"[\"'`](?:\\$\\{[^}]*\\})?/?(o/[-@$/.\\w()]+\\.(?:css|js))[\"'`]");
 	private static final Pattern _jsonStringEntryPattern = Pattern.compile(
@@ -275,5 +374,11 @@ public class StaticSiteResourceHarvester {
 	private static final Pattern _jsRelativeModulePathPattern = Pattern.compile(
 		"(?:from|import)\\s*\\(?\\s*[\"'`](\\.{1,2}/[-@$/.\\w()]+" +
 			"\\.(?:css|js))[\"'`]");
+	private static final Pattern _loaderBasePattern = Pattern.compile(
+		"\\bbase:\\s*([^,]+)");
+	private static final Pattern _loaderPathPattern = Pattern.compile(
+		"\\bpath:\\s*[\"']([^\"']+)[\"']");
+	private static final Pattern _quotedLiteralPattern = Pattern.compile(
+		"[\"']([^\"']*)[\"']");
 
 }
