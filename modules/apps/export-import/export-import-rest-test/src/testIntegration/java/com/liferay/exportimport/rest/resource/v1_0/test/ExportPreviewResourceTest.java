@@ -155,7 +155,8 @@ public class ExportPreviewResourceTest
 			_depotObjectDefinition,
 			(startDate, endDate) ->
 				exportPreviewResource.getAssetLibraryExportPreview(
-					externalReferenceCode, null, endDate, null, 0L, null, startDate));
+					externalReferenceCode, null, endDate, null, 0L, null,
+					startDate));
 		_testGetExportPreviewWithDateFilter(
 			_depotObjectDefinition,
 			(startDate, endDate) ->
@@ -199,7 +200,8 @@ public class ExportPreviewResourceTest
 			() -> exportPreviewResource.getExportPreview(
 				null, null, null, 0L, null, null));
 		_testGetExportPreviewWithDifferentScope(
-			exportPreviewResource.getExportPreview(null, null, null, 0L, null, null),
+			exportPreviewResource.getExportPreview(
+				null, null, null, 0L, null, null),
 			_depotObjectDefinition, _siteObjectDefinition);
 
 		long plid = _addLayoutWithPortlet(testGroup, portletId);
@@ -225,7 +227,8 @@ public class ExportPreviewResourceTest
 		_testGetExportPreviewWithDateFilter(
 			_siteObjectDefinition,
 			(startDate, endDate) -> exportPreviewResource.getSiteExportPreview(
-				externalReferenceCode, null, endDate, null, 0L, null, startDate));
+				externalReferenceCode, null, endDate, null, 0L, null,
+				startDate));
 		_testGetExportPreviewWithDateFilter(
 			_siteObjectDefinition,
 			(startDate, endDate) -> exportPreviewResource.getSiteExportPreview(
@@ -241,7 +244,8 @@ public class ExportPreviewResourceTest
 			_companyObjectDefinition, _depotObjectDefinition);
 		_testGetExportPreviewWithLayoutSet(
 			(startDate, endDate) -> exportPreviewResource.getSiteExportPreview(
-				externalReferenceCode, null, endDate, null, 0L, null, startDate));
+				externalReferenceCode, null, endDate, null, 0L, null,
+				startDate));
 		_testGetSiteExportPreviewWithLayoutPageTemplateEntries();
 
 		long plid = _addLayoutWithPortlet(testGroup, portletId);
@@ -632,8 +636,8 @@ public class ExportPreviewResourceTest
 		PreviewPortletDataHandler previewPortletDataHandler =
 			_getPreviewPortletDataHandler(
 				exportPreviewResource.getSiteExportPreview(
-					testGroup.getExternalReferenceCode(), null, null, null, 0L, null,
-					null),
+					testGroup.getExternalReferenceCode(), null, null, null, 0L,
+					null, null),
 				"PORTLET_DATA_" +
 					LayoutPageTemplateAdminPortletKeys.LAYOUT_PAGE_TEMPLATES);
 
