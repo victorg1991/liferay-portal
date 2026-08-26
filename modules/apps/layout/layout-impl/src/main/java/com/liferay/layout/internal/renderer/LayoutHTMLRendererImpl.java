@@ -10,6 +10,7 @@ import com.liferay.info.item.InfoItemDetails;
 import com.liferay.info.item.InfoItemReference;
 import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.info.item.provider.InfoItemDetailsProvider;
+import com.liferay.layout.constants.LayoutWebKeys;
 import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
 import com.liferay.layout.display.page.LayoutDisplayPageProvider;
 import com.liferay.layout.display.page.LayoutDisplayPageProviderRegistry;
@@ -196,7 +197,11 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			themeDisplay.setServerPort(
 				_portal.getForwardedPort(httpServletRequest));
 
+			httpServletRequest.setAttribute(WebKeys.LAYOUT, layout);
 			httpServletRequest.setAttribute(WebKeys.LOCALE, locale);
+
+			themeDisplay.setLayout(layout);
+			themeDisplay.setPlid(layout.getPlid());
 
 			if (layoutDisplayPageObjectProvider != null) {
 				httpServletRequest.setAttribute(
@@ -219,6 +224,7 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			}
 
 			httpServletRequest.removeAttribute(WebKeys.LAYOUT_CONTENT);
+			httpServletRequest.removeAttribute(LayoutWebKeys.LAYOUT_STRUCTURE);
 
 			layout.includeLayoutContent(
 				httpServletRequest, httpServletResponse);
