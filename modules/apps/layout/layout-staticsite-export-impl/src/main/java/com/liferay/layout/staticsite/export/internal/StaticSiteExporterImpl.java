@@ -58,6 +58,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Component;
@@ -91,11 +93,12 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			try {
 				pageHTMLs.put(
 					friendlyURL,
-					StringUtil.removeSubstring(
-						_layoutHTMLRenderer.renderHTML(
-							httpServletRequest, httpServletResponse, layout,
-							locale, null, user),
-						portalURL));
+					_removeDynamicScripts(
+						StringUtil.removeSubstring(
+							_layoutHTMLRenderer.renderHTML(
+								httpServletRequest, httpServletResponse, layout,
+								locale, null, user),
+							portalURL)));
 
 				_addExportedPage(friendlyURL, groupId, staticSiteExportResult);
 			}
@@ -407,6 +410,34 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			path.substring(extensionIndex));
 	}
 
+	private String _removeDynamicScripts(String html) {
+		Matcher matcher = _scriptPattern.matcher(html);
+
+		StringBuffer sb = new StringBuffer();
+
+		while (matcher.find()) {
+			String script = matcher.group();
+
+			boolean dynamic = false;
+
+			for (String moduleName : _DYNAMIC_MODULE_NAMES) {
+				if (script.contains(moduleName)) {
+					dynamic = true;
+
+					break;
+				}
+			}
+
+			matcher.appendReplacement(
+				sb,
+				dynamic ? StringPool.BLANK : Matcher.quoteReplacement(script));
+		}
+
+		matcher.appendTail(sb);
+
+		return sb.toString();
+	}
+
 	private void _renderDisplayPages(
 		long groupId, HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, Locale locale,
@@ -445,15 +476,16 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				try {
 					pageHTMLs.put(
 						friendlyURL,
-						StringUtil.removeSubstring(
-							_layoutHTMLRenderer.renderHTML(
-								httpServletRequest, httpServletResponse,
-								new InfoItemReference(
-									_portal.getClassName(
-										classNameIdAndClassPK[0]),
-									classNameIdAndClassPK[1]),
-								layout, locale, user),
-							portalURL));
+						_removeDynamicScripts(
+							StringUtil.removeSubstring(
+								_layoutHTMLRenderer.renderHTML(
+									httpServletRequest, httpServletResponse,
+									new InfoItemReference(
+										_portal.getClassName(
+											classNameIdAndClassPK[0]),
+										classNameIdAndClassPK[1]),
+									layout, locale, user),
+								portalURL)));
 
 					_addExportedPage(
 						friendlyURL, groupId, staticSiteExportResult);
@@ -496,8 +528,19 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		Deque<String> urls = new ArrayDeque<>();
 		Set<String> visitedURLs = new HashSet<>();
 
+		Map<String, String> importMapPrefixes = new LinkedHashMap<>();
+
 		for (String pageHTML : pageHTMLs) {
 			urls.addAll(staticSiteResourceHarvester.harvestHTML(pageHTML));
+
+			importMapPrefixes.putAll(
+				staticSiteResourceHarvester.harvestImportMapPrefixes(pageHTML));
+		}
+
+		for (String pageHTML : pageHTMLs) {
+			urls.addAll(
+				staticSiteResourceHarvester.harvestModuleSpecifiers(
+					pageHTML, importMapPrefixes));
 		}
 
 		while (!urls.isEmpty()) {
@@ -543,17 +586,28 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 						new String(bytes), url));
 			}
 			else if (StringUtil.endsWith(url, ".js") || url.contains(".js?")) {
+				String js = new String(bytes);
+
+				urls.addAll(staticSiteResourceHarvester.harvestJS(js, url));
 				urls.addAll(
-					staticSiteResourceHarvester.harvestJS(new String(bytes)));
+					staticSiteResourceHarvester.harvestModuleSpecifiers(
+						js, importMapPrefixes));
 			}
 		}
 	}
+
+	private static final String[] _DYNAMIC_MODULE_NAMES = {
+		"/o/audiences/bootstrap", "frontend-js-audiences-web",
+		"frontend-js-spa-web"
+	};
 
 	private static final String _INDEX_FILE_NAME = "index.html";
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		StaticSiteExporterImpl.class);
 
+	private static final Pattern _scriptPattern = Pattern.compile(
+		"<script\\b[^>]*>.*?</script>", Pattern.DOTALL);
 	private static final Set<String> _supportedLayoutTypes = new HashSet<>(
 		Arrays.asList(
 			LayoutConstants.TYPE_CONTENT, LayoutConstants.TYPE_EMBEDDED,
