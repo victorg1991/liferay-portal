@@ -282,6 +282,27 @@ test.describe('Static site export', () => {
 
 			await page.goto(`${staticSiteServer.baseURL}/home.html`);
 
+			// The whole page is exported, not just its content: the theme's
+			// header, navigation and footer are all served statically
+
+			await expect(page.locator('#banner')).toBeVisible();
+			await expect(page.locator('#footer')).toBeVisible();
+
+			const logo = page.locator('#banner img').first();
+
+			await expect(logo).toBeVisible();
+
+			expect(
+				await logo.evaluate(
+					(element: HTMLImageElement) =>
+						element.complete && element.naturalWidth > 0
+				)
+			).toBe(true);
+
+			const navigationLinks = page.locator('.navbar-site a.nav-link');
+
+			await expect(navigationLinks).toHaveCount(2);
+
 			for (const heading of HEADINGS) {
 				await expect(
 					page.locator(`text=${heading}`).first()
@@ -316,7 +337,19 @@ test.describe('Static site export', () => {
 				).toBe(webContentTitles[i]);
 
 				await expect(page.locator('#main-content')).toBeAttached();
+				await expect(page.locator('#banner')).toBeVisible();
+				await expect(page.locator('#footer')).toBeVisible();
 			}
+
+			// The theme's navigation reaches the other exported pages
+
+			await page.goto(`${staticSiteServer.baseURL}/index.html`);
+
+			await page.locator('.navbar-site a.nav-link').first().click();
+
+			await expect(page.locator('#main-content')).toBeAttached();
+
+			expect(new URL(page.url()).pathname).toBe('/home.html');
 
 			// Every resource the export bundles is served, and no URL kept
 			// the broken host the synthetic theme display used to produce
@@ -332,6 +365,8 @@ test.describe('Static site export', () => {
 					requestedPath.includes('null')
 				)
 			).toEqual([]);
+
+			expect(failedResponses).toEqual([]);
 		}
 	);
 });

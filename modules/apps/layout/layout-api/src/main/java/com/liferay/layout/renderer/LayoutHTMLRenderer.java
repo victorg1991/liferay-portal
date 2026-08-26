@@ -26,13 +26,14 @@ public interface LayoutHTMLRenderer {
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse,
 			InfoItemReference infoItemReference, Layout layout, Locale locale,
-			User user)
+			User user, boolean wholePage)
 		throws Exception;
 
 	public String renderHTML(
 			HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse, Layout layout,
-			Locale locale, String segmentsExperienceKey, User user)
+			Locale locale, String segmentsExperienceKey, User user,
+			boolean wholePage)
 		throws Exception;
 
 }

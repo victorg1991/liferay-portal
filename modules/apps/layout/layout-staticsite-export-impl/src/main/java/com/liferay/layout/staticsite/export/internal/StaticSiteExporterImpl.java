@@ -97,7 +97,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 						StringUtil.removeSubstring(
 							_layoutHTMLRenderer.renderHTML(
 								httpServletRequest, httpServletResponse, layout,
-								locale, null, user),
+								locale, null, user, true),
 							portalURL)));
 
 				_addExportedPage(friendlyURL, groupId, staticSiteExportResult);
@@ -484,7 +484,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 										_portal.getClassName(
 											classNameIdAndClassPK[0]),
 										classNameIdAndClassPK[1]),
-									layout, locale, user),
+									layout, locale, user, true),
 								portalURL)));
 
 					_addExportedPage(
@@ -513,14 +513,16 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		ServletContext servletContext = ServletContextPool.get(
 			_portal.getServletContextName());
 
+		StaticSiteBundleResourceResolver staticSiteBundleResourceResolver =
+			new StaticSiteBundleResourceResolver(
+				FrameworkUtil.getBundle(
+					StaticSiteExporterImpl.class
+				).getBundleContext());
+
 		StaticSiteResourceFetcher staticSiteResourceFetcher =
 			new StaticSiteResourceFetcher(
 				httpServletRequest, httpServletResponse, portalURL,
-				servletContext,
-				new StaticSiteBundleResourceResolver(
-					FrameworkUtil.getBundle(
-						StaticSiteExporterImpl.class
-					).getBundleContext()));
+				servletContext, staticSiteBundleResourceResolver);
 
 		StaticSiteResourceHarvester staticSiteResourceHarvester =
 			new StaticSiteResourceHarvester();
@@ -532,6 +534,8 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		for (String pageHTML : pageHTMLs) {
 			urls.addAll(staticSiteResourceHarvester.harvestHTML(pageHTML));
+			urls.addAll(
+				staticSiteResourceHarvester.harvestLoaderModules(pageHTML));
 
 			importMapPrefixes.putAll(
 				staticSiteResourceHarvester.harvestImportMapPrefixes(pageHTML));
@@ -590,8 +594,14 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 				urls.addAll(staticSiteResourceHarvester.harvestJS(js, url));
 				urls.addAll(
+					staticSiteResourceHarvester.harvestLoaderModules(js));
+				urls.addAll(
 					staticSiteResourceHarvester.harvestModuleSpecifiers(
 						js, importMapPrefixes));
+
+				urls.addAll(
+					staticSiteBundleResourceResolver.resolveSiblingModuleURLs(
+						url));
 			}
 		}
 	}
