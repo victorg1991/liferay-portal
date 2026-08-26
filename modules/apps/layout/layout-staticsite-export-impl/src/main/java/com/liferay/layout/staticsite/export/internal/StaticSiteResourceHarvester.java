@@ -199,7 +199,13 @@ public class StaticSiteResourceHarvester {
 			Matcher matcher = _jsonStringValuePattern.matcher(element.data());
 
 			while (matcher.find()) {
-				_addURL(urls, matcher.group(1));
+				String url = matcher.group(1);
+
+				if (url.endsWith(StringPool.SLASH)) {
+					continue;
+				}
+
+				_addURL(urls, url);
 			}
 		}
 
