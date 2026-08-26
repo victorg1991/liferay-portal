@@ -119,7 +119,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		_writeResources(
 			httpServletRequest, httpServletResponse, pageHTMLs.values(),
-			staticSiteExportResult, zipWriter);
+			portalURL, staticSiteExportResult, zipWriter);
 
 		StaticSiteURLRewriter staticSiteURLRewriter =
 			new StaticSiteURLRewriter();
@@ -475,14 +475,16 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 	private void _writeResources(
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, Iterable<String> pageHTMLs,
-		StaticSiteExportResult staticSiteExportResult, ZipWriter zipWriter) {
+		String portalURL, StaticSiteExportResult staticSiteExportResult,
+		ZipWriter zipWriter) {
 
 		ServletContext servletContext = ServletContextPool.get(
 			_portal.getServletContextName());
 
 		StaticSiteResourceFetcher staticSiteResourceFetcher =
 			new StaticSiteResourceFetcher(
-				httpServletRequest, httpServletResponse, servletContext,
+				httpServletRequest, httpServletResponse, portalURL,
+				servletContext,
 				new StaticSiteBundleResourceResolver(
 					FrameworkUtil.getBundle(
 						StaticSiteExporterImpl.class
@@ -539,6 +541,10 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				urls.addAll(
 					staticSiteResourceHarvester.harvestCSS(
 						new String(bytes), url));
+			}
+			else if (StringUtil.endsWith(url, ".js") || url.contains(".js?")) {
+				urls.addAll(
+					staticSiteResourceHarvester.harvestJS(new String(bytes)));
 			}
 		}
 	}
