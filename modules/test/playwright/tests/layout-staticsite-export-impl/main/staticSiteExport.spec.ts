@@ -34,6 +34,8 @@ const test = mergeTests(
 
 const HEADINGS = ['Static Export Overview', 'How The Export Works'];
 
+const TAB_TITLES = ['Overview', 'How It Works', 'Limitations'];
+
 const WEB_CONTENT_COUNT = 5;
 
 test.describe('Static site export', () => {
@@ -136,7 +138,8 @@ test.describe('Static site export', () => {
 				);
 			}
 
-			// Home page: two headings and a real image
+			// Home page: two headings, a real image, and a tabs fragment whose
+			// panels only become visible when its own JavaScript runs
 
 			await apiHelpers.headlessDelivery.createSitePage({
 				pageDefinition: getPageDefinition([
@@ -179,6 +182,45 @@ test.describe('Static site export', () => {
 						],
 						id: getRandomString(),
 						key: 'BASIC_COMPONENT-heading',
+					}),
+					getFragmentDefinition({
+						fragmentConfig: {
+							numberOfTabs: TAB_TITLES.length,
+							persistSelectedTab: true,
+						},
+						fragmentFields: TAB_TITLES.map((tabTitle, index) => ({
+							id: `title${index + 1}`,
+							value: {
+								text: {value_i18n: {en_US: tabTitle}},
+							},
+						})),
+						id: getRandomString(),
+						key: 'BASIC_COMPONENT-tabs',
+						pageElements: TAB_TITLES.map((tabTitle, index) => ({
+							definition: {
+								fragmentDropZoneId: String(index + 1),
+							},
+							id: getRandomString(),
+							pageElements: [
+								getFragmentDefinition({
+									fragmentFields: [
+										{
+											id: 'element-text',
+											value: {
+												text: {
+													value_i18n: {
+														en_US: `${tabTitle} tab heading`,
+													},
+												},
+											},
+										},
+									],
+									id: getRandomString(),
+									key: 'BASIC_COMPONENT-heading',
+								}),
+							],
+							type: 'FragmentDropZone',
+						})) as never,
 					}),
 				]),
 				siteId: site.id,
@@ -302,6 +344,25 @@ test.describe('Static site export', () => {
 			const navigationLinks = page.locator('.navbar-site a.nav-link');
 
 			await expect(navigationLinks).toHaveCount(2);
+
+			// The tabs fragment's own JavaScript runs: every panel is hidden
+			// until it reveals one, and clicking a tab switches which
+
+			const tabs = page.locator('.component-tabs .nav-link');
+
+			await expect(tabs).toHaveCount(TAB_TITLES.length);
+
+			for (let i = 0; i < TAB_TITLES.length; i++) {
+				await tabs.nth(i).click();
+
+				await expect(
+					page.locator('.tab-panel-item:not(.d-none)')
+				).toHaveCount(1);
+
+				await expect(
+					page.locator('.tab-panel-item:not(.d-none)')
+				).toContainText(`${TAB_TITLES[i]} tab heading`);
+			}
 
 			for (const heading of HEADINGS) {
 				await expect(
