@@ -19,6 +19,7 @@ export class JSONWebServicesLayoutPageTemplateEntryApiHelper {
 	async addDisplayPageLayoutPageTemplateEntry({
 		classNameId,
 		classTypeKey = '',
+		defaultTemplate = false,
 		externalReferenceCode = '',
 		groupId,
 		layoutPageTemplateEntryKey = '',
@@ -26,6 +27,7 @@ export class JSONWebServicesLayoutPageTemplateEntryApiHelper {
 	}: {
 		classNameId: string;
 		classTypeKey?: string;
+		defaultTemplate?: boolean;
 		externalReferenceCode?: string;
 		groupId: string;
 		layoutPageTemplateEntryKey?: string;
@@ -43,12 +45,16 @@ export class JSONWebServicesLayoutPageTemplateEntryApiHelper {
 			'layoutPageTemplateEntryKey',
 			layoutPageTemplateEntryKey
 		);
-		urlSearchParams.append('masterLayoutPlid', '0');
 		urlSearchParams.append('name', name);
 		urlSearchParams.append(
 			'type',
 			LAYOUT_PAGE_TEMPLATE_ENTRY_TYPES['display-page']
 		);
+		urlSearchParams.append('previewFileEntryId', '0');
+		urlSearchParams.append('defaultTemplate', String(defaultTemplate));
+		urlSearchParams.append('layoutPrototypeId', '0');
+		urlSearchParams.append('plid', '0');
+		urlSearchParams.append('masterLayoutPlid', '0');
 		urlSearchParams.append('status', '0');
 		urlSearchParams.append('serviceContext', JSON.stringify({}));
 
