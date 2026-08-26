@@ -5,8 +5,10 @@
 
 package com.liferay.layout.staticsite.export.internal;
 
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.Assert;
@@ -70,6 +72,15 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestHTMLImportMapSkipsPrefixes() {
+		Set<String> urls = _staticSiteResourceHarvester.harvestHTML(
+			_IMPORT_MAP_HTML);
+
+		Assert.assertEquals(urls.toString(), 1, urls.size());
+		Assert.assertTrue(urls.toString(), urls.contains("/o/a/react.js"));
+	}
+
+	@Test
 	public void testHarvestHTMLInlineStyleURL() {
 		Set<String> urls = _staticSiteResourceHarvester.harvestHTML(
 			"<html><body><style>.a { background: " +
@@ -130,6 +141,16 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestImportMapPrefixes() {
+		Map<String, String> prefixes =
+			_staticSiteResourceHarvester.harvestImportMapPrefixes(
+				_IMPORT_MAP_HTML);
+
+		Assert.assertEquals(prefixes.toString(), 1, prefixes.size());
+		Assert.assertEquals("/o/lang/en/", prefixes.get("@lang/"));
+	}
+
+	@Test
 	public void testHarvestJSModulePaths() {
 		Set<String> urls = _staticSiteResourceHarvester.harvestJS(
 			"import('/o/frontend-js-spa-web/__liferay__/index.js');" +
@@ -156,6 +177,19 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestModuleSpecifiers() {
+		Set<String> urls = _staticSiteResourceHarvester.harvestModuleSpecifiers(
+			"import \"@liferay/language/frontend-js-web/all.js\";",
+			HashMapBuilder.put(
+				"@liferay/language/", "/o/js/language/en_US/"
+			).build());
+
+		Assert.assertTrue(
+			urls.toString(),
+			urls.contains("/o/js/language/en_US/frontend-js-web/all.js"));
+	}
+
+	@Test
 	public void testIsHarvestableURL() {
 		Assert.assertTrue(
 			_staticSiteResourceHarvester.isHarvestableURL("/o/a/b.css"));
@@ -168,6 +202,10 @@ public class StaticSiteResourceHarvesterTest {
 				"https://liferay.com/o/a.css"));
 		Assert.assertFalse(_staticSiteResourceHarvester.isHarvestableURL(null));
 	}
+
+	private static final String _IMPORT_MAP_HTML =
+		"<script type=\"importmap\">{\"imports\": {\"@lang/\": " +
+			"\"/o/lang/en/\", \"react\": \"/o/a/react.js\"}}</script>";
 
 	private StaticSiteResourceHarvester _staticSiteResourceHarvester;
 
