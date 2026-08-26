@@ -7,6 +7,9 @@ package com.liferay.layout.staticsite.export.internal;
 
 import com.liferay.asset.display.page.model.AssetDisplayPageEntry;
 import com.liferay.asset.display.page.service.AssetDisplayPageEntryLocalService;
+import com.liferay.asset.kernel.model.AssetEntry;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
+import com.liferay.asset.kernel.service.persistence.AssetEntryQuery;
 import com.liferay.friendly.url.model.FriendlyURLEntry;
 import com.liferay.friendly.url.service.FriendlyURLEntryLocalService;
 import com.liferay.info.item.InfoItemReference;
@@ -22,11 +25,13 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolver;
 import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
@@ -87,8 +92,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 						httpServletRequest, httpServletResponse, layout, locale,
 						null, user));
 
-				staticSiteExportResult.addExportedPage(
-					friendlyURL, _getPageFileName(friendlyURL));
+				_addExportedPage(friendlyURL, groupId, staticSiteExportResult);
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
@@ -147,6 +151,27 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return staticSiteExportResult;
 	}
 
+	private void _addExportedPage(
+		String friendlyURL, long groupId,
+		StaticSiteExportResult staticSiteExportResult) {
+
+		String fileName = _getPageFileName(friendlyURL);
+
+		staticSiteExportResult.addExportedPage(friendlyURL, fileName);
+
+		Group group = _groupLocalService.fetchGroup(groupId);
+
+		if (group == null) {
+			return;
+		}
+
+		staticSiteExportResult.addExportedPage(
+			StringBundler.concat(
+				_portal.getPathFriendlyURLPublic(), group.getFriendlyURL(),
+				friendlyURL),
+			fileName);
+	}
+
 	private void _appendFailures(
 		StringBundler sb, List<StaticSiteExportResult.Failure> failures) {
 
@@ -176,17 +201,16 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 	}
 
 	private String _getDisplayPageFriendlyURL(
-		AssetDisplayPageEntry assetDisplayPageEntry, Locale locale) {
+		long classNameId, long classPK, Locale locale) {
 
-		String className = _portal.getClassName(
-			assetDisplayPageEntry.getClassNameId());
+		String className = _portal.getClassName(classNameId);
 
 		FriendlyURLResolver friendlyURLResolver = null;
 
 		for (FriendlyURLResolver curFriendlyURLResolver :
 				FriendlyURLResolverRegistryUtil.
 					getFriendlyURLResolversAsCollection(
-						assetDisplayPageEntry.getCompanyId())) {
+						_portal.getDefaultCompanyId())) {
 
 			if (className.equals(curFriendlyURLResolver.getKey())) {
 				friendlyURLResolver = curFriendlyURLResolver;
@@ -202,8 +226,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		try {
 			FriendlyURLEntry friendlyURLEntry =
 				_friendlyURLEntryLocalService.getMainFriendlyURLEntry(
-					assetDisplayPageEntry.getClassNameId(),
-					assetDisplayPageEntry.getClassPK());
+					classNameId, classPK);
 
 			String urlTitle = friendlyURLEntry.getUrlTitle(
 				LocaleUtil.toLanguageId(locale));
@@ -221,6 +244,55 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 			return null;
 		}
+	}
+
+	private List<long[]> _getDisplayPageItems(
+		long groupId, LayoutPageTemplateEntry layoutPageTemplateEntry) {
+
+		List<long[]> classNameIdsAndClassPKs = new ArrayList<>();
+
+		for (AssetDisplayPageEntry assetDisplayPageEntry :
+				_assetDisplayPageEntryLocalService.
+					getAssetDisplayPageEntriesByLayoutPageTemplateEntryId(
+						layoutPageTemplateEntry.
+							getLayoutPageTemplateEntryId())) {
+
+			classNameIdsAndClassPKs.add(
+				new long[] {
+					assetDisplayPageEntry.getClassNameId(),
+					assetDisplayPageEntry.getClassPK()
+				});
+		}
+
+		if (!classNameIdsAndClassPKs.isEmpty() ||
+			!layoutPageTemplateEntry.isDefaultTemplate()) {
+
+			return classNameIdsAndClassPKs;
+		}
+
+		AssetEntryQuery assetEntryQuery = new AssetEntryQuery();
+
+		assetEntryQuery.setClassNameIds(
+			new long[] {layoutPageTemplateEntry.getClassNameId()});
+
+		if (layoutPageTemplateEntry.getClassTypeId() > 0) {
+			assetEntryQuery.setClassTypeIds(
+				new long[] {layoutPageTemplateEntry.getClassTypeId()});
+		}
+
+		assetEntryQuery.setGroupIds(new long[] {groupId});
+		assetEntryQuery.setVisible(Boolean.TRUE);
+
+		for (AssetEntry assetEntry :
+				_assetEntryLocalService.getEntries(assetEntryQuery)) {
+
+			classNameIdsAndClassPKs.add(
+				new long[] {
+					assetEntry.getClassNameId(), assetEntry.getClassPK()
+				});
+		}
+
+		return classNameIdsAndClassPKs;
 	}
 
 	private List<Layout> _getExportableLayouts(long groupId) {
@@ -244,16 +316,10 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		if (Validator.isNull(friendlyURL) ||
 			friendlyURL.equals(StringPool.SLASH)) {
 
-			return "index.html";
+			return _INDEX_FILE_NAME;
 		}
 
-		String fileName = StringUtil.removeFirst(friendlyURL, StringPool.SLASH);
-
-		if (fileName.equals("home")) {
-			return "index.html";
-		}
-
-		return fileName + ".html";
+		return StringUtil.removeFirst(friendlyURL, StringPool.SLASH) + ".html";
 	}
 
 	private String _getReportJSON(
@@ -261,10 +327,12 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		StringBundler sb = new StringBundler();
 
-		sb.append("{\"deployAtWebServerRoot\": true, \"pages\": ");
-		sb.append(
+		Set<String> pageFileNames = new HashSet<>(
 			staticSiteExportResult.getExportedPageFileNames(
-			).size());
+			).values());
+
+		sb.append("{\"deployAtWebServerRoot\": true, \"pages\": ");
+		sb.append(pageFileNames.size());
 		sb.append(", \"resources\": ");
 		sb.append(
 			staticSiteExportResult.getResourceFileNames(
@@ -340,14 +408,11 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				continue;
 			}
 
-			for (AssetDisplayPageEntry assetDisplayPageEntry :
-					_assetDisplayPageEntryLocalService.
-						getAssetDisplayPageEntriesByLayoutPageTemplateEntryId(
-							layoutPageTemplateEntry.
-								getLayoutPageTemplateEntryId())) {
+			for (long[] classNameIdAndClassPK :
+					_getDisplayPageItems(groupId, layoutPageTemplateEntry)) {
 
 				String friendlyURL = _getDisplayPageFriendlyURL(
-					assetDisplayPageEntry, locale);
+					classNameIdAndClassPK[0], classNameIdAndClassPK[1], locale);
 
 				if (Validator.isNull(friendlyURL) ||
 					pageHTMLs.containsKey(friendlyURL)) {
@@ -361,13 +426,12 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 						_layoutHTMLRenderer.renderHTML(
 							httpServletRequest, httpServletResponse,
 							new InfoItemReference(
-								_portal.getClassName(
-									assetDisplayPageEntry.getClassNameId()),
-								assetDisplayPageEntry.getClassPK()),
+								_portal.getClassName(classNameIdAndClassPK[0]),
+								classNameIdAndClassPK[1]),
 							layout, locale, user));
 
-					staticSiteExportResult.addExportedPage(
-						friendlyURL, _getPageFileName(friendlyURL));
+					_addExportedPage(
+						friendlyURL, groupId, staticSiteExportResult);
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
@@ -450,6 +514,8 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 	}
 
+	private static final String _INDEX_FILE_NAME = "index.html";
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		StaticSiteExporterImpl.class);
 
@@ -463,7 +529,13 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		_assetDisplayPageEntryLocalService;
 
 	@Reference
+	private AssetEntryLocalService _assetEntryLocalService;
+
+	@Reference
 	private FriendlyURLEntryLocalService _friendlyURLEntryLocalService;
+
+	@Reference
+	private GroupLocalService _groupLocalService;
 
 	@Reference
 	private LayoutHTMLRenderer _layoutHTMLRenderer;

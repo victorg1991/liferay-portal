@@ -240,21 +240,27 @@ test.describe('Static site export', () => {
 
 			const fileNames = await extractZip(zipFilePath, exportDirPath);
 
-			expect(fileNames).toContain('index.html');
-			expect(fileNames).toContain('export-report.json');
-
-			for (const webContentURLPath of webContentURLPaths) {
-				expect(fileNames).toContain(
-					`${webContentURLPath.slice(1)}.html`
-				);
-			}
-
 			const report = JSON.parse(
 				fs.readFileSync(
 					path.join(exportDirPath, 'export-report.json'),
 					'utf8'
 				)
 			);
+
+			expect(fileNames).toContain('index.html');
+			expect(fileNames).toContain('home.html');
+			expect(fileNames).toContain('export-report.json');
+
+			expect(
+				fileNames.filter((fileName) => fileName.endsWith('.html'))
+					.length
+			).toBe(report.pages);
+
+			for (const webContentURLPath of webContentURLPaths) {
+				expect(fileNames).toContain(
+					`${webContentURLPath.slice(1)}.html`
+				);
+			}
 
 			expect(report.skippedPages).toEqual([]);
 			expect(report.resources).toBeGreaterThan(0);
@@ -274,7 +280,7 @@ test.describe('Static site export', () => {
 			// The home page renders its headings and its image, served
 			// entirely by the static server
 
-			await page.goto(`${staticSiteServer.baseURL}/index.html`);
+			await page.goto(`${staticSiteServer.baseURL}/home.html`);
 
 			for (const heading of HEADINGS) {
 				await expect(
@@ -298,9 +304,9 @@ test.describe('Static site export', () => {
 			// own document
 
 			for (let i = 0; i < WEB_CONTENT_COUNT; i++) {
-				await page.goto(
-					`${staticSiteServer.baseURL}${webContentURLPaths[i]}.html`
-				);
+				await page.goto(`${staticSiteServer.baseURL}/index.html`);
+
+				await page.locator('.component-button a').nth(i).click();
 
 				expect(
 					await page
