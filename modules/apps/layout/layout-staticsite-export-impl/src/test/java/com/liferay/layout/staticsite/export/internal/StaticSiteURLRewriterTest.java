@@ -30,6 +30,20 @@ public class StaticSiteURLRewriterTest {
 	}
 
 	@Test
+	public void testRewriteEscapedResourceURL() {
+		String html = _staticSiteURLRewriter.rewrite(
+			"<script src=\"/o/a/b.js?x=1&amp;y=2\"></script>",
+			Collections.emptyMap(),
+			HashMapBuilder.put(
+				"/o/a/b.js?x=1&y=2", "o/a/b.abcd1234.js"
+			).build(),
+			null);
+
+		Assert.assertEquals(
+			"<script src=\"/o/a/b.abcd1234.js\"></script>", html);
+	}
+
+	@Test
 	public void testRewriteHashedResourceURL() {
 		String html = _staticSiteURLRewriter.rewrite(
 			"<link href=\"/o/my-web/css/main.(abc123).css\">",
@@ -85,6 +99,16 @@ public class StaticSiteURLRewriterTest {
 			Collections.emptyMap(), null);
 
 		Assert.assertEquals("<a href=\"/newsletter\">Newsletter</a>", html);
+	}
+
+	@Test
+	public void testRewriteStripsAlternateLinks() {
+		String html = _staticSiteURLRewriter.rewrite(
+			"<link href=\"/es/web/site/home\" hreflang=\"es-ES\" " +
+				"rel=\"alternate\"><title>Kept</title>",
+			Collections.emptyMap(), Collections.emptyMap(), null);
+
+		Assert.assertEquals("<title>Kept</title>", html);
 	}
 
 	@Test

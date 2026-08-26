@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.util.Validator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * @author Víctor Galán
@@ -23,6 +24,12 @@ public class StaticSiteURLRewriter {
 	public String rewrite(
 		String html, Map<String, String> pageFileNames,
 		Map<String, String> resourceFileNames, String portalURL) {
+
+		html = _alternateLinkPattern.matcher(
+			html
+		).replaceAll(
+			StringPool.BLANK
+		);
 
 		if (Validator.isNotNull(portalURL)) {
 			html = StringUtil.removeSubstring(html, portalURL);
@@ -40,6 +47,9 @@ public class StaticSiteURLRewriter {
 			}
 
 			html = StringUtil.replace(html, url, fileName);
+			html = StringUtil.replace(
+				html, StringUtil.replace(url, CharPool.AMPERSAND, "&amp;"),
+				fileName);
 		}
 
 		for (Map.Entry<String, String> entry :
@@ -95,5 +105,8 @@ public class StaticSiteURLRewriter {
 	private static final char[] _URL_DELIMITERS = {
 		CharPool.POUND, CharPool.QUESTION, CharPool.QUOTE
 	};
+
+	private static final Pattern _alternateLinkPattern = Pattern.compile(
+		"<link[^>]+rel=\"alternate\"[^>]*>");
 
 }
