@@ -218,6 +218,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 					new long[] {segmentsExperience.getSegmentsExperienceId()});
 			}
 
+			httpServletRequest.removeAttribute(WebKeys.LAYOUT_CONTENT);
+
 			layout.includeLayoutContent(
 				httpServletRequest, httpServletResponse);
 
@@ -234,7 +236,12 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 			Element bodyElement = document.body();
 
-			bodyElement.html(sb.toString());
+			if (sb == null) {
+				bodyElement.html(StringPool.BLANK);
+			}
+			else {
+				bodyElement.html(sb.toString());
+			}
 
 			return document.html();
 		}

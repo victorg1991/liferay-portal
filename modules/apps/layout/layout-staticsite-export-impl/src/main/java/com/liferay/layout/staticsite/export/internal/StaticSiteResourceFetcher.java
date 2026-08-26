@@ -9,6 +9,7 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
 import com.liferay.portal.kernel.servlet.DirectRequestDispatcherFactoryUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.Validator;
 
 import jakarta.servlet.RequestDispatcher;
@@ -61,9 +62,29 @@ public class StaticSiteResourceFetcher {
 			queryString = url.substring(index + 1);
 		}
 
+		ServletContext servletContext = _servletContext;
+
+		String dispatchPath = path;
+
+		if (path.startsWith(_MODULE_PATH_PREFIX)) {
+			int slashIndex = path.indexOf(
+				CharPool.SLASH, _MODULE_PATH_PREFIX.length());
+
+			if (slashIndex != -1) {
+				ServletContext moduleServletContext = ServletContextPool.get(
+					path.substring(_MODULE_PATH_PREFIX.length(), slashIndex));
+
+				if (moduleServletContext != null) {
+					servletContext = moduleServletContext;
+
+					dispatchPath = path.substring(slashIndex);
+				}
+			}
+		}
+
 		RequestDispatcher requestDispatcher =
 			DirectRequestDispatcherFactoryUtil.getRequestDispatcher(
-				_servletContext, path);
+				servletContext, dispatchPath);
 
 		if (requestDispatcher == null) {
 			return null;
@@ -80,7 +101,8 @@ public class StaticSiteResourceFetcher {
 			new BufferCacheServletResponse(_httpServletResponse);
 
 		requestDispatcher.include(
-			new ResourcePathHttpServletRequestWrapper(httpServletRequest, path),
+			new ResourcePathHttpServletRequestWrapper(
+				httpServletRequest, dispatchPath),
 			bufferCacheServletResponse);
 
 		ByteBuffer byteBuffer = bufferCacheServletResponse.getByteBuffer();
@@ -107,6 +129,8 @@ public class StaticSiteResourceFetcher {
 
 		return url.substring(0, index) + url.substring(endIndex + 1);
 	}
+
+	private static final String _MODULE_PATH_PREFIX = "/o/";
 
 	private final HttpServletRequest _httpServletRequest;
 	private final HttpServletResponse _httpServletResponse;

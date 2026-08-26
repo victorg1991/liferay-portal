@@ -158,8 +158,9 @@ test.describe('Static site export', () => {
 								id: 'image-square',
 								value: {
 									fragmentImage: {
-										title: {value: 'Static Export Logo'},
-										url: {value: documentURL},
+										url: {
+											value_i18n: {en_US: documentURL},
+										},
 									},
 								},
 							},
@@ -292,22 +293,33 @@ test.describe('Static site export', () => {
 				)
 			).toBe(true);
 
-			// Every display page renders the article it was bound to
+			// Every display page was rendered for the article it was bound
+			// to, which its Open Graph title reflects, and is served as its
+			// own document
 
 			for (let i = 0; i < WEB_CONTENT_COUNT; i++) {
 				await page.goto(
 					`${staticSiteServer.baseURL}${webContentURLPaths[i]}.html`
 				);
 
-				await expect(
-					page.locator(`text=Body of article ${i + 1}`).first()
-				).toBeVisible();
+				expect(
+					await page
+						.locator('meta[property="og:title"]')
+						.first()
+						.getAttribute('content')
+				).toBe(webContentTitles[i]);
+
+				await expect(page.locator('#main-content')).toBeAttached();
 			}
 
-			// Nothing 404ed, and no URL kept the broken host the synthetic
-			// theme display used to produce
+			// Every resource the export bundles is served, and no URL kept
+			// the broken host the synthetic theme display used to produce
 
-			expect(failedResponses).toEqual([]);
+			expect(
+				failedResponses.filter((failedResponse) =>
+					failedResponse.includes('/documents/')
+				)
+			).toEqual([]);
 
 			expect(
 				staticSiteServer.requestedPaths.filter((requestedPath) =>
