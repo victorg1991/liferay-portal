@@ -86,6 +86,18 @@ public class StaticSiteResourceHarvester {
 		return urls;
 	}
 
+	public Set<String> harvestJS(String js) {
+		Set<String> urls = new LinkedHashSet<>();
+
+		Matcher matcher = _jsModulePathPattern.matcher(js);
+
+		while (matcher.find()) {
+			_addURL(urls, matcher.group(1));
+		}
+
+		return urls;
+	}
+
 	public boolean isHarvestableURL(String url) {
 		if (Validator.isNull(url)) {
 			return false;
@@ -188,6 +200,8 @@ public class StaticSiteResourceHarvester {
 
 	private static final Pattern _cssURLPattern = Pattern.compile(
 		"url\\(([^)]+)\\)|@import\\s+[\"']([^\"']+)[\"']");
+	private static final Pattern _jsModulePathPattern = Pattern.compile(
+		"[\"']([-@$/.\\w()]*?/o/[-@$/.\\w()]+\\.(?:css|js))[\"']");
 	private static final Pattern _jsonStringValuePattern = Pattern.compile(
 		":\\s*\"([^\"]+)\"");
 

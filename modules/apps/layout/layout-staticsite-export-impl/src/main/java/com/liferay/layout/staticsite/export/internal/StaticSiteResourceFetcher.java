@@ -5,10 +5,12 @@
 
 package com.liferay.layout.staticsite.export.internal;
 
+import com.liferay.petra.io.StreamUtil;
 import com.liferay.petra.string.CharPool;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
 import com.liferay.portal.kernel.servlet.DirectRequestDispatcherFactoryUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
+import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -17,6 +19,11 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.InputStream;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import java.nio.ByteBuffer;
 
@@ -27,11 +34,13 @@ public class StaticSiteResourceFetcher {
 
 	public StaticSiteResourceFetcher(
 		HttpServletRequest httpServletRequest,
-		HttpServletResponse httpServletResponse, ServletContext servletContext,
+		HttpServletResponse httpServletResponse, String portalURL,
+		ServletContext servletContext,
 		StaticSiteBundleResourceResolver staticSiteBundleResourceResolver) {
 
 		_httpServletRequest = httpServletRequest;
 		_httpServletResponse = httpServletResponse;
+		_portalURL = portalURL;
 		_servletContext = servletContext;
 		_staticSiteBundleResourceResolver = staticSiteBundleResourceResolver;
 	}
@@ -60,10 +69,14 @@ public class StaticSiteResourceFetcher {
 		String unhashedURL = _unhash(url);
 
 		if (!unhashedURL.equals(url)) {
-			return _fetch(unhashedURL);
+			bytes = _fetch(unhashedURL);
+
+			if ((bytes != null) && (bytes.length > 0)) {
+				return bytes;
+			}
 		}
 
-		return bytes;
+		return _request(url);
 	}
 
 	private byte[] _fetch(String url) throws Exception {
@@ -129,6 +142,40 @@ public class StaticSiteResourceFetcher {
 		return bytes;
 	}
 
+	/**
+	 * Asks the portal for a resource it generates per request rather than
+	 * stores, which is the only way left to obtain one.
+	 */
+	private byte[] _request(String url) throws Exception {
+		if (Validator.isNull(_portalURL)) {
+			return null;
+		}
+
+		HttpURLConnection httpURLConnection = (HttpURLConnection)new URL(
+			_portalURL + url
+		).openConnection();
+
+		try {
+			httpURLConnection.setConnectTimeout(_TIMEOUT);
+			httpURLConnection.setInstanceFollowRedirects(true);
+			httpURLConnection.setReadTimeout(_TIMEOUT);
+			httpURLConnection.setRequestMethod(HttpMethods.GET);
+
+			if (httpURLConnection.getResponseCode() !=
+					HttpServletResponse.SC_OK) {
+
+				return null;
+			}
+
+			try (InputStream inputStream = httpURLConnection.getInputStream()) {
+				return StreamUtil.toByteArray(inputStream);
+			}
+		}
+		finally {
+			httpURLConnection.disconnect();
+		}
+	}
+
 	private String _unhash(String url) {
 		int index = url.indexOf(".(");
 
@@ -147,8 +194,11 @@ public class StaticSiteResourceFetcher {
 
 	private static final String _MODULE_PATH_PREFIX = "/o/";
 
+	private static final int _TIMEOUT = 20000;
+
 	private final HttpServletRequest _httpServletRequest;
 	private final HttpServletResponse _httpServletResponse;
+	private final String _portalURL;
 	private final ServletContext _servletContext;
 	private final StaticSiteBundleResourceResolver
 		_staticSiteBundleResourceResolver;
