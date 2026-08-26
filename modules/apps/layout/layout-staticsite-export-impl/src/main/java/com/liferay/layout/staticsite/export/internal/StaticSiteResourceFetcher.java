@@ -27,15 +27,30 @@ public class StaticSiteResourceFetcher {
 
 	public StaticSiteResourceFetcher(
 		HttpServletRequest httpServletRequest,
-		HttpServletResponse httpServletResponse,
-		ServletContext servletContext) {
+		HttpServletResponse httpServletResponse, ServletContext servletContext,
+		StaticSiteBundleResourceResolver staticSiteBundleResourceResolver) {
 
 		_httpServletRequest = httpServletRequest;
 		_httpServletResponse = httpServletResponse;
 		_servletContext = servletContext;
+		_staticSiteBundleResourceResolver = staticSiteBundleResourceResolver;
 	}
 
 	public byte[] fetch(String url) throws Exception {
+		String path = url;
+
+		int index = url.indexOf(CharPool.QUESTION);
+
+		if (index != -1) {
+			path = url.substring(0, index);
+		}
+
+		byte[] bundleBytes = _staticSiteBundleResourceResolver.resolve(path);
+
+		if ((bundleBytes != null) && (bundleBytes.length > 0)) {
+			return bundleBytes;
+		}
+
 		byte[] bytes = _fetch(url);
 
 		if ((bytes != null) && (bytes.length > 0)) {
@@ -135,6 +150,8 @@ public class StaticSiteResourceFetcher {
 	private final HttpServletRequest _httpServletRequest;
 	private final HttpServletResponse _httpServletResponse;
 	private final ServletContext _servletContext;
+	private final StaticSiteBundleResourceResolver
+		_staticSiteBundleResourceResolver;
 
 	private static class ResourcePathHttpServletRequestWrapper
 		extends HttpServletRequestWrapper {
