@@ -10,7 +10,9 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -83,16 +85,74 @@ public class StaticSiteResourceHarvester {
 
 		urls.addAll(_harvestImportMap(document));
 
+		urls.addAll(harvestJS(html, StringPool.BLANK));
+
 		return urls;
 	}
 
-	public Set<String> harvestJS(String js) {
+	/**
+	 * Returns the module specifier prefixes the import map maps to a location
+	 * rather than to a file, which only become URLs once a specifier is
+	 * appended to them.
+	 */
+	public Map<String, String> harvestImportMapPrefixes(String html) {
+		Map<String, String> prefixes = new LinkedHashMap<>();
+
+		Document document = Jsoup.parse(html);
+
+		Elements elements = document.select("script[type=importmap]");
+
+		for (Element element : elements) {
+			Matcher matcher = _jsonStringEntryPattern.matcher(element.data());
+
+			while (matcher.find()) {
+				String specifier = matcher.group(1);
+				String url = matcher.group(2);
+
+				if (specifier.endsWith(StringPool.SLASH) &&
+					url.endsWith(StringPool.SLASH)) {
+
+					prefixes.put(specifier, url);
+				}
+			}
+		}
+
+		return prefixes;
+	}
+
+	public Set<String> harvestJS(String js, String jsURL) {
 		Set<String> urls = new LinkedHashSet<>();
 
 		Matcher matcher = _jsModulePathPattern.matcher(js);
 
 		while (matcher.find()) {
-			_addURL(urls, matcher.group(1));
+			_addURL(urls, StringPool.SLASH + matcher.group(1));
+		}
+
+		matcher = _jsRelativeModulePathPattern.matcher(js);
+
+		while (matcher.find()) {
+			_addURL(urls, _resolve(matcher.group(1), jsURL));
+		}
+
+		return urls;
+	}
+
+	public Set<String> harvestModuleSpecifiers(
+		String content, Map<String, String> prefixes) {
+
+		Set<String> urls = new LinkedHashSet<>();
+
+		for (Map.Entry<String, String> entry : prefixes.entrySet()) {
+			Matcher matcher = Pattern.compile(
+				"[\"'`]" + Pattern.quote(entry.getKey()) + "([-/.\\w]+)[\"'`]"
+			).matcher(
+				content
+			);
+
+			while (matcher.find()) {
+				_addURL(urls, entry.getValue() + matcher.group(1));
+			}
 		}
 
 		return urls;
@@ -201,8 +261,13 @@ public class StaticSiteResourceHarvester {
 	private static final Pattern _cssURLPattern = Pattern.compile(
 		"url\\(([^)]+)\\)|@import\\s+[\"']([^\"']+)[\"']");
 	private static final Pattern _jsModulePathPattern = Pattern.compile(
-		"[\"']([-@$/.\\w()]*?/o/[-@$/.\\w()]+\\.(?:css|js))[\"']");
+		"[\"'`](?:\\$\\{[^}]*\\})?/?(o/[-@$/.\\w()]+\\.(?:css|js))[\"'`]");
+	private static final Pattern _jsonStringEntryPattern = Pattern.compile(
+		"\"([^\"]+)\"\\s*:\\s*\"([^\"]+)\"");
 	private static final Pattern _jsonStringValuePattern = Pattern.compile(
 		":\\s*\"([^\"]+)\"");
+	private static final Pattern _jsRelativeModulePathPattern = Pattern.compile(
+		"(?:from|import)\\s*\\(?\\s*[\"'`](\\.{1,2}/[-@$/.\\w()]+" +
+			"\\.(?:css|js))[\"'`]");
 
 }

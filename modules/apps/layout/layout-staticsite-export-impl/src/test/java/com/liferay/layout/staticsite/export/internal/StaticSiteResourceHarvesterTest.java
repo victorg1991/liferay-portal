@@ -133,7 +133,8 @@ public class StaticSiteResourceHarvesterTest {
 	public void testHarvestJSModulePaths() {
 		Set<String> urls = _staticSiteResourceHarvester.harvestJS(
 			"import('/o/frontend-js-spa-web/__liferay__/index.js');" +
-				"var a = \"/o/other-web/main.css\"; var b = 'nope';");
+				"var a = \"/o/other-web/main.css\"; var b = 'nope';",
+			"/o/a/b.js");
 
 		Assert.assertTrue(
 			urls.toString(),
@@ -141,6 +142,17 @@ public class StaticSiteResourceHarvesterTest {
 		Assert.assertTrue(
 			urls.toString(), urls.contains("/o/other-web/main.css"));
 		Assert.assertEquals(urls.toString(), 2, urls.size());
+	}
+
+	@Test
+	public void testHarvestJSRelativeModulePath() {
+		Set<String> urls = _staticSiteResourceHarvester.harvestJS(
+			"import {a} from \"../../frontend-js-web/__liferay__/index.js\";",
+			"/o/frontend-js-spa-web/__liferay__/index.js");
+
+		Assert.assertTrue(
+			urls.toString(),
+			urls.contains("/o/frontend-js-web/__liferay__/index.js"));
 	}
 
 	@Test
