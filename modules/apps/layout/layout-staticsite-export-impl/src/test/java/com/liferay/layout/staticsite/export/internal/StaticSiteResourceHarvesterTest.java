@@ -8,6 +8,7 @@ package com.liferay.layout.staticsite.export.internal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,6 +58,15 @@ public class StaticSiteResourceHarvesterTest {
 			"/o/classic-theme/css/clay.css");
 
 		Assert.assertTrue(urls.toString(), urls.isEmpty());
+	}
+
+	@Test
+	public void testHarvestCSSSkipsFragmentOnlyURL() {
+		Assert.assertTrue(
+			_staticSiteResourceHarvester.harvestCSS(
+				".dial {behavior: url(#default#VML);}",
+				"/o/a/aui/dial/assets/skins/sam/dial.css"
+			).isEmpty());
 	}
 
 	@Test
@@ -151,6 +161,15 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestJSKeepsImportOutsideBlockComment() {
+		Assert.assertEquals(
+			Collections.singleton("/o/a/exports/styles.css"),
+			_staticSiteResourceHarvester.harvestJS(
+				"/** docs */\nimport styles from './styles.css';",
+				"/o/a/exports/b.js"));
+	}
+
+	@Test
 	public void testHarvestJSModulePaths() {
 		Set<String> urls = _staticSiteResourceHarvester.harvestJS(
 			"import('/o/frontend-js-spa-web/__liferay__/index.js');" +
@@ -174,6 +193,15 @@ public class StaticSiteResourceHarvesterTest {
 		Assert.assertTrue(
 			urls.toString(),
 			urls.contains("/o/frontend-js-web/__liferay__/index.js"));
+	}
+
+	@Test
+	public void testHarvestJSSkipsImportInBlockComment() {
+		Assert.assertTrue(
+			_staticSiteResourceHarvester.harvestJS(
+				"/**\n * import styles from './styles.css';\n */\n",
+				"/o/a/exports/b.js"
+			).isEmpty());
 	}
 
 	@Test
