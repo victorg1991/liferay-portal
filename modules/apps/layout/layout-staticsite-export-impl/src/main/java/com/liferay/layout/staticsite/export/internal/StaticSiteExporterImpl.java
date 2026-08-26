@@ -59,6 +59,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -79,6 +80,8 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		Map<String, String> pageHTMLs = new LinkedHashMap<>();
 
+		String portalURL = _portal.getPortalURL(httpServletRequest);
+
 		User user = _userLocalService.getGuestUser(
 			_portal.getCompanyId(httpServletRequest));
 
@@ -88,9 +91,11 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			try {
 				pageHTMLs.put(
 					friendlyURL,
-					_layoutHTMLRenderer.renderHTML(
-						httpServletRequest, httpServletResponse, layout, locale,
-						null, user));
+					StringUtil.removeSubstring(
+						_layoutHTMLRenderer.renderHTML(
+							httpServletRequest, httpServletResponse, layout,
+							locale, null, user),
+						portalURL));
 
 				_addExportedPage(friendlyURL, groupId, staticSiteExportResult);
 			}
@@ -108,7 +113,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		_renderDisplayPages(
 			groupId, httpServletRequest, httpServletResponse, locale, pageHTMLs,
-			staticSiteExportResult, user);
+			portalURL, staticSiteExportResult, user);
 
 		ZipWriter zipWriter = _zipWriterFactory.getZipWriter();
 
@@ -118,8 +123,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		StaticSiteURLRewriter staticSiteURLRewriter =
 			new StaticSiteURLRewriter();
-
-		String portalURL = _portal.getPortalURL(httpServletRequest);
 
 		for (Map.Entry<String, String> entry : pageHTMLs.entrySet()) {
 			try {
@@ -165,11 +168,14 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			return;
 		}
 
-		staticSiteExportResult.addExportedPage(
-			StringBundler.concat(
-				_portal.getPathFriendlyURLPublic(), group.getFriendlyURL(),
-				friendlyURL),
-			fileName);
+		String siteURL =
+			_portal.getPathFriendlyURLPublic() + group.getFriendlyURL();
+
+		staticSiteExportResult.addExportedPage(siteURL + friendlyURL, fileName);
+
+		if (fileName.equals("home.html") || fileName.equals(_INDEX_FILE_NAME)) {
+			staticSiteExportResult.addExportedPage(siteURL, fileName);
+		}
 	}
 
 	private void _appendFailures(
@@ -337,7 +343,23 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		sb.append(
 			staticSiteExportResult.getResourceFileNames(
 			).size());
-		sb.append(", \"skippedPages\": [");
+		sb.append(", \"resourceURLs\": [");
+
+		String delimiter = StringPool.BLANK;
+
+		for (String resourceURL :
+				staticSiteExportResult.getResourceFileNames(
+				).keySet()) {
+
+			sb.append(delimiter);
+			sb.append("\"");
+			sb.append(_escapeJSON(resourceURL));
+			sb.append("\"");
+
+			delimiter = ", ";
+		}
+
+		sb.append("], \"skippedPages\": [");
 
 		_appendFailures(sb, staticSiteExportResult.getSkippedPages());
 
@@ -388,7 +410,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 	private void _renderDisplayPages(
 		long groupId, HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, Locale locale,
-		Map<String, String> pageHTMLs,
+		Map<String, String> pageHTMLs, String portalURL,
 		StaticSiteExportResult staticSiteExportResult, User user) {
 
 		for (LayoutPageTemplateEntry layoutPageTemplateEntry :
@@ -423,12 +445,15 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				try {
 					pageHTMLs.put(
 						friendlyURL,
-						_layoutHTMLRenderer.renderHTML(
-							httpServletRequest, httpServletResponse,
-							new InfoItemReference(
-								_portal.getClassName(classNameIdAndClassPK[0]),
-								classNameIdAndClassPK[1]),
-							layout, locale, user));
+						StringUtil.removeSubstring(
+							_layoutHTMLRenderer.renderHTML(
+								httpServletRequest, httpServletResponse,
+								new InfoItemReference(
+									_portal.getClassName(
+										classNameIdAndClassPK[0]),
+									classNameIdAndClassPK[1]),
+								layout, locale, user),
+							portalURL));
 
 					_addExportedPage(
 						friendlyURL, groupId, staticSiteExportResult);
@@ -457,7 +482,11 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		StaticSiteResourceFetcher staticSiteResourceFetcher =
 			new StaticSiteResourceFetcher(
-				httpServletRequest, httpServletResponse, servletContext);
+				httpServletRequest, httpServletResponse, servletContext,
+				new StaticSiteBundleResourceResolver(
+					FrameworkUtil.getBundle(
+						StaticSiteExporterImpl.class
+					).getBundleContext()));
 
 		StaticSiteResourceHarvester staticSiteResourceHarvester =
 			new StaticSiteResourceHarvester();
