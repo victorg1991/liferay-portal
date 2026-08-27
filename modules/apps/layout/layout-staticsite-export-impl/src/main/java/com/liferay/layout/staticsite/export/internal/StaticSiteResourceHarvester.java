@@ -399,7 +399,20 @@ public class StaticSiteResourceHarvester {
 
 		url = StringUtil.trim(url);
 
-		return StringUtil.unquote(url);
+		url = StringUtil.unquote(url);
+
+		// A data URI can carry the parenthesis that ends a url(), leaving the
+		// value cut short and its opening quote behind, so trim any quote the
+		// pair above could not.
+
+		while (!url.isEmpty() &&
+			   ((url.charAt(0) == CharPool.QUOTE) ||
+				(url.charAt(0) == CharPool.APOSTROPHE))) {
+
+			url = url.substring(1);
+		}
+
+		return url;
 	}
 
 	private static final String[] _ATTRIBUTE_NAMES = {
@@ -407,6 +420,9 @@ public class StaticSiteResourceHarvester {
 	};
 
 	private static final String _MODULE_PATH_PREFIX = "/o/";
+
+	private static final String _RESOURCE_EXTENSIONS =
+		"css|gif|ico|jpeg|jpg|js|json|png|svg|webp|woff|woff2";
 
 	private static final String[] _RESOURCE_PREFIXES = {
 		"/combo", "/documents/", "/image/", "/o/", "/webserver/"
@@ -419,7 +435,8 @@ public class StaticSiteResourceHarvester {
 	private static final Pattern _identifierPattern = Pattern.compile(
 		"[$_A-Za-z][$_\\w]*");
 	private static final Pattern _jsModulePathPattern = Pattern.compile(
-		"[\"'`](?:\\$\\{[^}]*\\})?/?(o/[-@$/.\\w()]+\\.(?:css|js))[\"'`]");
+		"[\"'`](?:\\$\\{[^}]*\\})?/?(o/[-@$/.\\w()]+\\.(?:" +
+			_RESOURCE_EXTENSIONS + "))[\"'`]");
 	private static final Pattern _jsonStringEntryPattern = Pattern.compile(
 		"\"([^\"]+)\"\\s*:\\s*\"([^\"]+)\"");
 	private static final Pattern _jsonStringValuePattern = Pattern.compile(

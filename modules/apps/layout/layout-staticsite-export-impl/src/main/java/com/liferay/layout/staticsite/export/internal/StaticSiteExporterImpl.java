@@ -389,11 +389,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		path = StringUtil.removeFirst(path, StringPool.SLASH);
 
-		path = StringUtil.replace(
-			path,
-			new char[] {CharPool.OPEN_PARENTHESIS, CharPool.CLOSE_PARENTHESIS},
-			new String[] {StringPool.BLANK, StringPool.BLANK});
-
 		if (Validator.isNull(queryString)) {
 			return path;
 		}

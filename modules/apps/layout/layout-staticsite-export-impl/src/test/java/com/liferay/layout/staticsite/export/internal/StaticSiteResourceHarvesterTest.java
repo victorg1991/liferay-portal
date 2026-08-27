@@ -70,6 +70,16 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestCSSSkipsTruncatedDataURI() {
+		Assert.assertTrue(
+			_staticSiteResourceHarvester.harvestCSS(
+				".a {background: url(\"data:image/svg+xml;utf8,<svg " +
+					"width='12' height='12'></svg>\");}",
+				"/o/a/b/main.css"
+			).isEmpty());
+	}
+
+	@Test
 	public void testHarvestHTMLImportMap() {
 		Set<String> urls = _staticSiteResourceHarvester.harvestHTML(
 			"<html><head><script type=\"importmap\">{\"imports\": " +
@@ -245,6 +255,16 @@ public class StaticSiteResourceHarvesterTest {
 				"/**\n * import styles from './styles.css';\n */\n",
 				"/o/a/exports/b.js"
 			).isEmpty());
+	}
+
+	@Test
+	public void testHarvestJSSpritemap() {
+		Assert.assertEquals(
+			Collections.singleton("/o/classic-theme/images/clay/icons.svg"),
+			_staticSiteResourceHarvester.harvestJS(
+				"Liferay.Icons.spritemap = " +
+					"'/o/classic-theme/images/clay/icons.svg';",
+				"/o/a/index.js"));
 	}
 
 	@Test
