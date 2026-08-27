@@ -74,7 +74,8 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 	@Override
 	public StaticSiteExportResult exportSite(
 			long groupId, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse, Locale locale)
+			HttpServletResponse httpServletResponse, Locale locale,
+			long[] plids)
 		throws PortalException {
 
 		StaticSiteExportResult staticSiteExportResult =
@@ -87,7 +88,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		User user = _userLocalService.getGuestUser(
 			_portal.getCompanyId(httpServletRequest));
 
-		for (Layout layout : _getExportableLayouts(groupId)) {
+		for (Layout layout : _getSelectedLayouts(groupId, plids)) {
 			String friendlyURL = layout.getFriendlyURL(locale);
 
 			try {
@@ -155,6 +156,24 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 
 		return staticSiteExportResult;
+	}
+
+	@Override
+	public List<Layout> getExportableLayouts(long groupId) {
+		List<Layout> layouts = new ArrayList<>();
+
+		for (Layout layout : _layoutLocalService.getLayouts(groupId, false)) {
+			if (layout.isHidden() || layout.isSystem() ||
+				(layout.getStatus() != WorkflowConstants.STATUS_APPROVED) ||
+				!_supportedLayoutTypes.contains(layout.getType())) {
+
+				continue;
+			}
+
+			layouts.add(layout);
+		}
+
+		return layouts;
 	}
 
 	private void _addExportedPage(
@@ -304,23 +323,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return classNameIdsAndClassPKs;
 	}
 
-	private List<Layout> _getExportableLayouts(long groupId) {
-		List<Layout> layouts = new ArrayList<>();
-
-		for (Layout layout : _layoutLocalService.getLayouts(groupId, false)) {
-			if (layout.isHidden() || layout.isSystem() ||
-				(layout.getStatus() != WorkflowConstants.STATUS_APPROVED) ||
-				!_supportedLayoutTypes.contains(layout.getType())) {
-
-				continue;
-			}
-
-			layouts.add(layout);
-		}
-
-		return layouts;
-	}
-
 	private String _getPageFileName(String friendlyURL) {
 		if (Validator.isNull(friendlyURL) ||
 			friendlyURL.equals(StringPool.SLASH)) {
@@ -408,6 +410,24 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return StringBundler.concat(
 			path.substring(0, extensionIndex), StringPool.PERIOD, digest,
 			path.substring(extensionIndex));
+	}
+
+	private List<Layout> _getSelectedLayouts(long groupId, long[] plids) {
+		List<Layout> layouts = getExportableLayouts(groupId);
+
+		if (ArrayUtil.isEmpty(plids)) {
+			return layouts;
+		}
+
+		List<Layout> selectedLayouts = new ArrayList<>();
+
+		for (Layout layout : layouts) {
+			if (ArrayUtil.contains(plids, layout.getPlid())) {
+				selectedLayouts.add(layout);
+			}
+		}
+
+		return selectedLayouts;
 	}
 
 	private String _removeDynamicScripts(String html) {
