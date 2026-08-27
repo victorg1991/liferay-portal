@@ -58,11 +58,13 @@ public class ExportStaticSiteStrutsAction implements StrutsAction {
 				ActionKeys.MANAGE_LAYOUTS);
 		}
 
+		long[] plids = ParamUtil.getLongValues(httpServletRequest, "plids");
+
 		try {
 			StaticSiteExportResult staticSiteExportResult =
 				_staticSiteExporter.exportSite(
 					groupId, httpServletRequest, httpServletResponse,
-					_portal.getLocale(httpServletRequest));
+					_portal.getLocale(httpServletRequest), plids);
 
 			File file = staticSiteExportResult.getFile();
 
