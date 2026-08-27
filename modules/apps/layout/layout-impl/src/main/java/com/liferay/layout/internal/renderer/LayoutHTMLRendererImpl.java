@@ -20,12 +20,15 @@ import com.liferay.layout.util.LayoutServiceContextHelper;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.Image;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
+import com.liferay.portal.kernel.service.ImageLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
@@ -38,8 +41,10 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.webserver.WebServerServletToken;
 import com.liferay.portal.struts.Definition;
 import com.liferay.portal.struts.TilesUtil;
 import com.liferay.segments.SegmentsEntryRetriever;
@@ -144,22 +149,30 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 	}
 
 	/**
-	 * Derives what this render needs from the theme display the request
-	 * already carries, so that everything a real request establishes is kept
-	 * and only what describes the page and its reader is replaced. Falls back
-	 * to the fabricated one when there is no request behind this render.
+	 * Returns the theme display this render reads, deriving it from the one the
+	 * request carries when there is a request and building it when there is
+	 * not, then replacing on either what describes this page and its reader
+	 * rather than whatever the caller happened to be looking at.
 	 */
 	private ThemeDisplay _getThemeDisplay(
-			HttpServletRequest httpServletRequest, Layout layout,
+			HttpServletRequest httpServletRequest, Layout layout, Locale locale,
 			ThemeDisplay requestThemeDisplay, ServiceContext serviceContext,
 			User user)
 		throws Exception {
 
-		if (requestThemeDisplay == null) {
-			return serviceContext.getThemeDisplay();
-		}
+		ThemeDisplay themeDisplay = null;
 
-		ThemeDisplay themeDisplay = requestThemeDisplay.split();
+		if (requestThemeDisplay == null) {
+			themeDisplay = serviceContext.getThemeDisplay();
+
+			_setPortalThemeDisplay(themeDisplay);
+		}
+		else {
+			themeDisplay = requestThemeDisplay.split();
+
+			httpServletRequest.setAttribute(
+				WebKeys.THEME_DISPLAY, themeDisplay);
+		}
 
 		themeDisplay.setLayout(layout);
 		themeDisplay.setLayoutSet(layout.getLayoutSet());
@@ -169,10 +182,11 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			_layoutLocalService.getLayouts(
 				layout.getGroupId(), layout.isPrivateLayout(),
 				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID));
-
 		themeDisplay.setNavItems(null);
 		themeDisplay.setPermissionChecker(
 			PermissionThreadLocal.getPermissionChecker());
+		themeDisplay.setPlid(layout.getPlid());
+		themeDisplay.setPpid(StringPool.BLANK);
 		themeDisplay.setRealUser(user);
 		themeDisplay.setScopeGroupId(layout.getGroupId());
 		themeDisplay.setShowControlMenu(false);
@@ -191,7 +205,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 		themeDisplay.setSiteGroupId(layout.getGroupId());
 		themeDisplay.setUser(user);
 
-		httpServletRequest.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
+		themeDisplay.setURLCurrent(
+			_portal.getLayoutFriendlyURL(layout, themeDisplay, locale));
 
 		return themeDisplay;
 	}
@@ -248,8 +263,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			serviceContext.setRequest(httpServletRequest);
 
 			ThemeDisplay themeDisplay = _getThemeDisplay(
-				httpServletRequest, layout, requestThemeDisplay, serviceContext,
-				user);
+				httpServletRequest, layout, locale, requestThemeDisplay,
+				serviceContext, user);
 
 			String portalURL = _portal.getPortalURL(httpServletRequest);
 
@@ -339,7 +354,57 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 		}
 	}
 
+	/**
+	 * Fills in what a real request would have established about the portal
+	 * itself, for a render that has no request behind it. What a page reads and
+	 * cannot be reached any other way, and nothing more.
+	 */
+	private void _setPortalThemeDisplay(ThemeDisplay themeDisplay)
+		throws Exception {
+
+		Company company = themeDisplay.getCompany();
+
+		String imagePath = _portal.getPathImage();
+
+		themeDisplay.setPathFriendlyURLPublic(
+			_portal.getPathFriendlyURLPublic());
+		themeDisplay.setPathImage(imagePath);
+		themeDisplay.setStateExclusive(false);
+		themeDisplay.setStateMaximized(false);
+		themeDisplay.setStatePopUp(false);
+		themeDisplay.setThemeCssFastLoad(PropsValues.THEME_CSS_FAST_LOAD);
+		themeDisplay.setThemeJsFastLoad(PropsValues.JAVASCRIPT_FAST_LOAD);
+		themeDisplay.setURLPortal(themeDisplay.getPortalURL());
+		themeDisplay.setWidget(false);
+
+		long companyLogoId = company.getLogoId();
+
+		String companyLogo = imagePath + "/company_logo";
+
+		if (companyLogoId > 0) {
+			companyLogo = StringBundler.concat(
+				companyLogo, "?img_id=", companyLogoId, "&t=",
+				_webServerServletToken.getToken(companyLogoId));
+		}
+
+		themeDisplay.setCompanyLogo(companyLogo);
+
+		Image companyLogoImage = null;
+
+		if (companyLogoId > 0) {
+			companyLogoImage = _imageLocalService.fetchImage(companyLogoId);
+		}
+
+		if (companyLogoImage != null) {
+			themeDisplay.setCompanyLogoHeight(companyLogoImage.getHeight());
+			themeDisplay.setCompanyLogoWidth(companyLogoImage.getWidth());
+		}
+	}
+
 	private static final String _PATH_PORTAL_LAYOUT = "/portal/layout.jsp";
+
+	@Reference
+	private ImageLocalService _imageLocalService;
 
 	@Reference
 	private InfoItemServiceRegistry _infoItemServiceRegistry;
@@ -372,5 +437,8 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 	@Reference
 	private SegmentsExperienceService _segmentsExperienceService;
+
+	@Reference
+	private WebServerServletToken _webServerServletToken;
 
 }
