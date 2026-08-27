@@ -1,0 +1,86 @@
+.tax-highlighted-actions {
+	background-color: var(--tax-blue-pale);
+	border: 1px solid var(--tax-blue);
+	margin-bottom: 1.75rem;
+	padding: 1rem 1.25rem;
+}
+
+.tax-highlighted-actions-title {
+	align-items: center;
+	color: var(--tax-ink);
+	display: flex;
+	font-size: 1.1875rem;
+	font-weight: 400;
+	gap: 0.625rem;
+	margin: 0 0 0.75rem;
+}
+
+.tax-highlighted-actions-icon {
+	fill: none;
+	flex: 0 0 auto;
+	height: 1.375rem;
+	stroke: var(--tax-blue);
+	stroke-width: 1.5;
+	width: 1.375rem;
+}
+
+.tax-highlighted-actions-body ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.tax-highlighted-actions-body li {
+	align-items: baseline;
+	border-top: 1px solid rgba(0, 94, 181, 0.15);
+	display: flex;
+	gap: 1rem;
+	justify-content: space-between;
+	padding: 0.4375rem 0;
+}
+
+.tax-highlighted-actions-help {
+	flex: 0 0 auto;
+	font-size: 0.9375rem;
+	white-space: nowrap;
+}
+
+.tax-highlighted-actions-help::before {
+	border: 1px solid currentColor;
+	border-radius: 50%;
+	content: "?";
+	display: inline-block;
+	font-size: 0.6875rem;
+	height: 0.875rem;
+	line-height: 0.75rem;
+	margin-right: 0.3125rem;
+	text-align: center;
+	width: 0.875rem;
+}
+
+.tax-highlighted-actions-body li:first-child {
+	border-top: 0;
+}
+
+.tax-highlighted-actions-body a {
+	color: var(--tax-blue);
+	text-decoration: none;
+}
+
+.tax-highlighted-actions-body a:hover {
+	text-decoration: underline;
+}
+
+.tax-highlighted-actions-footer {
+	margin: 0.75rem 0 0;
+	text-align: center;
+}
+
+.tax-highlighted-actions-footer a {
+	color: var(--tax-blue);
+	text-decoration: none;
+}
+
+.tax-highlighted-actions-footer a:hover {
+	text-decoration: underline;
+}

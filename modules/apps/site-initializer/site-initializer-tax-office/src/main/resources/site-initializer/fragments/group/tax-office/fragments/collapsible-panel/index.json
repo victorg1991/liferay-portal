@@ -1,0 +1,14 @@
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"defaultValue": false,
+					"label": "expanded",
+					"name": "expanded",
+					"type": "checkbox"
+				}
+			]
+		}
+	]
+}

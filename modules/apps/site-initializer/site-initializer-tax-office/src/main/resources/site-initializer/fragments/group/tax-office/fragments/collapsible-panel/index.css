@@ -1,0 +1,57 @@
+.tax-collapsible-panel {
+	border: 1px solid var(--tax-border);
+	margin-bottom: 1.25rem;
+}
+
+.tax-collapsible-panel-summary {
+	align-items: center;
+	color: var(--tax-blue);
+	cursor: pointer;
+	display: flex;
+	font-size: 1.25rem;
+	gap: 1rem;
+	justify-content: space-between;
+	list-style: none;
+	padding: 1rem 1.25rem;
+}
+
+.tax-collapsible-panel-summary::-webkit-details-marker {
+	display: none;
+}
+
+.tax-collapsible-panel-chevron {
+	border-bottom: 2px solid currentColor;
+	border-right: 2px solid currentColor;
+	flex: 0 0 auto;
+	height: 0.5625rem;
+	transform: rotate(45deg) translate(-0.125rem, -0.125rem);
+	width: 0.5625rem;
+}
+
+.tax-collapsible-panel[open] .tax-collapsible-panel-chevron {
+	transform: rotate(225deg) translate(-0.125rem, -0.125rem);
+}
+
+.tax-collapsible-panel-body {
+	border-top: 1px solid var(--tax-border);
+	padding: 1rem 1.25rem;
+}
+
+.tax-collapsible-panel-body p {
+	margin: 0 0 1rem;
+}
+
+.tax-collapsible-panel-body p:last-child {
+	margin-bottom: 0;
+}
+
+.tax-collapsible-panel-body cite {
+	color: var(--tax-ink-muted);
+	display: block;
+	font-size: 0.875rem;
+	font-style: normal;
+}
+
+.tax-collapsible-panel-body strong {
+	display: block;
+}

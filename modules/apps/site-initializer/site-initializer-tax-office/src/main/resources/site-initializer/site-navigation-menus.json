@@ -1,0 +1,23 @@
+[
+	{
+		"externalReferenceCode": "TAXOFFICEMAINMENU",
+		"menuItems": [
+			{
+				"friendlyURL": "/inicio",
+				"privateLayout": false,
+				"type": "layout"
+			},
+			{
+				"friendlyURL": "/todas-gestiones",
+				"privateLayout": false,
+				"type": "layout"
+			},
+			{
+				"friendlyURL": "/ayuda",
+				"privateLayout": false,
+				"type": "layout"
+			}
+		],
+		"name": "Main Navigation"
+	}
+]

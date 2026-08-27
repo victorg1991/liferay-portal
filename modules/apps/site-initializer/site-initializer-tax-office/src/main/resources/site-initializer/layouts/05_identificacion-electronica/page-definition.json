@@ -1,0 +1,129 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "text-block"
+					},
+					"fragmentFields": [
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<p>Sistemas admitidos para identificarse y firmar electrónicamente en la sede: certificado electrónico, Cl@ve y sistemas de representación.</p>",
+										"es_ES": "<p>Sistemas admitidos para identificarse y firmar electrónicamente en la sede: certificado electrónico, Cl@ve y sistemas de representación.</p>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "highlighted-actions"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Gestiones destacadas",
+										"es_ES": "Gestiones destacadas"
+									}
+								}
+							}
+						},
+						{
+							"id": "actions",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Registro en el sistema Cl@ve</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Obtención del certificado electrónico</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Certificados electrónicos de representante de persona jurídica</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Comprobación del estado del certificado instalado</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Registro en el sistema Cl@ve</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Obtención del certificado electrónico</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Certificados electrónicos de representante de persona jurídica</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Comprobación del estado del certificado instalado</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
+									}
+								}
+							}
+						},
+						{
+							"id": "footerLink",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/todas-gestiones"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "false"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Todas las gestiones",
+										"es_ES": "Todas las gestiones"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "info-links"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Información",
+										"es_ES": "Información"
+									}
+								}
+							}
+						},
+						{
+							"id": "links",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Sistemas de identificación admitidos</a></li><li><a href=\"#\">Validación del certificado de sede</a></li><li><a href=\"#\">Ayuda técnica de identificación</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Sistemas de identificación admitidos</a></li><li><a href=\"#\">Validación del certificado de sede</a></li><li><a href=\"#\">Ayuda técnica de identificación</a></li></ul>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}
