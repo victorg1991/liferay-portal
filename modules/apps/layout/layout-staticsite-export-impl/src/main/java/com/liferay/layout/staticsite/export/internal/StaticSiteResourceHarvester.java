@@ -371,7 +371,9 @@ public class StaticSiteResourceHarvester {
 		return StringUtil.unquote(url);
 	}
 
-	private static final String[] _ATTRIBUTE_NAMES = {"href", "poster", "src"};
+	private static final String[] _ATTRIBUTE_NAMES = {
+		"href", "poster", "src", "xlink:href"
+	};
 
 	private static final String _MODULE_PATH_PREFIX = "/o/";
 
