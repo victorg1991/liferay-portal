@@ -5,8 +5,7 @@
 
 package com.liferay.layout.staticsite.export.internal.struts;
 
-import com.liferay.layout.staticsite.export.StaticSiteExportResult;
-import com.liferay.layout.staticsite.export.StaticSiteExporter;
+import com.liferay.layout.staticsite.export.StaticSiteBuilder;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -19,6 +18,8 @@ import com.liferay.portal.kernel.struts.StrutsAction;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.zip.ZipWriter;
+import com.liferay.portal.kernel.zip.ZipWriterFactory;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -61,12 +62,13 @@ public class ExportStaticSiteStrutsAction implements StrutsAction {
 		long[] plids = ParamUtil.getLongValues(httpServletRequest, "plids");
 
 		try {
-			StaticSiteExportResult staticSiteExportResult =
-				_staticSiteExporter.exportSite(
-					groupId, httpServletRequest, httpServletResponse,
-					_portal.getLocale(httpServletRequest), plids);
+			ZipWriter zipWriter = _zipWriterFactory.getZipWriter();
 
-			File file = staticSiteExportResult.getFile();
+			_staticSiteBuilder.build(
+				groupId, _portal.getLocale(httpServletRequest), plids,
+				zipWriter::addEntry);
+
+			File file = zipWriter.getFile();
 
 			Group group = _groupLocalService.getGroup(groupId);
 
@@ -92,6 +94,9 @@ public class ExportStaticSiteStrutsAction implements StrutsAction {
 	private Portal _portal;
 
 	@Reference
-	private StaticSiteExporter _staticSiteExporter;
+	private StaticSiteBuilder _staticSiteBuilder;
+
+	@Reference
+	private ZipWriterFactory _zipWriterFactory;
 
 }

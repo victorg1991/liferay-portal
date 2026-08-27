@@ -5,8 +5,11 @@
 
 package com.liferay.layout.staticsite.export.internal;
 
+import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.io.StreamUtil;
 import com.liferay.petra.string.CharPool;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.BufferCacheServletResponse;
 import com.liferay.portal.kernel.servlet.DirectRequestDispatcherFactoryUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
@@ -27,6 +30,8 @@ import java.net.URL;
 
 import java.nio.ByteBuffer;
 
+import java.util.Arrays;
+
 /**
  * @author Víctor Galán
  */
@@ -45,41 +50,54 @@ public class StaticSiteResourceFetcher {
 		_staticSiteBundleResourceResolver = staticSiteBundleResourceResolver;
 	}
 
+	/**
+	 * Returns the bytes of the resource at the given URL, from the bundle that
+	 * owns it, from the servlet that generates it, or from the portal over
+	 * HTTP, whichever answers first.
+	 *
+	 * <p>
+	 * Each source is tried independently, because a source that fails outright
+	 * says nothing about the ones after it and must not deny them their turn.
+	 * </p>
+	 */
 	public byte[] fetch(String url) throws Exception {
-		String path = url;
-
 		int index = url.indexOf(CharPool.QUESTION);
 
-		if (index != -1) {
-			path = url.substring(0, index);
-		}
-
-		byte[] bundleBytes = _staticSiteBundleResourceResolver.resolve(path);
-
-		if ((bundleBytes != null) && (bundleBytes.length > 0)) {
-			return bundleBytes;
-		}
-
-		byte[] bytes = _fetch(url);
-
-		if ((bytes != null) && (bytes.length > 0)) {
-			return bytes;
-		}
+		String path = (index == -1) ? url : url.substring(0, index);
 
 		String unhashedURL = _unhash(url);
 
-		if (!unhashedURL.equals(url)) {
-			bytes = _fetch(unhashedURL);
+		for (UnsafeSupplier<byte[], Exception> unsafeSupplier :
+				Arrays.<UnsafeSupplier<byte[], Exception>>asList(
+					() -> _staticSiteBundleResourceResolver.resolve(path),
+					() -> _fetch(url),
+					() -> unhashedURL.equals(url) ? null : _fetch(unhashedURL),
+					() -> _request(url))) {
+
+			byte[] bytes = null;
+
+			try {
+				bytes = unsafeSupplier.get();
+			}
+			catch (Exception exception) {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Unable to fetch " + url, exception);
+				}
+			}
 
 			if ((bytes != null) && (bytes.length > 0)) {
 				return bytes;
 			}
 		}
 
-		return _request(url);
+		return null;
 	}
 
 	private byte[] _fetch(String url) throws Exception {
+		if (_httpServletRequest == null) {
+			return null;
+		}
+
 		String path = url;
 		String queryString = null;
 
@@ -195,6 +213,9 @@ public class StaticSiteResourceFetcher {
 	private static final String _MODULE_PATH_PREFIX = "/o/";
 
 	private static final int _TIMEOUT = 20000;
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		StaticSiteResourceFetcher.class);
 
 	private final HttpServletRequest _httpServletRequest;
 	private final HttpServletResponse _httpServletResponse;

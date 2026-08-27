@@ -14,33 +14,40 @@ import com.liferay.layout.display.page.LayoutDisplayPageProviderRegistry;
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.layout.renderer.LayoutHTMLRenderer;
+import com.liferay.layout.staticsite.export.StaticSiteBuilder;
 import com.liferay.layout.staticsite.export.StaticSiteExportResult;
-import com.liferay.layout.staticsite.export.StaticSiteExporter;
+import com.liferay.layout.staticsite.export.StaticSiteWriter;
+import com.liferay.layout.util.LayoutServiceContextHelper;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.servlet.DummyHttpServletResponse;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.kernel.zip.ZipWriter;
-import com.liferay.portal.kernel.zip.ZipWriterFactory;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
+import java.nio.charset.StandardCharsets;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -64,96 +71,92 @@ import org.osgi.service.component.annotations.Reference;
 /**
  * @author Víctor Galán
  */
-@Component(service = StaticSiteExporter.class)
-public class StaticSiteExporterImpl implements StaticSiteExporter {
+@Component(service = StaticSiteBuilder.class)
+public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 
 	@Override
-	public StaticSiteExportResult exportSite(
-			long groupId, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse, Locale locale,
-			long[] plids)
+	public StaticSiteExportResult build(
+			long groupId, Locale locale, long[] plids,
+			StaticSiteWriter staticSiteWriter)
 		throws PortalException {
+
+		Group group = _groupLocalService.getGroup(groupId);
 
 		StaticSiteExportResult staticSiteExportResult =
 			new StaticSiteExportResult();
 
-		Map<String, String> pageHTMLs = new LinkedHashMap<>();
+		// The build renders pages and reads resources the way a request would,
+		// so it runs against a service context whether or not a request is what
+		// asked for it
 
-		String portalURL = _portal.getPortalURL(httpServletRequest);
+		try (AutoCloseable autoCloseable =
+				_layoutServiceContextHelper.getServiceContextAutoCloseable(
+					_companyLocalService.getCompany(group.getCompanyId()))) {
 
-		User user = _userLocalService.getGuestUser(
-			_portal.getCompanyId(httpServletRequest));
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
 
-		for (Layout layout : _getSelectedLayouts(groupId, plids)) {
-			String friendlyURL = layout.getFriendlyURL(locale);
+			HttpServletRequest httpServletRequest = serviceContext.getRequest();
 
-			try {
-				pageHTMLs.put(
-					friendlyURL,
-					_removeDynamicScripts(
-						StringUtil.removeSubstring(
-							_layoutHTMLRenderer.renderHTML(
-								httpServletRequest, httpServletResponse, layout,
-								locale, null, user, true),
-							portalURL)));
+			HttpServletResponse httpServletResponse =
+				new DummyHttpServletResponse();
 
-				_addExportedPage(friendlyURL, groupId, staticSiteExportResult);
-			}
-			catch (Exception exception) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(
-						"Unable to render " + friendlyURL + " as guest",
-						exception);
+			String portalURL = _getPortalURL(group);
+
+			User user = _userLocalService.getGuestUser(group.getCompanyId());
+
+			Map<String, String> pageHTMLs = new LinkedHashMap<>();
+
+			for (Layout layout : _getSelectedLayouts(groupId, plids)) {
+				String friendlyURL = layout.getFriendlyURL(locale);
+
+				try {
+					pageHTMLs.put(
+						friendlyURL,
+						_removeDynamicScripts(
+							StringUtil.removeSubstring(
+								_layoutHTMLRenderer.renderHTML(
+									httpServletRequest, httpServletResponse,
+									layout, locale, null, user, true),
+								portalURL)));
+
+					_addExportedPage(
+						friendlyURL, groupId, staticSiteExportResult);
 				}
+				catch (Exception exception) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"Unable to render " + friendlyURL + " as guest",
+							exception);
+					}
 
-				staticSiteExportResult.addSkippedPage(
-					friendlyURL, exception.getMessage());
-			}
-		}
-
-		_renderDisplayPages(
-			groupId, httpServletRequest, httpServletResponse, locale, pageHTMLs,
-			portalURL, staticSiteExportResult, user);
-
-		ZipWriter zipWriter = _zipWriterFactory.getZipWriter();
-
-		_writeResources(
-			httpServletRequest, httpServletResponse, pageHTMLs.values(),
-			portalURL, staticSiteExportResult, zipWriter);
-
-		StaticSiteURLRewriter staticSiteURLRewriter =
-			new StaticSiteURLRewriter();
-
-		String defaultFriendlyURL = _getDefaultFriendlyURL(groupId);
-
-		for (Map.Entry<String, String> entry : pageHTMLs.entrySet()) {
-			try {
-				String pageHTML = staticSiteURLRewriter.rewrite(
-					entry.getValue(),
-					staticSiteExportResult.getExportedPageFileNames(),
-					staticSiteExportResult.getResourceFileNames(), portalURL);
-
-				zipWriter.addEntry(_getPageFileName(entry.getKey()), pageHTML);
-
-				if (Objects.equals(entry.getKey(), defaultFriendlyURL)) {
-					zipWriter.addEntry(_INDEX_FILE_NAME, pageHTML);
+					staticSiteExportResult.addSkippedPage(
+						friendlyURL, exception.getMessage());
 				}
 			}
-			catch (Exception exception) {
-				staticSiteExportResult.addFailure(
-					entry.getKey(), exception.getMessage());
-			}
+
+			_renderDisplayPages(
+				groupId, httpServletRequest, httpServletResponse, locale,
+				pageHTMLs, portalURL, staticSiteExportResult, user);
+
+			_writeResources(
+				httpServletRequest, httpServletResponse, pageHTMLs.values(),
+				portalURL, staticSiteExportResult, staticSiteWriter);
+
+			_writePages(
+				groupId, pageHTMLs, portalURL, staticSiteExportResult,
+				staticSiteWriter);
+
+			staticSiteWriter.write(
+				"export-report.json",
+				_getBytes(_getReportJSON(staticSiteExportResult)));
 		}
-
-		try {
-			zipWriter.addEntry(
-				"export-report.json", _getReportJSON(staticSiteExportResult));
-
-			staticSiteExportResult.setFile(zipWriter.getFile());
+		catch (PortalException portalException) {
+			throw portalException;
 		}
 		catch (Exception exception) {
 			throw new PortalException(
-				"Unable to write the static site export", exception);
+				"Unable to build the static site", exception);
 		}
 
 		return staticSiteExportResult;
@@ -191,15 +194,27 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			return;
 		}
 
-		String siteURL =
-			_portal.getPathFriendlyURLPublic() + group.getFriendlyURL();
+		// A site reached through a virtual host is addressed without the
+		// friendly URL servlet mapping, so both forms name the same page and
+		// both have to be answered for
 
-		staticSiteExportResult.addExportedPage(siteURL + friendlyURL, fileName);
+		boolean defaultPage = friendlyURL.equals(
+			_getDefaultFriendlyURL(groupId));
 
-		if (friendlyURL.equals(_getDefaultFriendlyURL(groupId))) {
-			staticSiteExportResult.addExportedPage(siteURL, _INDEX_FILE_NAME);
+		for (String siteURL :
+				Arrays.asList(
+					_portal.getPathFriendlyURLPublic() + group.getFriendlyURL(),
+					group.getFriendlyURL())) {
+
 			staticSiteExportResult.addExportedPage(
-				siteURL + StringPool.SLASH, _INDEX_FILE_NAME);
+				siteURL + friendlyURL, fileName);
+
+			if (defaultPage) {
+				staticSiteExportResult.addExportedPage(
+					siteURL, _INDEX_FILE_NAME);
+				staticSiteExportResult.addExportedPage(
+					siteURL + StringPool.SLASH, _INDEX_FILE_NAME);
+			}
 		}
 	}
 
@@ -229,6 +244,10 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		value = StringUtil.replace(value, CharPool.BACK_SLASH, "\\\\");
 
 		return StringUtil.replace(value, CharPool.QUOTE, "\\\"");
+	}
+
+	private byte[] _getBytes(String s) {
+		return s.getBytes(StandardCharsets.UTF_8);
 	}
 
 	/**
@@ -330,6 +349,14 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 
 		return StringUtil.removeFirst(friendlyURL, StringPool.SLASH) + ".html";
+	}
+
+	private String _getPortalURL(Group group) throws PortalException {
+		Company company = _companyLocalService.getCompany(group.getCompanyId());
+
+		return _portal.getPortalURL(
+			company.getVirtualHostname(), _portal.getPortalServerPort(false),
+			false);
 	}
 
 	private String _getReportJSON(
@@ -577,11 +604,45 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 	}
 
+	private void _writePages(
+		long groupId, Map<String, String> pageHTMLs, String portalURL,
+		StaticSiteExportResult staticSiteExportResult,
+		StaticSiteWriter staticSiteWriter) {
+
+		StaticSiteURLRewriter staticSiteURLRewriter =
+			new StaticSiteURLRewriter();
+
+		String defaultFriendlyURL = _getDefaultFriendlyURL(groupId);
+
+		for (Map.Entry<String, String> entry : pageHTMLs.entrySet()) {
+			String friendlyURL = entry.getKey();
+
+			try {
+				String pageHTML = staticSiteURLRewriter.rewrite(
+					entry.getValue(),
+					staticSiteExportResult.getExportedPageFileNames(),
+					staticSiteExportResult.getResourceFileNames(), portalURL);
+
+				staticSiteWriter.write(
+					_getPageFileName(friendlyURL), _getBytes(pageHTML));
+
+				if (Objects.equals(friendlyURL, defaultFriendlyURL)) {
+					staticSiteWriter.write(
+						_INDEX_FILE_NAME, _getBytes(pageHTML));
+				}
+			}
+			catch (Exception exception) {
+				staticSiteExportResult.addFailure(
+					friendlyURL, exception.getMessage());
+			}
+		}
+	}
+
 	private void _writeResources(
 		HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, Iterable<String> pageHTMLs,
 		String portalURL, StaticSiteExportResult staticSiteExportResult,
-		ZipWriter zipWriter) {
+		StaticSiteWriter staticSiteWriter) {
 
 		ServletContext servletContext = ServletContextPool.get(
 			_portal.getServletContextName());
@@ -589,7 +650,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		StaticSiteBundleResourceResolver staticSiteBundleResourceResolver =
 			new StaticSiteBundleResourceResolver(
 				FrameworkUtil.getBundle(
-					StaticSiteExporterImpl.class
+					StaticSiteBuilderImpl.class
 				).getBundleContext());
 
 		StaticSiteResourceFetcher staticSiteResourceFetcher =
@@ -647,7 +708,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			String fileName = _getResourceFileName(url);
 
 			try {
-				zipWriter.addEntry(fileName, bytes);
+				staticSiteWriter.write(fileName, bytes);
 			}
 			catch (Exception exception) {
 				staticSiteExportResult.addFailure(url, exception.getMessage());
@@ -687,7 +748,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 	private static final String _INDEX_FILE_NAME = "index.html";
 
 	private static final Log _log = LogFactoryUtil.getLog(
-		StaticSiteExporterImpl.class);
+		StaticSiteBuilderImpl.class);
 
 	private static final Pattern _scriptPattern = Pattern.compile(
 		"<script\\b[^>]*>.*?</script>", Pattern.DOTALL);
@@ -699,6 +760,9 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 	@Reference
 	private AssetDisplayPageEntryLocalService
 		_assetDisplayPageEntryLocalService;
+
+	@Reference
+	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private GroupLocalService _groupLocalService;
@@ -718,12 +782,12 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		_layoutPageTemplateEntryLocalService;
 
 	@Reference
+	private LayoutServiceContextHelper _layoutServiceContextHelper;
+
+	@Reference
 	private Portal _portal;
 
 	@Reference
 	private UserLocalService _userLocalService;
-
-	@Reference
-	private ZipWriterFactory _zipWriterFactory;
 
 }

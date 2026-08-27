@@ -11,6 +11,8 @@
 		<suppress checks="VariableDeclarationAsUsedCheck" files="layout-impl/src/main/java/com/liferay/layout/internal/struts/UpdateLayoutStrutsAction\.java" />
 	</checkstyle>
 	<source-check>
+		<suppress checks="IllegalImportsCheck" files="layout-impl/src/main/java/com/liferay/layout/internal/renderer/LayoutHTMLRendererImpl\.java" />
 		<suppress checks="IllegalImportsCheck" files="layout-impl/src/main/java/com/liferay/layout/internal/renderer/LayoutPreviewRendererImpl\.java" />
+		<suppress checks="IllegalImportsCheck" files="layout-staticsite-export-impl/src/main/java/com/liferay/layout/staticsite/export/internal/StaticSiteResourceHarvester\.java" />
 	</source-check>
 </suppressions>
