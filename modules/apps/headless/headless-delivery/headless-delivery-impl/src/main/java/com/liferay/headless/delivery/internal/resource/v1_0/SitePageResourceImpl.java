@@ -35,6 +35,7 @@ import com.liferay.layout.constants.LayoutTypeSettingsConstants;
 import com.liferay.layout.importer.LayoutsImporter;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
+import com.liferay.layout.renderer.LayoutHTMLRenderer;
 import com.liferay.layout.seo.model.LayoutSEOEntryCustomMetaTagProperty;
 import com.liferay.layout.seo.service.LayoutSEOEntryService;
 import com.liferay.layout.util.LayoutServiceContextHelper;
@@ -47,7 +48,6 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
-import com.liferay.portal.kernel.model.LayoutSet;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Team;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
@@ -67,14 +67,10 @@ import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.service.TeamLocalService;
 import com.liferay.portal.kernel.service.permission.ModelPermissions;
 import com.liferay.portal.kernel.service.permission.ModelPermissionsFactory;
-import com.liferay.portal.kernel.servlet.DynamicServletRequest;
-import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
-import com.liferay.portal.kernel.theme.ThemeUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
-import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -82,7 +78,6 @@ import com.liferay.portal.kernel.util.ScopeUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.vulcan.aggregation.Aggregation;
@@ -98,7 +93,6 @@ import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 import com.liferay.portal.vulcan.util.SearchUtil;
 import com.liferay.segments.SegmentsEntryRetriever;
 import com.liferay.segments.constants.SegmentsExperienceConstants;
-import com.liferay.segments.constants.SegmentsWebKeys;
 import com.liferay.segments.context.RequestContextMapper;
 import com.liferay.segments.model.SegmentsExperience;
 import com.liferay.segments.processor.SegmentsExperienceRequestProcessorRegistry;
@@ -115,10 +109,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -600,19 +590,6 @@ public class SitePageResourceImpl
 			friendlyURLEntryLocalization.getClassPK());
 	}
 
-	private SegmentsExperience _getSegmentsExperience(
-			HttpServletRequest httpServletRequest, Layout layout,
-			String segmentsExperienceKey)
-		throws Exception {
-
-		if (Validator.isNull(segmentsExperienceKey)) {
-			return _getUserSegmentsExperience(httpServletRequest, layout);
-		}
-
-		return _segmentsExperienceService.fetchSegmentsExperience(
-			layout.getGroupId(), segmentsExperienceKey, layout.getPlid());
-	}
-
 	private List<SegmentsExperience> _getSegmentsExperiences(Layout layout)
 		throws Exception {
 
@@ -746,74 +723,11 @@ public class SitePageResourceImpl
 			String friendlyUrlPath, long groupId, String segmentsExperienceKey)
 		throws Exception {
 
-		Layout layout = _getLayout(groupId, friendlyUrlPath);
-
-		try (AutoCloseable autoCloseable =
-				_layoutServiceContextHelper.getServiceContextAutoCloseable(
-					layout, contextUser)) {
-
-			ServiceContext serviceContext =
-				ServiceContextThreadLocal.getServiceContext();
-
-			HttpServletRequest httpServletRequest =
-				_portal.getOriginalServletRequest(contextHttpServletRequest);
-
-			httpServletRequest = DynamicServletRequest.addQueryString(
-				httpServletRequest, "p_l_id=" + layout.getPlid(), false);
-
-			serviceContext.setRequest(httpServletRequest);
-
-			ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
-
-			String portalURL = _portal.getPortalURL(httpServletRequest);
-
-			themeDisplay.setLanguageId(
-				LocaleUtil.toLanguageId(
-					contextAcceptLanguage.getPreferredLocale()));
-			themeDisplay.setLocale(contextAcceptLanguage.getPreferredLocale());
-			themeDisplay.setPortalDomain(
-				HttpComponentsUtil.getDomain(portalURL));
-			themeDisplay.setPortalURL(portalURL);
-			themeDisplay.setRequest(httpServletRequest);
-			themeDisplay.setSecure(
-				_portal.isForwardedSecure(httpServletRequest));
-			themeDisplay.setServerName(
-				_portal.getForwardedHost(httpServletRequest));
-			themeDisplay.setServerPort(
-				_portal.getForwardedPort(httpServletRequest));
-
-			httpServletRequest.setAttribute(
-				WebKeys.LOCALE, contextAcceptLanguage.getPreferredLocale());
-
-			SegmentsExperience segmentsExperience = _getSegmentsExperience(
-				httpServletRequest, layout, segmentsExperienceKey);
-
-			if (segmentsExperience != null) {
-				httpServletRequest.setAttribute(
-					SegmentsWebKeys.SEGMENTS_EXPERIENCE_IDS,
-					new long[] {segmentsExperience.getSegmentsExperienceId()});
-			}
-
-			layout.includeLayoutContent(
-				httpServletRequest, contextHttpServletResponse);
-
-			StringBundler sb = (StringBundler)httpServletRequest.getAttribute(
-				WebKeys.LAYOUT_CONTENT);
-
-			LayoutSet layoutSet = layout.getLayoutSet();
-
-			Document document = Jsoup.parse(
-				ThemeUtil.include(
-					ServletContextPool.get(StringPool.BLANK),
-					httpServletRequest, contextHttpServletResponse,
-					"portal_normal.ftl", layoutSet.getTheme(), false));
-
-			Element bodyElement = document.body();
-
-			bodyElement.html(sb.toString());
-
-			return document.html();
-		}
+		return _layoutHTMLRenderer.renderHTML(
+			contextHttpServletRequest, contextHttpServletResponse,
+			_getLayout(groupId, friendlyUrlPath),
+			contextAcceptLanguage.getPreferredLocale(), segmentsExperienceKey,
+			contextUser, false);
 	}
 
 	private SitePage _toSitePage(boolean embeddedPageDefinition, Layout layout)
@@ -1078,6 +992,9 @@ public class SitePageResourceImpl
 
 	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private LayoutHTMLRenderer _layoutHTMLRenderer;
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;

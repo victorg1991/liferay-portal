@@ -1,0 +1,19 @@
+dependencies {
+	compileOnly group: "com.liferay.jakarta.portlet", name: "com.liferay.jakarta.portlet-api", version: "4.0.0"
+	compileOnly group: "com.liferay.portal", name: "com.liferay.portal.kernel", version: "default"
+	compileOnly group: "jakarta.servlet", name: "jakarta.servlet-api", version: "6.0.0"
+	compileOnly group: "org.jsoup", name: "jsoup", version: "1.23.1"
+	compileOnly group: "org.osgi", name: "org.osgi.service.component.annotations", version: "1.4.0"
+	compileOnly group: "org.osgi", name: "osgi.core", version: "6.0.0"
+	compileOnly project(":apps:asset:asset-display-page-api")
+	compileOnly project(":apps:friendly-url:friendly-url-api")
+	compileOnly project(":apps:info:info-api")
+	compileOnly project(":apps:layout:layout-api")
+	compileOnly project(":apps:layout:layout-page-template-api")
+	compileOnly project(":apps:layout:layout-staticsite-export-api")
+	compileOnly project(":core:petra:petra-io")
+	compileOnly project(":core:petra:petra-string")
+	testImplementation group: "com.liferay.portal", name: "com.liferay.portal.impl", version: "default"
+	testImplementation group: "junit", name: "junit", version: "4.13.1"
+	testImplementation group: "org.jsoup", name: "jsoup", version: "1.23.1"
+}
