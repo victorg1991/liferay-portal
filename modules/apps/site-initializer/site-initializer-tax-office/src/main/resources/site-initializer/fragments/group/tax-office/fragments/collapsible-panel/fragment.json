@@ -1,0 +1,10 @@
+{
+	"cacheable": false,
+	"configurationPath": "index.json",
+	"cssPath": "index.css",
+	"htmlPath": "index.html",
+	"icon": "angle-down",
+	"jsPath": "index.js",
+	"name": "Collapsible Panel",
+	"type": "component"
+}

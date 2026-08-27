@@ -1,0 +1,164 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "highlighted-actions"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Gestiones destacadas",
+										"es_ES": "Gestiones destacadas"
+									}
+								}
+							}
+						},
+						{
+							"id": "actions",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Alegaciones a la propuesta de sanción</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Conformidad con la propuesta de sanción</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado del expediente sancionador</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Alegaciones a la propuesta de sanción</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Conformidad con la propuesta de sanción</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado del expediente sancionador</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
+									}
+								}
+							}
+						},
+						{
+							"id": "footerLink",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/comprobaciones-fiscales"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "false"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Todas las gestiones",
+										"es_ES": "Todas las gestiones"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "info-links"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Información",
+										"es_ES": "Información"
+									}
+								}
+							}
+						},
+						{
+							"id": "links",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Reducciones de las sanciones</a></li><li><a href=\"#\">Plazo máximo de resolución</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Reducciones de las sanciones</a></li><li><a href=\"#\">Plazo máximo de resolución</a></li></ul>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "collapsible-panel"
+					},
+					"fragmentConfig": {
+						"expanded": false
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Normativa",
+										"es_ES": "Normativa"
+									}
+								}
+							}
+						},
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<p><strong>Ley 58/2003, de 17 de diciembre</strong>General Tributaria.<cite>(BOE, 18-diciembre-2003)</cite></p><p><strong>Real Decreto 1065/2007, de 27 de julio</strong>por el que se aprueba el Reglamento General de las actuaciones y los procedimientos de gestión e inspección tributaria.<cite>(BOE, 5-septiembre-2007)</cite></p>",
+										"es_ES": "<p><strong>Ley 58/2003, de 17 de diciembre</strong>General Tributaria.<cite>(BOE, 18-diciembre-2003)</cite></p><p><strong>Real Decreto 1065/2007, de 27 de julio</strong>por el que se aprueba el Reglamento General de las actuaciones y los procedimientos de gestión e inspección tributaria.<cite>(BOE, 5-septiembre-2007)</cite></p>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "document-link"
+					},
+					"fragmentFields": [
+						{
+							"id": "link",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Ficha del procedimiento",
+										"es_ES": "Ficha del procedimiento"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

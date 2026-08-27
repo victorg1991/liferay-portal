@@ -1,0 +1,10 @@
+{
+	"cacheable": false,
+	"configurationPath": "index.json",
+	"cssPath": "index.css",
+	"htmlPath": "index.html",
+	"icon": "list-ul",
+	"jsPath": "index.js",
+	"name": "Breadcrumb",
+	"type": "component"
+}

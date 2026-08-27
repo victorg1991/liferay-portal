@@ -1,0 +1,32 @@
+.tax-breadcrumb-list {
+	display: flex;
+	flex-wrap: wrap;
+	list-style: none;
+	margin: 0;
+	padding-bottom: 0.75rem;
+	padding-top: 0.75rem;
+}
+
+.tax-breadcrumb-item {
+	color: var(--tax-ink-muted);
+	font-size: 0.9375rem;
+}
+
+.tax-breadcrumb-item + .tax-breadcrumb-item::before {
+	color: var(--tax-ink-muted);
+	content: "/";
+	padding: 0 0.5rem;
+}
+
+.tax-breadcrumb-item a {
+	color: var(--tax-blue);
+	text-decoration: none;
+}
+
+.tax-breadcrumb-item a:hover {
+	text-decoration: underline;
+}
+
+.tax-breadcrumb-item-current {
+	color: var(--tax-ink-muted);
+}
