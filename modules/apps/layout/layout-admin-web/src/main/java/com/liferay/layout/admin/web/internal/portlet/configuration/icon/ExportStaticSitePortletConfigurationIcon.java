@@ -7,7 +7,7 @@ package com.liferay.layout.admin.web.internal.portlet.configuration.icon;
 
 import com.liferay.layout.admin.constants.LayoutAdminPortletKeys;
 import com.liferay.layout.admin.web.internal.display.context.ExportStaticSiteDisplayContext;
-import com.liferay.layout.staticsite.export.StaticSiteExporter;
+import com.liferay.layout.staticsite.export.StaticSiteBuilder;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
@@ -92,7 +92,7 @@ public class ExportStaticSitePortletConfigurationIcon
 			new ExportStaticSiteDisplayContext(
 				portletNamespace + "exportStaticSite",
 				themeDisplay.getScopeGroupId(),
-				_staticSiteExporter.getExportableLayouts(
+				_staticSiteBuilder.getExportableLayouts(
 					themeDisplay.getScopeGroupId()),
 				themeDisplay.getLocale(), _portal));
 
@@ -122,7 +122,7 @@ public class ExportStaticSitePortletConfigurationIcon
 		}
 
 		return ListUtil.isNotEmpty(
-			_staticSiteExporter.getExportableLayouts(
+			_staticSiteBuilder.getExportableLayouts(
 				themeDisplay.getScopeGroupId()));
 	}
 
@@ -149,6 +149,6 @@ public class ExportStaticSitePortletConfigurationIcon
 	private ServletContext _servletContext;
 
 	@Reference
-	private StaticSiteExporter _staticSiteExporter;
+	private StaticSiteBuilder _staticSiteBuilder;
 
 }

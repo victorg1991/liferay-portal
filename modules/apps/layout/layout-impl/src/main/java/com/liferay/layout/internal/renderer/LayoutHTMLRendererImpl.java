@@ -32,6 +32,8 @@ import com.liferay.portal.kernel.service.ImageLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
+import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.servlet.DummyHttpServletResponse;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
@@ -243,9 +245,12 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			boolean wholePage)
 		throws Exception {
 
-		ThemeDisplay requestThemeDisplay =
-			(ThemeDisplay)httpServletRequest.getAttribute(
+		ThemeDisplay requestThemeDisplay = null;
+
+		if (httpServletRequest != null) {
+			requestThemeDisplay = (ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
+		}
 
 		try (AutoCloseable autoCloseable =
 				_layoutServiceContextHelper.getServiceContextAutoCloseable(
@@ -253,6 +258,22 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 			ServiceContext serviceContext =
 				ServiceContextThreadLocal.getServiceContext();
+
+			// A caller with no request of its own, such as a background task,
+			// renders against the one the service context fabricates, and
+			// reads back the user it settled on
+
+			if (httpServletRequest == null) {
+				httpServletRequest = serviceContext.getRequest();
+			}
+
+			if (user == null) {
+				user = _userLocalService.getUser(serviceContext.getUserId());
+			}
+
+			if (httpServletResponse == null) {
+				httpServletResponse = new DummyHttpServletResponse();
+			}
 
 			httpServletRequest = _portal.getOriginalServletRequest(
 				httpServletRequest);
@@ -266,7 +287,24 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 				httpServletRequest, layout, locale, requestThemeDisplay,
 				serviceContext, user);
 
-			String portalURL = _portal.getPortalURL(httpServletRequest);
+			boolean secure = _portal.isForwardedSecure(httpServletRequest);
+			String serverName = _portal.getForwardedHost(httpServletRequest);
+			int serverPort = _portal.getForwardedPort(httpServletRequest);
+
+			// A fabricated request names no host, and every URL the theme
+			// builds is qualified against the one it finds here, so the
+			// company's own virtual host answers for it instead
+
+			if (Validator.isNull(serverName)) {
+				Company company = themeDisplay.getCompany();
+
+				serverName = company.getVirtualHostname();
+
+				serverPort = _portal.getPortalServerPort(secure);
+			}
+
+			String portalURL = _portal.getPortalURL(
+				serverName, serverPort, secure);
 
 			themeDisplay.setLanguageId(LocaleUtil.toLanguageId(locale));
 			themeDisplay.setLocale(locale);
@@ -274,12 +312,9 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 				HttpComponentsUtil.getDomain(portalURL));
 			themeDisplay.setPortalURL(portalURL);
 			themeDisplay.setRequest(httpServletRequest);
-			themeDisplay.setSecure(
-				_portal.isForwardedSecure(httpServletRequest));
-			themeDisplay.setServerName(
-				_portal.getForwardedHost(httpServletRequest));
-			themeDisplay.setServerPort(
-				_portal.getForwardedPort(httpServletRequest));
+			themeDisplay.setSecure(secure);
+			themeDisplay.setServerName(serverName);
+			themeDisplay.setServerPort(serverPort);
 
 			httpServletRequest.setAttribute(WebKeys.LAYOUT, layout);
 			httpServletRequest.setAttribute(WebKeys.LOCALE, locale);
@@ -438,6 +473,9 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 	@Reference
 	private SegmentsExperienceService _segmentsExperienceService;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 	@Reference
 	private WebServerServletToken _webServerServletToken;
