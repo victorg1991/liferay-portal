@@ -138,6 +138,25 @@ test.describe('Static site export', () => {
 				);
 			}
 
+			const paragraphFragmentDefinition = getFragmentDefinition({
+				fragmentFields: [
+					{
+						id: 'element-text',
+						value: {
+							text: {
+								value_i18n: {
+									en_US:
+										'A paragraph on both pages, whose' +
+										' fragment ships its own stylesheet.',
+								},
+							},
+						},
+					},
+				],
+				id: getRandomString(),
+				key: 'BASIC_COMPONENT-paragraph',
+			});
+
 			// Home page: two headings, a real image, and a tabs fragment whose
 			// panels only become visible when its own JavaScript runs
 
@@ -222,6 +241,7 @@ test.describe('Static site export', () => {
 							type: 'FragmentDropZone',
 						})) as never,
 					}),
+					paragraphFragmentDefinition,
 				]),
 				siteId: site.id,
 				title: 'home',
@@ -231,32 +251,36 @@ test.describe('Static site export', () => {
 
 			await apiHelpers.headlessDelivery.createSitePage({
 				pageDefinition: getPageDefinition(
-					webContentURLPaths.map((webContentURLPath, index) =>
-						getFragmentDefinition({
-							fragmentFields: [
-								{
-									id: 'link',
-									value: {
-										fragmentLink: {
-											value: {
-												href: {
-													value: webContentURLPath,
+					webContentURLPaths
+						.map((webContentURLPath, index) =>
+							getFragmentDefinition({
+								fragmentFields: [
+									{
+										id: 'link',
+										value: {
+											fragmentLink: {
+												value: {
+													href: {
+														value: webContentURLPath,
+													},
+													target: 'Self',
 												},
-												target: 'Self',
 											},
-										},
-										text: {
-											value_i18n: {
-												en_US: webContentTitles[index],
+											text: {
+												value_i18n: {
+													en_US: webContentTitles[
+														index
+													],
+												},
 											},
 										},
 									},
-								},
-							] as never,
-							id: getRandomString(),
-							key: 'BASIC_COMPONENT-button',
-						})
-					)
+								] as never,
+								id: getRandomString(),
+								key: 'BASIC_COMPONENT-button',
+							})
+						)
+						.concat([paragraphFragmentDefinition])
 				),
 				siteId: site.id,
 				title: 'index',
@@ -380,6 +404,27 @@ test.describe('Static site export', () => {
 						element.complete && element.naturalWidth > 0
 				)
 			).toBe(true);
+
+			// A fragment's CSS is emitted once per request, so exporting many
+			// pages on one request wrote it onto whichever page rendered
+			// first. Both pages carry a paragraph, whose fragment ships a
+			// stylesheet, so both must carry that stylesheet.
+
+			for (const pageFileName of ['home.html', 'index.html']) {
+				await page.goto(`${staticSiteServer.baseURL}/${pageFileName}`);
+
+				const hasParagraphCSS = await page
+					.locator('style')
+					.evaluateAll((styles) =>
+						styles.some((style) =>
+							(style.textContent || '').includes(
+								'.component-paragraph'
+							)
+						)
+					);
+
+				expect(hasParagraphCSS).toBe(true);
+			}
 
 			// Every display page was rendered for the article it was bound
 			// to, which its Open Graph title reflects, and is served as its

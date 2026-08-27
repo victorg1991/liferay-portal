@@ -94,6 +94,8 @@ public class StaticSiteResourceHarvester {
 
 		urls.addAll(_harvestImportMap(document));
 
+		urls.addAll(_harvestModuleStubs(html));
+
 		urls.addAll(harvestJS(html, StringPool.BLANK));
 
 		return urls;
@@ -138,7 +140,15 @@ public class StaticSiteResourceHarvester {
 			_addURL(urls, StringPool.SLASH + matcher.group(1));
 		}
 
-		matcher = _jsRelativeModulePathPattern.matcher(_stripBlockComments(js));
+		String strippedJS = _stripBlockComments(js);
+
+		matcher = _jsRelativeModulePathPattern.matcher(strippedJS);
+
+		while (matcher.find()) {
+			_addURL(urls, _resolve(matcher.group(1), jsURL));
+		}
+
+		matcher = _jsRelativeStylesheetPathPattern.matcher(strippedJS);
 
 		while (matcher.find()) {
 			_addURL(urls, _resolve(matcher.group(1), jsURL));
@@ -313,6 +323,27 @@ public class StaticSiteResourceHarvester {
 		return urls;
 	}
 
+	/**
+	 * Collects the modules a page reaches through a stub, which builds its URL
+	 * when something calls it and so never states one. The bundle it reaches
+	 * for is an argument to the stub, and that is a literal.
+	 */
+	private Set<String> _harvestModuleStubs(String html) {
+		Set<String> urls = new LinkedHashSet<>();
+
+		Matcher matcher = _moduleStubPattern.matcher(html);
+
+		while (matcher.find()) {
+			_addURL(
+				urls,
+				StringBundler.concat(
+					_MODULE_PATH_PREFIX, matcher.group(1),
+					"/__liferay__/index.js"));
+		}
+
+		return urls;
+	}
+
 	private String _resolve(String url, String baseURL) {
 		if (Validator.isNull(url) || url.startsWith(StringPool.SLASH) ||
 			url.startsWith("data:") || url.startsWith("http")) {
@@ -396,10 +427,21 @@ public class StaticSiteResourceHarvester {
 	private static final Pattern _jsRelativeModulePathPattern = Pattern.compile(
 		"(?:from|import)\\s*\\(?\\s*[\"'`](\\.{1,2}/[-@$/.\\w()]+" +
 			"\\.(?:css|js))[\"'`]");
+
+	/**
+	 * A module reaches its own stylesheet by naming it relative to itself and
+	 * resolving it against its own URL, rather than by importing it, so there
+	 * is no import to recognize it by.
+	 */
+	private static final Pattern _jsRelativeStylesheetPathPattern =
+		Pattern.compile("[\"'](\\.{1,2}/[-@$/.\\w()]+\\.css)[\"']");
+
 	private static final Pattern _loaderBasePattern = Pattern.compile(
 		"\\bbase:\\s*([^,]+)");
 	private static final Pattern _loaderPathPattern = Pattern.compile(
 		"\\bpath:\\s*[\"']([^\"']+)[\"']");
+	private static final Pattern _moduleStubPattern = Pattern.compile(
+		"buildESMStub\\(\\s*[\"']([-\\w.]+)[\"']");
 	private static final Pattern _quotedLiteralPattern = Pattern.compile(
 		"[\"']([^\"']*)[\"']");
 

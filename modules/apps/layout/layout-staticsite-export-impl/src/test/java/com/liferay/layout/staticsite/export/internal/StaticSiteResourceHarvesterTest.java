@@ -114,6 +114,24 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestHTMLModuleStub() {
+		Assert.assertTrue(
+			_staticSiteResourceHarvester.harvestHTML(
+				_MODULE_STUB_HTML
+			).contains(
+				"/o/frontend-js-components-web/__liferay__/index.js"
+			));
+	}
+
+	@Test
+	public void testHarvestHTMLModuleStubIgnoresTheStubDefinition() {
+		Assert.assertTrue(
+			_staticSiteResourceHarvester.harvestHTML(
+				"<script>function buildESMStub(contextPath, symbol) {}</script>"
+			).isEmpty());
+	}
+
+	@Test
 	public void testHarvestHTMLSkipsExternalAndPageURLs() {
 		Set<String> urls = _staticSiteResourceHarvester.harvestHTML(
 			"<html><body><a href=\"/home\">Home</a>" +
@@ -204,6 +222,23 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestJSRelativeStylesheet() {
+		Assert.assertEquals(
+			Collections.singleton("/o/a/b/c.(HASH).css"),
+			_staticSiteResourceHarvester.harvestJS(
+				"var url = \"../../a/b/c.(HASH).css\";",
+				"/o/a/__liferay__/index.js"));
+	}
+
+	@Test
+	public void testHarvestJSRelativeStylesheetSkipsBlockComment() {
+		Assert.assertTrue(
+			_staticSiteResourceHarvester.harvestJS(
+				"/**\n * var url = \"./x.css\";\n */\n", "/o/a/index.js"
+			).isEmpty());
+	}
+
+	@Test
 	public void testHarvestJSSkipsImportInBlockComment() {
 		Assert.assertTrue(
 			_staticSiteResourceHarvester.harvestJS(
@@ -242,6 +277,10 @@ public class StaticSiteResourceHarvesterTest {
 	private static final String _IMPORT_MAP_HTML =
 		"<script type=\"importmap\">{\"imports\": {\"@lang/\": " +
 			"\"/o/lang/en/\", \"react\": \"/o/a/react.js\"}}</script>";
+
+	private static final String _MODULE_STUB_HTML =
+		"<script>openModal: buildESMStub('frontend-js-components-web', " +
+			"'openModal'),</script>";
 
 	private StaticSiteResourceHarvester _staticSiteResourceHarvester;
 
