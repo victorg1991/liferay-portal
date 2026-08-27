@@ -52,6 +52,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -123,15 +124,20 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		StaticSiteURLRewriter staticSiteURLRewriter =
 			new StaticSiteURLRewriter();
 
+		String defaultFriendlyURL = _getDefaultFriendlyURL(groupId);
+
 		for (Map.Entry<String, String> entry : pageHTMLs.entrySet()) {
 			try {
-				zipWriter.addEntry(
-					_getPageFileName(entry.getKey()),
-					staticSiteURLRewriter.rewrite(
-						entry.getValue(),
-						staticSiteExportResult.getExportedPageFileNames(),
-						staticSiteExportResult.getResourceFileNames(),
-						portalURL));
+				String pageHTML = staticSiteURLRewriter.rewrite(
+					entry.getValue(),
+					staticSiteExportResult.getExportedPageFileNames(),
+					staticSiteExportResult.getResourceFileNames(), portalURL);
+
+				zipWriter.addEntry(_getPageFileName(entry.getKey()), pageHTML);
+
+				if (Objects.equals(entry.getKey(), defaultFriendlyURL)) {
+					zipWriter.addEntry(_INDEX_FILE_NAME, pageHTML);
+				}
 			}
 			catch (Exception exception) {
 				staticSiteExportResult.addFailure(
@@ -190,8 +196,10 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		staticSiteExportResult.addExportedPage(siteURL + friendlyURL, fileName);
 
-		if (fileName.equals("home.html") || fileName.equals(_INDEX_FILE_NAME)) {
-			staticSiteExportResult.addExportedPage(siteURL, fileName);
+		if (friendlyURL.equals(_getDefaultFriendlyURL(groupId))) {
+			staticSiteExportResult.addExportedPage(siteURL, _INDEX_FILE_NAME);
+			staticSiteExportResult.addExportedPage(
+				siteURL + StringPool.SLASH, _INDEX_FILE_NAME);
 		}
 	}
 
@@ -221,6 +229,22 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		value = StringUtil.replace(value, CharPool.BACK_SLASH, "\\\\");
 
 		return StringUtil.replace(value, CharPool.QUOTE, "\\\"");
+	}
+
+	/**
+	 * Finds the display page links a page makes, by looking for the separators
+	 * the registered display page providers publish rather than for a fixed
+	 * set of them.
+	 */
+	private String _getDefaultFriendlyURL(long groupId) {
+		Layout layout = _layoutLocalService.fetchFirstLayout(
+			groupId, false, LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
+
+		if (layout == null) {
+			return null;
+		}
+
+		return layout.getFriendlyURL();
 	}
 
 	/**

@@ -309,6 +309,7 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 			httpServletRequest.removeAttribute(WebKeys.LAYOUT_CONTENT);
 			httpServletRequest.removeAttribute(LayoutWebKeys.LAYOUT_STRUCTURE);
+			httpServletRequest.removeAttribute(WebKeys.OUTPUT_DATA);
 
 			if (wholePage) {
 				httpServletRequest.setAttribute(
