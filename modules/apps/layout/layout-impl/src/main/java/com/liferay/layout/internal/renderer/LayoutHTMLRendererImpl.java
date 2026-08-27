@@ -20,12 +20,12 @@ import com.liferay.layout.util.LayoutServiceContextHelper;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutSet;
+import com.liferay.portal.kernel.model.LayoutTypePortlet;
 import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
@@ -40,7 +40,6 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.kernel.webserver.WebServerServletToken;
 import com.liferay.portal.struts.Definition;
 import com.liferay.portal.struts.TilesUtil;
 import com.liferay.segments.SegmentsEntryRetriever;
@@ -131,42 +130,6 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			locale, segmentsExperienceKey, user, wholePage);
 	}
 
-	private String _getCompanyLogo(Company company, String imagePath) {
-		String companyLogo = imagePath + "/company_logo";
-
-		long companyLogoId = company.getLogoId();
-
-		if (companyLogoId <= 0) {
-			return companyLogo;
-		}
-
-		return StringBundler.concat(
-			companyLogo, "?img_id=", companyLogoId, "&t=",
-			_webServerServletToken.getToken(companyLogoId));
-	}
-
-	private String _getLayoutSetLogo(
-		Company company, String imagePath, LayoutSet layoutSet) {
-
-		if (!company.isSiteLogo() || !layoutSet.isLogo()) {
-			return null;
-		}
-
-		long logoId = layoutSet.getLogoId();
-
-		if (logoId == 0) {
-			logoId = layoutSet.getLiveLogoId();
-		}
-
-		if (logoId <= 0) {
-			return null;
-		}
-
-		return StringBundler.concat(
-			imagePath, "/layout_set_logo?img_id=", logoId, "&t=",
-			_webServerServletToken.getToken(logoId));
-	}
-
 	private SegmentsExperience _getSegmentsExperience(
 			HttpServletRequest httpServletRequest, Layout layout,
 			String segmentsExperienceKey, User user)
@@ -178,6 +141,59 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 		return _segmentsExperienceService.fetchSegmentsExperience(
 			layout.getGroupId(), segmentsExperienceKey, layout.getPlid());
+	}
+
+	/**
+	 * Derives what this render needs from the theme display the request
+	 * already carries, so that everything a real request establishes is kept
+	 * and only what describes the page and its reader is replaced. Falls back
+	 * to the fabricated one when there is no request behind this render.
+	 */
+	private ThemeDisplay _getThemeDisplay(
+			HttpServletRequest httpServletRequest, Layout layout,
+			ThemeDisplay requestThemeDisplay, ServiceContext serviceContext,
+			User user)
+		throws Exception {
+
+		if (requestThemeDisplay == null) {
+			return serviceContext.getThemeDisplay();
+		}
+
+		ThemeDisplay themeDisplay = requestThemeDisplay.split();
+
+		themeDisplay.setLayout(layout);
+		themeDisplay.setLayoutSet(layout.getLayoutSet());
+		themeDisplay.setLayoutTypePortlet(
+			(LayoutTypePortlet)layout.getLayoutType());
+		themeDisplay.setLayouts(
+			_layoutLocalService.getLayouts(
+				layout.getGroupId(), layout.isPrivateLayout(),
+				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID));
+
+		themeDisplay.setNavItems(null);
+		themeDisplay.setPermissionChecker(
+			PermissionThreadLocal.getPermissionChecker());
+		themeDisplay.setRealUser(user);
+		themeDisplay.setScopeGroupId(layout.getGroupId());
+		themeDisplay.setShowControlMenu(false);
+		themeDisplay.setShowControlPanelIcon(false);
+		themeDisplay.setShowHomeIcon(false);
+		themeDisplay.setShowLayoutTemplatesIcon(false);
+		themeDisplay.setShowMyAccountIcon(false);
+		themeDisplay.setShowPageCustomizationIcon(false);
+		themeDisplay.setShowPageSettingsIcon(false);
+		themeDisplay.setShowPortalIcon(false);
+		themeDisplay.setShowSignInIcon(false);
+		themeDisplay.setShowSignOutIcon(false);
+		themeDisplay.setShowSiteAdministrationIcon(false);
+		themeDisplay.setShowStagingIcon(false);
+		themeDisplay.setSignedIn(!user.isGuestUser());
+		themeDisplay.setSiteGroupId(layout.getGroupId());
+		themeDisplay.setUser(user);
+
+		httpServletRequest.setAttribute(WebKeys.THEME_DISPLAY, themeDisplay);
+
+		return themeDisplay;
 	}
 
 	private SegmentsExperience _getUserSegmentsExperience(
@@ -212,6 +228,10 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			boolean wholePage)
 		throws Exception {
 
+		ThemeDisplay requestThemeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
 		try (AutoCloseable autoCloseable =
 				_layoutServiceContextHelper.getServiceContextAutoCloseable(
 					layout, user)) {
@@ -227,7 +247,9 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 			serviceContext.setRequest(httpServletRequest);
 
-			ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
+			ThemeDisplay themeDisplay = _getThemeDisplay(
+				httpServletRequest, layout, requestThemeDisplay, serviceContext,
+				user);
 
 			String portalURL = _portal.getPortalURL(httpServletRequest);
 
@@ -274,8 +296,6 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 			httpServletRequest.removeAttribute(LayoutWebKeys.LAYOUT_STRUCTURE);
 
 			if (wholePage) {
-				_setWholePageThemeDisplay(layout, themeDisplay);
-
 				httpServletRequest.setAttribute(
 					TilesUtil.DEFINITION,
 					new Definition(
@@ -319,42 +339,7 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 		}
 	}
 
-	/**
-	 * Fills in what a page needs only when it is rendered whole: the logo the
-	 * theme shows and the layouts it builds its navigation from.
-	 */
-	private void _setWholePageThemeDisplay(
-			Layout layout, ThemeDisplay themeDisplay)
-		throws Exception {
-
-		Company company = _companyLocalService.getCompany(
-			layout.getCompanyId());
-
-		String imagePath = _portal.getPathImage();
-
-		themeDisplay.setPathImage(imagePath);
-
-		String layoutSetLogo = _getLayoutSetLogo(
-			company, imagePath, layout.getLayoutSet());
-
-		if (layoutSetLogo == null) {
-			themeDisplay.setCompanyLogo(_getCompanyLogo(company, imagePath));
-		}
-		else {
-			themeDisplay.setCompanyLogo(layoutSetLogo);
-			themeDisplay.setLayoutSetLogo(layoutSetLogo);
-		}
-
-		themeDisplay.setLayouts(
-			_layoutLocalService.getLayouts(
-				layout.getGroupId(), layout.isPrivateLayout(),
-				LayoutConstants.DEFAULT_PARENT_LAYOUT_ID));
-	}
-
 	private static final String _PATH_PORTAL_LAYOUT = "/portal/layout.jsp";
-
-	@Reference
-	private CompanyLocalService _companyLocalService;
 
 	@Reference
 	private InfoItemServiceRegistry _infoItemServiceRegistry;
@@ -387,8 +372,5 @@ public class LayoutHTMLRendererImpl implements LayoutHTMLRenderer {
 
 	@Reference
 	private SegmentsExperienceService _segmentsExperienceService;
-
-	@Reference
-	private WebServerServletToken _webServerServletToken;
 
 }

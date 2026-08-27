@@ -151,6 +151,14 @@ public class StaticSiteResourceHarvesterTest {
 	}
 
 	@Test
+	public void testHarvestHTMLXlinkHref() {
+		Assert.assertEquals(
+			Collections.singleton("/o/a/icons.svg"),
+			_staticSiteResourceHarvester.harvestHTML(
+				"<svg><use xlink:href=\"/o/a/icons.svg#angle-down\" /></svg>"));
+	}
+
+	@Test
 	public void testHarvestImportMapPrefixes() {
 		Map<String, String> prefixes =
 			_staticSiteResourceHarvester.harvestImportMapPrefixes(
