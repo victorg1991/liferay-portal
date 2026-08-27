@@ -21,6 +21,10 @@ export {default as EditLayout} from './EditLayout';
 
 // @ts-ignore
 
+export {default as ExportStaticSite} from './ExportStaticSite';
+
+// @ts-ignore
+
 export {default as LayoutActionDropdownPropsTransformer} from './LayoutActionDropdownPropsTransformer';
 
 // @ts-ignore

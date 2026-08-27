@@ -33,6 +33,7 @@ page import="com.liferay.layout.admin.constants.LayoutAdminPortletKeys" %><%@
 page import="com.liferay.layout.admin.constants.LayoutScreenNavigationEntryConstants" %><%@
 page import="com.liferay.layout.admin.web.internal.constants.LayoutAdminFormNavigatorConstants" %><%@
 page import="com.liferay.layout.admin.web.internal.constants.LayoutAdminWebKeys" %><%@
+page import="com.liferay.layout.admin.web.internal.display.context.ExportStaticSiteDisplayContext" %><%@
 page import="com.liferay.layout.admin.web.internal.display.context.LayoutLookAndFeelDisplayContext" %><%@
 page import="com.liferay.layout.admin.web.internal.display.context.LayoutUtilityPageEntryDisplayContext" %><%@
 page import="com.liferay.layout.admin.web.internal.display.context.LayoutUtilityPageEntryImportDisplayContext" %><%@
