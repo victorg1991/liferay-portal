@@ -1,0 +1,39 @@
+[#attempt]
+	[#assign ancestorLayouts = layout.getAncestors() /]
+
+	[#if ancestorLayouts?has_content]
+		[#assign siblingLayouts = ancestorLayouts?first.getChildren() /]
+	[#else]
+		[#assign siblingLayouts = themeDisplay.getLayouts() /]
+	[/#if]
+
+	[#assign visibleLayouts = [] /]
+
+	[#list siblingLayouts as siblingLayout]
+		[#if !siblingLayout.isHidden() && !siblingLayout.isSystem()]
+			[#assign visibleLayouts = visibleLayouts + [siblingLayout] /]
+		[/#if]
+	[/#list]
+
+	[#if visibleLayouts?size gt 1]
+		<nav aria-label="${configuration.ariaLabel}" class="tax-side-nav">
+			<ul class="tax-side-nav-list">
+				[#list visibleLayouts as visibleLayout]
+					[#assign current = visibleLayout.getPlid() == layout.getPlid() /]
+
+					<li class="tax-side-nav-item[#if current] tax-side-nav-item-current[/#if]">
+						<a class="tax-side-nav-link"[#if current] aria-current="page"[/#if] href="${portalUtil.getLayoutFriendlyURL(visibleLayout, themeDisplay)}">
+							<span class="tax-side-nav-label">${visibleLayout.getName(locale)}</span>
+
+							<span aria-hidden="true" class="tax-side-nav-chevron"></span>
+						</a>
+					</li>
+				[/#list]
+			</ul>
+		</nav>
+	[/#if]
+[#recover]
+
+	<!-- The section navigation needs a page context to resolve sibling pages. -->
+
+[/#attempt]

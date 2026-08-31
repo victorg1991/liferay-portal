@@ -436,7 +436,7 @@ public class LayoutExportController implements ExportController {
 
 		stopWatch.start();
 
-		staticSiteExporter.export(portletDataContext);
+		File file = staticSiteExporter.export(portletDataContext);
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
@@ -444,9 +444,7 @@ public class LayoutExportController implements ExportController {
 					" ms");
 		}
 
-		ZipWriter zipWriter = portletDataContext.getZipWriter();
-
-		return zipWriter.getFile();
+		return file;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

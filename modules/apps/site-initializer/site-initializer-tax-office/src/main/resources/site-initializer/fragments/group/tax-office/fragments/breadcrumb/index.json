@@ -1,0 +1,31 @@
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "Migas de pan",
+					"label": "aria-label",
+					"localizable": true,
+					"name": "ariaLabel",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "Inicio",
+					"label": "home-label",
+					"localizable": true,
+					"name": "homeLabel",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "/inicio",
+					"label": "home-friendly-url",
+					"name": "homeFriendlyURL",
+					"type": "text"
+				}
+			]
+		}
+	]
+}

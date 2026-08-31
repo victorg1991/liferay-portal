@@ -4,6 +4,7 @@
  */
 
 type StructuredContent = {
+	friendlyUrlPath: string;
 	id: number;
 	key: string;
 };

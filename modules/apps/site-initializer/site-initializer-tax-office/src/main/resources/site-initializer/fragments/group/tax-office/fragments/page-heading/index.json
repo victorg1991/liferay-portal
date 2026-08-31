@@ -1,0 +1,16 @@
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "Título de la página",
+					"label": "fallback-title",
+					"localizable": true,
+					"name": "fallbackTitle",
+					"type": "text"
+				}
+			]
+		}
+	]
+}

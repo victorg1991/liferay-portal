@@ -1,0 +1,16 @@
+.tax-text-block {
+	margin-bottom: 1.75rem;
+	max-width: 46rem;
+}
+
+.tax-text-block p {
+	margin: 0 0 1rem;
+}
+
+.tax-text-block p:last-child {
+	margin-bottom: 0;
+}
+
+.tax-text-block a {
+	color: var(--tax-blue);
+}
