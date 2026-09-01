@@ -456,36 +456,6 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 		return sb.toString();
 	}
 
-	private String _getResourceFileName(String url) {
-		String path = url;
-		String queryString = null;
-
-		int index = url.indexOf(CharPool.QUESTION);
-
-		if (index != -1) {
-			path = url.substring(0, index);
-			queryString = url.substring(index + 1);
-		}
-
-		path = StringUtil.removeFirst(path, StringPool.SLASH);
-
-		if (Validator.isNull(queryString)) {
-			return path;
-		}
-
-		String digest = StringUtil.toHexString(queryString.hashCode());
-
-		int extensionIndex = path.lastIndexOf(CharPool.PERIOD);
-
-		if (extensionIndex == -1) {
-			return path + StringPool.PERIOD + digest;
-		}
-
-		return StringBundler.concat(
-			path.substring(0, extensionIndex), StringPool.PERIOD, digest,
-			path.substring(extensionIndex));
-	}
-
 	private List<Layout> _getSelectedLayouts(long groupId, long[] plids) {
 		List<Layout> layouts = getExportableLayouts(groupId);
 
@@ -854,7 +824,7 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 				continue;
 			}
 
-			String fileName = _getResourceFileName(url);
+			String fileName = StaticSiteResourceFileNameUtil.getFileName(url);
 
 			try {
 				staticSiteWriter.write(fileName, bytes);
