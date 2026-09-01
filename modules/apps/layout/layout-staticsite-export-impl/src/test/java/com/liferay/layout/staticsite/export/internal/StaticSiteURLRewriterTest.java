@@ -37,7 +37,7 @@ public class StaticSiteURLRewriterTest {
 			HashMapBuilder.put(
 				"/o/a/b.js?x=1&y=2", "o/a/b.abcd1234.js"
 			).build(),
-			null);
+			Collections.emptyMap(), null);
 
 		Assert.assertEquals(
 			"<script src=\"/o/a/b.abcd1234.js\"></script>", html);
@@ -52,7 +52,7 @@ public class StaticSiteURLRewriterTest {
 				"/o/my-web/css/main.(abc123).css",
 				"o/my-web/css/main.d41d8cd9.css"
 			).build(),
-			null);
+			Collections.emptyMap(), null);
 
 		Assert.assertEquals(
 			"<link href=\"/o/my-web/css/main.d41d8cd9.css\">", html);
@@ -67,7 +67,7 @@ public class StaticSiteURLRewriterTest {
 			).put(
 				"/o/a/b.css?t=1", "o/a/b.abcd1234.css"
 			).build(),
-			null);
+			Collections.emptyMap(), null);
 
 		Assert.assertEquals("<link href=\"/o/a/b.abcd1234.css\">", html);
 	}
@@ -81,7 +81,7 @@ public class StaticSiteURLRewriterTest {
 			).put(
 				"/home", "index.html"
 			).build(),
-			Collections.emptyMap(), null);
+			Collections.emptyMap(), Collections.emptyMap(), null);
 
 		Assert.assertEquals(
 			"<a href=\"/index.html\">Home</a>" +
@@ -96,19 +96,27 @@ public class StaticSiteURLRewriterTest {
 			HashMapBuilder.put(
 				"/news", "news.html"
 			).build(),
-			Collections.emptyMap(), null);
+			Collections.emptyMap(), Collections.emptyMap(), null);
 
 		Assert.assertEquals("<a href=\"/newsletter\">Newsletter</a>", html);
 	}
 
 	@Test
-	public void testRewriteStripsAlternateLinks() {
+	public void testRewriteRemovesAlternateLinkForUnexportedLocale() {
 		String html = _staticSiteURLRewriter.rewrite(
-			"<link href=\"/es/web/site/home\" hreflang=\"es-ES\" " +
-				"rel=\"alternate\"><title>Kept</title>",
-			Collections.emptyMap(), Collections.emptyMap(), null);
+			"<link href=\"/es/web/site/ayuda\" hreflang=\"es-ES\" " +
+				"rel=\"alternate\"><link href=\"/zh/web/site/ayuda\" " +
+					"hreflang=\"zh-CN\" rel=\"alternate\">",
+			Collections.emptyMap(), Collections.emptyMap(),
+			HashMapBuilder.put(
+				"/es/web/site/ayuda", "es/ayuda.html"
+			).build(),
+			null);
 
-		Assert.assertEquals("<title>Kept</title>", html);
+		Assert.assertEquals(
+			"<link href=\"/es/ayuda.html\" hreflang=\"es-ES\" " +
+				"rel=\"alternate\">",
+			html);
 	}
 
 	@Test
@@ -116,7 +124,7 @@ public class StaticSiteURLRewriterTest {
 		String html = _staticSiteURLRewriter.rewrite(
 			"currentURL: 'http\\x3a\\x2f\\x2flocalhost\\x3a8080/home'",
 			Collections.emptyMap(), Collections.emptyMap(),
-			"http://localhost:8080");
+			Collections.emptyMap(), "http://localhost:8080");
 
 		Assert.assertEquals("currentURL: '/home'", html);
 	}
@@ -126,9 +134,36 @@ public class StaticSiteURLRewriterTest {
 		String html = _staticSiteURLRewriter.rewrite(
 			"<img src=\"http://localhost:8080/documents/1/a.png\">",
 			Collections.emptyMap(), Collections.emptyMap(),
-			"http://localhost:8080");
+			Collections.emptyMap(), "http://localhost:8080");
 
 		Assert.assertEquals("<img src=\"/documents/1/a.png\">", html);
+	}
+
+	@Test
+	public void testRewriteTranslatedPageLinkBeforePlainOne() {
+
+		// An alternate link carries the language ahead of the same path the
+		// plain form uses, so the longer one has to be replaced first or the
+		// plain form consumes the tail and leaves the prefix behind
+
+		String html = _staticSiteURLRewriter.rewrite(
+			"<a href=\"/web/site/ayuda\">Ayuda</a>" +
+				"<link href=\"/es/web/site/ayuda\" hreflang=\"es-ES\" " +
+					"rel=\"alternate\">",
+			HashMapBuilder.put(
+				"/web/site/ayuda", "ayuda.html"
+			).build(),
+			Collections.emptyMap(),
+			HashMapBuilder.put(
+				"/es/web/site/ayuda", "es/ayuda.html"
+			).build(),
+			null);
+
+		Assert.assertEquals(
+			"<a href=\"/ayuda.html\">Ayuda</a>" +
+				"<link href=\"/es/ayuda.html\" hreflang=\"es-ES\" " +
+					"rel=\"alternate\">",
+			html);
 	}
 
 	private StaticSiteURLRewriter _staticSiteURLRewriter;

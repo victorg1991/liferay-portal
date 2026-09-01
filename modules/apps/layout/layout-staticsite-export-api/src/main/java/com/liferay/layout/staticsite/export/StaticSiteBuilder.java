@@ -9,7 +9,6 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.Layout;
 
 import java.util.List;
-import java.util.Locale;
 
 import org.osgi.annotation.versioning.ProviderType;
 
@@ -24,15 +23,21 @@ import org.osgi.annotation.versioning.ProviderType;
 public interface StaticSiteBuilder {
 
 	/**
-	 * Builds the given pages of the given site, handing every file to the given
-	 * writer, and returns what was written and what could not be.
+	 * Builds the given pages of the given site, in every locale the site
+	 * publishes, handing every file to the given writer, and returns what was
+	 * written and what could not be.
+	 *
+	 * <p>
+	 * The site default locale is written at the root of the archive and every
+	 * other locale under its language code, which is how the portal addresses
+	 * them too.
+	 * </p>
 	 *
 	 * @param plids the pages to build, or an empty array for every page the
 	 *        build can write
 	 */
 	public StaticSiteExportResult build(
-			long groupId, Locale locale, long[] plids,
-			StaticSiteWriter staticSiteWriter)
+			long groupId, long[] plids, StaticSiteWriter staticSiteWriter)
 		throws PortalException;
 
 	/**

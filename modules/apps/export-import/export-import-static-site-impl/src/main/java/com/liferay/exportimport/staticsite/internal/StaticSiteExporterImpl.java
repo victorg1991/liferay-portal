@@ -12,7 +12,6 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
-import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.zip.ZipWriter;
 import com.liferay.portal.kernel.zip.ZipWriterFactory;
 
@@ -42,7 +41,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 		_staticSiteBuilder.build(
 			group.getGroupId(),
-			_portal.getSiteDefaultLocale(group.getGroupId()),
 			_getPlids(
 				group.getGroupId(), portletDataContext.isPrivateLayout(),
 				portletDataContext.getLayoutIds()),
@@ -83,9 +81,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;
-
-	@Reference
-	private Portal _portal;
 
 	@Reference
 	private StaticSiteBuilder _staticSiteBuilder;

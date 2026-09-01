@@ -8,17 +8,31 @@ package com.liferay.layout.staticsite.export;
 import java.io.File;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Víctor Galán
  */
 public class StaticSiteExportResult {
 
-	public void addExportedPage(String friendlyURL, String fileName) {
-		_exportedPageFileNames.put(friendlyURL, fileName);
+	/**
+	 * Records that the page addressed by the given URL, in the given locale, is
+	 * written to the given file.
+	 */
+	public void addExportedPage(
+		Locale locale, String friendlyURL, String fileName) {
+
+		Map<String, String> exportedPageFileNames =
+			_exportedPageFileNamesByLocale.computeIfAbsent(
+				locale, exportedLocale -> new LinkedHashMap<>());
+
+		exportedPageFileNames.put(friendlyURL, fileName);
 	}
 
 	public void addFailure(String url, String message) {
@@ -33,8 +47,34 @@ public class StaticSiteExportResult {
 		_skippedPages.add(new Failure(friendlyURL, message));
 	}
 
-	public Map<String, String> getExportedPageFileNames() {
-		return _exportedPageFileNames;
+	/**
+	 * Records a page URL that names its own locale, such as the ones the theme
+	 * emits as alternates. These are answered for from every locale, because a
+	 * page in one locale links to its siblings in the others.
+	 */
+	public void addTranslatedPage(String friendlyURL, String fileName) {
+		_translatedPageFileNames.put(friendlyURL, fileName);
+	}
+
+	public Set<Locale> getExportedLocales() {
+		return _exportedPageFileNamesByLocale.keySet();
+	}
+
+	public int getExportedPageCount() {
+		Set<String> fileNames = new HashSet<>();
+
+		for (Map<String, String> exportedPageFileNames :
+				_exportedPageFileNamesByLocale.values()) {
+
+			fileNames.addAll(exportedPageFileNames.values());
+		}
+
+		return fileNames.size();
+	}
+
+	public Map<String, String> getExportedPageFileNames(Locale locale) {
+		return _exportedPageFileNamesByLocale.getOrDefault(
+			locale, Collections.emptyMap());
 	}
 
 	public List<Failure> getFailures() {
@@ -51,6 +91,10 @@ public class StaticSiteExportResult {
 
 	public List<Failure> getSkippedPages() {
 		return _skippedPages;
+	}
+
+	public Map<String, String> getTranslatedPageFileNames() {
+		return _translatedPageFileNames;
 	}
 
 	public boolean hasResource(String url) {
@@ -81,12 +125,14 @@ public class StaticSiteExportResult {
 
 	}
 
-	private final Map<String, String> _exportedPageFileNames =
-		new LinkedHashMap<>();
+	private final Map<Locale, Map<String, String>>
+		_exportedPageFileNamesByLocale = new LinkedHashMap<>();
 	private final List<Failure> _failures = new ArrayList<>();
 	private File _file;
 	private final Map<String, String> _resourceFileNames =
 		new LinkedHashMap<>();
 	private final List<Failure> _skippedPages = new ArrayList<>();
+	private final Map<String, String> _translatedPageFileNames =
+		new LinkedHashMap<>();
 
 }

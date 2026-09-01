@@ -64,9 +64,7 @@ public class ExportStaticSiteStrutsAction implements StrutsAction {
 		try {
 			ZipWriter zipWriter = _zipWriterFactory.getZipWriter();
 
-			_staticSiteBuilder.build(
-				groupId, _portal.getLocale(httpServletRequest), plids,
-				zipWriter::addEntry);
+			_staticSiteBuilder.build(groupId, plids, zipWriter::addEntry);
 
 			File file = zipWriter.getFile();
 

@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.util.Validator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -21,15 +22,26 @@ import java.util.regex.Pattern;
  */
 public class StaticSiteURLRewriter {
 
+	/**
+	 * Returns the given page with every reference to the portal replaced by one
+	 * to the copy of what it named.
+	 *
+	 * <p>
+	 * Substitution runs over the whole page rather than over parsed attributes,
+	 * because the theme states as many of its URLs in script and in style as it
+	 * does in markup.
+	 * </p>
+	 *
+	 * @param pageFileNames the pages of this page's own locale, which is what
+	 *        its navigation and its content link to
+	 * @param translatedPageFileNames the pages of every locale, addressed the
+	 *        way the theme addresses another locale, which is what the
+	 *        alternate links point at
+	 */
 	public String rewrite(
 		String html, Map<String, String> pageFileNames,
-		Map<String, String> resourceFileNames, String portalURL) {
-
-		html = _alternateLinkPattern.matcher(
-			html
-		).replaceAll(
-			StringPool.BLANK
-		);
+		Map<String, String> resourceFileNames,
+		Map<String, String> translatedPageFileNames, String portalURL) {
 
 		if (Validator.isNotNull(portalURL)) {
 			html = StringUtil.removeSubstring(html, portalURL);
@@ -51,6 +63,65 @@ public class StaticSiteURLRewriter {
 				html, StringUtil.replace(url, CharPool.AMPERSAND, "&amp;"),
 				fileName);
 		}
+
+		// A locale prefixed URL is longer than the same page without one, so
+		// the alternates are replaced first and the plain forms cannot consume
+		// their prefixes
+
+		html = _rewritePageURLs(html, translatedPageFileNames);
+
+		return _removeDanglingAlternateLinks(
+			_rewritePageURLs(html, pageFileNames));
+	}
+
+	private String _escapeJS(String url) {
+		StringBundler sb = new StringBundler();
+
+		for (char c : url.toCharArray()) {
+			if ((c == CharPool.COLON) || (c == CharPool.SLASH)) {
+				sb.append("\\x");
+				sb.append(Integer.toHexString(c));
+			}
+			else {
+				sb.append(c);
+			}
+		}
+
+		return sb.toString();
+	}
+
+	/**
+	 * Returns the given page without the alternate links whose locale the build
+	 * did not write. A site serves every locale the instance has, so a page
+	 * names alternates the archive has no page for, and a reference to a
+	 * translation that does not exist is worse than no reference at all.
+	 */
+	private String _removeDanglingAlternateLinks(String html) {
+		Matcher matcher = _alternateLinkPattern.matcher(html);
+
+		StringBuffer sb = new StringBuffer();
+
+		while (matcher.find()) {
+			String alternateLink = matcher.group();
+
+			matcher.appendReplacement(
+				sb,
+				alternateLink.contains(".html\"") ?
+					Matcher.quoteReplacement(alternateLink) : StringPool.BLANK);
+		}
+
+		matcher.appendTail(sb);
+
+		return sb.toString();
+	}
+
+	/**
+	 * Replaces each page URL with its file, but only where the URL is bounded
+	 * the way a reference to a page is bounded. Without that, a page whose
+	 * friendly URL is a prefix of another's would be replaced inside it.
+	 */
+	private String _rewritePageURLs(
+		String html, Map<String, String> pageFileNames) {
 
 		for (Map.Entry<String, String> entry :
 				_sortByKeyLengthDescending(pageFileNames)) {
@@ -74,22 +145,6 @@ public class StaticSiteURLRewriter {
 		}
 
 		return html;
-	}
-
-	private String _escapeJS(String url) {
-		StringBundler sb = new StringBundler();
-
-		for (char c : url.toCharArray()) {
-			if ((c == CharPool.COLON) || (c == CharPool.SLASH)) {
-				sb.append("\\x");
-				sb.append(Integer.toHexString(c));
-			}
-			else {
-				sb.append(c);
-			}
-		}
-
-		return sb.toString();
 	}
 
 	private List<Map.Entry<String, String>> _sortByKeyLengthDescending(

@@ -38,6 +38,7 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.servlet.DummyHttpServletResponse;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -52,6 +53,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -76,8 +78,7 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 
 	@Override
 	public StaticSiteExportResult build(
-			long groupId, Locale locale, long[] plids,
-			StaticSiteWriter staticSiteWriter)
+			long groupId, long[] plids, StaticSiteWriter staticSiteWriter)
 		throws PortalException {
 
 		Group group = _groupLocalService.getGroup(groupId);
@@ -105,47 +106,43 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 
 			User user = _userLocalService.getGuestUser(group.getCompanyId());
 
-			Map<String, String> pageHTMLs = new LinkedHashMap<>();
+			Locale siteDefaultLocale = _portal.getSiteDefaultLocale(groupId);
 
-			for (Layout layout : _getSelectedLayouts(groupId, plids)) {
-				String friendlyURL = layout.getFriendlyURL(locale);
+			Map<Locale, Map<String, String>> pageHTMLsByLocale =
+				new LinkedHashMap<>();
 
-				try {
-					pageHTMLs.put(
-						friendlyURL,
-						_removeDynamicScripts(
-							StringUtil.removeSubstring(
-								_layoutHTMLRenderer.renderHTML(
-									httpServletRequest, httpServletResponse,
-									layout, locale, null, user, true),
-								portalURL)));
-
-					_addExportedPage(
-						friendlyURL, groupId, staticSiteExportResult);
-				}
-				catch (Exception exception) {
-					if (_log.isWarnEnabled()) {
-						_log.warn(
-							"Unable to render " + friendlyURL + " as guest",
-							exception);
-					}
-
-					staticSiteExportResult.addSkippedPage(
-						friendlyURL, exception.getMessage());
-				}
+			for (Locale locale : _getExportedLocales(siteDefaultLocale)) {
+				pageHTMLsByLocale.put(
+					locale,
+					_renderPages(
+						groupId, httpServletRequest, httpServletResponse,
+						locale, plids, portalURL, siteDefaultLocale,
+						staticSiteExportResult, user));
 			}
 
-			_renderDisplayPages(
-				groupId, httpServletRequest, httpServletResponse, locale,
-				pageHTMLs, portalURL, staticSiteExportResult, user);
+			// Every locale draws on one set of resources, so they are gathered
+			// across all of them at once and written once
+
+			List<String> pageHTMLs = new ArrayList<>();
+
+			for (Map<String, String> localePageHTMLs :
+					pageHTMLsByLocale.values()) {
+
+				pageHTMLs.addAll(localePageHTMLs.values());
+			}
 
 			_writeResources(
-				httpServletRequest, httpServletResponse, pageHTMLs.values(),
-				portalURL, staticSiteExportResult, staticSiteWriter);
+				httpServletRequest, httpServletResponse, pageHTMLs, portalURL,
+				staticSiteExportResult, staticSiteWriter);
 
-			_writePages(
-				groupId, pageHTMLs, portalURL, staticSiteExportResult,
-				staticSiteWriter);
+			for (Map.Entry<Locale, Map<String, String>> entry :
+					pageHTMLsByLocale.entrySet()) {
+
+				_writePages(
+					entry.getKey(), groupId, entry.getValue(), portalURL,
+					siteDefaultLocale, staticSiteExportResult,
+					staticSiteWriter);
+			}
 
 			staticSiteWriter.write(
 				"export-report.json",
@@ -181,12 +178,14 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 	}
 
 	private void _addExportedPage(
-		String friendlyURL, long groupId,
+		Locale locale, String friendlyURL, long groupId,
+		Locale siteDefaultLocale,
 		StaticSiteExportResult staticSiteExportResult) {
 
-		String fileName = _getPageFileName(friendlyURL);
+		String fileName = _getPageFileName(
+			locale, friendlyURL, siteDefaultLocale);
 
-		staticSiteExportResult.addExportedPage(friendlyURL, fileName);
+		staticSiteExportResult.addExportedPage(locale, friendlyURL, fileName);
 
 		Group group = _groupLocalService.fetchGroup(groupId);
 
@@ -207,13 +206,32 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 					group.getFriendlyURL())) {
 
 			staticSiteExportResult.addExportedPage(
-				siteURL + friendlyURL, fileName);
+				locale, siteURL + friendlyURL, fileName);
+
+			// The theme names a page in another locale by prefixing its
+			// language, which is how the alternate links reach their siblings.
+			// Those are answered for from every locale rather than only from
+			// this one
+
+			staticSiteExportResult.addTranslatedPage(
+				StringBundler.concat(
+					StringPool.SLASH, LocaleUtil.toLanguageId(locale), siteURL,
+					friendlyURL),
+				fileName);
+			staticSiteExportResult.addTranslatedPage(
+				StringBundler.concat(
+					StringPool.SLASH, locale.getLanguage(), siteURL,
+					friendlyURL),
+				fileName);
 
 			if (defaultPage) {
 				staticSiteExportResult.addExportedPage(
-					siteURL, _INDEX_FILE_NAME);
+					locale, siteURL, fileName);
 				staticSiteExportResult.addExportedPage(
-					siteURL + StringPool.SLASH, _INDEX_FILE_NAME);
+					locale, siteURL + StringPool.SLASH, fileName);
+				staticSiteExportResult.addTranslatedPage(
+					StringPool.SLASH + locale.getLanguage() + siteURL,
+					fileName);
 			}
 		}
 	}
@@ -324,6 +342,21 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 			layoutPageTemplateEntry.getPlid());
 	}
 
+	/**
+	 * Returns the file a page is written to. The site default locale sits at
+	 * the root of the archive and every other locale under its language code,
+	 * matching how the portal addresses them.
+	 */
+	private Set<Locale> _getExportedLocales(Locale siteDefaultLocale) {
+		Set<Locale> locales = new LinkedHashSet<>();
+
+		locales.add(siteDefaultLocale);
+
+		Collections.addAll(locales, _PROVISIONAL_LOCALES);
+
+		return locales;
+	}
+
 	private LayoutDisplayPageProvider<?> _getLayoutDisplayPageProvider(
 		String urlSeparator) {
 
@@ -341,14 +374,23 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 		return null;
 	}
 
-	private String _getPageFileName(String friendlyURL) {
-		if (Validator.isNull(friendlyURL) ||
-			friendlyURL.equals(StringPool.SLASH)) {
+	private String _getPageFileName(
+		Locale locale, String friendlyURL, Locale siteDefaultLocale) {
 
-			return _INDEX_FILE_NAME;
+		String fileName = _INDEX_FILE_NAME;
+
+		if (Validator.isNotNull(friendlyURL) &&
+			!friendlyURL.equals(StringPool.SLASH)) {
+
+			fileName =
+				StringUtil.removeFirst(friendlyURL, StringPool.SLASH) + ".html";
 		}
 
-		return StringUtil.removeFirst(friendlyURL, StringPool.SLASH) + ".html";
+		if (Objects.equals(locale, siteDefaultLocale)) {
+			return fileName;
+		}
+
+		return locale.getLanguage() + StringPool.SLASH + fileName;
 	}
 
 	private String _getPortalURL(Group group) throws PortalException {
@@ -364,12 +406,23 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 
 		StringBundler sb = new StringBundler();
 
-		Set<String> pageFileNames = new HashSet<>(
-			staticSiteExportResult.getExportedPageFileNames(
-			).values());
+		sb.append("{\"deployAtWebServerRoot\": true, \"locales\": [");
 
-		sb.append("{\"deployAtWebServerRoot\": true, \"pages\": ");
-		sb.append(pageFileNames.size());
+		String localeDelimiter = StringPool.BLANK;
+
+		for (Locale exportedLocale :
+				staticSiteExportResult.getExportedLocales()) {
+
+			sb.append(localeDelimiter);
+			sb.append("\"");
+			sb.append(LocaleUtil.toLanguageId(exportedLocale));
+			sb.append("\"");
+
+			localeDelimiter = ", ";
+		}
+
+		sb.append("], \"pages\": ");
+		sb.append(staticSiteExportResult.getExportedPageCount());
 		sb.append(", \"resources\": ");
 		sb.append(
 			staticSiteExportResult.getResourceFileNames(
@@ -468,6 +521,32 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 		return urlSeparators;
 	}
 
+	/**
+	 * Expands the specifiers written against each import map prefix, against
+	 * every location that prefix was given. A bilingual site states the same
+	 * specifier twice, once per locale, and both locations hold files the
+	 * archive needs.
+	 */
+	private Set<String> _harvestModuleSpecifiers(
+		StaticSiteResourceHarvester staticSiteResourceHarvester, String content,
+		Map<String, Set<String>> importMapPrefixes) {
+
+		Set<String> urls = new LinkedHashSet<>();
+
+		for (Map.Entry<String, Set<String>> entry :
+				importMapPrefixes.entrySet()) {
+
+			for (String prefixURL : entry.getValue()) {
+				urls.addAll(
+					staticSiteResourceHarvester.harvestModuleSpecifiers(
+						content,
+						Collections.singletonMap(entry.getKey(), prefixURL)));
+			}
+		}
+
+		return urls;
+	}
+
 	private String _removeDynamicScripts(String html) {
 		Matcher matcher = _scriptPattern.matcher(html);
 
@@ -561,16 +640,16 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 	}
 
 	/**
-	 * Renders a display page for every item the exported pages link to, and
-	 * for every item those pages link to in turn, so that what leaves the
-	 * portal is what the site actually reaches rather than everything it
-	 * holds.
+	 * Renders a display page for every item the exported pages link to, and for
+	 * every item those pages link to in turn, so that what leaves the portal is
+	 * what the site actually reaches rather than everything it holds.
 	 */
 	private void _renderDisplayPages(
 		long groupId, HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, Locale locale,
 		Map<String, String> pageHTMLs, String portalURL,
-		StaticSiteExportResult staticSiteExportResult, User user) {
+		Locale siteDefaultLocale, StaticSiteExportResult staticSiteExportResult,
+		User user) {
 
 		Deque<String> friendlyURLs = new ArrayDeque<>(pageHTMLs.values());
 
@@ -597,15 +676,66 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 
 				pageHTMLs.put(friendlyURL, pageHTML);
 
-				_addExportedPage(friendlyURL, groupId, staticSiteExportResult);
+				_addExportedPage(
+					locale, friendlyURL, groupId, siteDefaultLocale,
+					staticSiteExportResult);
 
 				friendlyURLs.add(pageHTML);
 			}
 		}
 	}
 
+	/**
+	 * Renders the selected pages in one locale, follows the display pages they
+	 * reach, and returns the HTML of each keyed by its friendly URL.
+	 */
+	private Map<String, String> _renderPages(
+		long groupId, HttpServletRequest httpServletRequest,
+		HttpServletResponse httpServletResponse, Locale locale, long[] plids,
+		String portalURL, Locale siteDefaultLocale,
+		StaticSiteExportResult staticSiteExportResult, User user) {
+
+		Map<String, String> pageHTMLs = new LinkedHashMap<>();
+
+		for (Layout layout : _getSelectedLayouts(groupId, plids)) {
+			String friendlyURL = layout.getFriendlyURL(locale);
+
+			try {
+				pageHTMLs.put(
+					friendlyURL,
+					_removeDynamicScripts(
+						StringUtil.removeSubstring(
+							_layoutHTMLRenderer.renderHTML(
+								httpServletRequest, httpServletResponse, layout,
+								locale, null, user, true),
+							portalURL)));
+
+				_addExportedPage(
+					locale, friendlyURL, groupId, siteDefaultLocale,
+					staticSiteExportResult);
+			}
+			catch (Exception exception) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Unable to render " + friendlyURL + " as guest",
+						exception);
+				}
+
+				staticSiteExportResult.addSkippedPage(
+					friendlyURL, exception.getMessage());
+			}
+		}
+
+		_renderDisplayPages(
+			groupId, httpServletRequest, httpServletResponse, locale, pageHTMLs,
+			portalURL, siteDefaultLocale, staticSiteExportResult, user);
+
+		return pageHTMLs;
+	}
+
 	private void _writePages(
-		long groupId, Map<String, String> pageHTMLs, String portalURL,
+		Locale locale, long groupId, Map<String, String> pageHTMLs,
+		String portalURL, Locale siteDefaultLocale,
 		StaticSiteExportResult staticSiteExportResult,
 		StaticSiteWriter staticSiteWriter) {
 
@@ -620,13 +750,21 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 			try {
 				String pageHTML = staticSiteURLRewriter.rewrite(
 					entry.getValue(),
-					staticSiteExportResult.getExportedPageFileNames(),
-					staticSiteExportResult.getResourceFileNames(), portalURL);
+					staticSiteExportResult.getExportedPageFileNames(locale),
+					staticSiteExportResult.getResourceFileNames(),
+					staticSiteExportResult.getTranslatedPageFileNames(),
+					portalURL);
 
 				staticSiteWriter.write(
-					_getPageFileName(friendlyURL), _getBytes(pageHTML));
+					_getPageFileName(locale, friendlyURL, siteDefaultLocale),
+					_getBytes(pageHTML));
 
-				if (Objects.equals(friendlyURL, defaultFriendlyURL)) {
+				// The archive answers for its root with the default locale's
+				// own default page
+
+				if (Objects.equals(locale, siteDefaultLocale) &&
+					Objects.equals(friendlyURL, defaultFriendlyURL)) {
+
 					staticSiteWriter.write(
 						_INDEX_FILE_NAME, _getBytes(pageHTML));
 				}
@@ -664,21 +802,32 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 		Deque<String> urls = new ArrayDeque<>();
 		Set<String> visitedURLs = new HashSet<>();
 
-		Map<String, String> importMapPrefixes = new LinkedHashMap<>();
+		// One specifier resolves against a different location in each locale,
+		// so every location it is given is kept rather than the last one
+
+		Map<String, Set<String>> importMapPrefixes = new LinkedHashMap<>();
 
 		for (String pageHTML : pageHTMLs) {
 			urls.addAll(staticSiteResourceHarvester.harvestHTML(pageHTML));
 			urls.addAll(
 				staticSiteResourceHarvester.harvestLoaderModules(pageHTML));
 
-			importMapPrefixes.putAll(
-				staticSiteResourceHarvester.harvestImportMapPrefixes(pageHTML));
+			for (Map.Entry<String, String> entry :
+					staticSiteResourceHarvester.harvestImportMapPrefixes(
+						pageHTML
+					).entrySet()) {
+
+				Set<String> prefixURLs = importMapPrefixes.computeIfAbsent(
+					entry.getKey(), specifier -> new LinkedHashSet<>());
+
+				prefixURLs.add(entry.getValue());
+			}
 		}
 
 		for (String pageHTML : pageHTMLs) {
 			urls.addAll(
-				staticSiteResourceHarvester.harvestModuleSpecifiers(
-					pageHTML, importMapPrefixes));
+				_harvestModuleSpecifiers(
+					staticSiteResourceHarvester, pageHTML, importMapPrefixes));
 		}
 
 		while (!urls.isEmpty()) {
@@ -730,8 +879,8 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 				urls.addAll(
 					staticSiteResourceHarvester.harvestLoaderModules(js));
 				urls.addAll(
-					staticSiteResourceHarvester.harvestModuleSpecifiers(
-						js, importMapPrefixes));
+					_harvestModuleSpecifiers(
+						staticSiteResourceHarvester, js, importMapPrefixes));
 
 				urls.addAll(
 					staticSiteBundleResourceResolver.resolveSiblingModuleURLs(
@@ -746,6 +895,10 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 	};
 
 	private static final String _INDEX_FILE_NAME = "index.html";
+
+	private static final Locale[] _PROVISIONAL_LOCALES = {
+		LocaleUtil.US, LocaleUtil.SPAIN
+	};
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		StaticSiteBuilderImpl.class);
