@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Contestar al requerimiento o a la propuesta de liquidación</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Aportar documentación complementaria</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado de tramitación del expediente</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Reply to the request or proposed assessment</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Submit supporting documents</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Check the status of the case</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Contestar al requerimiento o a la propuesta de liquidación</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Aportar documentación complementaria</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado de tramitación del expediente</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Qué es un procedimiento de comprobación limitada</a></li><li><a href=\"#\">Plazos y efectos de la contestación</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">What a limited review procedure is</a></li><li><a href=\"#\">Deadlines and effects of the reply</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Qué es un procedimiento de comprobación limitada</a></li><li><a href=\"#\">Plazos y efectos de la contestación</a></li></ul>"
 									}
 								}
@@ -111,7 +111,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Normativa",
+										"en_US": "Legislation",
 										"es_ES": "Normativa"
 									}
 								}
@@ -122,7 +122,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<p><strong>Ley 58/2003, de 17 de diciembre</strong>General Tributaria.<cite>(BOE, 18-diciembre-2003)</cite></p><p><strong>Real Decreto 1065/2007, de 27 de julio</strong>por el que se aprueba el Reglamento General de las actuaciones y los procedimientos de gestión e inspección tributaria.<cite>(BOE, 5-septiembre-2007)</cite></p>",
+										"en_US": "<p><strong>Law 58/2003 of 17 December</strong>General Taxation Act.<cite>(Official Gazette, 18 December 2003)</cite></p><p><strong>Royal Decree 1065/2007 of 27 July</strong>approving the General Regulation on tax management and inspection procedures.<cite>(Official Gazette, 5 September 2007)</cite></p>",
 										"es_ES": "<p><strong>Ley 58/2003, de 17 de diciembre</strong>General Tributaria.<cite>(BOE, 18-diciembre-2003)</cite></p><p><strong>Real Decreto 1065/2007, de 27 de julio</strong>por el que se aprueba el Reglamento General de las actuaciones y los procedimientos de gestión e inspección tributaria.<cite>(BOE, 5-septiembre-2007)</cite></p>"
 									}
 								}
@@ -143,7 +143,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Ficha del procedimiento",
+										"en_US": "Procedure factsheet",
 										"es_ES": "Ficha del procedimiento"
 									}
 								}

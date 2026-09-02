@@ -1,0 +1,7 @@
+<svg aria-label="Institutional emblem" height="38" role="img" viewBox="0 0 72 38" width="72" xmlns="http://www.w3.org/2000/svg">
+	<rect fill="#fabd00" height="38" width="72" />
+	<rect fill="#ad1519" height="9.5" width="72" />
+	<rect fill="#ad1519" height="9.5" width="72" y="28.5" />
+	<circle cx="36" cy="19" fill="none" r="6" stroke="#ad1519" stroke-width="1.5" />
+	<path d="M33 19 h6 M36 16 v6" stroke="#ad1519" stroke-width="1.5" />
+</svg>

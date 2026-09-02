@@ -1,0 +1,142 @@
+{
+	"enableCategorization": false,
+	"enableComments": false,
+	"enableFriendlyURLCustomization": true,
+	"enableIndexSearch": true,
+	"enableLocalization": true,
+	"externalReferenceCode": "TAX-OFFICE-TAX-PROCEDURE",
+	"friendlyURLSeparator": "procedure",
+	"label": {
+		"en_US": "Tax Procedure",
+		"es_ES": "Trámite tributario"
+	},
+	"name": "TaxProcedure",
+	"objectFields": [
+		{
+			"DBType": "String",
+			"businessType": "Text",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Name",
+				"es_ES": "Denominación"
+			},
+			"localized": true,
+			"name": "procedureName",
+			"required": true
+		},
+		{
+			"DBType": "String",
+			"businessType": "Text",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Procedure code",
+				"es_ES": "Código del procedimiento"
+			},
+			"localized": false,
+			"name": "procedureCode",
+			"required": false
+		},
+		{
+			"DBType": "Clob",
+			"businessType": "RichText",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Summary",
+				"es_ES": "Resumen"
+			},
+			"localized": true,
+			"name": "summary",
+			"required": false
+		},
+		{
+			"DBType": "Clob",
+			"businessType": "RichText",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Who can file it",
+				"es_ES": "Quién puede presentarlo"
+			},
+			"localized": true,
+			"name": "applicantProfile",
+			"required": false
+		},
+		{
+			"DBType": "String",
+			"businessType": "Text",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Filing period",
+				"es_ES": "Plazo de presentación"
+			},
+			"localized": true,
+			"name": "filingPeriod",
+			"required": false
+		},
+		{
+			"DBType": "String",
+			"businessType": "Text",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Time limit for resolution",
+				"es_ES": "Plazo de resolución"
+			},
+			"localized": true,
+			"name": "resolutionPeriod",
+			"required": false
+		},
+		{
+			"DBType": "String",
+			"businessType": "Picklist",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Area",
+				"es_ES": "Área"
+			},
+			"listTypeDefinitionExternalReferenceCode": "TAX-PROCEDURE-AREA",
+			"localized": false,
+			"name": "area",
+			"required": false
+		},
+		{
+			"DBType": "Boolean",
+			"businessType": "Boolean",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Electronic filing only",
+				"es_ES": "Solo tramitación electrónica"
+			},
+			"localized": false,
+			"name": "electronicOnly",
+			"required": false
+		},
+		{
+			"DBType": "Date",
+			"businessType": "Date",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Last updated",
+				"es_ES": "Última actualización"
+			},
+			"localized": false,
+			"name": "publicationDate",
+			"required": false
+		}
+	],
+	"panelCategoryKey": "site_administration.content",
+	"pluralLabel": {
+		"en_US": "Tax Procedures",
+		"es_ES": "Trámites tributarios"
+	},
+	"portlet": true,
+	"scope": "site",
+	"titleObjectFieldName": "procedureName"
+}

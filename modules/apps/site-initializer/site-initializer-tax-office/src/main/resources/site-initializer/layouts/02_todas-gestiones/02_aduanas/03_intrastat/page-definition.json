@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Presentación de la declaración Intrastat</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Rectificación de declaraciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">File the Intrastat declaration</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Amend declarations already filed</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Consult declarations already filed</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Presentación de la declaración Intrastat</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Rectificación de declaraciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Umbrales de exención</a></li><li><a href=\"#\">Nomenclatura combinada</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Exemption thresholds</a></li><li><a href=\"#\">Combined nomenclature</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Umbrales de exención</a></li><li><a href=\"#\">Nomenclatura combinada</a></li></ul>"
 									}
 								}

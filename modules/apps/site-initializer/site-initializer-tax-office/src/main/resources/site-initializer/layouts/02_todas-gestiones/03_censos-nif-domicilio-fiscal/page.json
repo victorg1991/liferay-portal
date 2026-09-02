@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/censos-nif-domicilio-fiscal",
 	"hidden": false,
-	"name": "Censos, NIF y domicilio fiscal",
+	"name": "Registers, Tax ID and Tax Address",
+	"name_i18n": {
+		"en_US": "Registers, Tax ID and Tax Address",
+		"es_ES": "Censos, NIF y domicilio fiscal"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

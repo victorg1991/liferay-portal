@@ -1,0 +1,12 @@
+{
+	"friendlyURL": "/tramites",
+	"hidden": false,
+	"name": "Procedure Directory",
+	"name_i18n": {
+		"en_US": "Procedure Directory",
+		"es_ES": "Directorio de trámites"
+	},
+	"private": false,
+	"system": false,
+	"type": "Content"
+}

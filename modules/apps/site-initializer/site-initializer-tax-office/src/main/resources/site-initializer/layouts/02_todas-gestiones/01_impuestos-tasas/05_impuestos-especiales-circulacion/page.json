@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/impuestos-especiales-circulacion",
 	"hidden": false,
-	"name": "II.EE. Documentos de circulación",
+	"name": "Excise duties. Movement documents",
+	"name_i18n": {
+		"en_US": "Excise duties. Movement documents",
+		"es_ES": "II.EE. Documentos de circulación"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/aduanas",
 	"hidden": false,
-	"name": "Aduanas",
+	"name": "Customs",
+	"name_i18n": {
+		"en_US": "Customs",
+		"es_ES": "Aduanas"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

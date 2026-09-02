@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/impuesto-matriculacion",
 	"hidden": false,
-	"name": "Impuesto de Matriculación",
+	"name": "Registration Tax",
+	"name_i18n": {
+		"en_US": "Registration Tax",
+		"es_ES": "Impuesto de Matriculación"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

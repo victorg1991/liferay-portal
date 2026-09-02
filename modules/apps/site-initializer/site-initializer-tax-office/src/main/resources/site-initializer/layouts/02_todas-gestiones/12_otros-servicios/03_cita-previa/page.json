@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/cita-previa",
 	"hidden": false,
-	"name": "Asistencia y Cita",
+	"name": "Assistance and appointments",
+	"name_i18n": {
+		"en_US": "Assistance and appointments",
+		"es_ES": "Asistencia y Cita"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

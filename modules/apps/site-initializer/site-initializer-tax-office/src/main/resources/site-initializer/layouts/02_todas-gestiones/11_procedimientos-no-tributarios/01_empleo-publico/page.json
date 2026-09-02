@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/empleo-publico",
 	"hidden": false,
-	"name": "Empleo Público",
+	"name": "Public employment",
+	"name_i18n": {
+		"en_US": "Public employment",
+		"es_ES": "Empleo Público"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

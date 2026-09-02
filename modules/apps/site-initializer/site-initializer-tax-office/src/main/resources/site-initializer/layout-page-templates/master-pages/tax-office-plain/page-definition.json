@@ -15,21 +15,81 @@
 							"fragmentConfig": {
 								"accountFriendlyURL": "/inicio",
 								"homeFriendlyURL": "/inicio",
-								"navigationAriaLabel": "Navegación principal",
+								"navigationAriaLabel": "{\"en_US\": \"Main navigation\", \"es_ES\": \"Navegación principal\"}",
 								"navigationFriendlyURL1": "/inicio",
 								"navigationFriendlyURL2": "/ayuda",
 								"navigationFriendlyURL3": "/todas-gestiones",
-								"searchButtonLabel": "Buscar",
+								"searchButtonLabel": "{\"en_US\": \"Search\", \"es_ES\": \"Buscar\"}",
 								"searchFriendlyURL": "/todas-gestiones",
-								"searchPlaceholder": "Buscar por impuestos, gestiones o modelos"
+								"searchPlaceholder": "{\"en_US\": \"Search taxes, procedures or forms\", \"es_ES\": \"Buscar por impuestos, gestiones o modelos\"}"
 							},
 							"fragmentFields": [
+								{
+									"id": "emblem",
+									"value": {
+										"fragmentImage": {
+											"description": {
+												"value_i18n": {
+													"en_US": "Institutional emblem",
+													"es_ES": "Emblema institucional"
+												}
+											},
+											"fragmentImageClassPKReference": {
+												"classPKReferences": {
+													"en_US": {
+														"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+														"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/brand/institutional-emblem.svg#]"
+													},
+													"es_ES": {
+														"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+														"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/brand/institutional-emblem.svg#]"
+													}
+												},
+												"fragmentImageConfiguration": {
+													"landscapeMobile": "auto",
+													"portraitMobile": "auto",
+													"tablet": "auto"
+												}
+											}
+										}
+									}
+								},
+								{
+									"id": "logo",
+									"value": {
+										"fragmentImage": {
+											"description": {
+												"value_i18n": {
+													"en_US": "Tax Office logo",
+													"es_ES": "Logotipo de la Oficina Tributaria"
+												}
+											},
+											"fragmentImageClassPKReference": {
+												"classPKReferences": {
+													"en_US": {
+														"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+														"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/brand/tax-office-logo.svg#]"
+													},
+													"es_ES": {
+														"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+														"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/brand/tax-office-logo.svg#]"
+													}
+												},
+												"fragmentImageConfiguration": {
+													"landscapeMobile": "auto",
+													"portraitMobile": "auto",
+													"tablet": "auto"
+												}
+											}
+										}
+									}
+								},
 								{
 									"id": "agencyName",
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Oficina Tributaria",
+												"en_US": "Tax Office",
 												"es_ES": "Oficina Tributaria"
 											}
 										}
@@ -40,7 +100,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Sede electrónica",
+												"en_US": "Electronic office",
 												"es_ES": "Sede electrónica"
 											}
 										}
@@ -51,7 +111,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "ÁREA PERSONAL",
+												"en_US": "MY ACCOUNT",
 												"es_ES": "ÁREA PERSONAL"
 											}
 										}
@@ -62,7 +122,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Sobre la Oficina Tributaria",
+												"en_US": "About the Tax Office",
 												"es_ES": "Sobre la Oficina Tributaria"
 											}
 										}
@@ -73,7 +133,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Información y gestiones",
+												"en_US": "Information and procedures",
 												"es_ES": "Información y gestiones"
 											}
 										}
@@ -84,7 +144,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Todas las gestiones",
+												"en_US": "All procedures",
 												"es_ES": "Todas las gestiones"
 											}
 										}
@@ -132,7 +192,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Oficina Tributaria",
+												"en_US": "Tax Office",
 												"es_ES": "Oficina Tributaria"
 											}
 										}
@@ -143,7 +203,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Contacta con nosotros",
+												"en_US": "Contact us",
 												"es_ES": "Contacta con nosotros"
 											}
 										}
@@ -154,7 +214,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Ayuda",
+												"en_US": "Help",
 												"es_ES": "Ayuda"
 											}
 										}
@@ -165,7 +225,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Enlaces de interés",
+												"en_US": "Related links",
 												"es_ES": "Enlaces de interés"
 											}
 										}
@@ -176,7 +236,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "Página actualizada:",
+												"en_US": "Page updated:",
 												"es_ES": "Página actualizada:"
 											}
 										}
@@ -187,7 +247,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "<ul><li><a href=\"#\">Accesibilidad</a></li><li><a href=\"#\">Aviso de seguridad</a></li><li><a href=\"#\">Aviso legal</a></li><li><a href=\"#\">Protección de datos</a></li><li><a href=\"#\">Política lingüística</a></li><li><a href=\"#\">Estructura y navegación en la sede electrónica</a></li></ul>",
+												"en_US": "<ul><li><a href=\"#\">Accessibility</a></li><li><a href=\"#\">Security notice</a></li><li><a href=\"#\">Legal notice</a></li><li><a href=\"#\">Data protection</a></li><li><a href=\"#\">Language policy</a></li><li><a href=\"#\">Structure and navigation of the electronic office</a></li></ul>",
 												"es_ES": "<ul><li><a href=\"#\">Accesibilidad</a></li><li><a href=\"#\">Aviso de seguridad</a></li><li><a href=\"#\">Aviso legal</a></li><li><a href=\"#\">Protección de datos</a></li><li><a href=\"#\">Política lingüística</a></li><li><a href=\"#\">Estructura y navegación en la sede electrónica</a></li></ul>"
 											}
 										}
@@ -198,7 +258,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "<ul><li><a href=\"#\">Asistencia y Cita</a></li><li><a href=\"#\">Teléfonos de interés</a></li><li><a href=\"#\">Buscador de oficinas</a></li><li><a href=\"#\">Buzones de sugerencias</a></li><li><a href=\"#\">Denuncias</a></li><li><a href=\"#\">Suscripción newsletter</a></li></ul>",
+												"en_US": "<ul><li><a href=\"#\">Assistance and appointments</a></li><li><a href=\"#\">Useful telephone numbers</a></li><li><a href=\"#\">Office finder</a></li><li><a href=\"#\">Suggestion mailboxes</a></li><li><a href=\"#\">Report an irregularity</a></li><li><a href=\"#\">Newsletter subscription</a></li></ul>",
 												"es_ES": "<ul><li><a href=\"#\">Asistencia y Cita</a></li><li><a href=\"#\">Teléfonos de interés</a></li><li><a href=\"#\">Buscador de oficinas</a></li><li><a href=\"#\">Buzones de sugerencias</a></li><li><a href=\"#\">Denuncias</a></li><li><a href=\"#\">Suscripción newsletter</a></li></ul>"
 											}
 										}
@@ -209,7 +269,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "<ul><li><a href=\"#\">Buscar</a></li><li><a href=\"#\">Consultas informáticas</a></li><li><a href=\"#\">Contenidos en lectura fácil</a></li><li><a href=\"#\">Diseños de registro</a></li><li><a href=\"#\">Horario de interrupciones de sede</a></li><li><a href=\"#\">Manuales, vídeos y folletos</a></li></ul>",
+												"en_US": "<ul><li><a href=\"#\">Search</a></li><li><a href=\"#\">IT support queries</a></li><li><a href=\"#\">Easy-read content</a></li><li><a href=\"#\">Record layouts</a></li><li><a href=\"#\">Scheduled service interruptions</a></li><li><a href=\"#\">Manuals, videos and leaflets</a></li></ul>",
 												"es_ES": "<ul><li><a href=\"#\">Buscar</a></li><li><a href=\"#\">Consultas informáticas</a></li><li><a href=\"#\">Contenidos en lectura fácil</a></li><li><a href=\"#\">Diseños de registro</a></li><li><a href=\"#\">Horario de interrupciones de sede</a></li><li><a href=\"#\">Manuales, vídeos y folletos</a></li></ul>"
 											}
 										}
@@ -220,7 +280,7 @@
 									"value": {
 										"text": {
 											"value_i18n": {
-												"en_US": "<ul><li><a href=\"#\">Ministerio de Hacienda</a></li><li><a href=\"#\">Fiscalidad autonómica y local</a></li><li><a href=\"#\">Tribunales Económico-Administrativos</a></li><li><a href=\"#\">Consejo para la Defensa del Contribuyente</a></li><li><a href=\"#\">Punto de Acceso General</a></li><li><a href=\"#\">Portal de la transparencia</a></li></ul>",
+												"en_US": "<ul><li><a href=\"#\">Ministry of Finance</a></li><li><a href=\"#\">Regional and local taxation</a></li><li><a href=\"#\">Economic-Administrative Courts</a></li><li><a href=\"#\">Council for the Defence of the Taxpayer</a></li><li><a href=\"#\">General Access Point</a></li><li><a href=\"#\">Transparency portal</a></li></ul>",
 												"es_ES": "<ul><li><a href=\"#\">Ministerio de Hacienda</a></li><li><a href=\"#\">Fiscalidad autonómica y local</a></li><li><a href=\"#\">Tribunales Económico-Administrativos</a></li><li><a href=\"#\">Consejo para la Defensa del Contribuyente</a></li><li><a href=\"#\">Punto de Acceso General</a></li><li><a href=\"#\">Portal de la transparencia</a></li></ul>"
 											}
 										}

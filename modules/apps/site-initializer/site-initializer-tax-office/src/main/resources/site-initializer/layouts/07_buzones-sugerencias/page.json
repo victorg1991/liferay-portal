@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/buzones-sugerencias",
 	"hidden": false,
-	"name": "Buzones de sugerencias",
+	"name": "Suggestion Mailboxes",
+	"name_i18n": {
+		"en_US": "Suggestion Mailboxes",
+		"es_ES": "Buzones de sugerencias"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

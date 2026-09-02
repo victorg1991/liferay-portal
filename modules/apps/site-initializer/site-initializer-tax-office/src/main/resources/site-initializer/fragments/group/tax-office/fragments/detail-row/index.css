@@ -1,0 +1,24 @@
+.tax-detail-row {
+	border-bottom: 1px solid var(--tax-border-soft);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1.5rem;
+	padding: 0.625rem 0;
+}
+
+.tax-detail-row-label {
+	color: var(--tax-ink);
+	flex: 0 0 14rem;
+	font-weight: 700;
+}
+
+.tax-detail-row-value {
+	color: var(--tax-ink-muted);
+	flex: 1 1 16rem;
+}
+
+@media (max-width: 35.9375em) {
+	.tax-detail-row-label {
+		flex-basis: 100%;
+	}
+}

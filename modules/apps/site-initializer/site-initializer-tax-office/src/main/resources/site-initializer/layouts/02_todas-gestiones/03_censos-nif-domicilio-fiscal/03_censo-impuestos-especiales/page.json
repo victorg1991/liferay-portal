@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/censo-impuestos-especiales",
 	"hidden": false,
-	"name": "Censo de Impuestos Especiales y Medioambientales",
+	"name": "Register of Excise and Environmental Taxes",
+	"name_i18n": {
+		"en_US": "Register of Excise and Environmental Taxes",
+		"es_ES": "Censo de Impuestos Especiales y Medioambientales"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

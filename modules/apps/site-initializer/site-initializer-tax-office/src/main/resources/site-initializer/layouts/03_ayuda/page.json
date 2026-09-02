@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/ayuda",
 	"hidden": false,
-	"name": "Ayuda",
+	"name": "Help",
+	"name_i18n": {
+		"en_US": "Help",
+		"es_ES": "Ayuda"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

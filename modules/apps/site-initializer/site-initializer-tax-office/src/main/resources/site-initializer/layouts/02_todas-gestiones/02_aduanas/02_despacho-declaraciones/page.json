@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/despacho-declaraciones",
 	"hidden": false,
-	"name": "Presentación y despacho de declaraciones",
+	"name": "Filing and clearance of declarations",
+	"name_i18n": {
+		"en_US": "Filing and clearance of declarations",
+		"es_ES": "Presentación y despacho de declaraciones"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

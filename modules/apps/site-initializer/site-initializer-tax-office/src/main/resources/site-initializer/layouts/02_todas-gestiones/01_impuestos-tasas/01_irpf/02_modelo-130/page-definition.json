@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Presentación del modelo 130</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de autoliquidaciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Domiciliación del pago</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">File form 130</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Consult self-assessments already filed</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Set up a direct debit</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Presentación del modelo 130</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de autoliquidaciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Domiciliación del pago</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Plazos de presentación</a></li><li><a href=\"#\">Diseños de registro. Modelos 100 al 199</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Filing deadlines</a></li><li><a href=\"#\">Record layouts. Forms 100 to 199</a></li><li><a href=\"#\">Technical help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Plazos de presentación</a></li><li><a href=\"#\">Diseños de registro. Modelos 100 al 199</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>"
 									}
 								}
@@ -111,7 +111,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Normativa",
+										"en_US": "Legislation",
 										"es_ES": "Normativa"
 									}
 								}
@@ -122,7 +122,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<p><strong>Ley 35/2006, de 28 de noviembre</strong>del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio.<cite>(BOE, 29-noviembre-2006)</cite></p><p><strong>Real Decreto 439/2007, de 30 de marzo</strong>por el que se aprueba el Reglamento del Impuesto sobre la Renta de las Personas Físicas y se modifica el Reglamento de Planes y Fondos de Pensiones.<cite>(BOE, 31-marzo-2007)</cite></p>",
+										"en_US": "<p><strong>Law 35/2006 of 28 November</strong>on Personal Income Tax and partially amending the laws on Corporate Income Tax, Non-Resident Income Tax and Wealth Tax.<cite>(Official Gazette, 29 November 2006)</cite></p><p><strong>Royal Decree 439/2007 of 30 March</strong>approving the Personal Income Tax Regulation and amending the Pension Plans and Funds Regulation.<cite>(Official Gazette, 31 March 2007)</cite></p>",
 										"es_ES": "<p><strong>Ley 35/2006, de 28 de noviembre</strong>del Impuesto sobre la Renta de las Personas Físicas y de modificación parcial de las leyes de los Impuestos sobre Sociedades, sobre la Renta de no Residentes y sobre el Patrimonio.<cite>(BOE, 29-noviembre-2006)</cite></p><p><strong>Real Decreto 439/2007, de 30 de marzo</strong>por el que se aprueba el Reglamento del Impuesto sobre la Renta de las Personas Físicas y se modifica el Reglamento de Planes y Fondos de Pensiones.<cite>(BOE, 31-marzo-2007)</cite></p>"
 									}
 								}
@@ -143,7 +143,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Ficha del procedimiento",
+										"en_US": "Procedure factsheet",
 										"es_ES": "Ficha del procedimiento"
 									}
 								}

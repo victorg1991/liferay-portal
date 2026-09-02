@@ -1,6 +1,57 @@
 {
 	"pageElement": {
 		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "content-image"
+					},
+					"fragmentFields": [
+						{
+							"id": "image",
+							"value": {
+								"fragmentImage": {
+									"description": {
+										"value_i18n": {
+											"en_US": "Appeals and Reviews",
+											"es_ES": "Recursos y revisión"
+										}
+									},
+									"fragmentImageClassPKReference": {
+										"classPKReferences": {
+											"en_US": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/procedures/appeals.png#]"
+											},
+											"es_ES": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/procedures/appeals.png#]"
+											}
+										},
+										"fragmentImageConfiguration": {
+											"landscapeMobile": "auto",
+											"portraitMobile": "auto",
+											"tablet": "auto"
+										}
+									}
+								}
+							}
+						},
+						{
+							"id": "caption",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Appeals and Reviews",
+										"es_ES": "Recursos y revisión"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
 		],
 		"type": "Root"
 	},

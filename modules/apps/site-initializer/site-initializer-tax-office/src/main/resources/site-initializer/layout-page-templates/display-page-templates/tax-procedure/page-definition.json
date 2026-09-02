@@ -1,0 +1,433 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"cssClasses": [
+						"tax-display-page"
+					],
+					"layout": {
+						"widthType": "Fixed"
+					}
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"fragment": {
+								"key": "content-heading"
+							},
+							"fragmentConfig": {
+								"headingLevel": "h1"
+							},
+							"fragmentFields": [
+								{
+									"id": "title",
+									"value": {
+										"text": {
+											"defaultFragmentInlineValue": {
+												"value": ""
+											},
+											"mapping": {
+												"fieldKey": "ObjectField_procedureName",
+												"itemReference": {
+													"contextSource": "DisplayPageItem"
+												}
+											}
+										}
+									}
+								}
+							]
+						},
+						"type": "Fragment"
+					},
+					{
+						"definition": {
+							"gutters": true,
+							"modulesPerRow": 2,
+							"numberOfColumns": 2,
+							"reverseOrder": false,
+							"verticalAlignment": "top"
+						},
+						"pageElements": [
+							{
+								"definition": {
+									"size": 8
+								},
+								"pageElements": [
+									{
+										"definition": {
+											"cssClasses": [
+												"tax-display-main"
+											],
+											"layout": {
+											}
+										},
+										"pageElements": [
+											{
+												"definition": {
+													"fragment": {
+														"key": "text-block"
+													},
+													"fragmentFields": [
+														{
+															"id": "body",
+															"value": {
+																"text": {
+																	"defaultFragmentInlineValue": {
+																		"value": ""
+																	},
+																	"mapping": {
+																		"fieldKey": "ObjectField_summary",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "content-heading"
+													},
+													"fragmentConfig": {
+														"headingLevel": "h2"
+													},
+													"fragmentFields": [
+														{
+															"id": "title",
+															"value": {
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Who can file it",
+																		"es_ES": "Quién puede presentarlo"
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "text-block"
+													},
+													"fragmentFields": [
+														{
+															"id": "body",
+															"value": {
+																"text": {
+																	"defaultFragmentInlineValue": {
+																		"value": ""
+																	},
+																	"mapping": {
+																		"fieldKey": "ObjectField_applicantProfile",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "document-link"
+													},
+													"fragmentFields": [
+														{
+															"id": "link",
+															"value": {
+																"fragmentLink": {
+																	"value": {
+																		"href": {
+																			"mapping": {
+																				"itemReference": {
+																					"className": "com.liferay.portal.kernel.model.Layout",
+																					"fields": [
+																						{
+																							"fieldName": "friendlyURL",
+																							"fieldValue": "/tramites"
+																						},
+																						{
+																							"fieldName": "privatePage",
+																							"fieldValue": "false"
+																						}
+																					]
+																				}
+																			}
+																		}
+																	}
+																},
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Back to the procedure directory",
+																		"es_ES": "Volver al directorio de trámites"
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											}
+										],
+										"type": "Section"
+									}
+								],
+								"type": "Column"
+							},
+							{
+								"definition": {
+									"size": 4
+								},
+								"pageElements": [
+									{
+										"definition": {
+											"cssClasses": [
+												"tax-display-aside"
+											],
+											"layout": {
+											}
+										},
+										"pageElements": [
+											{
+												"definition": {
+													"fragment": {
+														"key": "content-heading"
+													},
+													"fragmentConfig": {
+														"headingLevel": "h2"
+													},
+													"fragmentFields": [
+														{
+															"id": "title",
+															"value": {
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Procedure details",
+																		"es_ES": "Ficha del procedimiento"
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "detail-row"
+													},
+													"fragmentFields": [
+														{
+															"id": "label",
+															"value": {
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Procedure code",
+																		"es_ES": "Código del procedimiento"
+																	}
+																}
+															}
+														},
+														{
+															"id": "value",
+															"value": {
+																"text": {
+																	"defaultFragmentInlineValue": {
+																		"value": ""
+																	},
+																	"mapping": {
+																		"fieldKey": "ObjectField_procedureCode",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "detail-row"
+													},
+													"fragmentFields": [
+														{
+															"id": "label",
+															"value": {
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Area",
+																		"es_ES": "Área"
+																	}
+																}
+															}
+														},
+														{
+															"id": "value",
+															"value": {
+																"text": {
+																	"defaultFragmentInlineValue": {
+																		"value": ""
+																	},
+																	"mapping": {
+																		"fieldKey": "ObjectField_area",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "detail-row"
+													},
+													"fragmentFields": [
+														{
+															"id": "label",
+															"value": {
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Filing period",
+																		"es_ES": "Plazo de presentación"
+																	}
+																}
+															}
+														},
+														{
+															"id": "value",
+															"value": {
+																"text": {
+																	"defaultFragmentInlineValue": {
+																		"value": ""
+																	},
+																	"mapping": {
+																		"fieldKey": "ObjectField_filingPeriod",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "detail-row"
+													},
+													"fragmentFields": [
+														{
+															"id": "label",
+															"value": {
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Time limit for resolution",
+																		"es_ES": "Plazo de resolución"
+																	}
+																}
+															}
+														},
+														{
+															"id": "value",
+															"value": {
+																"text": {
+																	"defaultFragmentInlineValue": {
+																		"value": ""
+																	},
+																	"mapping": {
+																		"fieldKey": "ObjectField_resolutionPeriod",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "detail-row"
+													},
+													"fragmentFields": [
+														{
+															"id": "label",
+															"value": {
+																"text": {
+																	"value_i18n": {
+																		"en_US": "Last updated",
+																		"es_ES": "Última actualización"
+																	}
+																}
+															}
+														},
+														{
+															"id": "value",
+															"value": {
+																"text": {
+																	"defaultFragmentInlineValue": {
+																		"value": ""
+																	},
+																	"mapping": {
+																		"fieldKey": "ObjectField_publicationDate",
+																		"itemReference": {
+																			"contextSource": "DisplayPageItem"
+																		}
+																	}
+																}
+															}
+														}
+													]
+												},
+												"type": "Fragment"
+											}
+										],
+										"type": "Section"
+									}
+								],
+								"type": "Column"
+							}
+						],
+						"type": "Row"
+					}
+				],
+				"type": "Section"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-plain"
+		}
+	}
+}

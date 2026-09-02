@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/certificados",
 	"hidden": false,
-	"name": "Certificados",
+	"name": "Certificates",
+	"name_i18n": {
+		"en_US": "Certificates",
+		"es_ES": "Certificados"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

@@ -1,0 +1,18 @@
+[
+	{
+		"title": "TAX-PROCEDURES",
+		"unicodeProperties": {
+			"classNameIds": "[$OBJECT_DEFINITION_CLASS_NAME:TaxProcedure$]",
+			"orderBy": [
+				{
+					"key": "orderByColumn1",
+					"value": "title"
+				},
+				{
+					"key": "orderByType1",
+					"value": "ASC"
+				}
+			]
+		}
+	}
+]

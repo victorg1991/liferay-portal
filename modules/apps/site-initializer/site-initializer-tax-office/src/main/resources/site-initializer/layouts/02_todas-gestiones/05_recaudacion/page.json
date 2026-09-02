@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/recaudacion",
 	"hidden": false,
-	"name": "Recaudación",
+	"name": "Collection",
+	"name_i18n": {
+		"en_US": "Collection",
+		"es_ES": "Recaudación"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

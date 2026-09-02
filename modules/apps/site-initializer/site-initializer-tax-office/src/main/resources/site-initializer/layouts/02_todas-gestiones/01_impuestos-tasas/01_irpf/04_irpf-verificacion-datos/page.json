@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/irpf-verificacion-datos",
 	"hidden": false,
-	"name": "IRPF. Verificación de datos / Comprobación limitada",
+	"name": "Personal Income Tax. Data verification and limited review",
+	"name_i18n": {
+		"en_US": "Personal Income Tax. Data verification and limited review",
+		"es_ES": "IRPF. Verificación de datos y comprobación limitada"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

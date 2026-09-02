@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/requerimientos-comunicaciones",
 	"hidden": false,
-	"name": "Requerimientos y comunicaciones",
+	"name": "Requests and Notifications",
+	"name_i18n": {
+		"en_US": "Requests and Notifications",
+		"es_ES": "Requerimientos y comunicaciones"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

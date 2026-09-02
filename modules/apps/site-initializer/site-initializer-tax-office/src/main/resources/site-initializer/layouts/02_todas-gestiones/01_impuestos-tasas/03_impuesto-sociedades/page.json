@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/impuesto-sociedades",
 	"hidden": false,
-	"name": "Impuesto sobre Sociedades",
+	"name": "Corporate Income Tax",
+	"name_i18n": {
+		"en_US": "Corporate Income Tax",
+		"es_ES": "Impuesto sobre Sociedades"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

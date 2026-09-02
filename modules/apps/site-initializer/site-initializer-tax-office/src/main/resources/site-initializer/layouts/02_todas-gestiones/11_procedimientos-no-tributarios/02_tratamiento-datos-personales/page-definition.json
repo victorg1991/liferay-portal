@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Ejercicio del derecho de acceso</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Ejercicio del derecho de rectificación y supresión</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado de la solicitud</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Exercise the right of access</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Exercise the right to rectification and erasure</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Check the status of the request</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Ejercicio del derecho de acceso</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Ejercicio del derecho de rectificación y supresión</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado de la solicitud</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Registro de actividades de tratamiento</a></li><li><a href=\"#\">Delegado de Protección de Datos</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Record of processing activities</a></li><li><a href=\"#\">Data Protection Officer</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Registro de actividades de tratamiento</a></li><li><a href=\"#\">Delegado de Protección de Datos</a></li></ul>"
 									}
 								}

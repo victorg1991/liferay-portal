@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/beneficios-fiscales-autorizaciones",
 	"hidden": false,
-	"name": "Beneficios fiscales y autorizaciones",
+	"name": "Tax Benefits and Authorisations",
+	"name_i18n": {
+		"en_US": "Tax Benefits and Authorisations",
+		"es_ES": "Beneficios fiscales y autorizaciones"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

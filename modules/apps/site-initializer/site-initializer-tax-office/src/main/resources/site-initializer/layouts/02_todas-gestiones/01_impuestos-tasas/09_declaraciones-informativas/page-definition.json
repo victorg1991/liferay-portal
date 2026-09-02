@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Modelo 190. Retenciones e ingresos a cuenta del IRPF</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 347. Operaciones con terceras personas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 720. Bienes y derechos situados en el extranjero</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones informativas presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Form 190. Personal Income Tax withholdings and payments on account</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Form 347. Transactions with third parties</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Form 720. Assets and rights held abroad</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Consult informative returns already filed</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Modelo 190. Retenciones e ingresos a cuenta del IRPF</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 347. Operaciones con terceras personas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 720. Bienes y derechos situados en el extranjero</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones informativas presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Plazos de presentación de informativas</a></li><li><a href=\"#\">Diseños de registro de todos los modelos</a></li><li><a href=\"#\">Servicio de cotejo de datos declarados</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Filing deadlines for informative returns</a></li><li><a href=\"#\">Record layouts for every form</a></li><li><a href=\"#\">Reported data cross-check service</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Plazos de presentación de informativas</a></li><li><a href=\"#\">Diseños de registro de todos los modelos</a></li><li><a href=\"#\">Servicio de cotejo de datos declarados</a></li></ul>"
 									}
 								}

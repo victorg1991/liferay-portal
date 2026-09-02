@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/rectificacion-autoliquidaciones",
 	"hidden": false,
-	"name": "Rectificación de declaraciones y autoliquidaciones",
+	"name": "Amendment of returns and self-assessments",
+	"name_i18n": {
+		"en_US": "Amendment of returns and self-assessments",
+		"es_ES": "Rectificación de declaraciones y autoliquidaciones"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

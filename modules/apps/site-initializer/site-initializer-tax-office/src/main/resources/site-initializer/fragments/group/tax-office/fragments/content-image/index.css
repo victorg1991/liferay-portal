@@ -1,0 +1,17 @@
+.tax-content-image {
+	margin: 0 0 1.75rem;
+}
+
+.tax-content-image-media {
+	border: 1px solid var(--tax-border);
+	display: block;
+	height: auto;
+	width: 100%;
+}
+
+.tax-content-image-caption {
+	color: var(--tax-ink-muted);
+	display: block;
+	font-size: 0.875rem;
+	padding-top: 0.5rem;
+}

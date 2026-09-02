@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/aplazamientos-fraccionamientos",
 	"hidden": false,
-	"name": "Aplazamientos y fraccionamientos",
+	"name": "Deferrals and instalment payments",
+	"name_i18n": {
+		"en_US": "Deferrals and instalment payments",
+		"es_ES": "Aplazamientos y fraccionamientos"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

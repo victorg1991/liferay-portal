@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Cumplimentación y descarga del modelo 145</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Cálculo de retenciones</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Complete and download form 145</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Withholding calculator</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Cumplimentación y descarga del modelo 145</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Cálculo de retenciones</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Instrucciones de cumplimentación</a></li><li><a href=\"#\">Simulador de retenciones</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Completion instructions</a></li><li><a href=\"#\">Withholding simulator</a></li><li><a href=\"#\">Technical help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Instrucciones de cumplimentación</a></li><li><a href=\"#\">Simulador de retenciones</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>"
 									}
 								}
@@ -111,7 +111,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Normativa",
+										"en_US": "Legislation",
 										"es_ES": "Normativa"
 									}
 								}
@@ -122,7 +122,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<p><strong>Real Decreto 439/2007, de 30 de marzo</strong>por el que se aprueba el Reglamento del Impuesto sobre la Renta de las Personas Físicas y se modifica el Reglamento de Planes y Fondos de Pensiones.<cite>(BOE, 31-marzo-2007)</cite></p><p><strong>Orden HAC/277/2026, de 25 de marzo</strong>por la que se aprueban los modelos de declaración del Impuesto sobre la Renta de las Personas Físicas y del Impuesto sobre el Patrimonio, y se determinan el lugar, forma y plazos de presentación de los mismos.<cite>(BOE, 27-marzo-2026)</cite></p>",
+										"en_US": "<p><strong>Royal Decree 439/2007 of 30 March</strong>approving the Personal Income Tax Regulation and amending the Pension Plans and Funds Regulation.<cite>(Official Gazette, 31 March 2007)</cite></p><p><strong>Order HAC/277/2026 of 25 March</strong>approving the Personal Income Tax and Wealth Tax return forms and setting the place, form and deadlines for filing them.<cite>(Official Gazette, 27 March 2026)</cite></p>",
 										"es_ES": "<p><strong>Real Decreto 439/2007, de 30 de marzo</strong>por el que se aprueba el Reglamento del Impuesto sobre la Renta de las Personas Físicas y se modifica el Reglamento de Planes y Fondos de Pensiones.<cite>(BOE, 31-marzo-2007)</cite></p><p><strong>Orden HAC/277/2026, de 25 de marzo</strong>por la que se aprueban los modelos de declaración del Impuesto sobre la Renta de las Personas Físicas y del Impuesto sobre el Patrimonio, y se determinan el lugar, forma y plazos de presentación de los mismos.<cite>(BOE, 27-marzo-2026)</cite></p>"
 									}
 								}
@@ -143,7 +143,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Ficha del procedimiento",
+										"en_US": "Procedure factsheet",
 										"es_ES": "Ficha del procedimiento"
 									}
 								}

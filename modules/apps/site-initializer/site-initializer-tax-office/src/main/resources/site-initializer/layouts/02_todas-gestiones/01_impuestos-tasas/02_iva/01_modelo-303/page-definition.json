@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Presentación de la autoliquidación (Pre303)</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de autoliquidaciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitud de devolución mensual (REDEME)</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">File the self-assessment (Pre303)</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Consult self-assessments already filed</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Apply for the monthly refund register</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Presentación de la autoliquidación (Pre303)</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de autoliquidaciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitud de devolución mensual (REDEME)</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Servicios de ayuda para el modelo 303</a></li><li><a href=\"#\">Diseños de registro. Modelos 200 al 399</a></li><li><a href=\"#\">Libros registro de IVA (SII)</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Assistance services for form 303</a></li><li><a href=\"#\">Record layouts. Forms 200 to 399</a></li><li><a href=\"#\">VAT record books (SII)</a></li><li><a href=\"#\">Technical help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Servicios de ayuda para el modelo 303</a></li><li><a href=\"#\">Diseños de registro. Modelos 200 al 399</a></li><li><a href=\"#\">Libros registro de IVA (SII)</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>"
 									}
 								}
@@ -111,7 +111,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Normativa",
+										"en_US": "Legislation",
 										"es_ES": "Normativa"
 									}
 								}
@@ -122,7 +122,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<p><strong>Ley 37/1992, de 28 de diciembre</strong>del Impuesto sobre el Valor Añadido.<cite>(BOE, 29-diciembre-1992)</cite></p><p><strong>Real Decreto 1624/1992, de 29 de diciembre</strong>por el que se aprueba el Reglamento del Impuesto sobre el Valor Añadido.<cite>(BOE, 31-diciembre-1992)</cite></p><p><strong>Orden HAC/646/2026, de 12 de mayo</strong>por la que se aprueban los modelos de autoliquidación y declaración-resumen anual del Impuesto sobre el Valor Añadido.<cite>(BOE, 15-mayo-2026)</cite></p>",
+										"en_US": "<p><strong>Law 37/1992 of 28 December</strong>on Value Added Tax.<cite>(Official Gazette, 29 December 1992)</cite></p><p><strong>Royal Decree 1624/1992 of 29 December</strong>approving the Value Added Tax Regulation.<cite>(Official Gazette, 31 December 1992)</cite></p><p><strong>Order HAC/646/2026 of 12 May</strong>approving the Value Added Tax self-assessment and annual summary return forms.<cite>(Official Gazette, 15 May 2026)</cite></p>",
 										"es_ES": "<p><strong>Ley 37/1992, de 28 de diciembre</strong>del Impuesto sobre el Valor Añadido.<cite>(BOE, 29-diciembre-1992)</cite></p><p><strong>Real Decreto 1624/1992, de 29 de diciembre</strong>por el que se aprueba el Reglamento del Impuesto sobre el Valor Añadido.<cite>(BOE, 31-diciembre-1992)</cite></p><p><strong>Orden HAC/646/2026, de 12 de mayo</strong>por la que se aprueban los modelos de autoliquidación y declaración-resumen anual del Impuesto sobre el Valor Añadido.<cite>(BOE, 15-mayo-2026)</cite></p>"
 									}
 								}
@@ -143,7 +143,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Ficha del procedimiento",
+										"en_US": "Procedure factsheet",
 										"es_ES": "Ficha del procedimiento"
 									}
 								}

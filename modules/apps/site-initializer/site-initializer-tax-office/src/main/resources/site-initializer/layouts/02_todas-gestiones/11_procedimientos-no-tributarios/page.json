@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/procedimientos-no-tributarios",
 	"hidden": false,
-	"name": "Procedimientos no tributarios",
+	"name": "Non-Tax Procedures",
+	"name_i18n": {
+		"en_US": "Non-Tax Procedures",
+		"es_ES": "Procedimientos no tributarios"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

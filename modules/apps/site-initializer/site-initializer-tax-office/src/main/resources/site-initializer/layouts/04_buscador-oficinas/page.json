@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/buscador-oficinas",
 	"hidden": false,
-	"name": "Buscador de oficinas",
+	"name": "Office Finder",
+	"name_i18n": {
+		"en_US": "Office Finder",
+		"es_ES": "Buscador de oficinas"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

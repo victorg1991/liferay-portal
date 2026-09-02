@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/certificados-contratistas",
 	"hidden": false,
-	"name": "Contratistas y subcontratistas",
+	"name": "Contractors and subcontractors",
+	"name_i18n": {
+		"en_US": "Contractors and subcontractors",
+		"es_ES": "Contratistas y subcontratistas"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

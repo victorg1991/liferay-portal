@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/todas-gestiones",
 	"hidden": false,
-	"name": "Todas las gestiones",
+	"name": "All Procedures",
+	"name_i18n": {
+		"en_US": "All Procedures",
+		"es_ES": "Todas las gestiones"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

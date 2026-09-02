@@ -1,0 +1,329 @@
+{
+	"object-entries": [
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Individuals resident in Spain whose income exceeds the thresholds set out in Article 96 of Law 35/2006. Taxpayers below those thresholds may also file voluntarily when the return results in a refund.</p>",
+				"es_ES": "<p>Personas físicas residentes en España cuyas rentas superen los límites establecidos en el artículo 96 de la Ley 35/2006. Los contribuyentes que no superen dichos límites pueden presentar la declaración voluntariamente cuando resulte a devolver.</p>"
+			},
+			"area": "personalIncomeTax",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G229",
+			"filingPeriod_i18n": {
+				"en_US": "From 8 April to 30 June 2026",
+				"es_ES": "Del 8 de abril al 30 de junio de 2026"
+			},
+			"procedureCode": "G229",
+			"procedureName_i18n": {
+				"en_US": "Form 100. Personal Income Tax. Annual return",
+				"es_ES": "Modelo 100. Impuesto sobre la Renta de las Personas Físicas. Declaración anual"
+			},
+			"publicationDate": "2026-03-27",
+			"resolutionPeriod_i18n": {
+				"en_US": "6 months from the end of the filing period",
+				"es_ES": "6 meses desde el fin del plazo de presentación"
+			},
+			"summary_i18n": {
+				"en_US": "<p>File the annual Personal Income Tax return for the 2025 tax year, review the draft prepared by the Tax Office and confirm or amend it before the filing deadline.</p>",
+				"es_ES": "<p>Presentación de la declaración anual del Impuesto sobre la Renta de las Personas Físicas del ejercicio 2025, revisión del borrador elaborado por la Oficina Tributaria y confirmación o modificación del mismo antes de que finalice el plazo.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Self-employed individuals and professionals carrying out an economic activity under direct assessment, whether in its standard or simplified form.</p>",
+				"es_ES": "<p>Personas físicas empresarios y profesionales que desarrollen una actividad económica en estimación directa, tanto en su modalidad normal como simplificada.</p>"
+			},
+			"area": "personalIncomeTax",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G601",
+			"filingPeriod_i18n": {
+				"en_US": "First 20 calendar days of April, July and October, and 1 to 30 January",
+				"es_ES": "Primeros 20 días naturales de abril, julio y octubre, y del 1 al 30 de enero"
+			},
+			"procedureCode": "G601",
+			"procedureName_i18n": {
+				"en_US": "Form 130. Personal Income Tax. Instalment payment under direct assessment",
+				"es_ES": "Modelo 130. IRPF. Empresarios y profesionales en Estimación Directa. Pago fraccionado"
+			},
+			"publicationDate": "2026-01-15",
+			"resolutionPeriod_i18n": {
+				"en_US": "Not applicable. Self-assessment",
+				"es_ES": "No procede. Autoliquidación"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Quarterly instalment payment for self-employed workers and professionals whose business income is determined under the direct assessment method.</p>",
+				"es_ES": "<p>Pago fraccionado trimestral para empresarios y profesionales que determinan el rendimiento de su actividad por el método de estimación directa.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Employees who receive employment income subject to withholding, at the start of the employment relationship or whenever their circumstances change.</p>",
+				"es_ES": "<p>Trabajadores que perciben rendimientos del trabajo sujetos a retención, al inicio de la relación laboral o cuando varíen sus circunstancias.</p>"
+			},
+			"area": "personalIncomeTax",
+			"electronicOnly": false,
+			"externalReferenceCode": "TAX-PROCEDURE-G603",
+			"filingPeriod_i18n": {
+				"en_US": "Before the first payment of the year, or whenever circumstances change",
+				"es_ES": "Antes del primer pago del ejercicio, o cuando varíen las circunstancias"
+			},
+			"procedureCode": "G603",
+			"procedureName_i18n": {
+				"en_US": "Form 145. Withholdings on employment income. Notification of data to the payer",
+				"es_ES": "Modelo 145. Retenciones sobre rendimientos del trabajo. Comunicación de datos al pagador"
+			},
+			"publicationDate": "2025-11-20",
+			"resolutionPeriod_i18n": {
+				"en_US": "Not applicable. Notification to the payer",
+				"es_ES": "No procede. Comunicación al pagador"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Report your personal and family circumstances to your employer so that the withholding rate applied to your salary is calculated correctly.</p>",
+				"es_ES": "<p>Comunicación al pagador de la situación personal y familiar del perceptor para que el tipo de retención aplicado sobre el salario se calcule correctamente.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Businesses and professionals carrying out transactions subject to VAT, including those registered in the monthly refund register.</p>",
+				"es_ES": "<p>Empresarios y profesionales que realicen operaciones sujetas al IVA, incluidos los inscritos en el registro de devolución mensual.</p>"
+			},
+			"area": "valueAddedTax",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G330",
+			"filingPeriod_i18n": {
+				"en_US": "First 20 calendar days following each settlement period",
+				"es_ES": "Primeros 20 días naturales siguientes a cada periodo de liquidación"
+			},
+			"procedureCode": "G330",
+			"procedureName_i18n": {
+				"en_US": "Form 303. Value Added Tax. Self-assessment",
+				"es_ES": "Modelo 303. Impuesto sobre el Valor Añadido. Autoliquidación"
+			},
+			"publicationDate": "2026-05-15",
+			"resolutionPeriod_i18n": {
+				"en_US": "6 months when a refund is requested",
+				"es_ES": "6 meses cuando se solicite devolución"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Periodic VAT self-assessment reporting output and input tax for the quarter or month, with the assistance of the Pre303 service.</p>",
+				"es_ES": "<p>Autoliquidación periódica del IVA en la que se declaran el impuesto devengado y el soportado del trimestre o del mes, con la asistencia del servicio Pre303.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>VAT taxpayers required to file periodic self-assessments, except those exempted by the annual summary exclusion rules.</p>",
+				"es_ES": "<p>Sujetos pasivos del IVA obligados a presentar autoliquidaciones periódicas, salvo los exonerados por las reglas de exclusión del resumen anual.</p>"
+			},
+			"area": "valueAddedTax",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G390",
+			"filingPeriod_i18n": {
+				"en_US": "From 1 to 30 January of the following year",
+				"es_ES": "Del 1 al 30 de enero del año siguiente"
+			},
+			"procedureCode": "G390",
+			"procedureName_i18n": {
+				"en_US": "Form 390. Value Added Tax. Annual summary return",
+				"es_ES": "Modelo 390. Impuesto sobre el Valor Añadido. Declaración-resumen anual"
+			},
+			"publicationDate": "2025-12-30",
+			"resolutionPeriod_i18n": {
+				"en_US": "Not applicable. Informative return",
+				"es_ES": "No procede. Declaración informativa"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Annual informative summary of all VAT self-assessments filed during the calendar year.</p>",
+				"es_ES": "<p>Declaración informativa anual que resume todas las autoliquidaciones de IVA presentadas durante el año natural.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Businesses and professionals who carry out intra-Community transactions and are listed in the register of intra-Community operators.</p>",
+				"es_ES": "<p>Empresarios y profesionales que realicen operaciones intracomunitarias y figuren en el registro de operadores intracomunitarios.</p>"
+			},
+			"area": "valueAddedTax",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G349",
+			"filingPeriod_i18n": {
+				"en_US": "Monthly or quarterly, within the first 20 calendar days of the following period",
+				"es_ES": "Mensual o trimestral, dentro de los 20 primeros días naturales del periodo siguiente"
+			},
+			"procedureCode": "G349",
+			"procedureName_i18n": {
+				"en_US": "Form 349. Recapitulative statement of intra-Community transactions",
+				"es_ES": "Modelo 349. Declaración recapitulativa de operaciones intracomunitarias"
+			},
+			"publicationDate": "2025-12-30",
+			"resolutionPeriod_i18n": {
+				"en_US": "Not applicable. Informative return",
+				"es_ES": "No procede. Declaración informativa"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Report intra-Community supplies and acquisitions of goods and services carried out with operators registered in other Member States.</p>",
+				"es_ES": "<p>Declaración de las entregas y adquisiciones intracomunitarias de bienes y servicios realizadas con operadores registrados en otros Estados miembros.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Taxpayers who have received a notification opening a data verification or limited review procedure, and their authorised representatives.</p>",
+				"es_ES": "<p>Contribuyentes que hayan recibido una comunicación de inicio de un procedimiento de verificación de datos o de comprobación limitada, y sus representantes autorizados.</p>"
+			},
+			"area": "personalIncomeTax",
+			"electronicOnly": false,
+			"externalReferenceCode": "TAX-PROCEDURE-G200",
+			"filingPeriod_i18n": {
+				"en_US": "10 working days from the day after notification",
+				"es_ES": "10 días hábiles desde el día siguiente a la notificación"
+			},
+			"procedureCode": "G200",
+			"procedureName_i18n": {
+				"en_US": "Personal Income Tax. Data verification and limited review",
+				"es_ES": "IRPF. Verificación de datos y comprobación limitada"
+			},
+			"publicationDate": "2026-02-10",
+			"resolutionPeriod_i18n": {
+				"en_US": "6 months from the notification opening the procedure",
+				"es_ES": "6 meses desde la comunicación de inicio del procedimiento"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Reply to a request for information or to a proposed assessment issued after the Tax Office has compared your return with the data it holds.</p>",
+				"es_ES": "<p>Contestación a un requerimiento de información o a una propuesta de liquidación emitida tras comparar la Oficina Tributaria su declaración con los datos de que dispone.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Any taxpayer facing temporary cash-flow difficulties, for debts in either the voluntary or the enforcement period.</p>",
+				"es_ES": "<p>Cualquier obligado tributario con dificultades transitorias de tesorería, para deudas tanto en periodo voluntario como en periodo ejecutivo.</p>"
+			},
+			"area": "collection",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-GC10",
+			"filingPeriod_i18n": {
+				"en_US": "At any time before the debt becomes enforceable through seizure",
+				"es_ES": "En cualquier momento antes de que se inicie el embargo de la deuda"
+			},
+			"procedureCode": "GC10",
+			"procedureName_i18n": {
+				"en_US": "Application for deferral or instalment payment of tax debts",
+				"es_ES": "Solicitud de aplazamiento o fraccionamiento de deudas tributarias"
+			},
+			"publicationDate": "2026-01-08",
+			"resolutionPeriod_i18n": {
+				"en_US": "6 months from the date the application is filed",
+				"es_ES": "6 meses desde la fecha de presentación de la solicitud"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Request more time to pay a tax debt, either as a single deferred payment or split into instalments, with or without a guarantee depending on the amount.</p>",
+				"es_ES": "<p>Solicitud de un plazo mayor para el pago de una deuda tributaria, bien como aplazamiento único, bien fraccionada en plazos, con o sin garantía según el importe.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Individuals and legal entities, acting on their own behalf or through a representative holding the appropriate power of attorney.</p>",
+				"es_ES": "<p>Personas físicas y jurídicas, en nombre propio o mediante representante con el apoderamiento correspondiente.</p>"
+			},
+			"area": "certificates",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G414",
+			"filingPeriod_i18n": {
+				"en_US": "Available all year round",
+				"es_ES": "Disponible durante todo el año"
+			},
+			"procedureCode": "G414",
+			"procedureName_i18n": {
+				"en_US": "Certificate of being up to date with tax obligations",
+				"es_ES": "Certificado de estar al corriente de las obligaciones tributarias"
+			},
+			"publicationDate": "2025-10-01",
+			"resolutionPeriod_i18n": {
+				"en_US": "Immediate issue, or 20 days where manual review is required",
+				"es_ES": "Expedición inmediata, o 20 días cuando se requiera revisión manual"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Obtain an electronic certificate stating that you have no outstanding tax debts, commonly required to sign public contracts or receive grants.</p>",
+				"es_ES": "<p>Obtención de un certificado electrónico que acredita la inexistencia de deudas tributarias pendientes, habitualmente exigido para contratar con el sector público o percibir subvenciones.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Any taxpayer wishing to grant a power of attorney, and the appointed representative, who must accept it.</p>",
+				"es_ES": "<p>Cualquier obligado tributario que desee otorgar un poder, y el representante designado, que debe aceptarlo.</p>"
+			},
+			"area": "otherServices",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G306",
+			"filingPeriod_i18n": {
+				"en_US": "Available all year round",
+				"es_ES": "Disponible durante todo el año"
+			},
+			"procedureCode": "G306",
+			"procedureName_i18n": {
+				"en_US": "Registration of a power of attorney for electronic filing",
+				"es_ES": "Alta de apoderamiento para la tramitación electrónica"
+			},
+			"publicationDate": "2025-09-12",
+			"resolutionPeriod_i18n": {
+				"en_US": "Effective once the representative accepts the power of attorney",
+				"es_ES": "Efectivo desde que el representante acepta el apoderamiento"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Authorise another person or company to carry out tax procedures on your behalf through the electronic office, and consult or revoke the powers granted.</p>",
+				"es_ES": "<p>Autorización a otra persona o entidad para realizar trámites tributarios en su nombre a través de la sede electrónica, y consulta o revocación de los poderes otorgados.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Any taxpayer, or a third party acting on their behalf with the appropriate authorisation.</p>",
+				"es_ES": "<p>Cualquier obligado tributario, o un tercero que actúe en su nombre con la autorización correspondiente.</p>"
+			},
+			"area": "otherServices",
+			"electronicOnly": false,
+			"externalReferenceCode": "TAX-PROCEDURE-G500",
+			"filingPeriod_i18n": {
+				"en_US": "Available all year round, subject to the capacity of each office",
+				"es_ES": "Disponible todo el año, sujeto a la capacidad de cada oficina"
+			},
+			"procedureCode": "G500",
+			"procedureName_i18n": {
+				"en_US": "Appointment booking for in-person and telephone assistance",
+				"es_ES": "Solicitud de cita previa para atención presencial y telefónica"
+			},
+			"publicationDate": "2026-04-02",
+			"resolutionPeriod_i18n": {
+				"en_US": "Immediate confirmation",
+				"es_ES": "Confirmación inmediata"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Book, change or cancel an appointment to be assisted at a tax office or over the telephone, including the return filing assistance service.</p>",
+				"es_ES": "<p>Solicitud, modificación o anulación de una cita para ser atendido en una oficina tributaria o por teléfono, incluido el servicio de ayuda para la confección de declaraciones.</p>"
+			}
+		},
+		{
+			"applicantProfile_i18n": {
+				"en_US": "<p>Taxpayers affected by the contested act, and any other party whose legitimate interests it affects.</p>",
+				"es_ES": "<p>Obligados tributarios afectados por el acto impugnado, y cualquier otra persona cuyos intereses legítimos resulten afectados.</p>"
+			},
+			"area": "appeals",
+			"electronicOnly": true,
+			"externalReferenceCode": "TAX-PROCEDURE-G250",
+			"filingPeriod_i18n": {
+				"en_US": "1 month from the day after notification of the contested act",
+				"es_ES": "1 mes desde el día siguiente a la notificación del acto impugnado"
+			},
+			"procedureCode": "G250",
+			"procedureName_i18n": {
+				"en_US": "Appeal for reconsideration against a tax assessment",
+				"es_ES": "Recurso de reposición contra una liquidación tributaria"
+			},
+			"publicationDate": "2026-02-25",
+			"resolutionPeriod_i18n": {
+				"en_US": "1 month from the date the appeal is filed",
+				"es_ES": "1 mes desde la fecha de interposición del recurso"
+			},
+			"summary_i18n": {
+				"en_US": "<p>Challenge a tax assessment before the same body that issued it, as an optional step prior to an economic-administrative claim.</p>",
+				"es_ES": "<p>Impugnación de una liquidación tributaria ante el mismo órgano que la dictó, con carácter potestativo y previo a la reclamación económico-administrativa.</p>"
+			}
+		}
+	],
+	"objectDefinitionName": "TaxProcedure"
+}

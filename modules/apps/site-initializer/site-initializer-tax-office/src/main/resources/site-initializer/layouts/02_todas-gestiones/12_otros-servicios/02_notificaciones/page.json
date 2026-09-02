@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/notificaciones",
 	"hidden": false,
-	"name": "Notificaciones",
+	"name": "Notifications",
+	"name_i18n": {
+		"en_US": "Notifications",
+		"es_ES": "Notificaciones"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

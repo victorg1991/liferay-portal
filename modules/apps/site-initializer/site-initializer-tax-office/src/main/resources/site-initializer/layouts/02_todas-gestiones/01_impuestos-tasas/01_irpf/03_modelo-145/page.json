@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/modelo-145",
 	"hidden": false,
-	"name": "Modelo 145. Retenciones sobre rendimientos del trabajo. Comunicación de datos al pagador.",
+	"name": "Form 145. Withholdings on employment income. Notification of data to the payer",
+	"name_i18n": {
+		"en_US": "Form 145. Withholdings on employment income. Notification of data to the payer",
+		"es_ES": "Modelo 145. Retenciones sobre rendimientos del trabajo. Comunicación de datos al pagador"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

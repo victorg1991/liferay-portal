@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/diligencias-embargo",
 	"hidden": false,
-	"name": "Consulta y tramitación de diligencias de embargo",
+	"name": "Consultation and processing of seizure orders",
+	"name_i18n": {
+		"en_US": "Consultation and processing of seizure orders",
+		"es_ES": "Consulta y tramitación de diligencias de embargo"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

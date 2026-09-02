@@ -1,0 +1,50 @@
+[
+	{
+		"key": "personalIncomeTax",
+		"name": "Personal Income Tax",
+		"name_i18n": {
+			"en_US": "Personal Income Tax",
+			"es_ES": "Impuesto sobre la Renta"
+		}
+	},
+	{
+		"key": "valueAddedTax",
+		"name": "Value Added Tax",
+		"name_i18n": {
+			"en_US": "Value Added Tax",
+			"es_ES": "Impuesto sobre el Valor Añadido"
+		}
+	},
+	{
+		"key": "collection",
+		"name": "Collection",
+		"name_i18n": {
+			"en_US": "Collection",
+			"es_ES": "Recaudación"
+		}
+	},
+	{
+		"key": "certificates",
+		"name": "Certificates",
+		"name_i18n": {
+			"en_US": "Certificates",
+			"es_ES": "Certificados"
+		}
+	},
+	{
+		"key": "appeals",
+		"name": "Appeals and Reviews",
+		"name_i18n": {
+			"en_US": "Appeals and Reviews",
+			"es_ES": "Recursos y revisión"
+		}
+	},
+	{
+		"key": "otherServices",
+		"name": "Other Services",
+		"name_i18n": {
+			"en_US": "Other Services",
+			"es_ES": "Otros servicios"
+		}
+	}
+]

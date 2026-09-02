@@ -2,6 +2,10 @@
 	"friendlyURL": "/intrastat",
 	"hidden": false,
 	"name": "Intrastat",
+	"name_i18n": {
+		"en_US": "Intrastat",
+		"es_ES": "Intrastat"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

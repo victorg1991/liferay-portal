@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<p>Solicitud y consulta de los beneficios fiscales y de las autorizaciones administrativas cuya concesión corresponde a la Oficina Tributaria, agrupadas por figura impositiva.</p>",
+										"en_US": "<p>Apply for and consult the tax benefits and administrative authorisations granted by the Tax Office, grouped by tax.</p>",
 										"es_ES": "<p>Solicitud y consulta de los beneficios fiscales y de las autorizaciones administrativas cuya concesión corresponde a la Oficina Tributaria, agrupadas por figura impositiva.</p>"
 									}
 								}
@@ -33,7 +33,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -44,7 +44,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Solicitud de autorización para la llevanza de libros registro</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitud de aplicación del régimen especial del grupo de entidades</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitud de autorización de sistemas de facturación</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado de las autorizaciones concedidas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Apply for authorisation to keep record books</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Apply for the group of entities regime</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Apply for authorisation of invoicing systems</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Check the status of authorisations granted</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Solicitud de autorización para la llevanza de libros registro</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitud de aplicación del régimen especial del grupo de entidades</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitud de autorización de sistemas de facturación</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta del estado de las autorizaciones concedidas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -76,7 +76,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -97,7 +97,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -108,7 +108,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Relación de beneficios fiscales por impuesto</a></li><li><a href=\"#\">Plazos de resolución de autorizaciones</a></li><li><a href=\"#\">Efectos del silencio administrativo</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Tax benefits listed by tax</a></li><li><a href=\"#\">Time limits for resolving authorisations</a></li><li><a href=\"#\">Effects of administrative silence</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Relación de beneficios fiscales por impuesto</a></li><li><a href=\"#\">Plazos de resolución de autorizaciones</a></li><li><a href=\"#\">Efectos del silencio administrativo</a></li></ul>"
 									}
 								}

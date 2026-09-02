@@ -4,8 +4,62 @@
 			{
 				"definition": {
 					"fragment": {
-						"key": "page-heading"
-					}
+						"key": "hero-banner"
+					},
+					"fragmentFields": [
+						{
+							"id": "image",
+							"value": {
+								"fragmentImage": {
+									"description": {
+										"value_i18n": {
+											"en_US": "Illustration of an online tax return",
+											"es_ES": "Ilustración de una declaración tributaria en línea"
+										}
+									},
+									"fragmentImageClassPKReference": {
+										"classPKReferences": {
+											"en_US": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/hero-electronic-office.png#]"
+											},
+											"es_ES": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[#DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/hero-electronic-office.png#]"
+											}
+										},
+										"fragmentImageConfiguration": {
+											"landscapeMobile": "auto",
+											"portraitMobile": "auto",
+											"tablet": "auto"
+										}
+									}
+								}
+							}
+						},
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Electronic office",
+										"es_ES": "Sede electrónica"
+									}
+								}
+							}
+						},
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<p>File your returns, follow your cases and obtain certificates without visiting an office.</p>",
+										"es_ES": "<p>Presente sus declaraciones, siga sus expedientes y obtenga certificados sin desplazarse a una oficina.</p>"
+									}
+								}
+							}
+						}
+					]
 				},
 				"type": "Fragment"
 			},
@@ -20,7 +74,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<p>Bienvenido a la sede electrónica de la Oficina Tributaria. Desde aquí puede presentar declaraciones, consultar el estado de sus expedientes, obtener certificados y realizar cualquier trámite sin desplazarse a una oficina.</p><p>Todos los trámites disponibles están agrupados por materia en <strong>Todas las gestiones</strong>.</p>",
+										"en_US": "<p>Welcome to the electronic office of the Tax Office. From here you can file returns, check the status of your cases, obtain certificates and complete any procedure without visiting an office.</p><p>Every available procedure is grouped by subject under <strong>All procedures</strong>.</p>",
 										"es_ES": "<p>Bienvenido a la sede electrónica de la Oficina Tributaria. Desde aquí puede presentar declaraciones, consultar el estado de sus expedientes, obtener certificados y realizar cualquier trámite sin desplazarse a una oficina.</p><p>Todos los trámites disponibles están agrupados por materia en <strong>Todas las gestiones</strong>.</p>"
 									}
 								}
@@ -41,7 +95,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -52,7 +106,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Presentar la declaración de la Renta</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consultar mis notificaciones pendientes</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitar un certificado tributario</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Pagar y aplazar deudas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitar cita previa</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">File the income tax return</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Check my pending notifications</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Request a tax certificate</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Pay and defer debts</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Book an appointment</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Presentar la declaración de la Renta</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consultar mis notificaciones pendientes</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitar un certificado tributario</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Pagar y aplazar deudas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Solicitar cita previa</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -84,7 +138,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -105,7 +159,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -116,7 +170,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Calendario del contribuyente</a></li><li><a href=\"#\">Identificación electrónica</a></li><li><a href=\"#\">Novedades de la sede electrónica</a></li><li><a href=\"#\">Horario de interrupciones de sede</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Taxpayer calendar</a></li><li><a href=\"#\">Electronic identification</a></li><li><a href=\"#\">What is new in the electronic office</a></li><li><a href=\"#\">Scheduled service interruptions</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Calendario del contribuyente</a></li><li><a href=\"#\">Identificación electrónica</a></li><li><a href=\"#\">Novedades de la sede electrónica</a></li><li><a href=\"#\">Horario de interrupciones de sede</a></li></ul>"
 									}
 								}

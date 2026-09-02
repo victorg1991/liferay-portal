@@ -1,0 +1,145 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "text-block"
+					},
+					"fragmentFields": [
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<p>Every tax procedure available in the electronic office, with its filing period, the time limit for resolution and who is entitled to file it.</p>",
+										"es_ES": "<p>Todos los trámites tributarios disponibles en la sede electrónica, con su plazo de presentación, el plazo de resolución y quién puede presentarlos.</p>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"collectionConfig": {
+						"collectionReference": {
+							"className": "com.liferay.asset.list.model.AssetListEntry",
+							"classPK": "[$ASSET_LIST_ENTRY_ID:TAX-PROCEDURES$]"
+						},
+						"collectionType": "Collection"
+					},
+					"numberOfColumns": 2,
+					"numberOfItems": 12,
+					"numberOfItemsPerPage": 12
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"collectionItemConfig": {
+							}
+						},
+						"pageElements": [
+							{
+								"definition": {
+									"fragment": {
+										"key": "procedure-card"
+									},
+									"fragmentFields": [
+										{
+											"id": "code",
+											"value": {
+												"text": {
+													"defaultFragmentInlineValue": {
+														"value": ""
+													},
+													"mapping": {
+														"fieldKey": "ObjectField_procedureCode",
+														"itemReference": {
+															"contextSource": "CollectionItem"
+														}
+													}
+												}
+											}
+										},
+										{
+											"id": "area",
+											"value": {
+												"text": {
+													"defaultFragmentInlineValue": {
+														"value": ""
+													},
+													"mapping": {
+														"fieldKey": "ObjectField_area",
+														"itemReference": {
+															"contextSource": "CollectionItem"
+														}
+													}
+												}
+											}
+										},
+										{
+											"id": "title",
+											"value": {
+												"fragmentLink": {
+													"value": {
+														"href": {
+															"mapping": {
+																"fieldKey": "displayPageURL",
+																"itemReference": {
+																	"contextSource": "CollectionItem"
+																}
+															}
+														}
+													}
+												},
+												"text": {
+													"defaultFragmentInlineValue": {
+														"value": ""
+													},
+													"mapping": {
+														"fieldKey": "ObjectField_procedureName",
+														"itemReference": {
+															"contextSource": "CollectionItem"
+														}
+													}
+												}
+											}
+										},
+										{
+											"id": "summary",
+											"value": {
+												"text": {
+													"defaultFragmentInlineValue": {
+														"value": ""
+													},
+													"mapping": {
+														"fieldKey": "ObjectField_summary",
+														"itemReference": {
+															"contextSource": "CollectionItem"
+														}
+													}
+												}
+											}
+										}
+									]
+								},
+								"type": "Fragment"
+							}
+						],
+						"type": "CollectionItem"
+					}
+				],
+				"type": "Collection"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

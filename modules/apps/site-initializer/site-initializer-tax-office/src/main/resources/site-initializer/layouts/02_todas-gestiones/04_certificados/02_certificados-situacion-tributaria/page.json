@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/certificados-situacion-tributaria",
 	"hidden": false,
-	"name": "Situación Tributaria",
+	"name": "Tax status",
+	"name_i18n": {
+		"en_US": "Tax status",
+		"es_ES": "Situación Tributaria"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

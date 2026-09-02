@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/recursos-reclamaciones",
 	"hidden": false,
-	"name": "Recursos, reclamaciones, otros procedimientos de revisión y suspensiones",
+	"name": "Appeals, Claims and Suspensions",
+	"name_i18n": {
+		"en_US": "Appeals, Claims and Suspensions",
+		"es_ES": "Recursos, reclamaciones, otros procedimientos de revisión y suspensiones"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

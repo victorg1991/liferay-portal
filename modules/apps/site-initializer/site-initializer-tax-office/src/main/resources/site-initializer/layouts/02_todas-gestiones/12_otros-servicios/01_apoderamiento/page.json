@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/apoderamiento",
 	"hidden": false,
-	"name": "Apoderamiento",
+	"name": "Power of attorney",
+	"name_i18n": {
+		"en_US": "Power of attorney",
+		"es_ES": "Apoderamiento"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

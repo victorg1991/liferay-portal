@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/modelo-390",
 	"hidden": false,
-	"name": "Modelo 390. IVA. Declaración-resumen anual.",
+	"name": "Form 390. Value Added Tax. Annual summary return",
+	"name_i18n": {
+		"en_US": "Form 390. Value Added Tax. Annual summary return",
+		"es_ES": "Modelo 390. Impuesto sobre el Valor Añadido. Declaración-resumen anual"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/tasas",
 	"hidden": false,
-	"name": "Tasas",
+	"name": "Fees",
+	"name_i18n": {
+		"en_US": "Fees",
+		"es_ES": "Tasas"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

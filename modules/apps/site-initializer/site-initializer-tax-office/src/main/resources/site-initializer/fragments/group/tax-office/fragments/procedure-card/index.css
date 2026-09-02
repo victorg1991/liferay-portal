@@ -1,0 +1,56 @@
+.tax-procedure-card {
+	border: 1px solid var(--tax-border);
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	height: 100%;
+	padding: 1.125rem 1.25rem;
+}
+
+.tax-procedure-card-meta {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0;
+}
+
+.tax-procedure-card-code {
+	background-color: var(--tax-blue-dark);
+	color: #fff;
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	padding: 0.125rem 0.5rem;
+}
+
+.tax-procedure-card-area {
+	color: var(--tax-ink-muted);
+	font-size: 0.8125rem;
+	text-transform: uppercase;
+}
+
+.tax-procedure-card-title {
+	font-size: 1.0625rem;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.tax-procedure-card-link {
+	color: var(--tax-blue);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.tax-procedure-card-link:hover {
+	text-decoration: underline;
+}
+
+.tax-procedure-card-summary {
+	color: var(--tax-ink-muted);
+	font-size: 0.9375rem;
+}
+
+.tax-procedure-card-summary p {
+	margin: 0;
+}

@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/tratamiento-datos-personales",
 	"hidden": false,
-	"name": "Tratamiento de datos personales",
+	"name": "Processing of personal data",
+	"name_i18n": {
+		"en_US": "Processing of personal data",
+		"es_ES": "Tratamiento de datos personales"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

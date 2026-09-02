@@ -12,7 +12,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Gestiones destacadas",
+										"en_US": "Featured procedures",
 										"es_ES": "Gestiones destacadas"
 									}
 								}
@@ -23,7 +23,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Contestación a diligencias de embargo de créditos</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de diligencias recibidas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Ingreso de cantidades embargadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Reply to seizure orders on receivables</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Consult orders received</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li><li><a href=\"#\">Pay in seized amounts</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Help</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Contestación a diligencias de embargo de créditos</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de diligencias recibidas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Ingreso de cantidades embargadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
 									}
 								}
@@ -55,7 +55,7 @@
 								},
 								"text": {
 									"value_i18n": {
-										"en_US": "Todas las gestiones",
+										"en_US": "All procedures",
 										"es_ES": "Todas las gestiones"
 									}
 								}
@@ -76,7 +76,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Información",
+										"en_US": "Information",
 										"es_ES": "Información"
 									}
 								}
@@ -87,7 +87,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<ul><li><a href=\"#\">Bienes inembargables</a></li><li><a href=\"#\">Orden de embargo de bienes</a></li></ul>",
+										"en_US": "<ul><li><a href=\"#\">Assets that cannot be seized</a></li><li><a href=\"#\">Order in which assets are seized</a></li></ul>",
 										"es_ES": "<ul><li><a href=\"#\">Bienes inembargables</a></li><li><a href=\"#\">Orden de embargo de bienes</a></li></ul>"
 									}
 								}
@@ -111,7 +111,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "Normativa",
+										"en_US": "Legislation",
 										"es_ES": "Normativa"
 									}
 								}
@@ -122,7 +122,7 @@
 							"value": {
 								"text": {
 									"value_i18n": {
-										"en_US": "<p><strong>Ley 58/2003, de 17 de diciembre</strong>General Tributaria.<cite>(BOE, 18-diciembre-2003)</cite></p><p><strong>Real Decreto 939/2005, de 29 de julio</strong>por el que se aprueba el Reglamento General de Recaudación.<cite>(BOE, 2-septiembre-2005)</cite></p>",
+										"en_US": "<p><strong>Law 58/2003 of 17 December</strong>General Taxation Act.<cite>(Official Gazette, 18 December 2003)</cite></p><p><strong>Royal Decree 939/2005 of 29 July</strong>approving the General Collection Regulation.<cite>(Official Gazette, 2 September 2005)</cite></p>",
 										"es_ES": "<p><strong>Ley 58/2003, de 17 de diciembre</strong>General Tributaria.<cite>(BOE, 18-diciembre-2003)</cite></p><p><strong>Real Decreto 939/2005, de 29 de julio</strong>por el que se aprueba el Reglamento General de Recaudación.<cite>(BOE, 2-septiembre-2005)</cite></p>"
 									}
 								}

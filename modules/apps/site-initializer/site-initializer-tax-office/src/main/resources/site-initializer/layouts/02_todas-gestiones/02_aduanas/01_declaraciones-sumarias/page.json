@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/declaraciones-sumarias",
 	"hidden": false,
-	"name": "Presentación de declaraciones sumarias y manifiestos de carga",
+	"name": "Filing of summary declarations and cargo manifests",
+	"name_i18n": {
+		"en_US": "Filing of summary declarations and cargo manifests",
+		"es_ES": "Presentación de declaraciones sumarias y manifiestos de carga"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

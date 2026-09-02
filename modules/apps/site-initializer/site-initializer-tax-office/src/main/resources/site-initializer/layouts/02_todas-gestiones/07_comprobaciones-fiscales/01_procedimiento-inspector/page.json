@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/procedimiento-inspector",
 	"hidden": false,
-	"name": "Procedimiento inspector",
+	"name": "Inspection procedure",
+	"name_i18n": {
+		"en_US": "Inspection procedure",
+		"es_ES": "Procedimiento inspector"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

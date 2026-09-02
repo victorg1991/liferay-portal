@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/impuesto-patrimonio",
 	"hidden": false,
-	"name": "Impuesto sobre el Patrimonio",
+	"name": "Wealth Tax",
+	"name_i18n": {
+		"en_US": "Wealth Tax",
+		"es_ES": "Impuesto sobre el Patrimonio"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/calendario-contribuyente",
 	"hidden": false,
-	"name": "Calendario del contribuyente",
+	"name": "Taxpayer calendar",
+	"name_i18n": {
+		"en_US": "Taxpayer calendar",
+		"es_ES": "Calendario del contribuyente"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

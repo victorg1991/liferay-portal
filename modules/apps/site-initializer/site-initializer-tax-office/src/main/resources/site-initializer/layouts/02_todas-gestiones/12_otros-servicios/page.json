@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/otros-servicios",
 	"hidden": false,
-	"name": "Otros servicios",
+	"name": "Other Services",
+	"name_i18n": {
+		"en_US": "Other Services",
+		"es_ES": "Otros servicios"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

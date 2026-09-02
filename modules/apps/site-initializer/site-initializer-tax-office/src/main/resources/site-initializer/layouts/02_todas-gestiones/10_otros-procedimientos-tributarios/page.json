@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/otros-procedimientos-tributarios",
 	"hidden": false,
-	"name": "Otros procedimientos tributarios",
+	"name": "Other Tax Procedures",
+	"name_i18n": {
+		"en_US": "Other Tax Procedures",
+		"es_ES": "Otros procedimientos tributarios"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

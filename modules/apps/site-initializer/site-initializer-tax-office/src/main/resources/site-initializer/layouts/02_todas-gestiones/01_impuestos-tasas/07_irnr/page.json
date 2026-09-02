@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/irnr",
 	"hidden": false,
-	"name": "Impuesto sobre la Renta de No Residentes",
+	"name": "Non-Resident Income Tax",
+	"name_i18n": {
+		"en_US": "Non-Resident Income Tax",
+		"es_ES": "Impuesto sobre la Renta de No Residentes"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

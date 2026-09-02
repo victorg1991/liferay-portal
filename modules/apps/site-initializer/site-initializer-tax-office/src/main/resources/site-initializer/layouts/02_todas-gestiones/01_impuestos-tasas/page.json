@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/impuestos-tasas",
 	"hidden": false,
-	"name": "Impuestos, tasas y prestaciones patrimoniales",
+	"name": "Taxes, Fees and Public Levies",
+	"name_i18n": {
+		"en_US": "Taxes, Fees and Public Levies",
+		"es_ES": "Impuestos, tasas y prestaciones patrimoniales"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

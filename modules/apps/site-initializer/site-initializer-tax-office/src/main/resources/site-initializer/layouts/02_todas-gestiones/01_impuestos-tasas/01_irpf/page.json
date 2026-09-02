@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/irpf",
 	"hidden": false,
-	"name": "Impuesto sobre la Renta de las Personas Físicas",
+	"name": "Personal Income Tax",
+	"name_i18n": {
+		"en_US": "Personal Income Tax",
+		"es_ES": "Impuesto sobre la Renta de las Personas Físicas"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

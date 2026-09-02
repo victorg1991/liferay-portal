@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/procedimiento-sancionador",
 	"hidden": false,
-	"name": "Procedimiento sancionador",
+	"name": "Penalty procedure",
+	"name_i18n": {
+		"en_US": "Penalty procedure",
+		"es_ES": "Procedimiento sancionador"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

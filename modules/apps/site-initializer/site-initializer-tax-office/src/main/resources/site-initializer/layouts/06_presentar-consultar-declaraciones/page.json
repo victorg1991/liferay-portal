@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/presentar-consultar-declaraciones",
 	"hidden": false,
-	"name": "Presentar y consultar declaraciones por modelo",
+	"name": "File and Consult Returns by Form",
+	"name_i18n": {
+		"en_US": "File and Consult Returns by Form",
+		"es_ES": "Presentar y consultar declaraciones por modelo"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

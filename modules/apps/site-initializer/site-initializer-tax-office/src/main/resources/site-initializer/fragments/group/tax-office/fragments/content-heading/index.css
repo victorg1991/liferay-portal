@@ -1,0 +1,47 @@
+.tax-content-heading {
+	color: var(--tax-ink);
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: 700;
+	line-height: 1.2;
+	margin: 0 0 1rem;
+}
+
+.tax-content-heading-h1 {
+	font-size: 1.8rem;
+	margin-bottom: 1.5rem;
+}
+
+.tax-content-heading-h2 {
+	font-size: 1.3rem;
+	margin-top: 2rem;
+}
+
+.tax-content-heading-h3 {
+	font-size: 1.0625rem;
+}
+
+/* ---------- Layout of the display page template. ---------- */
+
+.tax-display-page {
+	padding-bottom: 3rem;
+	padding-top: 1.5rem;
+}
+
+.tax-display-aside {
+	background-color: var(--tax-blue-pale);
+	padding: 0.25rem 1.25rem 1.25rem;
+}
+
+.tax-display-aside .tax-content-heading-h2 {
+	margin-top: 1.25rem;
+}
+
+.tax-display-main {
+	padding-right: 1.5rem;
+}
+
+@media (max-width: 61.9375em) {
+	.tax-display-main {
+		padding-right: 0;
+	}
+}

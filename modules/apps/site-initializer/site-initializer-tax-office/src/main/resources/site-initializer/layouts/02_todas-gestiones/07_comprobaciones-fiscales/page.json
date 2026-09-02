@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/comprobaciones-fiscales",
 	"hidden": false,
-	"name": "Comprobaciones fiscales y procedimiento sancionador",
+	"name": "Tax Audits and Penalty Procedure",
+	"name_i18n": {
+		"en_US": "Tax Audits and Penalty Procedure",
+		"es_ES": "Comprobaciones fiscales y procedimiento sancionador"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

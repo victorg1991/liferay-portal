@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/iva",
 	"hidden": false,
-	"name": "IVA",
+	"name": "Value Added Tax",
+	"name_i18n": {
+		"en_US": "Value Added Tax",
+		"es_ES": "IVA"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

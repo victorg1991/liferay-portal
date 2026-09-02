@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/censos",
 	"hidden": false,
-	"name": "Censos",
+	"name": "Registers",
+	"name_i18n": {
+		"en_US": "Registers",
+		"es_ES": "Censos"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

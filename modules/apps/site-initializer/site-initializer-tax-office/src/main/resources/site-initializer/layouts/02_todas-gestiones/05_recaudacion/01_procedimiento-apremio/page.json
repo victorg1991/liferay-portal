@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/procedimiento-apremio",
 	"hidden": false,
-	"name": "Procedimiento de apremio",
+	"name": "Enforcement procedure",
+	"name_i18n": {
+		"en_US": "Enforcement procedure",
+		"es_ES": "Procedimiento de apremio"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

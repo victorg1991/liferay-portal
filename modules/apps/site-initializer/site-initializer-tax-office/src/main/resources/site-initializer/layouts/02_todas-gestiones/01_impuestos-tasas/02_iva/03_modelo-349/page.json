@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/modelo-349",
 	"hidden": false,
-	"name": "Modelo 349. Declaración recapitulativa de operaciones intracomunitarias.",
+	"name": "Form 349. Recapitulative statement of intra-Community transactions",
+	"name_i18n": {
+		"en_US": "Form 349. Recapitulative statement of intra-Community transactions",
+		"es_ES": "Modelo 349. Declaración recapitulativa de operaciones intracomunitarias"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

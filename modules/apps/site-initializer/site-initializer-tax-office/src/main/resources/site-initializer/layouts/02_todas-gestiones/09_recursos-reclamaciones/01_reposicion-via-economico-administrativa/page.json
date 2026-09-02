@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/reposicion-via-economico-administrativa",
 	"hidden": false,
-	"name": "Reposición y vía económico administrativa",
+	"name": "Reconsideration and economic-administrative review",
+	"name_i18n": {
+		"en_US": "Reconsideration and economic-administrative review",
+		"es_ES": "Reposición y vía económico administrativa"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

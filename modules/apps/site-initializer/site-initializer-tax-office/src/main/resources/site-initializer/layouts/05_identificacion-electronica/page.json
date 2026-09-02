@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/identificacion-electronica",
 	"hidden": false,
-	"name": "Identificación electrónica",
+	"name": "Electronic Identification",
+	"name_i18n": {
+		"en_US": "Electronic Identification",
+		"es_ES": "Identificación electrónica"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

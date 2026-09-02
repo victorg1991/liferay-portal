@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/nif-domicilio-fiscal",
 	"hidden": false,
-	"name": "NIF y domicilio fiscal",
+	"name": "Tax ID and tax address",
+	"name_i18n": {
+		"en_US": "Tax ID and tax address",
+		"es_ES": "NIF y domicilio fiscal"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

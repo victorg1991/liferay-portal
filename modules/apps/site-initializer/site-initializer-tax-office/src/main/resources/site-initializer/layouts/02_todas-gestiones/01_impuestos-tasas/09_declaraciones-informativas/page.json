@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/declaraciones-informativas",
 	"hidden": false,
-	"name": "Declaraciones Informativas",
+	"name": "Informative Returns",
+	"name_i18n": {
+		"en_US": "Informative Returns",
+		"es_ES": "Declaraciones Informativas"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"

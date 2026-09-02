@@ -1,0 +1,44 @@
+.tax-hero-banner {
+	margin-bottom: 2rem;
+	position: relative;
+}
+
+.tax-hero-banner-image {
+	display: block;
+	height: auto;
+	object-fit: cover;
+	width: 100%;
+}
+
+.tax-hero-banner-body {
+	background-color: rgba(0, 47, 87, 0.88);
+	bottom: 0;
+	color: #fff;
+	left: 0;
+	padding: 1.25rem 1.5rem;
+	position: absolute;
+	right: 0;
+}
+
+.tax-hero-banner-title {
+	color: #fff;
+	font-size: 1.6rem;
+	font-weight: 700;
+	line-height: 1.2;
+	margin: 0 0 0.375rem;
+}
+
+.tax-hero-banner-text p {
+	margin: 0;
+}
+
+@media (max-width: 47.9375em) {
+	.tax-hero-banner-body {
+		padding: 0.875rem 1rem;
+		position: static;
+	}
+
+	.tax-hero-banner-title {
+		font-size: 1.25rem;
+	}
+}

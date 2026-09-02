@@ -1,7 +1,11 @@
 {
 	"friendlyURL": "/certificados-censales",
 	"hidden": false,
-	"name": "Censales",
+	"name": "Register certificates",
+	"name_i18n": {
+		"en_US": "Register certificates",
+		"es_ES": "Censales"
+	},
 	"private": false,
 	"system": false,
 	"type": "Content"
