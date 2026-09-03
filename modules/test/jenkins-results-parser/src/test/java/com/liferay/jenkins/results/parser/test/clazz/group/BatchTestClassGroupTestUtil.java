@@ -11,6 +11,7 @@ import com.liferay.jenkins.results.parser.Job;
 import com.liferay.jenkins.results.parser.JobFactory;
 import com.liferay.jenkins.results.parser.PortalGitWorkingDirectory;
 import com.liferay.jenkins.results.parser.PortalTestClassJob;
+import com.liferay.jenkins.results.parser.test.clazz.TestClass;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,6 +32,20 @@ import org.mockito.Mockito;
  * @author Kenji Heigel
  */
 public class BatchTestClassGroupTestUtil {
+
+	public static List<Integer> getAxisSizes(
+		List<AxisTestClassGroup> axisTestClassGroups) {
+
+		List<Integer> axisSizes = new ArrayList<>();
+
+		for (AxisTestClassGroup axisTestClassGroup : axisTestClassGroups) {
+			List<TestClass> testClasses = axisTestClassGroup.getTestClasses();
+
+			axisSizes.add(testClasses.size());
+		}
+
+		return axisSizes;
+	}
 
 	public static PortalTestClassJob getPortalTestClassJob() {
 		return getPortalTestClassJob(null);
@@ -56,6 +71,33 @@ public class BatchTestClassGroupTestUtil {
 					"/BatchTestClassGroupTestUtil/test.properties"));
 
 		_setDefaults(portalTestClassJob.getPortalGitWorkingDirectory());
+
+		return portalTestClassJob;
+	}
+
+	public static PortalTestClassJob getPortalTestClassJob(
+		Properties jobProperties, List<File> modifiedFiles,
+		File workingDirectory) {
+
+		PortalTestClassJob portalTestClassJob = getPortalTestClassJob(
+			jobProperties);
+
+		PortalGitWorkingDirectory portalGitWorkingDirectory =
+			portalTestClassJob.getPortalGitWorkingDirectory();
+
+		Mockito.doReturn(
+			modifiedFiles
+		).when(
+			portalGitWorkingDirectory
+		).getModifiedFilesList(
+			Mockito.anyBoolean(), Mockito.any(), Mockito.anyList()
+		);
+
+		Mockito.doReturn(
+			workingDirectory
+		).when(
+			portalGitWorkingDirectory
+		).getWorkingDirectory();
 
 		return portalTestClassJob;
 	}
@@ -170,6 +212,14 @@ public class BatchTestClassGroupTestUtil {
 				Collections.emptyList()
 			).when(
 				portalGitWorkingDirectory
+			).getModifiedFilesList(
+				Mockito.anyBoolean(), Mockito.any(), Mockito.anyList()
+			);
+
+			Mockito.doReturn(
+				Collections.emptyList()
+			).when(
+				portalGitWorkingDirectory
 			).getModifiedModuleDirsList(
 				Mockito.anyList(), Mockito.anyList()
 			);
@@ -185,6 +235,11 @@ public class BatchTestClassGroupTestUtil {
 			).when(
 				portalGitWorkingDirectory
 			).getModifiedPoshiModules();
+
+			Mockito.doCallRealMethod(
+			).when(
+				portalGitWorkingDirectory
+			).getWorkingDirectory();
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
