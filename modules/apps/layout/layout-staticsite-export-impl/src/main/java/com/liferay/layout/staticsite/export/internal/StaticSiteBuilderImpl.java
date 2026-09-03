@@ -22,6 +22,10 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactory;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Company;
@@ -102,6 +106,16 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 			HttpServletResponse httpServletResponse =
 				new DummyHttpServletResponse();
 
+			// Every file goes through the writer, so recording there is what
+			// makes the inventory complete rather than a list maintained
+			// alongside the code that writes
+
+			StaticSiteWriter recordingStaticSiteWriter = (fileName, bytes) -> {
+				staticSiteWriter.write(fileName, bytes);
+
+				staticSiteExportResult.addWrittenFile(fileName, bytes);
+			};
+
 			String portalURL = _getPortalURL(group);
 
 			User user = _userLocalService.getGuestUser(group.getCompanyId());
@@ -133,7 +147,7 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 
 			_writeResources(
 				httpServletRequest, httpServletResponse, pageHTMLs, portalURL,
-				staticSiteExportResult, staticSiteWriter);
+				staticSiteExportResult, recordingStaticSiteWriter);
 
 			for (Map.Entry<Locale, Map<String, String>> entry :
 					pageHTMLsByLocale.entrySet()) {
@@ -141,8 +155,11 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 				_writePages(
 					entry.getKey(), groupId, entry.getValue(), portalURL,
 					siteDefaultLocale, staticSiteExportResult,
-					staticSiteWriter);
+					recordingStaticSiteWriter);
 			}
+
+			// Written through the raw writer rather than the recording one,
+			// since a report cannot carry a digest of itself
 
 			staticSiteWriter.write(
 				"export-report.json",
@@ -234,34 +251,6 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 					fileName);
 			}
 		}
-	}
-
-	private void _appendFailures(
-		StringBundler sb, List<StaticSiteExportResult.Failure> failures) {
-
-		for (int i = 0; i < failures.size(); i++) {
-			StaticSiteExportResult.Failure failure = failures.get(i);
-
-			if (i > 0) {
-				sb.append(", ");
-			}
-
-			sb.append("{\"url\": \"");
-			sb.append(_escapeJSON(failure.getURL()));
-			sb.append("\", \"message\": \"");
-			sb.append(_escapeJSON(failure.getMessage()));
-			sb.append("\"}");
-		}
-	}
-
-	private String _escapeJSON(String value) {
-		if (value == null) {
-			return StringPool.BLANK;
-		}
-
-		value = StringUtil.replace(value, CharPool.BACK_SLASH, "\\\\");
-
-		return StringUtil.replace(value, CharPool.QUOTE, "\\\"");
 	}
 
 	private byte[] _getBytes(String s) {
@@ -357,6 +346,23 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 		return locales;
 	}
 
+	private JSONArray _getFailuresJSONArray(
+		List<StaticSiteExportResult.Failure> failures) {
+
+		JSONArray jsonArray = _jsonFactory.createJSONArray();
+
+		for (StaticSiteExportResult.Failure failure : failures) {
+			jsonArray.put(
+				JSONUtil.put(
+					"message", failure.getMessage()
+				).put(
+					"url", failure.getURL()
+				));
+		}
+
+		return jsonArray;
+	}
+
 	private LayoutDisplayPageProvider<?> _getLayoutDisplayPageProvider(
 		String urlSeparator) {
 
@@ -401,59 +407,68 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 			false);
 	}
 
-	private String _getReportJSON(
-		StaticSiteExportResult staticSiteExportResult) {
+	/**
+	 * Returns the report written beside the site, which is what one export can
+	 * be compared against another with.
+	 *
+	 * <p>
+	 * The file inventory carries a path, a digest and a size for everything
+	 * written. Diffing two reports says which files an export gained, which it
+	 * lost, and which kept their path while their contents changed, none of
+	 * which can be recovered from the archives themselves once one has been
+	 * unzipped over the other.
+	 * </p>
+	 */
+	private String _getReportJSON(StaticSiteExportResult staticSiteExportResult)
+		throws Exception {
 
-		StringBundler sb = new StringBundler();
+		JSONObject filesJSONObject = _jsonFactory.createJSONObject();
 
-		sb.append("{\"deployAtWebServerRoot\": true, \"locales\": [");
+		for (Map.Entry<String, StaticSiteExportResult.WrittenFile> entry :
+				staticSiteExportResult.getWrittenFiles(
+				).entrySet()) {
 
-		String localeDelimiter = StringPool.BLANK;
+			StaticSiteExportResult.WrittenFile writtenFile = entry.getValue();
 
-		for (Locale exportedLocale :
-				staticSiteExportResult.getExportedLocales()) {
-
-			sb.append(localeDelimiter);
-			sb.append("\"");
-			sb.append(LocaleUtil.toLanguageId(exportedLocale));
-			sb.append("\"");
-
-			localeDelimiter = ", ";
+			filesJSONObject.put(
+				entry.getKey(),
+				JSONUtil.put(
+					"digest", writtenFile.getDigest()
+				).put(
+					"size", writtenFile.getSize()
+				));
 		}
 
-		sb.append("], \"pages\": ");
-		sb.append(staticSiteExportResult.getExportedPageCount());
-		sb.append(", \"resources\": ");
-		sb.append(
+		return JSONUtil.put(
+			"deployAtWebServerRoot", true
+		).put(
+			"failures",
+			_getFailuresJSONArray(staticSiteExportResult.getFailures())
+		).put(
+			"fileCount", filesJSONObject.length()
+		).put(
+			"files", filesJSONObject
+		).put(
+			"locales",
+			JSONUtil.toJSONArray(
+				staticSiteExportResult.getExportedLocales(),
+				LocaleUtil::toLanguageId)
+		).put(
+			"pages", staticSiteExportResult.getExportedPageCount()
+		).put(
+			"resources",
 			staticSiteExportResult.getResourceFileNames(
-			).size());
-		sb.append(", \"resourceURLs\": [");
-
-		String delimiter = StringPool.BLANK;
-
-		for (String resourceURL :
+			).size()
+		).put(
+			"resourceURLs",
+			JSONUtil.toJSONArray(
 				staticSiteExportResult.getResourceFileNames(
-				).keySet()) {
-
-			sb.append(delimiter);
-			sb.append("\"");
-			sb.append(_escapeJSON(resourceURL));
-			sb.append("\"");
-
-			delimiter = ", ";
-		}
-
-		sb.append("], \"skippedPages\": [");
-
-		_appendFailures(sb, staticSiteExportResult.getSkippedPages());
-
-		sb.append("], \"failures\": [");
-
-		_appendFailures(sb, staticSiteExportResult.getFailures());
-
-		sb.append("]}");
-
-		return sb.toString();
+				).keySet(),
+				resourceURL -> resourceURL)
+		).put(
+			"skippedPages",
+			_getFailuresJSONArray(staticSiteExportResult.getSkippedPages())
+		).toString();
 	}
 
 	private List<Layout> _getSelectedLayouts(long groupId, long[] plids) {
@@ -889,6 +904,9 @@ public class StaticSiteBuilderImpl implements StaticSiteBuilder {
 
 	@Reference
 	private GroupLocalService _groupLocalService;
+
+	@Reference
+	private JSONFactory _jsonFactory;
 
 	@Reference
 	private LayoutDisplayPageProviderRegistry

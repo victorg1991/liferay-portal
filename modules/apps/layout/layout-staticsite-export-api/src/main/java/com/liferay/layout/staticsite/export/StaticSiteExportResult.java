@@ -5,7 +5,12 @@
 
 package com.liferay.layout.staticsite.export;
 
+import com.liferay.portal.kernel.util.StringUtil;
+
 import java.io.File;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +61,22 @@ public class StaticSiteExportResult {
 		_translatedPageFileNames.put(friendlyURL, fileName);
 	}
 
+	/**
+	 * Records a file the build wrote, by the path it was written to and a
+	 * digest of its bytes.
+	 *
+	 * <p>
+	 * Two exports of the same site are compared through these: a path present
+	 * in one and not the other was added or removed, and a path in both whose
+	 * digest differs was rewritten. Neither is visible from the file names
+	 * alone, and neither survives unzipping over a previous export.
+	 * </p>
+	 */
+	public void addWrittenFile(String fileName, byte[] bytes) {
+		_writtenFiles.put(
+			fileName, new WrittenFile(_getDigest(bytes), bytes.length));
+	}
+
 	public Set<Locale> getExportedLocales() {
 		return _exportedPageFileNamesByLocale.keySet();
 	}
@@ -97,6 +118,10 @@ public class StaticSiteExportResult {
 		return _translatedPageFileNames;
 	}
 
+	public Map<String, WrittenFile> getWrittenFiles() {
+		return _writtenFiles;
+	}
+
 	public boolean hasResource(String url) {
 		return _resourceFileNames.containsKey(url);
 	}
@@ -125,6 +150,37 @@ public class StaticSiteExportResult {
 
 	}
 
+	public static class WrittenFile {
+
+		public WrittenFile(String digest, int size) {
+			_digest = digest;
+			_size = size;
+		}
+
+		public String getDigest() {
+			return _digest;
+		}
+
+		public int getSize() {
+			return _size;
+		}
+
+		private final String _digest;
+		private final int _size;
+
+	}
+
+	private String _getDigest(byte[] bytes) {
+		try {
+			MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
+
+			return StringUtil.bytesToHexString(messageDigest.digest(bytes));
+		}
+		catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+			throw new IllegalStateException(noSuchAlgorithmException);
+		}
+	}
+
 	private final Map<Locale, Map<String, String>>
 		_exportedPageFileNamesByLocale = new LinkedHashMap<>();
 	private final List<Failure> _failures = new ArrayList<>();
@@ -133,6 +189,8 @@ public class StaticSiteExportResult {
 		new LinkedHashMap<>();
 	private final List<Failure> _skippedPages = new ArrayList<>();
 	private final Map<String, String> _translatedPageFileNames =
+		new LinkedHashMap<>();
+	private final Map<String, WrittenFile> _writtenFiles =
 		new LinkedHashMap<>();
 
 }
