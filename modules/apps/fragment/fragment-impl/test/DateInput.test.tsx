@@ -64,6 +64,10 @@ function renderDateInput({
 	);
 }
 
+function getCalendarButton() {
+	return screen.getByTestId('date-button');
+}
+
 function getInput() {
 	return screen.getByLabelText(/Expiration Date/);
 }
@@ -189,6 +193,64 @@ describe('DateInput', () => {
 			renderDateInput({required: true});
 
 			expect(getInput()).toBeRequired();
+		});
+
+		it('opens the calendar when the input is editable', async () => {
+			renderDateInput({value: '2026-07-09'});
+
+			await userEvent.click(getCalendarButton());
+
+			expect(getCalendarButton()).toHaveAttribute(
+				'aria-expanded',
+				'true'
+			);
+		});
+
+		// `readonly` only stops typing, so the calendar needs its own guard.
+
+		it('does not open the calendar when the input is read only', async () => {
+			renderDateInput({readOnly: true, value: '2026-07-09'});
+
+			await userEvent.click(getCalendarButton());
+
+			expect(getCalendarButton()).toHaveAttribute(
+				'aria-expanded',
+				'false'
+			);
+
+			expect(getSubmittedValue()).toBe('2026-07-09');
+		});
+	});
+
+	describe('Unlocalized', () => {
+		beforeEach(() => {
+			(Liferay.on as jest.Mock).mockClear();
+		});
+
+		it('does not open the calendar on a language it cannot translate', async () => {
+			renderDateInput({
+				unlocalizedFieldsState: 'read-only',
+				value: '2026-07-09',
+			});
+
+			fireLocalizationEvent('localeChanged', {languageId: 'es_ES'});
+
+			await userEvent.click(getCalendarButton());
+
+			expect(getCalendarButton()).toHaveAttribute(
+				'aria-expanded',
+				'false'
+			);
+
+			expect(getSubmittedValue()).toBe('2026-07-09');
+		});
+
+		it('disables the calendar on a language it cannot translate', () => {
+			renderDateInput({value: '2026-07-09'});
+
+			fireLocalizationEvent('localeChanged', {languageId: 'es_ES'});
+
+			expect(getCalendarButton()).toBeDisabled();
 		});
 	});
 

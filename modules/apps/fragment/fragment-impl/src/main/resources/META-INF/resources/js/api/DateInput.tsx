@@ -112,9 +112,18 @@ export function DateInput({
 		toDisplayValue(value, formats, locale)
 	);
 
+	const [expanded, setExpanded] = useState(false);
+
+	const [unlocalized, setUnlocalized] = useState(false);
+
 	const onChangeRef = useRef<OnChange>();
 
 	const registeredRef = useRef(false);
+
+	const inputDisabled =
+		disabled || (unlocalized && unlocalizedFieldsState === 'disabled');
+	const inputReadOnly =
+		readOnly || (unlocalized && unlocalizedFieldsState === 'read-only');
 
 	useEffect(() => {
 
@@ -133,8 +142,11 @@ export function DateInput({
 		if (!localizable) {
 			registerUnlocalizedInput({
 				changeTextDirection: false,
+				customLocaleChangeHandler: true,
 				defaultLanguageId,
 				inputElement: document.getElementById(id) as HTMLInputElement,
+				onLocaleChange: (languageId) =>
+					setUnlocalized(languageId !== defaultLanguageId),
 				readOnlyInputLabel: document.getElementById(
 					readOnlyLabelId
 				) as HTMLSpanElement,
@@ -228,13 +240,13 @@ export function DateInput({
 	useEffect(() => {
 		const inputElement = document.getElementById(id) as HTMLInputElement;
 
-		inputElement.readOnly = Boolean(readOnly);
+		inputElement.readOnly = Boolean(inputReadOnly);
 		inputElement.required = Boolean(required);
 
 		if (focus) {
 			focusInput(inputElement);
 		}
-	}, [focus, id, readOnly, required]);
+	}, [focus, id, inputReadOnly, required]);
 
 	const date = moment(value, formats.serverFormat, true);
 	const year = date.isValid() ? date.year() : moment().year();
@@ -255,7 +267,8 @@ export function DateInput({
 				selectYear: Liferay.Language.get('select-a-year'),
 			}}
 			dateFormat={formats.clayFormat}
-			disabled={disabled}
+			disabled={inputDisabled}
+			expanded={inputReadOnly ? false : expanded}
 			firstDayOfWeek={dateUtils.getFirstDayOfWeek(
 				Liferay.ThemeDisplay.getBCP47LanguageId() as FirstDayOfWeekLocale
 			)}
@@ -263,6 +276,10 @@ export function DateInput({
 			inputName={`${namespace}-date-picker`}
 			months={dateUtils.getMonthsLong()}
 			onChange={(displayValue) => {
+				if (inputReadOnly) {
+					return;
+				}
+
 				setDisplayValue(displayValue);
 
 				const date = moment(displayValue, formats.displayFormat, true);
@@ -286,6 +303,11 @@ export function DateInput({
 				).value = value;
 
 				onChangeRef.current?.(value);
+			}}
+			onExpandedChange={(value: boolean) => {
+				if (!inputReadOnly) {
+					setExpanded(value);
+				}
 			}}
 			placeholder={formats.placeholder}
 			time={time}
