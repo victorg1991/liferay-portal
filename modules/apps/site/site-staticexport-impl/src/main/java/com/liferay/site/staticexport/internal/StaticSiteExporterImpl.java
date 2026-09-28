@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.servlet.DummyHttpServletResponse;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
+import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -45,6 +46,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -196,48 +198,86 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				ServletContextPool.get(_portal.getServletContextName()),
 				staticSiteExportBundleResourceResolver);
 
-		Set<String> optionalURLs = _getLanguageResourceURLs(
-			locales, _getModuleNames(staticSiteExportDocuments));
+		Set<String> fetchedURLs = new HashSet<>();
+
+		Set<String> moduleNames = new LinkedHashSet<>();
+
+		for (StaticSiteExportDocument staticSiteExportDocument :
+				staticSiteExportDocuments) {
+
+			moduleNames.addAll(
+				_getModuleNames(staticSiteExportDocument.getHTML()));
+		}
 
 		Set<String> urls = _getResourceURLs(
-			portalURL, staticSiteExportBundleResourceResolver,
-			staticSiteExportDocuments);
+			portalURL, staticSiteExportDocuments);
 
-		urls.addAll(optionalURLs);
+		while (!urls.isEmpty() || !moduleNames.isEmpty()) {
+			Set<String> optionalURLs = _getLanguageResourceURLs(
+				locales, moduleNames);
 
-		for (String url : urls) {
-			File file = null;
+			optionalURLs.addAll(
+				_getModuleResourceURLs(
+					moduleNames, staticSiteExportBundleResourceResolver));
 
-			try {
-				file = staticSiteExportResourceFetcher.fetch(url);
-			}
-			catch (Exception exception) {
-				if (_log.isDebugEnabled()) {
-					_log.debug("Unable to fetch " + url, exception);
+			urls.addAll(optionalURLs);
+
+			moduleNames = new LinkedHashSet<>();
+
+			for (String url : urls) {
+				if (!fetchedURLs.add(url)) {
+					continue;
 				}
 
-				if (!optionalURLs.contains(url)) {
-					resourceFailures.add(
-						new StaticSiteExportReport.Failure(
-							exception.getMessage(), url));
+				File file = null;
+
+				try {
+					file = staticSiteExportResourceFetcher.fetch(url);
+				}
+				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug("Unable to fetch " + url, exception);
+					}
+
+					if (!optionalURLs.contains(url)) {
+						resourceFailures.add(
+							new StaticSiteExportReport.Failure(
+								exception.getMessage(), url));
+					}
+
+					continue;
 				}
 
-				continue;
-			}
+				if (file == null) {
+					if (!optionalURLs.contains(url)) {
+						resourceFailures.add(
+							new StaticSiteExportReport.Failure(
+								"No servlet serves the resource", url));
+					}
 
-			if (file == null) {
-				if (!optionalURLs.contains(url)) {
-					resourceFailures.add(
-						new StaticSiteExportReport.Failure(
-							"No servlet serves the resource", url));
+					continue;
 				}
 
-				continue;
+				staticSiteExportResources.add(
+					new StaticSiteExportResource(
+						file, StaticSiteExportResourcePathUtil.getPath(url),
+						url));
+
+				if (!url.endsWith(".js")) {
+					continue;
+				}
+
+				try {
+					moduleNames.addAll(_getModuleNames(FileUtil.read(file)));
+				}
+				catch (Exception exception) {
+					if (_log.isDebugEnabled()) {
+						_log.debug("Unable to read " + url, exception);
+					}
+				}
 			}
 
-			staticSiteExportResources.add(
-				new StaticSiteExportResource(
-					file, StaticSiteExportResourcePathUtil.getPath(url), url));
+			urls = new LinkedHashSet<>();
 		}
 
 		return staticSiteExportResources;
@@ -280,20 +320,13 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return languageResourceURLs;
 	}
 
-	private Set<String> _getModuleNames(
-		Collection<StaticSiteExportDocument> staticSiteExportDocuments) {
-
+	private Set<String> _getModuleNames(String content) {
 		Set<String> moduleNames = new LinkedHashSet<>();
 
-		for (StaticSiteExportDocument staticSiteExportDocument :
-				staticSiteExportDocuments) {
+		Matcher matcher = _moduleNamePattern.matcher(content);
 
-			Matcher matcher = _moduleNamePattern.matcher(
-				staticSiteExportDocument.getHTML());
-
-			while (matcher.find()) {
-				moduleNames.add(matcher.group(1));
-			}
+		while (matcher.find()) {
+			moduleNames.add(matcher.group(1));
 		}
 
 		return moduleNames;
@@ -430,8 +463,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 	private Set<String> _getResourceURLs(
 		String portalURL,
-		StaticSiteExportBundleResourceResolver
-			staticSiteExportBundleResourceResolver,
 		Collection<StaticSiteExportDocument> staticSiteExportDocuments) {
 
 		Set<String> resourceURLs = new LinkedHashSet<>();
@@ -456,11 +487,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				}
 			}
 		}
-
-		resourceURLs.addAll(
-			_getModuleResourceURLs(
-				_getModuleNames(staticSiteExportDocuments),
-				staticSiteExportBundleResourceResolver));
 
 		return resourceURLs;
 	}
@@ -527,7 +553,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		StaticSiteExporterImpl.class);
 
 	private static final Pattern _moduleNamePattern = Pattern.compile(
-		"/o/([a-z0-9][a-z0-9.\\-]*)/__liferay__/");
+		"([a-z0-9][a-z0-9.\\-]*)/__liferay__/");
 
 	private BundleContext _bundleContext;
 
