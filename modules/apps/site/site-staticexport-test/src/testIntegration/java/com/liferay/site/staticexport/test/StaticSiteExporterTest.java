@@ -246,12 +246,13 @@ public class StaticSiteExporterTest {
 				generatedResource = true;
 			}
 
-			if (url.contains(".css")) {
+			String html = staticSiteExportLayout.getHTML();
+
+			if (url.contains(".css") && html.contains(url)) {
 				stylesheet = true;
 
 				Assert.assertThat(
-					staticSiteExportLayout.getHTML(),
-					CoreMatchers.containsString(StringPool.SLASH + path));
+					html, CoreMatchers.containsString(StringPool.SLASH + path));
 			}
 		}
 
