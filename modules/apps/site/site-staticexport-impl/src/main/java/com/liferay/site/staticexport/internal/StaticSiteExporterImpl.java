@@ -27,6 +27,7 @@ import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.servlet.DummyHttpServletResponse;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -212,9 +213,10 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		Set<String> urls = _getResourceURLs(
 			portalURL, staticSiteExportDocuments);
 
+		Set<String> optionalURLs = new LinkedHashSet<>();
+
 		while (!urls.isEmpty() || !moduleNames.isEmpty()) {
-			Set<String> optionalURLs = _getLanguageResourceURLs(
-				locales, moduleNames);
+			optionalURLs.addAll(_getLanguageResourceURLs(locales, moduleNames));
 
 			optionalURLs.addAll(
 				_getModuleResourceURLs(
@@ -223,6 +225,8 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			urls.addAll(optionalURLs);
 
 			moduleNames = new LinkedHashSet<>();
+
+			Set<String> nextURLs = new LinkedHashSet<>();
 
 			for (String url : urls) {
 				if (!fetchedURLs.add(url)) {
@@ -263,12 +267,23 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 						file, StaticSiteExportResourcePathUtil.getPath(url),
 						url));
 
-				if (!url.endsWith(".js")) {
+				if (!url.endsWith(".css") && !url.endsWith(".js")) {
 					continue;
 				}
 
 				try {
-					moduleNames.addAll(_getModuleNames(FileUtil.read(file)));
+					String content = FileUtil.read(file);
+
+					if (url.endsWith(".css")) {
+						Set<String> stylesheetResourceURLs =
+							_getStylesheetResourceURLs(content, url);
+
+						nextURLs.addAll(stylesheetResourceURLs);
+						optionalURLs.addAll(stylesheetResourceURLs);
+					}
+					else {
+						moduleNames.addAll(_getModuleNames(content));
+					}
 				}
 				catch (Exception exception) {
 					if (_log.isDebugEnabled()) {
@@ -277,7 +292,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				}
 			}
 
-			urls = new LinkedHashSet<>();
+			urls = nextURLs;
 		}
 
 		return staticSiteExportResources;
@@ -491,6 +506,28 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return resourceURLs;
 	}
 
+	private Set<String> _getStylesheetResourceURLs(String content, String url) {
+		Set<String> stylesheetResourceURLs = new LinkedHashSet<>();
+
+		Matcher matcher = _stylesheetResourceURLPattern.matcher(content);
+
+		while (matcher.find()) {
+			String stylesheetResourceURL = matcher.group(1);
+
+			if (stylesheetResourceURL == null) {
+				stylesheetResourceURL = matcher.group(2);
+			}
+
+			stylesheetResourceURL = _resolveURL(stylesheetResourceURL, url);
+
+			if (stylesheetResourceURL != null) {
+				stylesheetResourceURLs.add(stylesheetResourceURL);
+			}
+		}
+
+		return stylesheetResourceURLs;
+	}
+
 	private void _putPagePath(
 		Map<String, String> pagePaths, String path, String portalURL,
 		String url) {
@@ -507,6 +544,62 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 
 		return url.substring(0, index);
+	}
+
+	private String _resolveURL(String relativeURL, String url) {
+		if (Validator.isNull(relativeURL) ||
+			relativeURL.startsWith(StringPool.POUND) ||
+			relativeURL.startsWith("data:") ||
+			((HttpComponentsUtil.getDomain(relativeURL) != null) &&
+			 !relativeURL.startsWith(StringPool.SLASH) &&
+			 relativeURL.contains("://"))) {
+
+			return null;
+		}
+
+		relativeURL = _removeURLFragment(relativeURL);
+
+		if (relativeURL.startsWith(StringPool.SLASH)) {
+			return relativeURL;
+		}
+
+		String path = HttpComponentsUtil.getPath(url);
+
+		int index = path.lastIndexOf(CharPool.SLASH);
+
+		if (index == -1) {
+			return null;
+		}
+
+		List<String> names = new ArrayList<>();
+
+		for (String name :
+				StringUtil.split(path.substring(0, index), CharPool.SLASH)) {
+
+			if (Validator.isNotNull(name)) {
+				names.add(name);
+			}
+		}
+
+		for (String name : StringUtil.split(relativeURL, CharPool.SLASH)) {
+			if (Objects.equals(name, StringPool.PERIOD)) {
+				continue;
+			}
+
+			if (Objects.equals(name, StringPool.DOUBLE_PERIOD)) {
+				if (names.isEmpty()) {
+					return null;
+				}
+
+				names.remove(names.size() - 1);
+
+				continue;
+			}
+
+			names.add(name);
+		}
+
+		return StringPool.SLASH + StringUtil.merge(names, StringPool.SLASH);
 	}
 
 	private List<StaticSiteExportLayout> _rewriteLayouts(
@@ -554,6 +647,9 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 	private static final Pattern _moduleNamePattern = Pattern.compile(
 		"([a-z0-9][a-z0-9.\\-]*)/__liferay__/");
+	private static final Pattern _stylesheetResourceURLPattern =
+		Pattern.compile(
+			"url\\(\\s*[\"']?([^)\"'\\s]+)|@import\\s+[\"']([^\"']+)");
 
 	private BundleContext _bundleContext;
 
