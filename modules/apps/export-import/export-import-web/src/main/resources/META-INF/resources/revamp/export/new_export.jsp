@@ -59,6 +59,8 @@ renderResponse.setTitle(exportImportProcessDisplayContext.getExportTitle());
 			).put(
 				"siteSelectionEnabled", exportImportProcessDisplayContext.isSiteSelectionEnabled()
 			).put(
+				"staticSite", exportImportProcessDisplayContext.isStaticSite()
+			).put(
 				"timeZoneId", timeZone.getID()
 			).build()
 		%>'
