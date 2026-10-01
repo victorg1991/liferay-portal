@@ -55,6 +55,7 @@ dependencies {
 	testIntegrationImplementation project(":apps:segments:segments-api")
 	testIntegrationImplementation project(":apps:site-navigation:site-navigation-api")
 	testIntegrationImplementation project(":apps:site-navigation:site-navigation-menu-item-api")
+	testIntegrationImplementation project(":apps:site:site-staticexport-api")
 	testIntegrationImplementation project(":apps:staging:staging-api")
 	testIntegrationImplementation project(":apps:static:portal-configuration:portal-configuration-persistence-api")
 	testIntegrationImplementation project(":apps:trash:trash-api")
