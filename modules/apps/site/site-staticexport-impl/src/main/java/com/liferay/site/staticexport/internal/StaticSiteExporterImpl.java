@@ -495,7 +495,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			}
 
 			url = StringUtil.removeFirst(
-				_removeURLFragment(StringUtil.trim(url)), portalURL);
+				_removeURIFragment(StringUtil.trim(url)), portalURL);
 
 			for (String resourcePrefix : _RESOURCE_PREFIXES) {
 				if (url.startsWith(resourcePrefix)) {
@@ -555,7 +555,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		pagePaths.put(url, path);
 	}
 
-	private String _removeURLFragment(String url) {
+	private String _removeURIFragment(String url) {
 		int index = url.indexOf(CharPool.POUND);
 
 		if (index == -1) {
@@ -574,7 +574,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			return null;
 		}
 
-		relativeURL = _removeURLFragment(relativeURL);
+		relativeURL = _removeURIFragment(relativeURL);
 
 		if (relativeURL.startsWith(StringPool.SLASH)) {
 			return relativeURL;

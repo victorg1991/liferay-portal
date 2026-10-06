@@ -54,7 +54,7 @@ public class StaticSiteExportBundleResourceResolver {
 
 			try {
 				_collectResourcePaths(
-					_RESOURCES_FOLDER + resourcePath, resourcePaths,
+					_RESOURCES_PATH + resourcePath, resourcePaths,
 					servletContextHelper);
 			}
 			finally {
@@ -111,8 +111,7 @@ public class StaticSiteExportBundleResourceResolver {
 			}
 			else {
 				resourcePaths.add(
-					StringUtil.removeFirst(
-						childResourcePath, _RESOURCES_FOLDER));
+					StringUtil.removeFirst(childResourcePath, _RESOURCES_PATH));
 			}
 		}
 	}
@@ -153,7 +152,7 @@ public class StaticSiteExportBundleResourceResolver {
 			HashedFilesUtil.removeHash(resourcePath));
 	}
 
-	private static final String _RESOURCES_FOLDER = "/META-INF/resources";
+	private static final String _RESOURCES_PATH = "/META-INF/resources";
 
 	private final BundleContext _bundleContext;
 

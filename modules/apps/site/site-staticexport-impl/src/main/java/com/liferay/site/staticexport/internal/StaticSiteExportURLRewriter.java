@@ -35,12 +35,12 @@ public class StaticSiteExportURLRewriter {
 
 		url = StringUtil.trim(url);
 
-		String fragment = StringPool.BLANK;
+		String uriFragment = StringPool.BLANK;
 
 		int index = url.indexOf(CharPool.POUND);
 
 		if (index != -1) {
-			fragment = url.substring(index);
+			uriFragment = url.substring(index);
 
 			url = url.substring(0, index);
 		}
@@ -55,7 +55,7 @@ public class StaticSiteExportURLRewriter {
 			return null;
 		}
 
-		return StringPool.SLASH + path + fragment;
+		return StringPool.SLASH + path + uriFragment;
 	}
 
 	private final Map<String, String> _pagePaths;
