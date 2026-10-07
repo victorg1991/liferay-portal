@@ -6,6 +6,8 @@
 package com.liferay.site.staticexport.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.document.library.kernel.model.DLFolderConstants;
+import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.layout.test.util.ContentLayoutTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
@@ -13,11 +15,16 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.util.ContentTypes;
+import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -34,6 +41,8 @@ import com.liferay.site.staticexport.StaticSiteExportResource;
 import com.liferay.site.staticexport.StaticSiteExporter;
 
 import java.io.File;
+
+import java.nio.charset.StandardCharsets;
 
 import java.util.List;
 import java.util.Set;
@@ -237,6 +246,91 @@ public class StaticSiteExporterTest {
 	}
 
 	@Test
+	public void testExportWithStylesheet() throws Exception {
+		byte[] bytes = RandomTestUtil.randomBytes();
+
+		String fileEntryURL = _getFileEntryURL(
+			bytes, ContentTypes.IMAGE_PNG,
+			RandomTestUtil.randomString() + ".png");
+
+		String stylesheet = StringBundler.concat(
+			".", RandomTestUtil.randomString(), " {background: url(",
+			fileEntryURL, "?v=1#", RandomTestUtil.randomString(), ");}");
+
+		String stylesheetURL = _getFileEntryURL(
+			stylesheet.getBytes(StandardCharsets.UTF_8), ContentTypes.TEXT_CSS,
+			RandomTestUtil.randomString() + ".css");
+
+		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+		Layout draftLayout = layout.fetchDraftLayout();
+
+		ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
+			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, null,
+			StringBundler.concat(
+				"<link href=\"", stylesheetURL,
+				"?t=1\" rel=\"stylesheet\" /><img src=\"", fileEntryURL,
+				"?v=2\" />"),
+			StringPool.BLANK, draftLayout, null,
+			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
+				draftLayout.getPlid()),
+			FragmentConstants.TYPE_COMPONENT);
+
+		ContentLayoutTestUtil.publishLayout(draftLayout, layout);
+
+		try (StaticSiteExport staticSiteExport = _staticSiteExporter.export(
+				_group.getGroupId(), Set.of(LocaleUtil.US))) {
+
+			StaticSiteExportResource imageStaticSiteExportResource = null;
+			StaticSiteExportResource stylesheetImageStaticSiteExportResource =
+				null;
+			StaticSiteExportResource stylesheetStaticSiteExportResource = null;
+
+			for (StaticSiteExportResource staticSiteExportResource :
+					staticSiteExport.getStaticSiteExportResources()) {
+
+				String url = staticSiteExportResource.getURL();
+
+				if (url.equals(fileEntryURL + "?v=1")) {
+					stylesheetImageStaticSiteExportResource =
+						staticSiteExportResource;
+				}
+				else if (url.equals(fileEntryURL + "?v=2")) {
+					imageStaticSiteExportResource = staticSiteExportResource;
+				}
+				else if (url.equals(stylesheetURL + "?t=1")) {
+					stylesheetStaticSiteExportResource =
+						staticSiteExportResource;
+				}
+			}
+
+			Assert.assertArrayEquals(
+				bytes,
+				FileUtil.getBytes(
+					stylesheetImageStaticSiteExportResource.getFile()));
+
+			Assert.assertThat(
+				FileUtil.read(stylesheetStaticSiteExportResource.getFile()),
+				CoreMatchers.containsString(
+					"url(/" +
+						stylesheetImageStaticSiteExportResource.getPath() +
+							"#"));
+
+			List<StaticSiteExportLayout> staticSiteExportLayouts =
+				staticSiteExport.getStaticSiteExportLayouts();
+
+			StaticSiteExportLayout staticSiteExportLayout =
+				staticSiteExportLayouts.get(0);
+
+			Assert.assertThat(
+				staticSiteExportLayout.getHTML(),
+				CoreMatchers.containsString(
+					"src=\"/" + imageStaticSiteExportResource.getPath() +
+						"\""));
+		}
+	}
+
+	@Test
 	public void testExportWithURIFragment() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
 
@@ -359,8 +453,26 @@ public class StaticSiteExporterTest {
 			resourceFailures.toString(), resourceFailures.isEmpty());
 	}
 
+	private String _getFileEntryURL(byte[] bytes, String mimeType, String title)
+		throws Exception {
+
+		FileEntry fileEntry = _dlAppLocalService.addFileEntry(
+			null, TestPropsValues.getUserId(), _group.getGroupId(),
+			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, title, mimeType, title,
+			null, StringPool.BLANK, StringPool.BLANK, bytes, null, null, null,
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
+
+		return StringBundler.concat(
+			"/documents/", fileEntry.getGroupId(), StringPool.SLASH,
+			fileEntry.getFolderId(), StringPool.SLASH, fileEntry.getTitle(),
+			StringPool.SLASH, fileEntry.getUuid());
+	}
+
 	private static final String _ICONS_URL =
 		"/o/classic-theme/images/clay/icons.svg";
+
+	@Inject
+	private DLAppLocalService _dlAppLocalService;
 
 	private Group _group;
 
