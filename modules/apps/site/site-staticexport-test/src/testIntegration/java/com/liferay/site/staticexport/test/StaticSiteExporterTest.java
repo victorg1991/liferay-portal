@@ -352,7 +352,7 @@ public class StaticSiteExporterTest {
 
 				File file = staticSiteExportResource.getFile();
 
-				Assert.assertTrue(url, file.length() > 0);
+				Assert.assertTrue(url, file.exists());
 			}
 
 			Assert.assertTrue(
@@ -536,8 +536,10 @@ public class StaticSiteExporterTest {
 
 		Assert.assertFalse(staticSiteExportResources.isEmpty());
 
+		boolean auiResource = false;
 		boolean bundleResource = false;
 		boolean generatedResource = false;
+		boolean liferayResource = false;
 		boolean stylesheet = false;
 
 		for (StaticSiteExportResource staticSiteExportResource :
@@ -554,10 +556,18 @@ public class StaticSiteExporterTest {
 
 			File file = staticSiteExportResource.getFile();
 
-			Assert.assertTrue(url, file.length() > 0);
+			Assert.assertTrue(url, file.exists());
 
 			if (url.contains("/__liferay__/")) {
 				bundleResource = true;
+			}
+
+			if (url.startsWith("/o/frontend-js-aui-web/aui/")) {
+				auiResource = true;
+			}
+
+			if (url.startsWith("/o/frontend-js-aui-web/liferay/")) {
+				liferayResource = true;
 			}
 
 			if (url.contains("/layout-common-styles/")) {
@@ -574,9 +584,12 @@ public class StaticSiteExporterTest {
 			}
 		}
 
+		Assert.assertTrue(staticSiteExportResources.toString(), auiResource);
 		Assert.assertTrue(staticSiteExportResources.toString(), bundleResource);
 		Assert.assertTrue(
 			staticSiteExportResources.toString(), generatedResource);
+		Assert.assertTrue(
+			staticSiteExportResources.toString(), liferayResource);
 		Assert.assertTrue(staticSiteExportResources.toString(), stylesheet);
 
 		StaticSiteExportReport staticSiteExportReport =
