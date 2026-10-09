@@ -30,23 +30,28 @@ public class StaticSiteExportURLTest {
 	@Test
 	public void testGetArchivePath() {
 		Assert.assertEquals(
+			"combo." + _getDigest("minifierType=css&t=1") + ".css",
+			_getArchivePath("css", "/combo?minifierType=css&t=1"));
+		Assert.assertEquals(
 			"combo." + _getDigest("minifierType=js&/o/a/b.js") + ".js",
-			_getArchivePath("/combo?minifierType=js&/o/a/b.js"));
+			_getArchivePath(null, "/combo?minifierType=js&/o/a/b.js"));
 		Assert.assertEquals(
 			"documents/20121/0/photo.jpg/uuid.jpg",
-			_getArchivePath("/documents/20121/0/photo.jpg/uuid"));
+			_getArchivePath(null, "/documents/20121/0/photo.jpg/uuid"));
 		Assert.assertEquals(
 			"documents/20121/0/photo.jpg/uuid." + _getDigest("t=1") + ".jpg",
-			_getArchivePath("/documents/20121/0/photo.jpg/uuid?t=1"));
+			_getArchivePath(null, "/documents/20121/0/photo.jpg/uuid?t=1"));
 		Assert.assertEquals(
 			"image/company_logo." + _getDigest("img_id=1"),
-			_getArchivePath("/image/company_logo?img_id=1"));
+			_getArchivePath(null, "/image/company_logo?img_id=1"));
+		Assert.assertEquals(
+			"o/a/main.js", _getArchivePath("css", "/o/a/main.js"));
 		Assert.assertEquals(
 			"o/frontend-js-web/main.css",
-			_getArchivePath("/o/frontend-js-web/main.css"));
+			_getArchivePath(null, "/o/frontend-js-web/main.css"));
 		Assert.assertEquals(
 			"o/layout-common-styles/main." + _getDigest("plid=1") + ".css",
-			_getArchivePath("/o/layout-common-styles/main.css?plid=1"));
+			_getArchivePath(null, "/o/layout-common-styles/main.css?plid=1"));
 	}
 
 	@Test
@@ -298,10 +303,10 @@ public class StaticSiteExportURLTest {
 		Assert.assertEquals(url, "#top", staticSiteExportURL.getURIFragment());
 	}
 
-	private String _getArchivePath(String url) {
+	private String _getArchivePath(String extension, String url) {
 		StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(url);
 
-		return staticSiteExportURL.getArchivePath();
+		return staticSiteExportURL.getArchivePath(extension);
 	}
 
 	private String _getDigest(String queryString) {
