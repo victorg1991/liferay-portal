@@ -43,6 +43,7 @@ import com.liferay.site.staticexport.StaticSiteExporter;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
@@ -151,17 +152,18 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			Set<String> portalHostNames = _getPortalHostNames(
 				company, group, portalURL);
 
+			Map<String, String> resourcePaths = new HashMap<>();
+
 			List<StaticSiteExportResource> staticSiteExportResources =
 				_fetchStaticSiteExportResources(
 					serviceContext.getRequest(), locales, portalHostNames,
-					portalURL, resourceFailures,
+					portalURL, resourceFailures, resourcePaths,
 					staticSiteExportDocuments.values());
 
 			StaticSiteExportURLRewriter staticSiteExportURLRewriter =
 				new StaticSiteExportURLRewriter(
 					_getPagePaths(group, staticSiteExportLayouts),
-					portalHostNames,
-					_getResourcePaths(staticSiteExportResources));
+					portalHostNames, resourcePaths);
 
 			return new StaticSiteExportImpl(
 				_rewriteLayouts(
@@ -257,6 +259,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		HttpServletRequest httpServletRequest, Set<Locale> locales,
 		Set<String> portalHostNames, String portalURL,
 		List<StaticSiteExportReport.Failure> resourceFailures,
+		Map<String, String> resourcePaths,
 		Collection<StaticSiteExportDocument> staticSiteExportDocuments) {
 
 		List<StaticSiteExportResource> staticSiteExportResources =
@@ -280,12 +283,14 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 
 			_fetchStaticSiteExportResources(
 				fetchedURLs, locales, moduleNames, false, portalHostNames,
-				resourceFailures, staticSiteExportBundleResourceResolver,
+				resourceFailures, resourcePaths,
+				staticSiteExportBundleResourceResolver,
 				staticSiteExportResourceFetcher, staticSiteExportResources,
 				_getResourceURLs(portalHostNames, staticSiteExportDocument));
 			_fetchStaticSiteExportResources(
 				fetchedURLs, locales, moduleNames, true, portalHostNames,
-				resourceFailures, staticSiteExportBundleResourceResolver,
+				resourceFailures, resourcePaths,
+				staticSiteExportBundleResourceResolver,
 				staticSiteExportResourceFetcher, staticSiteExportResources,
 				_getModuleURLs(
 					staticSiteExportDocument.getHTML(), locales, moduleNames,
@@ -299,6 +304,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		Set<String> fetchedURLs, Set<Locale> locales, Set<String> moduleNames,
 		boolean optional, Set<String> portalHostNames,
 		List<StaticSiteExportReport.Failure> resourceFailures,
+		Map<String, String> resourcePaths,
 		StaticSiteExportBundleResourceResolver
 			staticSiteExportBundleResourceResolver,
 		StaticSiteExportResourceFetcher staticSiteExportResourceFetcher,
@@ -319,24 +325,42 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				continue;
 			}
 
-			StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(
-				url);
-
-			staticSiteExportResources.add(
-				new StaticSiteExportResource(
-					staticSiteExportResourceFile.getFile(),
-					staticSiteExportURL.getArchivePath(
-						staticSiteExportResourceFile.getExtension()),
-					url));
-
 			_fetchStaticSiteExportResources(
 				fetchedURLs, locales, moduleNames, true, portalHostNames,
-				resourceFailures, staticSiteExportBundleResourceResolver,
+				resourceFailures, resourcePaths,
+				staticSiteExportBundleResourceResolver,
 				staticSiteExportResourceFetcher, staticSiteExportResources,
 				_getNestedResourceURLs(
 					locales, moduleNames, portalHostNames,
 					staticSiteExportBundleResourceResolver,
 					staticSiteExportResourceFile, url));
+
+			try {
+				if (Objects.equals(
+						staticSiteExportResourceFile.getExtension(), "css")) {
+
+					_rewriteStylesheet(
+						staticSiteExportResourceFile.getFile(), portalHostNames,
+						resourcePaths, url);
+				}
+
+				_putStaticSiteExportResource(
+					resourcePaths, staticSiteExportResourceFile,
+					staticSiteExportResources, url);
+			}
+			catch (IOException ioException) {
+				if (_log.isDebugEnabled()) {
+					_log.debug("Unable to read " + url, ioException);
+				}
+
+				FileUtil.delete(staticSiteExportResourceFile.getFile());
+
+				if (!optional) {
+					resourceFailures.add(
+						new StaticSiteExportReport.Failure(
+							ioException.getMessage(), url));
+				}
+			}
 		}
 	}
 
@@ -543,22 +567,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return portalHostNames;
 	}
 
-	private Map<String, String> _getResourcePaths(
-		List<StaticSiteExportResource> staticSiteExportResources) {
-
-		Map<String, String> resourcePaths = new HashMap<>();
-
-		for (StaticSiteExportResource staticSiteExportResource :
-				staticSiteExportResources) {
-
-			resourcePaths.put(
-				staticSiteExportResource.getURL(),
-				staticSiteExportResource.getPath());
-		}
-
-		return resourcePaths;
-	}
-
 	private Set<String> _getResourceURLs(
 		Set<String> portalHostNames,
 		StaticSiteExportDocument staticSiteExportDocument) {
@@ -610,6 +618,25 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return stylesheetResourceURLs;
 	}
 
+	private void _putStaticSiteExportResource(
+		Map<String, String> resourcePaths,
+		StaticSiteExportResourceFile staticSiteExportResourceFile,
+		List<StaticSiteExportResource> staticSiteExportResources, String url) {
+
+		StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(url);
+
+		StaticSiteExportResource staticSiteExportResource =
+			new StaticSiteExportResource(
+				staticSiteExportResourceFile.getFile(),
+				staticSiteExportURL.getArchivePath(
+					staticSiteExportResourceFile.getExtension()),
+				url);
+
+		staticSiteExportResources.add(staticSiteExportResource);
+
+		resourcePaths.put(url, staticSiteExportResource.getPath());
+	}
+
 	private List<StaticSiteExportLayout> _rewriteLayouts(
 		Map<StaticSiteExportLayout, StaticSiteExportDocument>
 			staticSiteExportDocuments,
@@ -637,6 +664,65 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 
 		return rewrittenStaticSiteExportLayouts;
+	}
+
+	private void _rewriteStylesheet(
+			File file, Set<String> portalHostNames,
+			Map<String, String> resourcePaths, String url)
+		throws IOException {
+
+		String content = FileUtil.read(file);
+
+		StringBundler sb = new StringBundler();
+
+		int index = 0;
+
+		StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(
+			portalHostNames, url);
+
+		Matcher matcher = _stylesheetResourceURLPattern.matcher(content);
+
+		while (matcher.find()) {
+			int groupIndex = 1;
+
+			if (matcher.group(groupIndex) == null) {
+				groupIndex = 2;
+			}
+
+			String stylesheetResourceURL = matcher.group(groupIndex);
+
+			StaticSiteExportURL resolvedStaticSiteExportURL =
+				staticSiteExportURL.resolve(stylesheetResourceURL);
+
+			if (resolvedStaticSiteExportURL == null) {
+				continue;
+			}
+
+			String path = resourcePaths.get(
+				resolvedStaticSiteExportURL.getURL());
+
+			if (path == null) {
+				continue;
+			}
+
+			StaticSiteExportURL stylesheetResourceStaticSiteExportURL =
+				new StaticSiteExportURL(stylesheetResourceURL);
+
+			sb.append(content.substring(index, matcher.start(groupIndex)));
+			sb.append(StringPool.SLASH);
+			sb.append(path);
+			sb.append(stylesheetResourceStaticSiteExportURL.getURIFragment());
+
+			index = matcher.end(groupIndex);
+		}
+
+		if (index == 0) {
+			return;
+		}
+
+		sb.append(content.substring(index));
+
+		FileUtil.write(file, sb.toString());
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
