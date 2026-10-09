@@ -43,7 +43,6 @@ import com.liferay.site.staticexport.StaticSiteExporter;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
@@ -220,20 +219,17 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return staticSiteExportLayouts;
 	}
 
-	private StaticSiteExportResource _fetchStaticSiteExportResource(
+	private StaticSiteExportResourceFile _fetchStaticSiteExportResourceFile(
 		boolean optional, List<StaticSiteExportReport.Failure> resourceFailures,
 		StaticSiteExportResourceFetcher staticSiteExportResourceFetcher,
 		String url) {
 
 		try {
-			File file = staticSiteExportResourceFetcher.fetch(url);
+			StaticSiteExportResourceFile staticSiteExportResourceFile =
+				staticSiteExportResourceFetcher.fetch(url);
 
-			if (file != null) {
-				StaticSiteExportURL staticSiteExportURL =
-					new StaticSiteExportURL(url);
-
-				return new StaticSiteExportResource(
-					file, staticSiteExportURL.getArchivePath(), url);
+			if (staticSiteExportResourceFile != null) {
+				return staticSiteExportResourceFile;
 			}
 
 			if (!optional) {
@@ -314,16 +310,24 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				continue;
 			}
 
-			StaticSiteExportResource staticSiteExportResource =
-				_fetchStaticSiteExportResource(
+			StaticSiteExportResourceFile staticSiteExportResourceFile =
+				_fetchStaticSiteExportResourceFile(
 					optional, resourceFailures, staticSiteExportResourceFetcher,
 					url);
 
-			if (staticSiteExportResource == null) {
+			if (staticSiteExportResourceFile == null) {
 				continue;
 			}
 
-			staticSiteExportResources.add(staticSiteExportResource);
+			StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(
+				url);
+
+			staticSiteExportResources.add(
+				new StaticSiteExportResource(
+					staticSiteExportResourceFile.getFile(),
+					staticSiteExportURL.getArchivePath(
+						staticSiteExportResourceFile.getExtension()),
+					url));
 
 			_fetchStaticSiteExportResources(
 				fetchedURLs, locales, moduleNames, true, portalHostNames,
@@ -332,7 +336,7 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				_getNestedResourceURLs(
 					locales, moduleNames, portalHostNames,
 					staticSiteExportBundleResourceResolver,
-					staticSiteExportResource));
+					staticSiteExportResourceFile, url));
 		}
 	}
 
@@ -412,21 +416,22 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		Set<String> portalHostNames,
 		StaticSiteExportBundleResourceResolver
 			staticSiteExportBundleResourceResolver,
-		StaticSiteExportResource staticSiteExportResource) {
+		StaticSiteExportResourceFile staticSiteExportResourceFile, String url) {
 
-		String url = staticSiteExportResource.getURL();
+		String extension = staticSiteExportResourceFile.getExtension();
 
 		try {
-			if (url.endsWith(".css")) {
+			if (Objects.equals(extension, "css")) {
 				return _getStylesheetResourceURLs(
-					FileUtil.read(staticSiteExportResource.getFile()),
+					FileUtil.read(staticSiteExportResourceFile.getFile()),
 					portalHostNames, url);
 			}
 
-			if (url.endsWith(".js")) {
+			if (Objects.equals(extension, "js")) {
 				return _getModuleURLs(
-					FileUtil.read(staticSiteExportResource.getFile()), locales,
-					moduleNames, staticSiteExportBundleResourceResolver);
+					FileUtil.read(staticSiteExportResourceFile.getFile()),
+					locales, moduleNames,
+					staticSiteExportBundleResourceResolver);
 			}
 		}
 		catch (IOException ioException) {

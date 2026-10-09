@@ -103,9 +103,9 @@ public class StaticSiteExportURL {
 		this(Collections.emptySet(), url);
 	}
 
-	public String getArchivePath() {
+	public String getArchivePath(String extension) {
 		String path = _addExtension(
-			StringUtil.removeFirst(_path, StringPool.SLASH));
+			extension, StringUtil.removeFirst(_path, StringPool.SLASH));
 
 		if (Validator.isNull(_queryString)) {
 			return path;
@@ -291,14 +291,16 @@ public class StaticSiteExportURL {
 			StringPool.SLASH + StringUtil.merge(names, StringPool.SLASH));
 	}
 
-	private String _addExtension(String path) {
+	private String _addExtension(String extension, String path) {
 		String fileName = _getFileName(path);
 
 		if (fileName.indexOf(CharPool.PERIOD) != -1) {
 			return path;
 		}
 
-		String extension = _getPathExtension(path);
+		if (extension == null) {
+			extension = _getPathExtension(path);
+		}
 
 		if (extension == null) {
 			extension = _getQueryStringExtension();

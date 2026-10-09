@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import jakarta.servlet.RequestDispatcher;
@@ -48,34 +49,43 @@ public class StaticSiteExportResourceFetcher {
 			staticSiteExportBundleResourceResolver;
 	}
 
-	public File fetch(String url) throws Exception {
+	public StaticSiteExportResourceFile fetch(String url) throws Exception {
 		StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(url);
 
-		File file = null;
+		StaticSiteExportResourceFile staticSiteExportResourceFile = null;
 
 		String moduleName = staticSiteExportURL.getModuleName();
 
 		if (moduleName == null) {
-			file = _getServletFile(_servletContext, staticSiteExportURL);
+			staticSiteExportResourceFile =
+				_getServletStaticSiteExportResourceFile(
+					_servletContext, staticSiteExportURL);
 		}
 		else {
-			file = _staticSiteExportBundleResourceResolver.resolve(
-				moduleName, staticSiteExportURL.getDispatchPath());
+			String dispatchPath = staticSiteExportURL.getDispatchPath();
 
-			if (file == null) {
-				file = _getServletFile(
-					ServletContextPool.get(moduleName), staticSiteExportURL);
+			File file = _staticSiteExportBundleResourceResolver.resolve(
+				moduleName, dispatchPath);
+
+			if (file != null) {
+				return new StaticSiteExportResourceFile(
+					MimeTypesUtil.getContentType(dispatchPath), file);
 			}
+
+			staticSiteExportResourceFile =
+				_getServletStaticSiteExportResourceFile(
+					ServletContextPool.get(moduleName), staticSiteExportURL);
 		}
 
-		if (file != null) {
-			return file;
+		if (staticSiteExportResourceFile != null) {
+			return staticSiteExportResourceFile;
 		}
 
-		return _fetchFile(staticSiteExportURL);
+		return _fetchStaticSiteExportResourceFile(staticSiteExportURL);
 	}
 
-	private File _fetchFile(StaticSiteExportURL staticSiteExportURL)
+	private StaticSiteExportResourceFile _fetchStaticSiteExportResourceFile(
+			StaticSiteExportURL staticSiteExportURL)
 		throws Exception {
 
 		Http.Options options = new Http.Options();
@@ -101,7 +111,8 @@ public class StaticSiteExportResourceFetcher {
 			return null;
 		}
 
-		return file;
+		return new StaticSiteExportResourceFile(
+			response.getContentType(), file);
 	}
 
 	private String _getLocation(StaticSiteExportURL staticSiteExportURL) {
@@ -112,9 +123,10 @@ public class StaticSiteExportResourceFetcher {
 		return _portalURL + staticSiteExportURL.getURL();
 	}
 
-	private File _getServletFile(
-			ServletContext servletContext,
-			StaticSiteExportURL staticSiteExportURL)
+	private StaticSiteExportResourceFile
+			_getServletStaticSiteExportResourceFile(
+				ServletContext servletContext,
+				StaticSiteExportURL staticSiteExportURL)
 		throws Exception {
 
 		if (servletContext == null) {
@@ -167,7 +179,8 @@ public class StaticSiteExportResourceFetcher {
 			return null;
 		}
 
-		return file;
+		return new StaticSiteExportResourceFile(
+			metaInfoCacheServletResponse.getContentType(), file);
 	}
 
 	private final HttpServletRequest _httpServletRequest;
