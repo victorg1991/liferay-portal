@@ -586,6 +586,19 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			}
 		}
 
+		for (String url : staticSiteExportDocument.getEmbeddedURLs()) {
+			if (Validator.isNull(url)) {
+				continue;
+			}
+
+			StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(
+				portalHostNames, url);
+
+			if (staticSiteExportURL.isExternal()) {
+				resourceURLs.add(staticSiteExportURL.getURL());
+			}
+		}
+
 		return resourceURLs;
 	}
 

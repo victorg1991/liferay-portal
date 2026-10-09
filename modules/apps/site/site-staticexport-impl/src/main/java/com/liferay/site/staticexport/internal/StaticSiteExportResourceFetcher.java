@@ -6,6 +6,7 @@
 package com.liferay.site.staticexport.internal;
 
 import com.liferay.petra.io.StreamUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.servlet.DirectRequestDispatcherFactoryUtil;
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
 import com.liferay.portal.kernel.servlet.MetaInfoCacheServletResponse;
@@ -29,6 +30,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
+import java.net.InetAddress;
+
 /**
  * @author Víctor Galán
  */
@@ -51,6 +54,11 @@ public class StaticSiteExportResourceFetcher {
 
 	public StaticSiteExportResourceFile fetch(String url) throws Exception {
 		StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(url);
+
+		if (staticSiteExportURL.isExternal()) {
+			return _fetchExternalStaticSiteExportResourceFile(
+				staticSiteExportURL);
+		}
 
 		StaticSiteExportResourceFile staticSiteExportResourceFile = null;
 
@@ -81,17 +89,39 @@ public class StaticSiteExportResourceFetcher {
 			return staticSiteExportResourceFile;
 		}
 
-		return _fetchStaticSiteExportResourceFile(staticSiteExportURL);
+		return _fetchStaticSiteExportResourceFile(
+			true, _portalURL + staticSiteExportURL.getURL());
+	}
+
+	private StaticSiteExportResourceFile
+			_fetchExternalStaticSiteExportResourceFile(
+				StaticSiteExportURL staticSiteExportURL)
+		throws Exception {
+
+		String hostName = staticSiteExportURL.getHostName();
+
+		if (Validator.isNull(hostName) || !_isPublicHost(hostName)) {
+			throw new IllegalArgumentException(
+				"Host " + hostName + " does not resolve to a public address");
+		}
+
+		String location = staticSiteExportURL.getURL();
+
+		if (!staticSiteExportURL.hasScheme()) {
+			location = Http.HTTPS + StringPool.COLON + location;
+		}
+
+		return _fetchStaticSiteExportResourceFile(false, location);
 	}
 
 	private StaticSiteExportResourceFile _fetchStaticSiteExportResourceFile(
-			StaticSiteExportURL staticSiteExportURL)
+			boolean followRedirects, String location)
 		throws Exception {
 
 		Http.Options options = new Http.Options();
 
-		options.setFollowRedirects(true);
-		options.setLocation(_getLocation(staticSiteExportURL));
+		options.setFollowRedirects(followRedirects);
+		options.setLocation(location);
 
 		File file = FileUtil.createTempFile();
 
@@ -113,14 +143,6 @@ public class StaticSiteExportResourceFetcher {
 
 		return new StaticSiteExportResourceFile(
 			response.getContentType(), file);
-	}
-
-	private String _getLocation(StaticSiteExportURL staticSiteExportURL) {
-		if (staticSiteExportURL.isExternal()) {
-			return staticSiteExportURL.getURL();
-		}
-
-		return _portalURL + staticSiteExportURL.getURL();
 	}
 
 	private StaticSiteExportResourceFile
@@ -181,6 +203,21 @@ public class StaticSiteExportResourceFetcher {
 
 		return new StaticSiteExportResourceFile(
 			metaInfoCacheServletResponse.getContentType(), file);
+	}
+
+	private boolean _isPublicHost(String hostName) throws Exception {
+		for (InetAddress inetAddress : InetAddress.getAllByName(hostName)) {
+			if (inetAddress.isAnyLocalAddress() ||
+				inetAddress.isLinkLocalAddress() ||
+				inetAddress.isLoopbackAddress() ||
+				inetAddress.isMulticastAddress() ||
+				inetAddress.isSiteLocalAddress()) {
+
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private final HttpServletRequest _httpServletRequest;

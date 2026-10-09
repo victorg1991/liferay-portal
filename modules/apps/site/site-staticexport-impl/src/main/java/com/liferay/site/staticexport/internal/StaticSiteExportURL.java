@@ -9,6 +9,7 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.DigesterUtil;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -105,8 +106,25 @@ public class StaticSiteExportURL {
 	}
 
 	public String getArchivePath(String extension) {
-		String path = _addExtension(
-			extension, StringUtil.removeFirst(_path, StringPool.SLASH));
+		String path = StringUtil.removeFirst(_path, StringPool.SLASH);
+
+		if (Validator.isNotNull(path)) {
+			path = _addExtension(extension, path);
+		}
+
+		if (_host != null) {
+			String host = StringUtil.replace(
+				_host, CharPool.COLON, CharPool.UNDERLINE);
+
+			String hostPath = "external/" + host;
+
+			if (Validator.isNull(path)) {
+				path = hostPath;
+			}
+			else {
+				path = hostPath + StringPool.SLASH + path;
+			}
+		}
 
 		if (Validator.isNull(_queryString)) {
 			return path;
@@ -239,15 +257,20 @@ public class StaticSiteExportURL {
 		StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(
 			_portalHostNames, relativeURL);
 
-		if (staticSiteExportURL.hasScheme() ||
-			staticSiteExportURL.isExternal() ||
-			Validator.isNull(staticSiteExportURL.getURL())) {
+		if (Validator.isNull(staticSiteExportURL.getURL())) {
+			return null;
+		}
 
+		if (staticSiteExportURL.isExternal()) {
+			return staticSiteExportURL;
+		}
+
+		if (staticSiteExportURL.hasScheme()) {
 			return null;
 		}
 
 		if (staticSiteExportURL._path.startsWith(StringPool.SLASH)) {
-			return staticSiteExportURL;
+			return _resolve(staticSiteExportURL.getURL());
 		}
 
 		int slashIndex = _path.lastIndexOf(CharPool.SLASH);
@@ -288,8 +311,7 @@ public class StaticSiteExportURL {
 			names.add(name);
 		}
 
-		return new StaticSiteExportURL(
-			_portalHostNames,
+		return _resolve(
 			StringPool.SLASH + StringUtil.merge(names, StringPool.SLASH));
 	}
 
@@ -428,6 +450,24 @@ public class StaticSiteExportURL {
 		}
 
 		return true;
+	}
+
+	private StaticSiteExportURL _resolve(String path) {
+		if (_host == null) {
+			return new StaticSiteExportURL(_portalHostNames, path);
+		}
+
+		String scheme = _scheme;
+
+		if (scheme == null) {
+			scheme = Http.HTTPS;
+		}
+
+		return new StaticSiteExportURL(
+			_portalHostNames,
+			StringBundler.concat(
+				scheme, StringPool.COLON, StringPool.DOUBLE_SLASH, _host,
+				path));
 	}
 
 	private static final String _MODULE_PATH_PREFIX = "/o/";
