@@ -6,8 +6,8 @@
 package com.liferay.site.staticexport.internal;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.DigesterUtil;
 import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Set;
@@ -310,7 +310,7 @@ public class StaticSiteExportURLTest {
 	}
 
 	private String _getDigest(String queryString) {
-		return StringUtil.toHexString(queryString.hashCode());
+		return DigesterUtil.digestHex(DigesterUtil.SHA_256, queryString);
 	}
 
 	private boolean _isResource(String url) {
