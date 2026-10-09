@@ -8,6 +8,7 @@ package com.liferay.site.staticexport.internal;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.DigesterUtil;
 import com.liferay.portal.kernel.util.HttpComponentsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -115,7 +116,8 @@ public class StaticSiteExportURL {
 
 		int periodIndex = fileName.lastIndexOf(CharPool.PERIOD);
 
-		String digest = StringUtil.toHexString(_queryString.hashCode());
+		String digest = DigesterUtil.digestHex(
+			DigesterUtil.SHA_256, _queryString);
 
 		if (periodIndex == -1) {
 			return path + StringPool.PERIOD + digest;
