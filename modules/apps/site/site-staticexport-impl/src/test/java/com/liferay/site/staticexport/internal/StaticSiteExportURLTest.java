@@ -30,6 +30,12 @@ public class StaticSiteExportURLTest {
 	@Test
 	public void testGetArchivePath() {
 		Assert.assertEquals(
+			"external/cdn.example.com",
+			_getArchivePath(null, "//cdn.example.com"));
+		Assert.assertEquals(
+			"external/cdn.example.com/lib/a." + _getDigest("v=2") + ".js",
+			_getArchivePath(null, "//cdn.example.com/lib/a.js?v=2"));
+		Assert.assertEquals(
 			"combo." + _getDigest("minifierType=css&t=1") + ".css",
 			_getArchivePath("css", "/combo?minifierType=css&t=1"));
 		Assert.assertEquals(
@@ -52,6 +58,11 @@ public class StaticSiteExportURLTest {
 		Assert.assertEquals(
 			"o/layout-common-styles/main." + _getDigest("plid=1") + ".css",
 			_getArchivePath(null, "/o/layout-common-styles/main.css?plid=1"));
+		Assert.assertEquals(
+			"external/fonts.example.com_8443/css2." + _getDigest("family=a") +
+				".css",
+			_getArchivePath(
+				"css", "https://fonts.example.com:8443/css2?family=a"));
 	}
 
 	@Test
@@ -272,6 +283,9 @@ public class StaticSiteExportURLTest {
 			"/o/classic-theme/css/b.png",
 			_resolve(staticSiteExportURL, "./b.png"));
 		Assert.assertEquals(
+			"//cdn.example.com/a.png",
+			_resolve(staticSiteExportURL, "//cdn.example.com/a.png"));
+		Assert.assertEquals(
 			"/o/other/d.png", _resolve(staticSiteExportURL, "/o/other/d.png"));
 		Assert.assertEquals(
 			"/o/classic-theme/css/a.png?x=a:b",
@@ -279,16 +293,38 @@ public class StaticSiteExportURLTest {
 		Assert.assertEquals(
 			"/o/classic-theme/css/fonts/c.woff2?v=3",
 			_resolve(staticSiteExportURL, "fonts/c.woff2?v=3#iefix"));
+		Assert.assertEquals(
+			"https://cdn.example.com/a.png",
+			_resolve(staticSiteExportURL, "https://cdn.example.com/a.png"));
 
 		Assert.assertNull(_resolve(staticSiteExportURL, StringPool.BLANK));
 		Assert.assertNull(_resolve(staticSiteExportURL, "#symbol"));
 		Assert.assertNull(_resolve(staticSiteExportURL, "../../../../a.png"));
 		Assert.assertNull(
-			_resolve(staticSiteExportURL, "//cdn.example.com/a.png"));
-		Assert.assertNull(
 			_resolve(staticSiteExportURL, "data:image/png;base64,AAAA"));
-		Assert.assertNull(
-			_resolve(staticSiteExportURL, "https://cdn.example.com/a.png"));
+	}
+
+	@Test
+	public void testResolveWithExternalURL() {
+		StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(
+			"//cdn.example.com/lib/css/a.css");
+
+		Assert.assertEquals(
+			"https://cdn.example.com/lib/fonts/b.woff2",
+			_resolve(staticSiteExportURL, "../fonts/b.woff2"));
+
+		staticSiteExportURL = new StaticSiteExportURL(
+			"https://fonts.example.com/css2?family=a");
+
+		Assert.assertEquals(
+			"https://fonts.example.com/s/c.woff2",
+			_resolve(staticSiteExportURL, "/s/c.woff2"));
+		Assert.assertEquals(
+			"https://other.example.com/d.woff2",
+			_resolve(staticSiteExportURL, "https://other.example.com/d.woff2"));
+		Assert.assertEquals(
+			"https://fonts.example.com/s/e.woff2",
+			_resolve(staticSiteExportURL, "s/e.woff2"));
 	}
 
 	private void _assertPortalURL(Set<String> portalHostNames, String url) {
