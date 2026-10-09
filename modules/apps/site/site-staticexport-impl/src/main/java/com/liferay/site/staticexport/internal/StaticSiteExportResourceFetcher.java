@@ -208,6 +208,11 @@ public class StaticSiteExportResourceFetcher {
 		}
 
 		@Override
+		public String getQueryString() {
+			return _staticSiteExportURL.getQueryString();
+		}
+
+		@Override
 		public String getRequestURI() {
 			return _staticSiteExportURL.getDispatchPath();
 		}
