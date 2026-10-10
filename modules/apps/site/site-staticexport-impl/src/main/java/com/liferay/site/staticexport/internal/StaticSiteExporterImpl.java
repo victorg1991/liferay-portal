@@ -5,8 +5,11 @@
 
 package com.liferay.site.staticexport.internal;
 
+import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.layout.renderer.LayoutPreviewRenderer;
 import com.liferay.layout.util.LayoutServiceContextHelper;
+import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -18,7 +21,10 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.LayoutConstants;
+import com.liferay.portal.kernel.model.LayoutFriendlyURLComposite;
 import com.liferay.portal.kernel.model.LayoutSet;
+import com.liferay.portal.kernel.portlet.FriendlyURLResolver;
+import com.liferay.portal.kernel.portlet.FriendlyURLResolverRegistryUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
@@ -29,10 +35,13 @@ import com.liferay.portal.kernel.servlet.DummyHttpServletResponse;
 import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsValues;
+import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.URLCodec;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
@@ -48,12 +57,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -126,28 +136,6 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			List<StaticSiteExportReport.Failure> layoutFailures =
 				new ArrayList<>();
 
-			List<StaticSiteExportLayout> staticSiteExportLayouts =
-				_exportStaticSiteExportLayouts(
-					layoutFailures, layouts, locales);
-
-			Map<StaticSiteExportLayout, StaticSiteExportDocument>
-				staticSiteExportDocuments = new LinkedHashMap<>();
-
-			for (StaticSiteExportLayout staticSiteExportLayout :
-					staticSiteExportLayouts) {
-
-				staticSiteExportDocuments.put(
-					staticSiteExportLayout,
-					new StaticSiteExportDocument(
-						staticSiteExportLayout.getHTML(), _jsonFactory));
-			}
-
-			List<StaticSiteExportReport.Failure> resourceFailures =
-				new ArrayList<>();
-
-			ServiceContext serviceContext =
-				ServiceContextThreadLocal.getServiceContext();
-
 			String portalURL = _portal.getPortalURL(
 				company.getVirtualHostname(),
 				_portal.getPortalServerPort(false), false);
@@ -155,23 +143,35 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			Set<String> portalHostNames = _getPortalHostNames(
 				company, group, portalURL);
 
+			List<StaticSiteExportPage> staticSiteExportPages =
+				_exportStaticSiteExportPages(
+					group, layoutFailures, layouts, locales, portalHostNames);
+
+			List<StaticSiteExportReport.Failure> resourceFailures =
+				new ArrayList<>();
+
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
+
 			Map<String, String> resourcePaths = new HashMap<>();
 
 			List<StaticSiteExportResource> staticSiteExportResources =
 				_fetchStaticSiteExportResources(
 					serviceContext.getRequest(), locales, portalHostNames,
 					portalURL, resourceFailures, resourcePaths,
-					staticSiteExportDocuments.values());
+					TransformUtil.transform(
+						staticSiteExportPages,
+						StaticSiteExportPage::getStaticSiteExportDocument));
 
 			StaticSiteExportURLRewriter staticSiteExportURLRewriter =
 				new StaticSiteExportURLRewriter(
-					_getPagePathsMap(group, staticSiteExportLayouts),
+					_getPagePathsMap(group, staticSiteExportPages),
 					portalHostNames, resourcePaths);
 
 			return new StaticSiteExportImpl(
 				_rewriteLayouts(
 					_portal.getSiteDefaultLocale(groupId),
-					staticSiteExportDocuments, staticSiteExportURLRewriter),
+					staticSiteExportPages, staticSiteExportURLRewriter),
 				new StaticSiteExportReport(layoutFailures, resourceFailures),
 				staticSiteExportResources);
 		}
@@ -183,13 +183,161 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 	}
 
-	private List<StaticSiteExportLayout> _exportStaticSiteExportLayouts(
-			List<StaticSiteExportReport.Failure> layoutFailures,
-			List<Layout> layouts, Set<Locale> locales)
+	private StaticSiteExportPage _exportDisplayPage(
+			String friendlyURL, Group group, Locale locale)
+		throws Exception {
+
+		FriendlyURLResolver friendlyURLResolver =
+			FriendlyURLResolverRegistryUtil.getFriendlyURLResolver(
+				group.getCompanyId(), _getURLSeparator(friendlyURL));
+
+		if (friendlyURLResolver == null) {
+			return null;
+		}
+
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		LayoutFriendlyURLComposite layoutFriendlyURLComposite =
+			friendlyURLResolver.getLayoutFriendlyURLComposite(
+				group.getCompanyId(), group.getGroupId(), false, friendlyURL,
+				new HashMap<>(),
+				HashMapBuilder.<String, Object>put(
+					WebKeys.LOCALE, locale
+				).put(
+					"request", serviceContext.getRequest()
+				).build());
+
+		Layout layout = layoutFriendlyURLComposite.getLayout();
+
+		try (AutoCloseable autoCloseable =
+				_layoutServiceContextHelper.getServiceContextAutoCloseable(
+					layout)) {
+
+			serviceContext = ServiceContextThreadLocal.getServiceContext();
+
+			HttpServletRequest httpServletRequest = serviceContext.getRequest();
+
+			ThemeDisplay themeDisplay =
+				(ThemeDisplay)httpServletRequest.getAttribute(
+					WebKeys.THEME_DISPLAY);
+
+			themeDisplay.setLanguageId(LocaleUtil.toLanguageId(locale));
+			themeDisplay.setLocale(locale);
+
+			friendlyURLResolver.getActualURL(
+				group.getCompanyId(), group.getGroupId(), false,
+				_portal.getPathMain(), friendlyURL, new HashMap<>(),
+				HashMapBuilder.<String, Object>put(
+					WebKeys.LOCALE, locale
+				).put(
+					"request", httpServletRequest
+				).build());
+
+			String html = _render(
+				layout, locale,
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(layout.getPlid()),
+				serviceContext);
+
+			String localizedFriendlyURL =
+				layoutFriendlyURLComposite.getFriendlyURL();
+
+			return new StaticSiteExportPage(
+				SetUtil.fromArray(friendlyURL, localizedFriendlyURL),
+				_getKey(
+					(AssetEntry)httpServletRequest.getAttribute(
+						WebKeys.LAYOUT_ASSET_ENTRY),
+					friendlyURL),
+				locale,
+				_getPath(URLCodec.decodeURL(localizedFriendlyURL), locale),
+				layout.getPlid(),
+				new StaticSiteExportDocument(html, _jsonFactory));
+		}
+	}
+
+	private void _exportDisplayPages(
+		Group group, List<StaticSiteExportReport.Failure> layoutFailures,
+		Locale locale, Set<String> portalHostNames,
+		List<StaticSiteExportPage> staticSiteExportPages) {
+
+		Deque<String> friendlyURLs = new ArrayDeque<>();
+
+		for (StaticSiteExportPage staticSiteExportPage :
+				staticSiteExportPages) {
+
+			if (Objects.equals(staticSiteExportPage.getLocale(), locale)) {
+				friendlyURLs.addAll(
+					_getDisplayPageFriendlyURLs(
+						group, portalHostNames,
+						staticSiteExportPage.getStaticSiteExportDocument()));
+			}
+		}
+
+		Set<String> exportedFriendlyURLs = new HashSet<>();
+		Map<String, StaticSiteExportPage> displayPages = new HashMap<>();
+
+		while (!friendlyURLs.isEmpty()) {
+			String friendlyURL = friendlyURLs.poll();
+
+			if (!exportedFriendlyURLs.add(friendlyURL)) {
+				continue;
+			}
+
+			try {
+				StaticSiteExportPage staticSiteExportPage = _exportDisplayPage(
+					friendlyURL, group, locale);
+
+				if (staticSiteExportPage == null) {
+					continue;
+				}
+
+				StaticSiteExportPage displayPage = displayPages.get(
+					staticSiteExportPage.getKey());
+
+				if (displayPage != null) {
+					Set<String> displayPageFriendlyURLs =
+						displayPage.getFriendlyURLs();
+
+					displayPageFriendlyURLs.addAll(
+						staticSiteExportPage.getFriendlyURLs());
+
+					continue;
+				}
+
+				displayPages.put(
+					staticSiteExportPage.getKey(), staticSiteExportPage);
+
+				staticSiteExportPages.add(staticSiteExportPage);
+
+				friendlyURLs.addAll(
+					_getDisplayPageFriendlyURLs(
+						group, portalHostNames,
+						staticSiteExportPage.getStaticSiteExportDocument()));
+			}
+			catch (Exception exception) {
+				if (_log.isWarnEnabled()) {
+					_log.warn("Unable to render " + friendlyURL, exception);
+				}
+
+				layoutFailures.add(
+					new StaticSiteExportReport.Failure(
+						exception.getMessage(), friendlyURL));
+			}
+		}
+	}
+
+	private List<StaticSiteExportPage> _exportStaticSiteExportPages(
+			Group group, List<StaticSiteExportReport.Failure> layoutFailures,
+			List<Layout> layouts, Set<Locale> locales,
+			Set<String> portalHostNames)
 		throws PortalException {
 
-		List<StaticSiteExportLayout> staticSiteExportLayouts =
-			new ArrayList<>();
+		List<StaticSiteExportPage> staticSiteExportPages = new ArrayList<>();
+
+		Layout defaultLayout = _layoutLocalService.fetchFirstLayout(
+			group.getGroupId(), false,
+			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
 
 		for (Layout layout : _getExportableLayouts(layouts)) {
 			long segmentsExperienceId =
@@ -199,12 +347,24 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			for (Locale locale : locales) {
 				String friendlyURL = layout.getFriendlyURL(locale);
 
+				Set<String> friendlyURLs = SetUtil.fromArray(friendlyURL);
+
+				if ((defaultLayout != null) &&
+					(defaultLayout.getPlid() == layout.getPlid())) {
+
+					friendlyURLs.add(StringPool.BLANK);
+					friendlyURLs.add(StringPool.SLASH);
+				}
+
 				try {
-					staticSiteExportLayouts.add(
-						new StaticSiteExportLayout(
-							_render(layout, locale, segmentsExperienceId),
+					staticSiteExportPages.add(
+						new StaticSiteExportPage(
+							friendlyURLs, String.valueOf(layout.getPlid()),
 							locale, _getPath(friendlyURL, locale),
-							layout.getPlid()));
+							layout.getPlid(),
+							new StaticSiteExportDocument(
+								_render(layout, locale, segmentsExperienceId),
+								_jsonFactory)));
 				}
 				catch (Exception exception) {
 					if (_log.isWarnEnabled()) {
@@ -218,7 +378,13 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			}
 		}
 
-		return staticSiteExportLayouts;
+		for (Locale locale : locales) {
+			_exportDisplayPages(
+				group, layoutFailures, locale, portalHostNames,
+				staticSiteExportPages);
+		}
+
+		return staticSiteExportPages;
 	}
 
 	private StaticSiteExportResourceFile _fetchStaticSiteExportResourceFile(
@@ -446,6 +612,55 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return alternatePaths;
 	}
 
+	private Set<String> _getDisplayPageFriendlyURLs(
+		Group group, Set<String> portalHostNames,
+		StaticSiteExportDocument staticSiteExportDocument) {
+
+		Set<String> displayPageFriendlyURLs = new LinkedHashSet<>();
+
+		String siteURL =
+			_portal.getPathFriendlyURLPublic() + group.getFriendlyURL() +
+				StringPool.SLASH;
+		String[] urlSeparators =
+			FriendlyURLResolverRegistryUtil.getURLSeparators(
+				group.getCompanyId());
+
+		for (String url : staticSiteExportDocument.getURLs()) {
+			StaticSiteExportURL staticSiteExportURL = new StaticSiteExportURL(
+				portalHostNames, url);
+
+			if (staticSiteExportURL.hasScheme() ||
+				staticSiteExportURL.isExternal() ||
+				(staticSiteExportURL.getQueryString() != null)) {
+
+				continue;
+			}
+
+			String path = staticSiteExportURL.getURL();
+
+			int index = path.indexOf(siteURL);
+
+			if ((index == -1) ||
+				((index > 0) &&
+				 (path.lastIndexOf(CharPool.SLASH, index - 1) != 0))) {
+
+				continue;
+			}
+
+			String friendlyURL = path.substring(index + siteURL.length() - 1);
+
+			for (String urlSeparator : urlSeparators) {
+				if (friendlyURL.startsWith(urlSeparator)) {
+					displayPageFriendlyURLs.add(friendlyURL);
+
+					break;
+				}
+			}
+		}
+
+		return displayPageFriendlyURLs;
+	}
+
 	private List<Layout> _getExportableLayouts(List<Layout> layouts) {
 		List<Layout> exportableLayouts = new ArrayList<>();
 
@@ -463,6 +678,16 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		}
 
 		return exportableLayouts;
+	}
+
+	private String _getKey(AssetEntry assetEntry, String friendlyURL) {
+		if (assetEntry == null) {
+			return friendlyURL;
+		}
+
+		return StringBundler.concat(
+			assetEntry.getClassNameId(), StringPool.COLON,
+			assetEntry.getClassPK());
 	}
 
 	private Set<String> _getModuleURLs(
@@ -567,23 +792,19 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 	}
 
 	private Map<Locale, Map<String, String>> _getPagePathsMap(
-			Group group, List<StaticSiteExportLayout> staticSiteExportLayouts)
-		throws PortalException {
+		Group group, List<StaticSiteExportPage> staticSiteExportPages) {
 
 		Map<Locale, Map<String, String>> pagePathsMap = new HashMap<>();
 
-		Layout defaultLayout = _layoutLocalService.fetchFirstLayout(
-			group.getGroupId(), false,
-			LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
 		Set<Locale> locales = new HashSet<>();
 		Map<String, String> localizedPagePaths = new HashMap<>();
 		String siteURL =
 			_portal.getPathFriendlyURLPublic() + group.getFriendlyURL();
 
-		for (StaticSiteExportLayout staticSiteExportLayout :
-				staticSiteExportLayouts) {
+		for (StaticSiteExportPage staticSiteExportPage :
+				staticSiteExportPages) {
 
-			Locale locale = staticSiteExportLayout.getLocale();
+			Locale locale = staticSiteExportPage.getLocale();
 
 			locales.add(locale);
 
@@ -592,14 +813,10 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 			String i18nPathLanguageId = _portal.getI18nPathLanguageId(
 				locale, languageId);
 
-			String path = staticSiteExportLayout.getPath();
+			String path = staticSiteExportPage.getPath();
 
-			for (String url :
-					_getURLs(
-						defaultLayout,
-						_layoutLocalService.fetchLayout(
-							staticSiteExportLayout.getPlid()),
-						locale, siteURL)) {
+			for (String friendlyURL : staticSiteExportPage.getFriendlyURLs()) {
+				String url = siteURL + friendlyURL;
 
 				localizedPagePaths.put(
 					StringBundler.concat(
@@ -618,24 +835,29 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		for (Locale locale : locales) {
 			Map<String, String> pagePaths = new HashMap<>(localizedPagePaths);
 
-			for (StaticSiteExportLayout staticSiteExportLayout :
-					staticSiteExportLayouts) {
+			for (StaticSiteExportPage staticSiteExportPage :
+					staticSiteExportPages) {
 
-				if (!Objects.equals(
-						staticSiteExportLayout.getLocale(), locale)) {
-
+				if (!Objects.equals(staticSiteExportPage.getLocale(), locale)) {
 					continue;
 				}
 
-				Layout layout = _layoutLocalService.fetchLayout(
-					staticSiteExportLayout.getPlid());
+				for (StaticSiteExportPage urlStaticSiteExportPage :
+						staticSiteExportPages) {
 
-				for (Locale urlLocale : locales) {
-					for (String url :
-							_getURLs(
-								defaultLayout, layout, urlLocale, siteURL)) {
+					if (!Objects.equals(
+							urlStaticSiteExportPage.getKey(),
+							staticSiteExportPage.getKey())) {
 
-						pagePaths.put(url, staticSiteExportLayout.getPath());
+						continue;
+					}
+
+					for (String friendlyURL :
+							urlStaticSiteExportPage.getFriendlyURLs()) {
+
+						pagePaths.put(
+							siteURL + friendlyURL,
+							staticSiteExportPage.getPath());
 					}
 				}
 			}
@@ -748,21 +970,14 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 		return stylesheetResourceURLs;
 	}
 
-	private List<String> _getURLs(
-		Layout defaultLayout, Layout layout, Locale locale, String siteURL) {
+	private String _getURLSeparator(String friendlyURL) {
+		int index = friendlyURL.indexOf(CharPool.SLASH, 1);
 
-		List<String> urls = new ArrayList<>();
-
-		urls.add(siteURL + layout.getFriendlyURL(locale));
-
-		if ((defaultLayout != null) &&
-			(defaultLayout.getPlid() == layout.getPlid())) {
-
-			urls.add(siteURL);
-			urls.add(siteURL + StringPool.SLASH);
+		if (index == -1) {
+			return friendlyURL;
 		}
 
-		return urls;
+		return friendlyURL.substring(0, index + 1);
 	}
 
 	private boolean _hasAUIModuleURL(Set<String> resourceURLs) {
@@ -802,84 +1017,88 @@ public class StaticSiteExporterImpl implements StaticSiteExporter {
 				_layoutServiceContextHelper.getServiceContextAutoCloseable(
 					layout)) {
 
-			ServiceContext serviceContext =
-				ServiceContextThreadLocal.getServiceContext();
-
-			HttpServletRequest httpServletRequest = serviceContext.getRequest();
-
-			ThemeDisplay themeDisplay =
-				(ThemeDisplay)httpServletRequest.getAttribute(
-					WebKeys.THEME_DISPLAY);
-
-			themeDisplay.setCDNBaseURL(StringPool.BLANK);
-			themeDisplay.setThemeJsFastLoad(false);
-
-			return _layoutPreviewRenderer.render(
-				layout, locale, segmentsExperienceId, serviceContext);
+			return _render(
+				layout, locale, segmentsExperienceId,
+				ServiceContextThreadLocal.getServiceContext());
 		}
+	}
+
+	private String _render(
+			Layout layout, Locale locale, long segmentsExperienceId,
+			ServiceContext serviceContext)
+		throws Exception {
+
+		HttpServletRequest httpServletRequest = serviceContext.getRequest();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		themeDisplay.setCDNBaseURL(StringPool.BLANK);
+		themeDisplay.setThemeJsFastLoad(false);
+
+		return _layoutPreviewRenderer.render(
+			layout, locale, segmentsExperienceId, serviceContext);
 	}
 
 	private List<StaticSiteExportLayout> _rewriteLayouts(
 		Locale siteDefaultLocale,
-		Map<StaticSiteExportLayout, StaticSiteExportDocument>
-			staticSiteExportDocuments,
+		List<StaticSiteExportPage> staticSiteExportPages,
 		StaticSiteExportURLRewriter staticSiteExportURLRewriter) {
 
-		Map<Long, Map<Locale, String>> pathsMap = new HashMap<>();
+		Map<String, Map<Locale, String>> pathsMap = new HashMap<>();
 
-		for (StaticSiteExportLayout staticSiteExportLayout :
-				staticSiteExportDocuments.keySet()) {
+		for (StaticSiteExportPage staticSiteExportPage :
+				staticSiteExportPages) {
 
 			Map<Locale, String> paths = pathsMap.get(
-				staticSiteExportLayout.getPlid());
+				staticSiteExportPage.getKey());
 
 			if (paths == null) {
 				paths = new HashMap<>();
 
-				pathsMap.put(staticSiteExportLayout.getPlid(), paths);
+				pathsMap.put(staticSiteExportPage.getKey(), paths);
 			}
 
 			paths.put(
-				staticSiteExportLayout.getLocale(),
-				staticSiteExportLayout.getPath());
+				staticSiteExportPage.getLocale(),
+				staticSiteExportPage.getPath());
 		}
 
-		List<StaticSiteExportLayout> rewrittenStaticSiteExportLayouts =
+		List<StaticSiteExportLayout> staticSiteExportLayouts =
 			new ArrayList<>();
 
-		for (Map.Entry<StaticSiteExportLayout, StaticSiteExportDocument> entry :
-				staticSiteExportDocuments.entrySet()) {
-
-			StaticSiteExportLayout staticSiteExportLayout = entry.getKey();
+		for (StaticSiteExportPage staticSiteExportPage :
+				staticSiteExportPages) {
 
 			StaticSiteExportDocument staticSiteExportDocument =
-				entry.getValue();
+				staticSiteExportPage.getStaticSiteExportDocument();
 
 			staticSiteExportURLRewriter.rewrite(
-				staticSiteExportLayout.getLocale(), staticSiteExportDocument);
+				staticSiteExportPage.getLocale(), staticSiteExportDocument);
 
 			Map<Locale, String> paths = pathsMap.get(
-				staticSiteExportLayout.getPlid());
+				staticSiteExportPage.getKey());
 
 			String canonicalPath =
-				StringPool.SLASH + staticSiteExportLayout.getPath();
+				StringPool.SLASH + staticSiteExportPage.getPath();
 
 			staticSiteExportDocument.replaceLinks(
 				_getAlternatePaths(paths, siteDefaultLocale), canonicalPath);
 			staticSiteExportDocument.replaceOpenGraphMetaTags(
 				canonicalPath,
 				_getOpenGraphLocaleAlternates(
-					staticSiteExportLayout.getLocale(), paths.keySet()));
+					staticSiteExportPage.getLocale(), paths.keySet()));
 
-			rewrittenStaticSiteExportLayouts.add(
+			staticSiteExportLayouts.add(
 				new StaticSiteExportLayout(
 					staticSiteExportDocument.getHTML(),
-					staticSiteExportLayout.getLocale(),
-					staticSiteExportLayout.getPath(),
-					staticSiteExportLayout.getPlid()));
+					staticSiteExportPage.getLocale(),
+					staticSiteExportPage.getPath(),
+					staticSiteExportPage.getPlid()));
 		}
 
-		return rewrittenStaticSiteExportLayouts;
+		return staticSiteExportLayouts;
 	}
 
 	private void _rewriteStylesheet(
