@@ -10,6 +10,10 @@ import com.liferay.document.library.helper.DLURLHelper;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.fragment.constants.FragmentConstants;
+import com.liferay.journal.constants.JournalFolderConstants;
+import com.liferay.journal.model.JournalArticle;
+import com.liferay.journal.test.util.JournalTestUtil;
+import com.liferay.layout.page.template.test.util.DisplayPageTemplateTestUtil;
 import com.liferay.layout.test.util.ContentLayoutTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.function.transform.TransformUtil;
@@ -31,6 +35,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -147,6 +152,74 @@ public class StaticSiteExporterTest {
 					StringBundler.concat(
 						"<img src=\"/", iconsStaticSiteExportResource.getPath(),
 						"\">")));
+		}
+	}
+
+	@Test
+	public void testExportWithDisplayPage() throws Exception {
+		JournalArticle journalArticle = JournalTestUtil.addArticle(
+			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+
+		DisplayPageTemplateTestUtil.addDisplayPageTemplate(
+			_group.getGroupId(),
+			PortalUtil.getClassNameId(JournalArticle.class.getName()),
+			journalArticle.getDDMStructureKey(), true,
+			WorkflowConstants.STATUS_APPROVED);
+
+		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+		Layout draftLayout = layout.fetchDraftLayout();
+
+		ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
+			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, null,
+			StringBundler.concat(
+				"<a href=\"", PortalUtil.getPathFriendlyURLPublic(),
+				_group.getFriendlyURL(), "/w/", journalArticle.getUrlTitle(),
+				"\">Display Page</a>"),
+			StringPool.BLANK, draftLayout, null,
+			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
+				draftLayout.getPlid()),
+			FragmentConstants.TYPE_COMPONENT);
+
+		ContentLayoutTestUtil.publishLayout(draftLayout, layout);
+
+		try (StaticSiteExport staticSiteExport = _staticSiteExporter.export(
+				_group.getGroupId(), Set.of(LocaleUtil.US))) {
+
+			Map<String, StaticSiteExportLayout> staticSiteExportLayouts =
+				new HashMap<>();
+
+			for (StaticSiteExportLayout staticSiteExportLayout :
+					staticSiteExport.getStaticSiteExportLayouts()) {
+
+				staticSiteExportLayouts.put(
+					staticSiteExportLayout.getPath(), staticSiteExportLayout);
+			}
+
+			Assert.assertEquals(
+				staticSiteExportLayouts.toString(), 2,
+				staticSiteExportLayouts.size());
+
+			String displayPagePath =
+				"en/w/" + journalArticle.getUrlTitle() + ".html";
+
+			StaticSiteExportLayout displayPageStaticSiteExportLayout =
+				staticSiteExportLayouts.get(displayPagePath);
+
+			Assert.assertThat(
+				displayPageStaticSiteExportLayout.getHTML(),
+				CoreMatchers.containsString(
+					journalArticle.getTitle(LocaleUtil.US)));
+
+			StaticSiteExportLayout staticSiteExportLayout =
+				staticSiteExportLayouts.get(
+					"en" + layout.getFriendlyURL() + ".html");
+
+			Assert.assertThat(
+				staticSiteExportLayout.getHTML(),
+				CoreMatchers.containsString(
+					"href=\"/" + displayPagePath + "\">Display Page"));
 		}
 	}
 
