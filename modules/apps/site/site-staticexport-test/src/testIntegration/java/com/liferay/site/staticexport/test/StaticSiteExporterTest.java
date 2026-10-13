@@ -10,6 +10,10 @@ import com.liferay.document.library.helper.DLURLHelper;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.fragment.constants.FragmentConstants;
+import com.liferay.journal.constants.JournalFolderConstants;
+import com.liferay.journal.model.JournalArticle;
+import com.liferay.journal.test.util.JournalTestUtil;
+import com.liferay.layout.page.template.test.util.DisplayPageTemplateTestUtil;
 import com.liferay.layout.test.util.ContentLayoutTestUtil;
 import com.liferay.layout.test.util.LayoutTestUtil;
 import com.liferay.petra.function.transform.TransformUtil;
@@ -27,9 +31,11 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.FileUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -46,7 +52,11 @@ import java.io.File;
 
 import java.nio.charset.StandardCharsets;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.hamcrest.CoreMatchers;
@@ -146,6 +156,74 @@ public class StaticSiteExporterTest {
 	}
 
 	@Test
+	public void testExportWithDisplayPage() throws Exception {
+		JournalArticle journalArticle = JournalTestUtil.addArticle(
+			_group.getGroupId(),
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID);
+
+		DisplayPageTemplateTestUtil.addDisplayPageTemplate(
+			_group.getGroupId(),
+			PortalUtil.getClassNameId(JournalArticle.class.getName()),
+			journalArticle.getDDMStructureKey(), true,
+			WorkflowConstants.STATUS_APPROVED);
+
+		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+		Layout draftLayout = layout.fetchDraftLayout();
+
+		ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
+			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, null,
+			StringBundler.concat(
+				"<a href=\"", PortalUtil.getPathFriendlyURLPublic(),
+				_group.getFriendlyURL(), "/w/", journalArticle.getUrlTitle(),
+				"\">Display Page</a>"),
+			StringPool.BLANK, draftLayout, null,
+			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
+				draftLayout.getPlid()),
+			FragmentConstants.TYPE_COMPONENT);
+
+		ContentLayoutTestUtil.publishLayout(draftLayout, layout);
+
+		try (StaticSiteExport staticSiteExport = _staticSiteExporter.export(
+				_group.getGroupId(), Set.of(LocaleUtil.US))) {
+
+			Map<String, StaticSiteExportLayout> staticSiteExportLayouts =
+				new HashMap<>();
+
+			for (StaticSiteExportLayout staticSiteExportLayout :
+					staticSiteExport.getStaticSiteExportLayouts()) {
+
+				staticSiteExportLayouts.put(
+					staticSiteExportLayout.getPath(), staticSiteExportLayout);
+			}
+
+			Assert.assertEquals(
+				staticSiteExportLayouts.toString(), 2,
+				staticSiteExportLayouts.size());
+
+			String displayPagePath =
+				"en/w/" + journalArticle.getUrlTitle() + ".html";
+
+			StaticSiteExportLayout displayPageStaticSiteExportLayout =
+				staticSiteExportLayouts.get(displayPagePath);
+
+			Assert.assertThat(
+				displayPageStaticSiteExportLayout.getHTML(),
+				CoreMatchers.containsString(
+					journalArticle.getTitle(LocaleUtil.US)));
+
+			StaticSiteExportLayout staticSiteExportLayout =
+				staticSiteExportLayouts.get(
+					"en" + layout.getFriendlyURL() + ".html");
+
+			Assert.assertThat(
+				staticSiteExportLayout.getHTML(),
+				CoreMatchers.containsString(
+					"href=\"/" + displayPagePath + "\">Display Page"));
+		}
+	}
+
+	@Test
 	public void testExportWithExternalURL() throws Exception {
 		String imageURL = StringBundler.concat(
 			"http://10.0.0.1/", RandomTestUtil.randomString(), ".png");
@@ -230,6 +308,114 @@ public class StaticSiteExporterTest {
 				Assert.assertNotEquals(
 					layout1.getPlid(), staticSiteExportLayout.getPlid());
 			}
+		}
+	}
+
+	@Test
+	public void testExportWithLocales() throws Exception {
+		GroupTestUtil.updateDisplaySettings(
+			_group.getGroupId(),
+			Arrays.asList(LocaleUtil.GERMANY, LocaleUtil.SPAIN, LocaleUtil.US),
+			LocaleUtil.US);
+
+		String englishFriendlyURL = StringBundler.concat(
+			StringPool.SLASH,
+			StringUtil.toLowerCase(RandomTestUtil.randomString()),
+			StringPool.SLASH,
+			StringUtil.toLowerCase(RandomTestUtil.randomString()));
+		String spanishFriendlyURL = StringBundler.concat(
+			StringPool.SLASH,
+			StringUtil.toLowerCase(RandomTestUtil.randomString()),
+			StringPool.SLASH,
+			StringUtil.toLowerCase(RandomTestUtil.randomString()));
+
+		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+		Layout draftLayout = layout.fetchDraftLayout();
+
+		String siteURL =
+			PortalUtil.getPathFriendlyURLPublic() + _group.getFriendlyURL();
+
+		ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
+			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, null,
+			StringBundler.concat(
+				"<a href=\"/es", siteURL, spanishFriendlyURL,
+				"\">Spanish</a><a href=\"", siteURL, englishFriendlyURL,
+				"\">Unprefixed</a>"),
+			StringPool.BLANK, draftLayout, null,
+			_segmentsExperienceLocalService.fetchDefaultSegmentsExperienceId(
+				draftLayout.getPlid()),
+			FragmentConstants.TYPE_COMPONENT);
+
+		ContentLayoutTestUtil.publishLayout(draftLayout, layout);
+
+		LayoutTestUtil.updateFriendlyURL(
+			layout,
+			HashMapBuilder.put(
+				LocaleUtil.SPAIN, spanishFriendlyURL
+			).put(
+				LocaleUtil.US, englishFriendlyURL
+			).build());
+
+		try (StaticSiteExport staticSiteExport = _staticSiteExporter.export(
+				_group.getGroupId(), Set.of(LocaleUtil.SPAIN, LocaleUtil.US))) {
+
+			Map<Locale, StaticSiteExportLayout> staticSiteExportLayouts =
+				new HashMap<>();
+
+			for (StaticSiteExportLayout staticSiteExportLayout :
+					staticSiteExport.getStaticSiteExportLayouts()) {
+
+				staticSiteExportLayouts.put(
+					staticSiteExportLayout.getLocale(), staticSiteExportLayout);
+			}
+
+			Assert.assertEquals(
+				staticSiteExportLayouts.toString(), 2,
+				staticSiteExportLayouts.size());
+
+			String englishPath = "en" + englishFriendlyURL + ".html";
+			String spanishPath = "es" + spanishFriendlyURL + ".html";
+
+			StaticSiteExportLayout spanishStaticSiteExportLayout =
+				staticSiteExportLayouts.get(LocaleUtil.SPAIN);
+
+			Assert.assertEquals(
+				spanishPath, spanishStaticSiteExportLayout.getPath());
+
+			String spanishHTML = spanishStaticSiteExportLayout.getHTML();
+
+			_assertLinks(
+				spanishPath, englishPath, spanishHTML, "en_US", spanishPath);
+
+			Assert.assertThat(
+				spanishHTML,
+				CoreMatchers.containsString(
+					"href=\"/" + spanishPath + "\">Spanish"));
+			Assert.assertThat(
+				spanishHTML,
+				CoreMatchers.containsString(
+					"href=\"/" + spanishPath + "\">Unprefixed"));
+
+			StaticSiteExportLayout englishStaticSiteExportLayout =
+				staticSiteExportLayouts.get(LocaleUtil.US);
+
+			Assert.assertEquals(
+				englishPath, englishStaticSiteExportLayout.getPath());
+
+			String englishHTML = englishStaticSiteExportLayout.getHTML();
+
+			_assertLinks(
+				englishPath, englishPath, englishHTML, "es_ES", spanishPath);
+
+			Assert.assertThat(
+				englishHTML,
+				CoreMatchers.containsString(
+					"href=\"/" + spanishPath + "\">Spanish"));
+			Assert.assertThat(
+				englishHTML,
+				CoreMatchers.containsString(
+					"href=\"/" + englishPath + "\">Unprefixed"));
 		}
 	}
 
@@ -508,6 +694,55 @@ public class StaticSiteExporterTest {
 			ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 	}
 
+	private void _assertLinks(
+		String canonicalPath, String englishPath, String html,
+		String openGraphLocaleAlternate, String spanishPath) {
+
+		Assert.assertThat(
+			html,
+			CoreMatchers.containsString(
+				"<link href=\"/" + englishPath +
+					"\" hreflang=\"en-US\" rel=\"alternate\">"));
+		Assert.assertThat(
+			html,
+			CoreMatchers.containsString(
+				"<link href=\"/" + spanishPath +
+					"\" hreflang=\"es-ES\" rel=\"alternate\">"));
+		Assert.assertThat(
+			html,
+			CoreMatchers.containsString(
+				"<link href=\"/" + englishPath +
+					"\" hreflang=\"x-default\" rel=\"alternate\">"));
+		Assert.assertThat(
+			html,
+			CoreMatchers.containsString(
+				"<link href=\"/" + canonicalPath + "\" rel=\"canonical\">"));
+		Assert.assertThat(
+			html,
+			CoreMatchers.containsString(
+				"<meta name=\"twitter:url\" content=\"/" + canonicalPath +
+					"\">"));
+		Assert.assertThat(
+			html,
+			CoreMatchers.containsString(
+				"<meta property=\"og:locale:alternate\" content=\"" +
+					openGraphLocaleAlternate + "\">"));
+		Assert.assertThat(
+			html,
+			CoreMatchers.containsString(
+				"<meta property=\"og:url\" content=\"/" + canonicalPath +
+					"\">"));
+		Assert.assertThat(
+			html,
+			CoreMatchers.not(
+				CoreMatchers.containsString("hreflang=\"de-DE\"")));
+		Assert.assertThat(
+			html,
+			CoreMatchers.not(
+				CoreMatchers.containsString(
+					"property=\"og:locale:alternate\" content=\"de_DE\"")));
+	}
+
 	private void _assertStaticSiteExport(
 		Layout layout, StaticSiteExport staticSiteExport) {
 
@@ -523,8 +758,7 @@ public class StaticSiteExporterTest {
 
 		Assert.assertEquals(LocaleUtil.US, staticSiteExportLayout.getLocale());
 		Assert.assertEquals(
-			StringUtil.removeFirst(layout.getFriendlyURL(), StringPool.SLASH) +
-				".html",
+			"en" + layout.getFriendlyURL() + ".html",
 			staticSiteExportLayout.getPath());
 		Assert.assertEquals(layout.getPlid(), staticSiteExportLayout.getPlid());
 		Assert.assertThat(
