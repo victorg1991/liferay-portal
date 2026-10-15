@@ -1,0 +1,70 @@
+[
+	{
+		"externalReferenceCode": "TAXOFFICEMAINMENU",
+		"menuItems": [
+			{
+				"friendlyURL": "/inicio",
+				"privateLayout": false,
+				"type": "layout"
+			},
+			{
+				"friendlyURL": "/todas-gestiones",
+				"privateLayout": false,
+				"type": "layout"
+			},
+			{
+				"friendlyURL": "/ayuda",
+				"privateLayout": false,
+				"type": "layout"
+			}
+		],
+		"name": "Main Navigation"
+	},
+	{
+		"externalReferenceCode": "TAXOFFICERESOURCESMENU",
+		"menuItems": [
+			{
+				"friendlyURL": "/recursos",
+				"privateLayout": false,
+				"type": "layout"
+			},
+			{
+				"menuItems": [
+					{
+						"friendlyURL": "/componentes",
+						"privateLayout": false,
+						"type": "layout"
+					},
+					{
+						"friendlyURL": "/imagenes-documentos",
+						"privateLayout": false,
+						"type": "layout"
+					}
+				],
+				"name_i18n": {
+					"en_US": "Examples",
+					"es_ES": "Ejemplos"
+				},
+				"type": "node"
+			},
+			{
+				"name_i18n": {
+					"en_US": "Tax agency",
+					"es_ES": "Agencia Tributaria"
+				},
+				"type": "url",
+				"url": "https://sede.agenciatributaria.gob.es/",
+				"useNewTab": true
+			},
+			{
+				"key": "/site-initializer/documents/group/Recursos/guia-renta-2026.pdf",
+				"type": "display-page"
+			},
+			{
+				"key": "/site-initializer/journal-articles/novedades/campana-renta.json",
+				"type": "display-page"
+			}
+		],
+		"name": "Resources Navigation"
+	}
+]

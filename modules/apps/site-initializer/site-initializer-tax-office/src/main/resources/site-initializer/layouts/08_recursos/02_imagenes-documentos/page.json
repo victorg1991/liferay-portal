@@ -1,0 +1,15 @@
+{
+	"friendlyURL": "/imagenes-documentos",
+	"friendlyURL_i18n": {
+		"en_US": "/images-documents",
+		"es_ES": "/imagenes-documentos"
+	},
+	"hidden": false,
+	"name_i18n": {
+		"en_US": "Images and documents",
+		"es_ES": "Imágenes y documentos"
+	},
+	"private": false,
+	"system": false,
+	"type": "Content"
+}

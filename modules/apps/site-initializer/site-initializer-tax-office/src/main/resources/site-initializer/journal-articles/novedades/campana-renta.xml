@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<root available-locales="en_US,es_ES" default-locale="en_US" version="1.0">
+	<dynamic-element field-reference="summary" index-type="text" instance-id="summ0001" name="summary" type="text">
+		<dynamic-content language-id="en_US">
+			<![CDATA[Income tax campaign 2026 opens on April 2.]]>
+		</dynamic-content>
+		<dynamic-content language-id="es_ES">
+			<![CDATA[La campaña de la Renta 2026 comienza el 2 de abril.]]>
+		</dynamic-content>
+	</dynamic-element>
+	<dynamic-element field-reference="content" index-type="text" instance-id="cont0001" name="content" type="rich_text">
+		<dynamic-content language-id="en_US">
+			<![CDATA[<p>From April 2 you can file your income tax return online. Check your tax data before submitting and use the <a href="/web/tax-office/modelo-100">Modelo 100</a> guide.</p><p><img alt="Madrid office" src="[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/oficina-madrid.jpg$]" width="320" /></p>]]>
+		</dynamic-content>
+		<dynamic-content language-id="es_ES">
+			<![CDATA[<p>Desde el 2 de abril puede presentar su declaración de la Renta por internet. Revise sus datos fiscales antes de enviarla y consulte la guía del <a href="/web/tax-office/modelo-100">Modelo 100</a>.</p><p><img alt="Oficina de Madrid" src="[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/oficina-madrid.jpg$]" width="320" /></p>]]>
+		</dynamic-content>
+	</dynamic-element>
+</root>

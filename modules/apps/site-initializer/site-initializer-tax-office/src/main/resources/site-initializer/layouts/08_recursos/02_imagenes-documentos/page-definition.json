@@ -1,0 +1,301 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h2"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Images and documents",
+										"es_ES": "Imágenes y documentos"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-image"
+					},
+					"fragmentConfig": {
+						"imageSize": "auto"
+					},
+					"fragmentFields": [
+						{
+							"id": "image-square",
+							"value": {
+								"fragmentImage": {
+									"description": {
+										"value_i18n": {
+											"en_US": "Madrid office",
+											"es_ES": "Oficina de Madrid"
+										}
+									},
+									"fragmentImageClassPKReference": {
+										"classPKReferences": {
+											"en_US": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-madrid.jpg$]"
+											},
+											"es_ES": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-madrid.jpg$]"
+											}
+										},
+										"fragmentImageConfiguration": {
+											"landscapeMobile": "auto",
+											"portraitMobile": "auto",
+											"tablet": "auto"
+										}
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-card"
+					},
+					"fragmentConfig": {
+					},
+					"fragmentFields": [
+						{
+							"id": "01-img",
+							"value": {
+								"fragmentImage": {
+									"description": {
+										"value_i18n": {
+											"en_US": "Seville office",
+											"es_ES": "Oficina de Sevilla"
+										}
+									},
+									"fragmentImageClassPKReference": {
+										"classPKReferences": {
+											"en_US": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-sevilla.jpg$]"
+											},
+											"es_ES": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-sevilla.jpg$]"
+											}
+										},
+										"fragmentImageConfiguration": {
+											"landscapeMobile": "auto",
+											"portraitMobile": "auto",
+											"tablet": "auto"
+										}
+									}
+								}
+							}
+						},
+						{
+							"id": "02-title",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Income tax guide",
+										"es_ES": "Guía de la Renta"
+									}
+								}
+							}
+						},
+						{
+							"id": "03-content",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Download the 2026 guide as a PDF.",
+										"es_ES": "Descargue la guía de 2026 en PDF."
+									}
+								}
+							}
+						},
+						{
+							"id": "04-link",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"value_i18n": {
+												"en_US": "[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/guia-renta-2026.pdf$]",
+												"es_ES": "[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/guia-renta-2026.pdf$]"
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Download",
+										"es_ES": "Descargar"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-slider"
+					},
+					"fragmentConfig": {
+						"numberOfSlides": "3"
+					},
+					"fragmentFields": [
+						{
+							"id": "01-01-image",
+							"value": {
+								"fragmentImage": {
+									"description": {
+										"value_i18n": {
+											"en_US": "Madrid",
+											"es_ES": "Madrid"
+										}
+									},
+									"fragmentImageClassPKReference": {
+										"classPKReferences": {
+											"en_US": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-madrid.jpg$]"
+											},
+											"es_ES": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-madrid.jpg$]"
+											}
+										},
+										"fragmentImageConfiguration": {
+											"landscapeMobile": "auto",
+											"portraitMobile": "auto",
+											"tablet": "auto"
+										}
+									}
+								}
+							}
+						},
+						{
+							"id": "02-01-image",
+							"value": {
+								"fragmentImage": {
+									"description": {
+										"value_i18n": {
+											"en_US": "Seville",
+											"es_ES": "Sevilla"
+										}
+									},
+									"fragmentImageClassPKReference": {
+										"classPKReferences": {
+											"en_US": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-sevilla.jpg$]"
+											},
+											"es_ES": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-sevilla.jpg$]"
+											}
+										},
+										"fragmentImageConfiguration": {
+											"landscapeMobile": "auto",
+											"portraitMobile": "auto",
+											"tablet": "auto"
+										}
+									}
+								}
+							}
+						},
+						{
+							"id": "03-01-image",
+							"value": {
+								"fragmentImage": {
+									"description": {
+										"value_i18n": {
+											"en_US": "Valencia",
+											"es_ES": "Valencia"
+										}
+									},
+									"fragmentImageClassPKReference": {
+										"classPKReferences": {
+											"en_US": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-valencia.jpg$]"
+											},
+											"es_ES": {
+												"className": "com.liferay.portal.kernel.repository.model.FileEntry",
+												"classPK": "[$DOCUMENT_FILE_ENTRY_ID:/site-initializer/documents/group/Recursos/oficina-valencia.jpg$]"
+											}
+										},
+										"fragmentImageConfiguration": {
+											"landscapeMobile": "auto",
+											"portraitMobile": "auto",
+											"tablet": "auto"
+										}
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "text-block"
+					},
+					"fragmentConfig": {
+					},
+					"fragmentFields": [
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<p><img alt=\"Mascot\" src=\"[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/mascota.png$]\" width=\"160\" /></p><p><a href=\"[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/guia-renta-2026.pdf$]\">Income tax guide (PDF)</a></p>",
+										"es_ES": "<p><img alt=\"Mascota\" src=\"[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/mascota.png$]\" width=\"160\" /></p><p><a href=\"[$DOCUMENT_URL:/site-initializer/documents/group/Recursos/guia-renta-2026.pdf$]\">Guía de la Renta (PDF)</a></p>"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

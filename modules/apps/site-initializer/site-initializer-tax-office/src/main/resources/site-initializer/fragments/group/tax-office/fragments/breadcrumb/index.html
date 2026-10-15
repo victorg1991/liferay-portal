@@ -1,0 +1,26 @@
+[#attempt]
+	[#assign ancestorLayouts = layout.getAncestors()?reverse /]
+	[#assign homeURL = themeDisplay.getPathFriendlyURLPublic() + themeDisplay.getScopeGroup().getFriendlyURL() + configuration.homeFriendlyURL /]
+
+	<nav aria-label="${configuration.ariaLabel}" class="tax-breadcrumb">
+		<ol class="tax-breadcrumb-list tax-container">
+			<li class="tax-breadcrumb-item">
+				<a href="${homeURL}">${configuration.homeLabel}</a>
+			</li>
+
+			[#list ancestorLayouts as ancestorLayout]
+				<li class="tax-breadcrumb-item">
+					<a href="${portalUtil.getLayoutFriendlyURL(ancestorLayout, themeDisplay)}">${ancestorLayout.getName(locale)}</a>
+				</li>
+			[/#list]
+
+			<li aria-current="page" class="tax-breadcrumb-item tax-breadcrumb-item-current">
+				${layout.getName(locale)}
+			</li>
+		</ol>
+	</nav>
+[#recover]
+
+	<!-- The breadcrumb needs a page context to resolve the trail. -->
+
+[/#attempt]

@@ -1,0 +1,77 @@
+[#attempt]
+	[#assign siteURL = themeDisplay.getPathFriendlyURLPublic() + themeDisplay.getScopeGroup().getFriendlyURL() /]
+[#recover]
+	[#assign siteURL = "" /]
+[/#attempt]
+
+<header class="tax-header">
+	<div class="tax-header-institutional">
+		<div class="tax-container tax-header-institutional-inner">
+			<a class="tax-header-brand" href="${siteURL}${configuration.homeFriendlyURL}">
+				<span aria-hidden="true" class="tax-header-emblem">
+					<span class="tax-header-emblem-band"></span>
+					<span class="tax-header-emblem-band"></span>
+					<span class="tax-header-emblem-band"></span>
+				</span>
+
+				<svg aria-hidden="true" class="tax-header-mark" viewBox="0 0 32 32">
+					<path d="M4 4 L16 20 L28 4 L22 4 L16 12 L10 4 Z" />
+					<path d="M4 28 L12 18 L16 24 L20 18 L28 28 Z" />
+				</svg>
+
+				<span class="tax-header-wordmark">
+					<span class="tax-header-agency" data-lfr-editable-id="agencyName" data-lfr-editable-type="text">Oficina Tributaria</span>
+					<span class="tax-header-tagline" data-lfr-editable-id="agencyTagline" data-lfr-editable-type="text">Sede electrónica</span>
+				</span>
+			</a>
+
+			<div class="tax-header-utilities">
+				<span class="tax-header-timestamp">${.now?string["dd/MM/yyyy HH:mm:ss"]}</span>
+
+				<a class="tax-header-account" href="${siteURL}${configuration.accountFriendlyURL}">
+					<svg aria-hidden="true" class="tax-header-account-icon" viewBox="0 0 24 24">
+						<circle cx="12" cy="8" r="4" />
+
+						<path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8Z" />
+					</svg>
+
+					<span data-lfr-editable-id="accountLabel" data-lfr-editable-type="text">ÁREA PERSONAL</span>
+				</a>
+
+				<span class="tax-header-language">ES</span>
+			</div>
+		</div>
+	</div>
+
+	<nav aria-label="${configuration.navigationAriaLabel}" class="tax-navbar">
+		<div class="tax-container tax-navbar-inner">
+			<ul class="tax-navbar-menu">
+				<li class="tax-navbar-item">
+					<a class="tax-navbar-link" href="${siteURL}${configuration.navigationFriendlyURL1}" data-lfr-editable-id="navigationLabel1" data-lfr-editable-type="text">Sobre la Oficina Tributaria</a>
+				</li>
+				<li class="tax-navbar-item">
+					<a class="tax-navbar-link" href="${siteURL}${configuration.navigationFriendlyURL2}" data-lfr-editable-id="navigationLabel2" data-lfr-editable-type="text">Información y gestiones</a>
+				</li>
+				<li class="tax-navbar-item">
+					<a class="tax-navbar-link" href="${siteURL}${configuration.navigationFriendlyURL3}" data-lfr-editable-id="navigationLabel3" data-lfr-editable-type="text">Todas las gestiones</a>
+				</li>
+			</ul>
+
+			<form action="${siteURL}${configuration.searchFriendlyURL}" class="tax-search" method="get" role="search">
+				<label class="tax-visually-hidden" for="${fragmentEntryLinkNamespace}-search">${configuration.searchPlaceholder}</label>
+
+				<input class="tax-search-input" id="${fragmentEntryLinkNamespace}-search" name="q" placeholder="${configuration.searchPlaceholder}" type="search" />
+
+				<button class="tax-search-button" type="submit">
+					<span class="tax-visually-hidden">${configuration.searchButtonLabel}</span>
+
+					<svg aria-hidden="true" viewBox="0 0 24 24">
+						<circle cx="10.5" cy="10.5" r="6.5" />
+
+						<path d="M15.5 15.5 L21 21" />
+					</svg>
+				</button>
+			</form>
+		</div>
+	</nav>
+</header>

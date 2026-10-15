@@ -1,0 +1,15 @@
+{
+	"friendlyURL": "/componentes",
+	"friendlyURL_i18n": {
+		"en_US": "/components",
+		"es_ES": "/componentes"
+	},
+	"hidden": false,
+	"name_i18n": {
+		"en_US": "Components",
+		"es_ES": "Componentes"
+	},
+	"private": false,
+	"system": false,
+	"type": "Content"
+}

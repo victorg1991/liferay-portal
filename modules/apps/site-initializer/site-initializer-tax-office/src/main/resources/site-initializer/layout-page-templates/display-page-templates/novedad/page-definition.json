@@ -1,0 +1,81 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"text": {
+									"mapping": {
+										"fieldKey": "JournalArticle_title",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "text-block"
+					},
+					"fragmentFields": [
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"mapping": {
+										"fieldKey": "summary",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "text-block"
+					},
+					"fragmentFields": [
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"mapping": {
+										"fieldKey": "content",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

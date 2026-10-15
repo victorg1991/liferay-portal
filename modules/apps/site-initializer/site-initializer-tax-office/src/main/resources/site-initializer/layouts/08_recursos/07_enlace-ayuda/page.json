@@ -1,0 +1,21 @@
+{
+	"friendlyURL": "/acceso-ayuda",
+	"friendlyURL_i18n": {
+		"en_US": "/help-shortcut",
+		"es_ES": "/acceso-ayuda"
+	},
+	"hidden": false,
+	"name_i18n": {
+		"en_US": "Help shortcut",
+		"es_ES": "Acceso a la ayuda"
+	},
+	"private": false,
+	"system": false,
+	"type": "link_to_layout",
+	"typeSettings": [
+		{
+			"key": "linkToLayoutId",
+			"value": "[$LAYOUT_ID:Ayuda$]"
+		}
+	]
+}

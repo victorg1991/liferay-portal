@@ -1,0 +1,16 @@
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "Navegación de la sección",
+					"label": "aria-label",
+					"localizable": true,
+					"name": "ariaLabel",
+					"type": "text"
+				}
+			]
+		}
+	]
+}

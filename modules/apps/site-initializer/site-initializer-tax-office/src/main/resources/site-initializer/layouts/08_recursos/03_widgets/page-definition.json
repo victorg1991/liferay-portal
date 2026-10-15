@@ -1,0 +1,175 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h2"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Navigation",
+										"es_ES": "Navegación"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"widgetInstance": {
+						"widgetConfig": {
+							"displayDepth": "0",
+							"displayStyle": "ddmTemplate_LIST-MENU-FTL",
+							"expandedLevels": "auto",
+							"rootMenuItemLevel": "0",
+							"rootMenuItemType": "absolute",
+							"siteNavigationMenuExternalReferenceCode": "TAXOFFICERESOURCESMENU",
+							"siteNavigationMenuName": "Resources Navigation",
+							"siteNavigationMenuType": "-1"
+						},
+						"widgetInstanceId": "resources",
+						"widgetName": "com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet"
+					}
+				},
+				"type": "Widget"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h2"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Language",
+										"es_ES": "Idioma"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"widgetInstance": {
+						"widgetConfig": {
+						},
+						"widgetName": "com_liferay_site_navigation_language_web_portlet_SiteNavigationLanguagePortlet"
+					}
+				},
+				"type": "Widget"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h2"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Breadcrumb",
+										"es_ES": "Ruta de navegación"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"widgetInstance": {
+						"widgetConfig": {
+						},
+						"widgetName": "com_liferay_site_navigation_breadcrumb_web_portlet_SiteNavigationBreadcrumbPortlet"
+					}
+				},
+				"type": "Widget"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h2"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Latest news",
+										"es_ES": "Últimas novedades"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"widgetInstance": {
+						"widgetConfig": {
+							"anyAssetType": "false",
+							"classNameIds": [
+								"[$CLASS_NAME_ID:com.liferay.journal.model.JournalArticle$]"
+							],
+							"displayStyle": "abstracts",
+							"selectionStyle": "dynamic"
+						},
+						"widgetName": "com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet"
+					}
+				},
+				"type": "Widget"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

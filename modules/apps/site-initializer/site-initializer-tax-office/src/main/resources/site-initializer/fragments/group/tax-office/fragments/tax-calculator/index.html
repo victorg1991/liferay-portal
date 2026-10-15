@@ -1,0 +1,49 @@
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+<script>
+	if (window.tailwind) {
+		window.tailwind.config = {
+			corePlugins: {
+				preflight: false
+			},
+			prefix: 'tw-'
+		};
+	}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/dayjs.min.js"></script>
+
+<section class="tax-calculator tw-bg-gradient-to-br tw-border tw-border-slate-200 tw-border-solid tw-from-sky-50 tw-p-6 tw-rounded-xl tw-shadow-sm tw-to-white">
+	<div class="tw-flex tw-flex-wrap tw-gap-4 tw-items-center">
+		<img alt="Bandera de España" class="tw-h-10 tw-object-cover tw-rounded tw-shadow tw-w-16" src="https://flagcdn.com/w320/es.png" />
+
+		<div>
+			<h2 class="tw-m-0 tw-text-xl tw-font-semibold tw-text-slate-800" data-lfr-editable-id="title" data-lfr-editable-type="text">Calculadora orientativa del IRPF</h2>
+
+			<p class="tw-m-0 tw-text-sm tw-text-slate-500 tax-calculator-deadline">Calculando el plazo de la campaña de la renta...</p>
+		</div>
+	</div>
+
+	<form class="tax-calculator-form tw-mt-5 tw-grid tw-gap-4 sm:tw-grid-cols-2">
+		<label class="tw-flex tw-flex-col tw-font-semibold tw-gap-1 tw-text-slate-700 tw-text-sm">
+			Base liquidable anual (€)
+
+			<input class="tax-calculator-income tw-border tw-border-slate-300 tw-border-solid tw-px-3 tw-py-2 tw-rounded-lg tw-text-base" min="0" step="100" type="number" value="30000" />
+		</label>
+
+		<div class="tw-bg-sky-700 tw-flex tw-flex-col tw-gap-1 tw-justify-end tw-px-4 tw-py-3 tw-rounded-lg tw-text-white">
+			<span class="tw-text-xs tw-uppercase tw-tracking-wide tw-opacity-80">Cuota estimada</span>
+
+			<span class="tax-calculator-result tw-text-2xl tw-font-semibold">-</span>
+
+			<span class="tax-calculator-rate tw-opacity-80 tw-text-xs"></span>
+		</div>
+	</form>
+
+	<p class="tw-mb-0 tw-mt-4 tw-text-slate-500 tw-text-xs">
+		Cálculo orientativo con la escala general estatal y autonómica. Para un cálculo oficial use
+		<a class="tw-font-semibold tw-text-sky-700" href="https://sede.agenciatributaria.gob.es/" rel="noopener noreferrer" target="_blank">la sede de la Agencia Tributaria</a>.
+	</p>
+</section>

@@ -1,0 +1,164 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "highlighted-actions"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Gestiones destacadas",
+										"es_ES": "Gestiones destacadas"
+									}
+								}
+							}
+						},
+						{
+							"id": "actions",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Presentación de la declaración-resumen anual</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Presentación de la declaración-resumen anual</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
+									}
+								}
+							}
+						},
+						{
+							"id": "footerLink",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/iva"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "false"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Todas las gestiones",
+										"es_ES": "Todas las gestiones"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "info-links"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Información",
+										"es_ES": "Información"
+									}
+								}
+							}
+						},
+						{
+							"id": "links",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Obligados a presentar el modelo 390</a></li><li><a href=\"#\">Diseños de registro. Modelos 200 al 399</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Obligados a presentar el modelo 390</a></li><li><a href=\"#\">Diseños de registro. Modelos 200 al 399</a></li></ul>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "collapsible-panel"
+					},
+					"fragmentConfig": {
+						"expanded": false
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Normativa",
+										"es_ES": "Normativa"
+									}
+								}
+							}
+						},
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<p><strong>Ley 37/1992, de 28 de diciembre</strong>del Impuesto sobre el Valor Añadido.<cite>(BOE, 29-diciembre-1992)</cite></p><p><strong>Real Decreto 1624/1992, de 29 de diciembre</strong>por el que se aprueba el Reglamento del Impuesto sobre el Valor Añadido.<cite>(BOE, 31-diciembre-1992)</cite></p>",
+										"es_ES": "<p><strong>Ley 37/1992, de 28 de diciembre</strong>del Impuesto sobre el Valor Añadido.<cite>(BOE, 29-diciembre-1992)</cite></p><p><strong>Real Decreto 1624/1992, de 29 de diciembre</strong>por el que se aprueba el Reglamento del Impuesto sobre el Valor Añadido.<cite>(BOE, 31-diciembre-1992)</cite></p>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "document-link"
+					},
+					"fragmentFields": [
+						{
+							"id": "link",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Ficha del procedimiento",
+										"es_ES": "Ficha del procedimiento"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

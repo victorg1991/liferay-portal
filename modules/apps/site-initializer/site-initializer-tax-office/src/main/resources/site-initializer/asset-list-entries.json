@@ -1,0 +1,21 @@
+[
+	{
+		"assetEntrySubtypeId": "[$DDM_STRUCTURE_ID:NOVEDAD$]",
+		"title": "Novedades",
+		"unicodeProperties": {
+			"anyClassType": "anyClassTypeJournalArticleAssetRendererFactory",
+			"classNameIds": "com.liferay.journal.model.JournalArticle",
+			"classTypeIds": "classTypeIdsJournalArticleAssetRendererFactory",
+			"orderBy": [
+				{
+					"key": "orderByColumn1",
+					"value": "title"
+				},
+				{
+					"key": "orderByType1",
+					"value": "ASC"
+				}
+			]
+		}
+	}
+]

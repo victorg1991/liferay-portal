@@ -1,0 +1,67 @@
+.tax-side-nav-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.tax-side-nav-item + .tax-side-nav-item {
+	border-top: 1px solid var(--tax-border-soft);
+}
+
+.tax-side-nav-link {
+	align-items: center;
+	color: var(--tax-blue);
+	display: flex;
+	gap: 1rem;
+	justify-content: space-between;
+	line-height: 1.35;
+	padding: 0.75rem 1rem;
+	text-decoration: none;
+}
+
+.tax-side-nav-link:hover {
+	background-color: var(--tax-blue-pale);
+	text-decoration: underline;
+}
+
+.tax-side-nav-chevron {
+	border-right: 2px solid currentColor;
+	border-top: 2px solid currentColor;
+	flex: 0 0 auto;
+	height: 0.5rem;
+	transform: rotate(45deg);
+	width: 0.5rem;
+}
+
+.tax-side-nav-item-current .tax-side-nav-link {
+	background-color: var(--tax-blue-dark);
+	color: #fff;
+}
+
+.tax-side-nav-item-current .tax-side-nav-link:hover {
+	background-color: var(--tax-blue-darker);
+	color: #fff;
+}
+
+/* ---------- Two column layout of the section master page. ---------- */
+
+.tax-page {
+	padding-bottom: 3rem;
+}
+
+.tax-page-main {
+	padding-top: 0.5rem;
+}
+
+@media (min-width: 62em) {
+	.tax-page-aside {
+		border-right: 1px solid var(--tax-border);
+		padding-left: 3.5rem;
+		padding-right: 1.5rem;
+		padding-top: 0.5rem;
+	}
+
+	.tax-page-main {
+		padding-left: 2rem;
+	}
+}

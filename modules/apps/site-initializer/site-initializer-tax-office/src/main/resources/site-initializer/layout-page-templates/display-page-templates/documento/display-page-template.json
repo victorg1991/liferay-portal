@@ -1,0 +1,10 @@
+{
+	"contentSubtype": {
+		"subtypeId": 0
+	},
+	"contentType": {
+		"className": "com.liferay.portal.kernel.repository.model.FileEntry"
+	},
+	"defaultTemplate": true,
+	"name": "Documento"
+}

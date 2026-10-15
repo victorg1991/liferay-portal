@@ -1,0 +1,23 @@
+[#attempt]
+	[#assign childLayouts = [] /]
+
+	[#list layout.getChildren() as childLayout]
+		[#if !childLayout.isHidden() && !childLayout.isSystem()]
+			[#assign childLayouts = childLayouts + [childLayout] /]
+		[/#if]
+	[/#list]
+
+	[#if childLayouts?has_content]
+		<ul class="tax-child-page-list">
+			[#list childLayouts as childLayout]
+				<li class="tax-child-page-item">
+					<a class="tax-child-page-link" href="${portalUtil.getLayoutFriendlyURL(childLayout, themeDisplay)}">${childLayout.getName(locale)}</a>
+				</li>
+			[/#list]
+		</ul>
+	[/#if]
+[#recover]
+
+	<!-- The child page list needs a page context to resolve child pages. -->
+
+[/#attempt]
