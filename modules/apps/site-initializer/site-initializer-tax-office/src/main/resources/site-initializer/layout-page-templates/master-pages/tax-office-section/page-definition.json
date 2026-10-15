@@ -1,0 +1,340 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"layout": {
+					}
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"fragment": {
+								"key": "site-header"
+							},
+							"fragmentConfig": {
+								"accountFriendlyURL": "/inicio",
+								"homeFriendlyURL": "/inicio",
+								"navigationAriaLabel": "Navegación principal",
+								"navigationFriendlyURL1": "/inicio",
+								"navigationFriendlyURL2": "/ayuda",
+								"navigationFriendlyURL3": "/todas-gestiones",
+								"searchButtonLabel": "Buscar",
+								"searchFriendlyURL": "/todas-gestiones",
+								"searchPlaceholder": "Buscar por impuestos, gestiones o modelos"
+							},
+							"fragmentFields": [
+								{
+									"id": "agencyName",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Oficina Tributaria",
+												"es_ES": "Oficina Tributaria"
+											}
+										}
+									}
+								},
+								{
+									"id": "agencyTagline",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Sede electrónica",
+												"es_ES": "Sede electrónica"
+											}
+										}
+									}
+								},
+								{
+									"id": "accountLabel",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "ÁREA PERSONAL",
+												"es_ES": "ÁREA PERSONAL"
+											}
+										}
+									}
+								},
+								{
+									"id": "navigationLabel1",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Sobre la Oficina Tributaria",
+												"es_ES": "Sobre la Oficina Tributaria"
+											}
+										}
+									}
+								},
+								{
+									"id": "navigationLabel2",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Información y gestiones",
+												"es_ES": "Información y gestiones"
+											}
+										}
+									}
+								},
+								{
+									"id": "navigationLabel3",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Todas las gestiones",
+												"es_ES": "Todas las gestiones"
+											}
+										}
+									}
+								}
+							]
+						},
+						"type": "Fragment"
+					}
+				],
+				"type": "Section"
+			},
+			{
+				"definition": {
+					"layout": {
+					}
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"fragment": {
+								"key": "breadcrumb"
+							},
+							"fragmentConfig": {
+								"ariaLabel": "Migas de pan",
+								"homeFriendlyURL": "/inicio",
+								"homeLabel": "Inicio"
+							}
+						},
+						"type": "Fragment"
+					}
+				],
+				"type": "Section"
+			},
+			{
+				"definition": {
+					"cssClasses": [
+						"tax-page"
+					],
+					"layout": {
+						"widthType": "Fixed"
+					}
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"gutters": true,
+							"modulesPerRow": 2,
+							"numberOfColumns": 2,
+							"reverseOrder": false,
+							"verticalAlignment": "top"
+						},
+						"pageElements": [
+							{
+								"definition": {
+									"size": 4
+								},
+								"pageElements": [
+									{
+										"definition": {
+											"cssClasses": [
+												"tax-page-aside"
+											],
+											"layout": {
+											}
+										},
+										"pageElements": [
+											{
+												"definition": {
+													"fragment": {
+														"key": "side-nav"
+													},
+													"fragmentConfig": {
+														"ariaLabel": "Navegación de la sección"
+													}
+												},
+												"type": "Fragment"
+											}
+										],
+										"type": "Section"
+									}
+								],
+								"type": "Column"
+							},
+							{
+								"definition": {
+									"size": 8
+								},
+								"pageElements": [
+									{
+										"definition": {
+											"cssClasses": [
+												"tax-page-main"
+											],
+											"layout": {
+											}
+										},
+										"pageElements": [
+											{
+												"definition": {
+													"fragment": {
+														"key": "page-heading"
+													}
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+													"fragment": {
+														"key": "child-page-list"
+													}
+												},
+												"type": "Fragment"
+											},
+											{
+												"definition": {
+												},
+												"type": "DropZone"
+											}
+										],
+										"type": "Section"
+									}
+								],
+								"type": "Column"
+							}
+						],
+						"type": "Row"
+					}
+				],
+				"type": "Section"
+			},
+			{
+				"definition": {
+					"layout": {
+					}
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"fragment": {
+								"key": "site-footer"
+							},
+							"fragmentFields": [
+								{
+									"id": "columnTitle1",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Oficina Tributaria",
+												"es_ES": "Oficina Tributaria"
+											}
+										}
+									}
+								},
+								{
+									"id": "columnTitle2",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Contacta con nosotros",
+												"es_ES": "Contacta con nosotros"
+											}
+										}
+									}
+								},
+								{
+									"id": "columnTitle3",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Ayuda",
+												"es_ES": "Ayuda"
+											}
+										}
+									}
+								},
+								{
+									"id": "columnTitle4",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Enlaces de interés",
+												"es_ES": "Enlaces de interés"
+											}
+										}
+									}
+								},
+								{
+									"id": "updatedLabel",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "Página actualizada:",
+												"es_ES": "Página actualizada:"
+											}
+										}
+									}
+								},
+								{
+									"id": "columnLinks1",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "<ul><li><a href=\"#\">Accesibilidad</a></li><li><a href=\"#\">Aviso de seguridad</a></li><li><a href=\"#\">Aviso legal</a></li><li><a href=\"#\">Protección de datos</a></li><li><a href=\"#\">Política lingüística</a></li><li><a href=\"#\">Estructura y navegación en la sede electrónica</a></li></ul>",
+												"es_ES": "<ul><li><a href=\"#\">Accesibilidad</a></li><li><a href=\"#\">Aviso de seguridad</a></li><li><a href=\"#\">Aviso legal</a></li><li><a href=\"#\">Protección de datos</a></li><li><a href=\"#\">Política lingüística</a></li><li><a href=\"#\">Estructura y navegación en la sede electrónica</a></li></ul>"
+											}
+										}
+									}
+								},
+								{
+									"id": "columnLinks2",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "<ul><li><a href=\"#\">Asistencia y Cita</a></li><li><a href=\"#\">Teléfonos de interés</a></li><li><a href=\"#\">Buscador de oficinas</a></li><li><a href=\"#\">Buzones de sugerencias</a></li><li><a href=\"#\">Denuncias</a></li><li><a href=\"#\">Suscripción newsletter</a></li></ul>",
+												"es_ES": "<ul><li><a href=\"#\">Asistencia y Cita</a></li><li><a href=\"#\">Teléfonos de interés</a></li><li><a href=\"#\">Buscador de oficinas</a></li><li><a href=\"#\">Buzones de sugerencias</a></li><li><a href=\"#\">Denuncias</a></li><li><a href=\"#\">Suscripción newsletter</a></li></ul>"
+											}
+										}
+									}
+								},
+								{
+									"id": "columnLinks3",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "<ul><li><a href=\"#\">Buscar</a></li><li><a href=\"#\">Consultas informáticas</a></li><li><a href=\"#\">Contenidos en lectura fácil</a></li><li><a href=\"#\">Diseños de registro</a></li><li><a href=\"#\">Horario de interrupciones de sede</a></li><li><a href=\"#\">Manuales, vídeos y folletos</a></li></ul>",
+												"es_ES": "<ul><li><a href=\"#\">Buscar</a></li><li><a href=\"#\">Consultas informáticas</a></li><li><a href=\"#\">Contenidos en lectura fácil</a></li><li><a href=\"#\">Diseños de registro</a></li><li><a href=\"#\">Horario de interrupciones de sede</a></li><li><a href=\"#\">Manuales, vídeos y folletos</a></li></ul>"
+											}
+										}
+									}
+								},
+								{
+									"id": "columnLinks4",
+									"value": {
+										"text": {
+											"value_i18n": {
+												"en_US": "<ul><li><a href=\"#\">Ministerio de Hacienda</a></li><li><a href=\"#\">Fiscalidad autonómica y local</a></li><li><a href=\"#\">Tribunales Económico-Administrativos</a></li><li><a href=\"#\">Consejo para la Defensa del Contribuyente</a></li><li><a href=\"#\">Punto de Acceso General</a></li><li><a href=\"#\">Portal de la transparencia</a></li></ul>",
+												"es_ES": "<ul><li><a href=\"#\">Ministerio de Hacienda</a></li><li><a href=\"#\">Fiscalidad autonómica y local</a></li><li><a href=\"#\">Tribunales Económico-Administrativos</a></li><li><a href=\"#\">Consejo para la Defensa del Contribuyente</a></li><li><a href=\"#\">Punto de Acceso General</a></li><li><a href=\"#\">Portal de la transparencia</a></li></ul>"
+											}
+										}
+									}
+								}
+							]
+						},
+						"type": "Fragment"
+					}
+				],
+				"type": "Section"
+			}
+		],
+		"type": "Root"
+	}
+}

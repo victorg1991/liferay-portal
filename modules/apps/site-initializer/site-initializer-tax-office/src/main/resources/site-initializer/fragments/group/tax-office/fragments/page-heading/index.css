@@ -1,0 +1,8 @@
+.tax-page-heading {
+	color: var(--tax-ink);
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 1.8rem;
+	font-weight: 700;
+	line-height: 1.2;
+	margin: 0 0 1.75rem;
+}

@@ -1,0 +1,10 @@
+{
+	"cacheable": false,
+	"configurationPath": "index.json",
+	"cssPath": "index.css",
+	"htmlPath": "index.html",
+	"icon": "calculator",
+	"jsPath": "index.js",
+	"name": "Tax Calculator",
+	"type": "component"
+}

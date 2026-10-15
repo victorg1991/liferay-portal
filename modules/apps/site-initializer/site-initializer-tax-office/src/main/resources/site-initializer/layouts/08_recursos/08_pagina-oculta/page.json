@@ -1,0 +1,15 @@
+{
+	"friendlyURL": "/pagina-oculta",
+	"friendlyURL_i18n": {
+		"en_US": "/hidden-page",
+		"es_ES": "/pagina-oculta"
+	},
+	"hidden": true,
+	"name_i18n": {
+		"en_US": "Hidden page",
+		"es_ES": "Página oculta"
+	},
+	"private": false,
+	"system": false,
+	"type": "Content"
+}

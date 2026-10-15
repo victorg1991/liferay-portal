@@ -1,0 +1,26 @@
+{
+	"object-entries": [
+		{
+			"ciudad": "Madrid",
+			"direccion": "Calle de Guzmán el Bueno, 139",
+			"externalReferenceCode": "OFICINA_MADRID",
+			"nombre": "Delegación de Madrid",
+			"telefono": "915 831 000"
+		},
+		{
+			"ciudad": "Sevilla",
+			"direccion": "Calle Tomás de Ibarra, 36",
+			"externalReferenceCode": "OFICINA_SEVILLA",
+			"nombre": "Delegación de Sevilla",
+			"telefono": "954 214 000"
+		},
+		{
+			"ciudad": "Valencia",
+			"direccion": "Calle de Guillem de Castro, 4",
+			"externalReferenceCode": "OFICINA_VALENCIA",
+			"nombre": "Delegación de Valencia",
+			"telefono": "963 984 000"
+		}
+	],
+	"objectDefinitionName": "Oficina"
+}

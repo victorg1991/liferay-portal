@@ -1,0 +1,21 @@
+{
+	"friendlyURL": "/agencia-tributaria",
+	"friendlyURL_i18n": {
+		"en_US": "/tax-agency",
+		"es_ES": "/agencia-tributaria"
+	},
+	"hidden": false,
+	"name_i18n": {
+		"en_US": "Tax agency",
+		"es_ES": "Agencia Tributaria"
+	},
+	"private": false,
+	"system": false,
+	"type": "url",
+	"typeSettings": [
+		{
+			"key": "url",
+			"value": "https://sede.agenciatributaria.gob.es/"
+		}
+	]
+}

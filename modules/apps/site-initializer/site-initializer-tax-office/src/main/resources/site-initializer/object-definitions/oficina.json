@@ -1,0 +1,60 @@
+{
+	"externalReferenceCode": "TAX_OFFICE_OFICINA",
+	"label": {
+		"en_US": "Office",
+		"es_ES": "Oficina"
+	},
+	"name": "Oficina",
+	"objectFields": [
+		{
+			"DBType": "String",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "City",
+				"es_ES": "Ciudad"
+			},
+			"name": "ciudad",
+			"required": false
+		},
+		{
+			"DBType": "String",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Address",
+				"es_ES": "Dirección"
+			},
+			"name": "direccion",
+			"required": false
+		},
+		{
+			"DBType": "String",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Name",
+				"es_ES": "Nombre"
+			},
+			"name": "nombre",
+			"required": true
+		},
+		{
+			"DBType": "String",
+			"indexed": true,
+			"indexedAsKeyword": false,
+			"label": {
+				"en_US": "Phone",
+				"es_ES": "Teléfono"
+			},
+			"name": "telefono",
+			"required": false
+		}
+	],
+	"pluralLabel": {
+		"en_US": "Offices",
+		"es_ES": "Oficinas"
+	},
+	"scope": "site",
+	"titleObjectFieldName": "nombre"
+}

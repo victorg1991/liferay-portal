@@ -1,0 +1,15 @@
+{
+	"friendlyURL": "/oficinas",
+	"friendlyURL_i18n": {
+		"en_US": "/offices",
+		"es_ES": "/oficinas"
+	},
+	"hidden": false,
+	"name_i18n": {
+		"en_US": "Offices",
+		"es_ES": "Oficinas"
+	},
+	"private": false,
+	"system": false,
+	"type": "Content"
+}

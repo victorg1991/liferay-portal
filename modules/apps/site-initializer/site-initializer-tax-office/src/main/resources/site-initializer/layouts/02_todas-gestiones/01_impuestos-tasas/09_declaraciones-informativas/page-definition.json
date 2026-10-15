@@ -1,0 +1,108 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "highlighted-actions"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Gestiones destacadas",
+										"es_ES": "Gestiones destacadas"
+									}
+								}
+							}
+						},
+						{
+							"id": "actions",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Modelo 190. Retenciones e ingresos a cuenta del IRPF</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 347. Operaciones con terceras personas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 720. Bienes y derechos situados en el extranjero</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones informativas presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Modelo 190. Retenciones e ingresos a cuenta del IRPF</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 347. Operaciones con terceras personas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Modelo 720. Bienes y derechos situados en el extranjero</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta de declaraciones informativas presentadas</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
+									}
+								}
+							}
+						},
+						{
+							"id": "footerLink",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/impuestos-tasas"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "false"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Todas las gestiones",
+										"es_ES": "Todas las gestiones"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "info-links"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Información",
+										"es_ES": "Información"
+									}
+								}
+							}
+						},
+						{
+							"id": "links",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Plazos de presentación de informativas</a></li><li><a href=\"#\">Diseños de registro de todos los modelos</a></li><li><a href=\"#\">Servicio de cotejo de datos declarados</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Plazos de presentación de informativas</a></li><li><a href=\"#\">Diseños de registro de todos los modelos</a></li><li><a href=\"#\">Servicio de cotejo de datos declarados</a></li></ul>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

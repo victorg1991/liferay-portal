@@ -1,0 +1,268 @@
+/* ---------- Design tokens and base rules shared by every tax office fragment. ---------- */
+
+:root {
+	--tax-blue: #005eb5;
+	--tax-blue-dark: #00447c;
+	--tax-blue-darker: #002f57;
+	--tax-blue-pale: #f1f8fe;
+	--tax-border: #d4d9de;
+	--tax-border-soft: #e6e9ec;
+	--tax-ink: #1c1c1c;
+	--tax-ink-muted: #4a5057;
+}
+
+.tax-container,
+.tax-header,
+.tax-footer,
+.tax-breadcrumb,
+.tax-page-aside,
+.tax-page-main {
+	color: var(--tax-ink);
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+.tax-container {
+	margin: 0 auto;
+	max-width: 82.5rem;
+	padding-left: 1.5rem;
+	padding-right: 1.5rem;
+	width: 100%;
+}
+
+.tax-visually-hidden {
+	border: 0;
+	clip: rect(0, 0, 0, 0);
+	height: 1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+.tax-header a:focus-visible,
+.tax-header button:focus-visible,
+.tax-header input:focus-visible,
+.tax-footer a:focus-visible,
+.tax-breadcrumb a:focus-visible,
+.tax-page-aside a:focus-visible,
+.tax-page-main a:focus-visible,
+.tax-page-main summary:focus-visible {
+	outline: 3px solid #ffbf47;
+	outline-offset: 2px;
+}
+
+/* ---------- Institutional bar ---------- */
+
+.tax-header-institutional {
+	background-color: #fff;
+}
+
+.tax-header-institutional-inner {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem 2rem;
+	justify-content: space-between;
+	min-height: 3.875rem;
+	padding-bottom: 0.5rem;
+	padding-top: 0.5rem;
+}
+
+.tax-header-brand {
+	align-items: center;
+	color: var(--tax-blue-darker);
+	display: flex;
+	gap: 0.75rem;
+	text-decoration: none;
+}
+
+.tax-header-emblem {
+	display: flex;
+	flex-direction: column;
+	height: 2.375rem;
+	overflow: hidden;
+	width: 4.5rem;
+}
+
+.tax-header-emblem-band {
+	flex: 1 1 auto;
+}
+
+.tax-header-emblem-band:nth-child(1),
+.tax-header-emblem-band:nth-child(3) {
+	background-color: #ad1519;
+	flex: 0 0 25%;
+}
+
+.tax-header-emblem-band:nth-child(2) {
+	background-color: #fabd00;
+}
+
+.tax-header-mark {
+	fill: var(--tax-blue);
+	flex: 0 0 auto;
+	height: 2rem;
+	width: 2rem;
+}
+
+.tax-header-wordmark {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.15;
+}
+
+.tax-header-agency {
+	font-size: 1.5rem;
+	font-weight: 700;
+}
+
+.tax-header-tagline {
+	font-size: 0.8125rem;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+}
+
+.tax-header-utilities {
+	align-items: center;
+	display: flex;
+	gap: 1.25rem;
+}
+
+.tax-header-timestamp {
+	color: var(--tax-ink-muted);
+	font-size: 0.875rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.tax-header-account {
+	align-items: center;
+	background-color: var(--tax-blue);
+	border-radius: 0.25rem;
+	color: #fff;
+	display: inline-flex;
+	font-size: 0.875rem;
+	font-weight: 700;
+	gap: 0.5rem;
+	padding: 0.625rem 1.25rem;
+	text-decoration: none;
+}
+
+.tax-header-account:hover {
+	background-color: var(--tax-blue-dark);
+	color: #fff;
+}
+
+.tax-header-account-icon {
+	fill: none;
+	height: 1.125rem;
+	stroke: currentColor;
+	stroke-width: 1.75;
+	width: 1.125rem;
+}
+
+.tax-header-language {
+	color: var(--tax-ink);
+	font-size: 0.9375rem;
+}
+
+.tax-header-language::after {
+	content: " \25be";
+}
+
+/* ---------- Navigation bar ---------- */
+
+.tax-navbar {
+	background-color: var(--tax-blue);
+}
+
+.tax-navbar-inner {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.5rem;
+	justify-content: space-between;
+	min-height: 2.875rem;
+}
+
+.tax-navbar-menu {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1rem;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.tax-navbar-link {
+	color: #fff;
+	display: inline-block;
+	font-size: 0.9375rem;
+	padding: 0.75rem 0.5rem;
+	text-decoration: none;
+}
+
+.tax-navbar-link:hover {
+	color: #fff;
+	text-decoration: underline;
+}
+
+.tax-search {
+	display: flex;
+	margin: 0.375rem 0;
+	max-width: 25rem;
+	width: 100%;
+}
+
+.tax-search-input {
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 0.25rem 0 0 0.25rem;
+	color: var(--tax-ink);
+	font-size: 0.875rem;
+	min-width: 0;
+	padding: 0.5rem 0.75rem;
+	width: 100%;
+}
+
+.tax-search-button {
+	align-items: center;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-left: 1px solid var(--tax-border);
+	border-radius: 0 0.25rem 0.25rem 0;
+	cursor: pointer;
+	display: flex;
+	justify-content: center;
+	padding: 0 0.75rem;
+}
+
+.tax-search-button svg {
+	fill: none;
+	height: 1.125rem;
+	stroke: var(--tax-blue);
+	stroke-width: 2;
+	width: 1.125rem;
+}
+
+@media (max-width: 47.9375em) {
+	.tax-header-utilities {
+		width: 100%;
+	}
+
+	.tax-navbar-inner {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.tax-search {
+		max-width: none;
+	}
+}
+
+.tax-home {
+	padding-bottom: 3rem;
+	padding-top: 1.5rem;
+}

@@ -1,0 +1,108 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "highlighted-actions"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Gestiones destacadas",
+										"es_ES": "Gestiones destacadas"
+									}
+								}
+							}
+						},
+						{
+							"id": "actions",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Solicitud de cita previa</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta, modificación y anulación de la cita</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Asistencia telefónica para la confección de declaraciones</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Solicitud de cita previa</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Consulta, modificación y anulación de la cita</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Asistencia telefónica para la confección de declaraciones</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
+									}
+								}
+							}
+						},
+						{
+							"id": "footerLink",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/otros-servicios"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "false"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Todas las gestiones",
+										"es_ES": "Todas las gestiones"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "info-links"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Información",
+										"es_ES": "Información"
+									}
+								}
+							}
+						},
+						{
+							"id": "links",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Servicios disponibles con cita previa</a></li><li><a href=\"#\">Documentación que debe aportarse</a></li><li><a href=\"#\">Buscador de oficinas</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Servicios disponibles con cita previa</a></li><li><a href=\"#\">Documentación que debe aportarse</a></li><li><a href=\"#\">Buscador de oficinas</a></li></ul>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

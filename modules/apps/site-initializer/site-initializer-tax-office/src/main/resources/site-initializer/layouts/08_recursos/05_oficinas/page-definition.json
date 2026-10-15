@@ -1,0 +1,139 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h2"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Offices",
+										"es_ES": "Oficinas"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"collectionConfig": {
+						"collectionReference": {
+							"className": "[$OBJECT_DEFINITION_CLASS_NAME:Oficina$]"
+						},
+						"collectionType": "CollectionProvider"
+					},
+					"displayAllItems": false,
+					"displayAllPages": true,
+					"listItemStyle": "",
+					"listStyle": "",
+					"numberOfColumns": 1,
+					"numberOfItems": 20,
+					"numberOfItemsPerPage": 20,
+					"numberOfPages": 10,
+					"paginationType": "Numeric",
+					"showAllItems": false,
+					"templateKey": ""
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"collectionItemConfig": {
+							}
+						},
+						"pageElements": [
+							{
+								"definition": {
+									"fragment": {
+										"key": "BASIC_COMPONENT-heading"
+									},
+									"fragmentConfig": {
+										"headingLevel": "h3"
+									},
+									"fragmentFields": [
+										{
+											"id": "element-text",
+											"value": {
+												"fragmentLink": {
+													"value": {
+														"href": {
+															"mapping": {
+																"fieldKey": "displayPageURL",
+																"itemReference": {
+																	"contextSource": "CollectionItem"
+																}
+															}
+														}
+													}
+												},
+												"text": {
+													"mapping": {
+														"fieldKey": "ObjectField_nombre",
+														"itemReference": {
+															"contextSource": "CollectionItem"
+														}
+													}
+												}
+											}
+										}
+									],
+									"indexed": true
+								},
+								"type": "Fragment"
+							},
+							{
+								"definition": {
+									"fragment": {
+										"key": "BASIC_COMPONENT-paragraph"
+									},
+									"fragmentConfig": {
+									},
+									"fragmentFields": [
+										{
+											"id": "element-text",
+											"value": {
+												"fragmentLink": {
+												},
+												"text": {
+													"mapping": {
+														"fieldKey": "ObjectField_ciudad",
+														"itemReference": {
+															"contextSource": "CollectionItem"
+														}
+													}
+												}
+											}
+										}
+									],
+									"indexed": true
+								},
+								"type": "Fragment"
+							}
+						],
+						"type": "CollectionItem"
+					}
+				],
+				"type": "Collection"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

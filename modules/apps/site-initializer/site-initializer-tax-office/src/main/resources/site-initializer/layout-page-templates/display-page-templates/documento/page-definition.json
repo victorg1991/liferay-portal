@@ -1,0 +1,79 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h1"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"mapping": {
+										"fieldKey": "FileEntry_title",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-button"
+					},
+					"fragmentConfig": {
+						"buttonSize": "nm",
+						"buttonType": "primary"
+					},
+					"fragmentFields": [
+						{
+							"id": "link",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"fieldKey": "FileEntry_downloadURL",
+												"itemReference": {
+													"contextSource": "DisplayPageItem"
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Download",
+										"es_ES": "Descargar"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

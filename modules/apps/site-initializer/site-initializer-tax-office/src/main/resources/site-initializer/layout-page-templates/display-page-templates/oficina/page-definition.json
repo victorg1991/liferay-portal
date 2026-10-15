@@ -1,0 +1,125 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h1"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"mapping": {
+										"fieldKey": "ObjectField_nombre",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-paragraph"
+					},
+					"fragmentConfig": {
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"mapping": {
+										"fieldKey": "ObjectField_direccion",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-paragraph"
+					},
+					"fragmentConfig": {
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"mapping": {
+										"fieldKey": "ObjectField_ciudad",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-paragraph"
+					},
+					"fragmentConfig": {
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"mapping": {
+										"fieldKey": "ObjectField_telefono",
+										"itemReference": {
+											"contextSource": "DisplayPageItem"
+										}
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

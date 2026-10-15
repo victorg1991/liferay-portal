@@ -1,0 +1,11 @@
+[
+	{
+		"actionIds": [
+			"VIEW"
+		],
+		"primKey": "0",
+		"resourceName": "[$OBJECT_DEFINITION_CLASS_NAME:Oficina$]",
+		"roleName": "Guest",
+		"scope": 1
+	}
+]

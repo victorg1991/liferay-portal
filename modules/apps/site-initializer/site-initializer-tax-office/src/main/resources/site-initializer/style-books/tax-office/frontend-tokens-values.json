@@ -1,0 +1,10 @@
+{
+	"brandColor1": {
+		"cssVariableMapping": "brand-color-1",
+		"value": "#00558C"
+	},
+	"btnPrimaryBackgroundColor": {
+		"cssVariableMapping": "btn-primary-background-color",
+		"value": "#00558C"
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"friendlyURL": "/portlets",
+	"friendlyURL_i18n": {
+		"en_US": "/portlets",
+		"es_ES": "/portlets"
+	},
+	"hidden": false,
+	"name_i18n": {
+		"en_US": "Widgets",
+		"es_ES": "Widgets"
+	},
+	"private": false,
+	"system": false,
+	"type": "Content"
+}

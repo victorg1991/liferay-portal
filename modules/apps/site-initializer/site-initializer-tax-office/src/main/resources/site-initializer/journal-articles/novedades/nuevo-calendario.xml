@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<root available-locales="en_US,es_ES" default-locale="en_US" version="1.0">
+	<dynamic-element field-reference="summary" index-type="text" instance-id="summ0003" name="summary" type="text">
+		<dynamic-content language-id="en_US">
+			<![CDATA[The taxpayer calendar for the next quarter is available.]]>
+		</dynamic-content>
+		<dynamic-content language-id="es_ES">
+			<![CDATA[Ya está disponible el calendario del contribuyente del próximo trimestre.]]>
+		</dynamic-content>
+	</dynamic-element>
+	<dynamic-element field-reference="content" index-type="text" instance-id="cont0003" name="content" type="rich_text">
+		<dynamic-content language-id="en_US">
+			<![CDATA[<p>Review the filing deadlines in the <a href="/web/tax-office/calendario-contribuyente">taxpayer calendar</a>.</p>]]>
+		</dynamic-content>
+		<dynamic-content language-id="es_ES">
+			<![CDATA[<p>Consulte los plazos de presentación en el <a href="/web/tax-office/calendario-contribuyente">calendario del contribuyente</a>.</p>]]>
+		</dynamic-content>
+	</dynamic-element>
+</root>

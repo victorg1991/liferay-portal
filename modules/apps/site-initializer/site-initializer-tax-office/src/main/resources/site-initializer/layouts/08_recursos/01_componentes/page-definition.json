@@ -1,0 +1,271 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-heading"
+					},
+					"fragmentConfig": {
+						"headingLevel": "h2"
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Standard components",
+										"es_ES": "Componentes estándar"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-paragraph"
+					},
+					"fragmentConfig": {
+					},
+					"fragmentFields": [
+						{
+							"id": "element-text",
+							"value": {
+								"fragmentLink": {
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Paragraph with <strong>bold</strong>, <em>italic</em> and a <a href=\"https://sede.agenciatributaria.gob.es/\">link to the tax agency</a>.",
+										"es_ES": "Párrafo con <strong>negrita</strong>, <em>cursiva</em> y un <a href=\"https://sede.agenciatributaria.gob.es/\">enlace a la Agencia Tributaria</a>."
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-button"
+					},
+					"fragmentConfig": {
+						"buttonSize": "nm",
+						"buttonType": "primary"
+					},
+					"fragmentFields": [
+						{
+							"id": "link",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/ayuda"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "false"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Go to help",
+										"es_ES": "Ir a la ayuda"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-separator"
+					},
+					"fragmentConfig": {
+						"bottomSpacing": "3"
+					},
+					"fragmentFields": [
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-spacer"
+					},
+					"fragmentConfig": {
+						"height": "4"
+					},
+					"fragmentFields": [
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-tabs"
+					},
+					"fragmentConfig": {
+						"numberOfTabs": "2",
+						"persistSelectedTab": false
+					},
+					"fragmentFields": [
+						{
+							"id": "title1",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Individuals",
+										"es_ES": "Particulares"
+									}
+								}
+							}
+						},
+						{
+							"id": "title2",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Companies",
+										"es_ES": "Empresas"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"pageElements": [
+					{
+						"definition": {
+							"fragmentDropZoneId": "1"
+						},
+						"pageElements": [
+							{
+								"definition": {
+									"fragment": {
+										"key": "BASIC_COMPONENT-paragraph"
+									},
+									"fragmentConfig": {
+									},
+									"fragmentFields": [
+										{
+											"id": "element-text",
+											"value": {
+												"fragmentLink": {
+												},
+												"text": {
+													"value_i18n": {
+														"en_US": "Procedures for individuals.",
+														"es_ES": "Trámites para particulares."
+													}
+												}
+											}
+										}
+									],
+									"indexed": true
+								},
+								"type": "Fragment"
+							}
+						],
+						"type": "FragmentDropZone"
+					},
+					{
+						"definition": {
+							"fragmentDropZoneId": "2"
+						},
+						"pageElements": [
+							{
+								"definition": {
+									"fragment": {
+										"key": "BASIC_COMPONENT-paragraph"
+									},
+									"fragmentConfig": {
+									},
+									"fragmentFields": [
+										{
+											"id": "element-text",
+											"value": {
+												"fragmentLink": {
+												},
+												"text": {
+													"value_i18n": {
+														"en_US": "Procedures for companies.",
+														"es_ES": "Trámites para empresas."
+													}
+												}
+											}
+										}
+									],
+									"indexed": true
+								},
+								"type": "Fragment"
+							}
+						],
+						"type": "FragmentDropZone"
+					}
+				],
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "BASIC_COMPONENT-html"
+					},
+					"fragmentConfig": {
+					},
+					"fragmentFields": [
+						{
+							"id": "element-html",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<table class=\"table\"><thead><tr><th>Form</th><th>Deadline</th></tr></thead><tbody><tr><td>100</td><td>30/06</td></tr><tr><td>303</td><td>20/04</td></tr></tbody></table>",
+										"es_ES": "<table class=\"table\"><thead><tr><th>Modelo</th><th>Plazo</th></tr></thead><tbody><tr><td>100</td><td>30/06</td></tr><tr><td>303</td><td>20/04</td></tr></tbody></table>"
+									}
+								}
+							}
+						}
+					],
+					"indexed": true
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

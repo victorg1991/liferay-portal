@@ -1,0 +1,164 @@
+{
+	"pageElement": {
+		"pageElements": [
+			{
+				"definition": {
+					"fragment": {
+						"key": "highlighted-actions"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Gestiones destacadas",
+										"es_ES": "Gestiones destacadas"
+									}
+								}
+							}
+						},
+						{
+							"id": "actions",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Cumplimentación y descarga del modelo 145</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Cálculo de retenciones</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Cumplimentación y descarga del modelo 145</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li><li><a href=\"#\">Cálculo de retenciones</a><a class=\"tax-highlighted-actions-help\" href=\"#\">Ayuda</a></li></ul>"
+									}
+								}
+							}
+						},
+						{
+							"id": "footerLink",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/irpf"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "false"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Todas las gestiones",
+										"es_ES": "Todas las gestiones"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "info-links"
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Información",
+										"es_ES": "Información"
+									}
+								}
+							}
+						},
+						{
+							"id": "links",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<ul><li><a href=\"#\">Instrucciones de cumplimentación</a></li><li><a href=\"#\">Simulador de retenciones</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>",
+										"es_ES": "<ul><li><a href=\"#\">Instrucciones de cumplimentación</a></li><li><a href=\"#\">Simulador de retenciones</a></li><li><a href=\"#\">Ayuda técnica</a></li></ul>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "collapsible-panel"
+					},
+					"fragmentConfig": {
+						"expanded": false
+					},
+					"fragmentFields": [
+						{
+							"id": "title",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Normativa",
+										"es_ES": "Normativa"
+									}
+								}
+							}
+						},
+						{
+							"id": "body",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "<p><strong>Real Decreto 439/2007, de 30 de marzo</strong>por el que se aprueba el Reglamento del Impuesto sobre la Renta de las Personas Físicas y se modifica el Reglamento de Planes y Fondos de Pensiones.<cite>(BOE, 31-marzo-2007)</cite></p><p><strong>Orden HAC/277/2026, de 25 de marzo</strong>por la que se aprueban los modelos de declaración del Impuesto sobre la Renta de las Personas Físicas y del Impuesto sobre el Patrimonio, y se determinan el lugar, forma y plazos de presentación de los mismos.<cite>(BOE, 27-marzo-2026)</cite></p>",
+										"es_ES": "<p><strong>Real Decreto 439/2007, de 30 de marzo</strong>por el que se aprueba el Reglamento del Impuesto sobre la Renta de las Personas Físicas y se modifica el Reglamento de Planes y Fondos de Pensiones.<cite>(BOE, 31-marzo-2007)</cite></p><p><strong>Orden HAC/277/2026, de 25 de marzo</strong>por la que se aprueban los modelos de declaración del Impuesto sobre la Renta de las Personas Físicas y del Impuesto sobre el Patrimonio, y se determinan el lugar, forma y plazos de presentación de los mismos.<cite>(BOE, 27-marzo-2026)</cite></p>"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			},
+			{
+				"definition": {
+					"fragment": {
+						"key": "document-link"
+					},
+					"fragmentFields": [
+						{
+							"id": "link",
+							"value": {
+								"text": {
+									"value_i18n": {
+										"en_US": "Ficha del procedimiento",
+										"es_ES": "Ficha del procedimiento"
+									}
+								}
+							}
+						}
+					]
+				},
+				"type": "Fragment"
+			}
+		],
+		"type": "Root"
+	},
+	"settings": {
+		"masterPage": {
+			"key": "tax-office-section"
+		}
+	}
+}

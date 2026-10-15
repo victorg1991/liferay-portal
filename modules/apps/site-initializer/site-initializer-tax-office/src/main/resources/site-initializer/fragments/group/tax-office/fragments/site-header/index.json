@@ -1,0 +1,85 @@
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "/inicio",
+					"label": "home-friendly-url",
+					"name": "homeFriendlyURL",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "/area-personal",
+					"label": "account-friendly-url",
+					"name": "accountFriendlyURL",
+					"type": "text"
+				}
+			],
+			"label": "identity"
+		},
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "Navegación principal",
+					"label": "navigation-aria-label",
+					"localizable": true,
+					"name": "navigationAriaLabel",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "/inicio",
+					"label": "navigation-friendly-url-1",
+					"name": "navigationFriendlyURL1",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "/ayuda",
+					"label": "navigation-friendly-url-2",
+					"name": "navigationFriendlyURL2",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "/todas-gestiones",
+					"label": "navigation-friendly-url-3",
+					"name": "navigationFriendlyURL3",
+					"type": "text"
+				}
+			],
+			"label": "navigation"
+		},
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": "/buscador",
+					"label": "search-friendly-url",
+					"name": "searchFriendlyURL",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "Buscar por impuestos, gestiones o modelos",
+					"label": "search-placeholder",
+					"localizable": true,
+					"name": "searchPlaceholder",
+					"type": "text"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": "Buscar",
+					"label": "search-button-label",
+					"localizable": true,
+					"name": "searchButtonLabel",
+					"type": "text"
+				}
+			],
+			"label": "search"
+		}
+	]
+}
