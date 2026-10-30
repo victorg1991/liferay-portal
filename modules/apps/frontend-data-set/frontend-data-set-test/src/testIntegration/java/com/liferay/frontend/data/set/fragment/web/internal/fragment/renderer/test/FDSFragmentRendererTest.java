@@ -87,6 +87,31 @@ public class FDSFragmentRendererTest {
 	}
 
 	@Test
+	public void testGetTokenValueWithAssetVocabulary() throws Exception {
+		Group group = GroupTestUtil.addGroup();
+
+		AssetVocabulary assetVocabulary = AssetTestUtil.addVocabulary(
+			group.getGroupId());
+
+		Assert.assertEquals(
+			String.valueOf(assetVocabulary.getVocabularyId()),
+			_getTokenValue(
+				group,
+				JSONUtil.put(
+					"className", AssetVocabulary.class.getName()
+				).put(
+					"classPK", RandomTestUtil.randomLong()
+				).put(
+					"externalReferenceCode",
+					assetVocabulary.getExternalReferenceCode()
+				).put(
+					"fieldId", "classPK"
+				).put(
+					"mappingMode", "content"
+				)));
+	}
+
+	@Test
 	public void testGetTokenValueWithScopeExternalReferenceCode()
 		throws Exception {
 
