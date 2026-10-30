@@ -412,6 +412,27 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 		return tokenNames;
 	}
 
+	private String _getClassPK(InfoItemDetails infoItemDetails) {
+		if (infoItemDetails == null) {
+			return null;
+		}
+
+		InfoItemReference infoItemReference =
+			infoItemDetails.getInfoItemReference();
+
+		InfoItemIdentifier infoItemIdentifier =
+			infoItemReference.getInfoItemIdentifier();
+
+		if (!(infoItemIdentifier instanceof ClassPKInfoItemIdentifier)) {
+			return null;
+		}
+
+		ClassPKInfoItemIdentifier classPKInfoItemIdentifier =
+			(ClassPKInfoItemIdentifier)infoItemIdentifier;
+
+		return String.valueOf(classPKInfoItemIdentifier.getClassPK());
+	}
+
 	private JSONObject _getConfigurationValuesJSONObject(
 		FragmentRendererContext fragmentRendererContext) {
 
@@ -467,6 +488,7 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 
 	private InfoItemDetails _getInfoItemDetails(
 		HttpServletRequest httpServletRequest,
+		Class<? extends InfoItemIdentifier> infoItemIdentifierClass,
 		InfoItemReference infoItemReference) {
 
 		String className = infoItemReference.getClassName();
@@ -490,10 +512,12 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 		}
 
 		try {
+			long scopeGroupId = _portal.getScopeGroupId(httpServletRequest);
+
 			return infoItemDetailsProvider.getInfoItemDetails(
-				_portal.getScopeGroupId(httpServletRequest),
-				ERCInfoItemIdentifier.class,
-				infoItemObjectProvider.getInfoItem(infoItemIdentifier));
+				scopeGroupId, infoItemIdentifierClass,
+				infoItemObjectProvider.getInfoItem(
+					scopeGroupId, infoItemIdentifier));
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
@@ -650,7 +674,9 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 				}
 
 				return _getExternalReferenceCode(
-					_getInfoItemDetails(httpServletRequest, infoItemReference));
+					_getInfoItemDetails(
+						httpServletRequest, ERCInfoItemIdentifier.class,
+						infoItemReference));
 			}
 
 			if (infoItemIdentifier instanceof ClassPKInfoItemIdentifier) {
@@ -667,7 +693,22 @@ public class FDSFragmentRenderer implements FragmentRenderer {
 			return mappingJSONObject.getString("externalReferenceCode");
 		}
 
-		return mappingJSONObject.getString("classPK");
+		String externalReferenceCode = mappingJSONObject.getString(
+			"externalReferenceCode");
+
+		if (Validator.isNull(externalReferenceCode)) {
+			return mappingJSONObject.getString("classPK");
+		}
+
+		return _getClassPK(
+			_getInfoItemDetails(
+				httpServletRequest, ClassPKInfoItemIdentifier.class,
+				new InfoItemReference(
+					mappingJSONObject.getString("className"),
+					new ERCInfoItemIdentifier(
+						externalReferenceCode,
+						mappingJSONObject.getString(
+							"scopeExternalReferenceCode", null)))));
 	}
 
 	private Set<String> _getUnresolvedContextTokenNames(

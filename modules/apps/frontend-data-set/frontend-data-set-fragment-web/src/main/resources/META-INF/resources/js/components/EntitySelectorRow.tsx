@@ -126,6 +126,8 @@ export default function EntitySelectorRow({
 				externalReferenceCode: selected.externalReferenceCode ?? '',
 				fieldId: entity.fieldId,
 				mappingMode: EMappingMode.CONTENT,
+				scopeExternalReferenceCode:
+					selected.scopeExternalReferenceCode ?? '',
 				title: selected.title,
 			});
 		});

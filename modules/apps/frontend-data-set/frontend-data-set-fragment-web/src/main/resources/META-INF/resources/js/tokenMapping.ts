@@ -18,6 +18,7 @@ export interface IContentMappedTokenValue {
 	externalReferenceCode: string;
 	fieldId: IdentifierField | '';
 	mappingMode: EMappingMode.CONTENT;
+	scopeExternalReferenceCode?: string;
 	title?: string;
 }
 
