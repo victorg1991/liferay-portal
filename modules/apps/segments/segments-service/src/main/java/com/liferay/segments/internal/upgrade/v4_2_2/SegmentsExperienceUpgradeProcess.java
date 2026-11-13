@@ -5,19 +5,37 @@
 
 package com.liferay.segments.internal.upgrade.v4_2_2;
 
+import com.liferay.change.tracking.constants.CTConstants;
+import com.liferay.change.tracking.model.CTEntry;
+import com.liferay.change.tracking.service.CTEntryLocalService;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.segments.model.SegmentsExperience;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Georgel Pop
  */
 public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
+
+	public SegmentsExperienceUpgradeProcess(
+		CTEntryLocalService ctEntryLocalService) {
+
+		_ctEntryLocalService = ctEntryLocalService;
+	}
 
 	@Override
 	protected void doUpgrade() throws Exception {
@@ -26,6 +44,8 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 		if (!hasColumn("FragmentEntryLink", "plid")) {
 			fragmentEntryLinkColumnName = "classPK";
 		}
+
+		_updateSegmentsExperiences();
 
 		boolean hasFragmentEntryLinkCTCollectionId = hasColumn(
 			"FragmentEntryLink", "ctCollectionId");
@@ -143,6 +163,74 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 
 			preparedStatement5.executeBatch();
 		}
+
+		_addCTEntries();
+	}
+
+	private void _addCTEntries() throws Exception {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(
+				StringBundler.concat(
+					"select SegmentsExperience.mvccVersion, ",
+					"SegmentsExperience.ctCollectionId, ",
+					"SegmentsExperience.segmentsExperienceId, ",
+					"SegmentsExperience.companyId, SegmentsExperience.userId ",
+					"from SegmentsExperience inner join CTCollection on ",
+					"CTCollection.ctCollectionId = ",
+					"SegmentsExperience.ctCollectionId inner join Layout on ",
+					"Layout.ctCollectionId = 0 and Layout.plid = ",
+					"SegmentsExperience.plid where CTCollection.status != ? ",
+					"and Layout.classNameId = ? and not exists (select 1 from ",
+					"CTEntry where CTEntry.ctCollectionId = ",
+					"SegmentsExperience.ctCollectionId and ",
+					"CTEntry.modelClassNameId = ? and CTEntry.modelClassPK = ",
+					"SegmentsExperience.segmentsExperienceId)"))) {
+
+			long segmentsExperienceClassNameId = PortalUtil.getClassNameId(
+				SegmentsExperience.class);
+
+			preparedStatement.setInt(1, WorkflowConstants.STATUS_APPROVED);
+			preparedStatement.setLong(
+				2, PortalUtil.getClassNameId(Layout.class));
+			preparedStatement.setLong(3, segmentsExperienceClassNameId);
+
+			try (ResultSet resultSet = preparedStatement.executeQuery()) {
+				while (resultSet.next()) {
+					CTEntry ctEntry = _ctEntryLocalService.createCTEntry(
+						increment(CTEntry.class.getName()));
+
+					ctEntry.setCompanyId(resultSet.getLong("companyId"));
+					ctEntry.setUserId(resultSet.getLong("userId"));
+					ctEntry.setCtCollectionId(
+						resultSet.getLong("ctCollectionId"));
+					ctEntry.setModelClassNameId(segmentsExperienceClassNameId);
+					ctEntry.setModelClassPK(
+						resultSet.getLong("segmentsExperienceId"));
+					ctEntry.setModelMvccVersion(
+						resultSet.getLong("mvccVersion"));
+					ctEntry.setChangeType(CTConstants.CT_CHANGE_TYPE_ADDITION);
+
+					_ctEntryLocalService.addCTEntry(ctEntry);
+				}
+			}
+		}
+	}
+
+	private Set<Integer> _getPriorities(
+			long groupId, long plid, PreparedStatement preparedStatement)
+		throws Exception {
+
+		Set<Integer> priorities = new HashSet<>();
+
+		preparedStatement.setLong(1, groupId);
+		preparedStatement.setLong(2, plid);
+
+		try (ResultSet resultSet = preparedStatement.executeQuery()) {
+			while (resultSet.next()) {
+				priorities.add(resultSet.getInt("priority"));
+			}
+		}
+
+		return priorities;
 	}
 
 	private String _getSelectSegmentsExperienceSQL(
@@ -258,5 +346,107 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 
 		return sb.toString();
 	}
+
+	private void _updateSegmentsExperiences() throws Exception {
+		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+				StringBundler.concat(
+					"select SegmentsExperience.ctCollectionId, ",
+					"SegmentsExperience.segmentsExperienceId, ",
+					"SegmentsExperience.groupId, ",
+					"SegmentsExperience.segmentsExperienceKey, ",
+					"SegmentsExperience.plid, SegmentsExperience.priority ",
+					"from SegmentsExperience inner join CTCollection on ",
+					"CTCollection.ctCollectionId = ",
+					"SegmentsExperience.ctCollectionId inner join Layout on ",
+					"Layout.ctCollectionId = 0 and Layout.plid = ",
+					"SegmentsExperience.plid inner join SegmentsExperience ",
+					"publishedSegmentsExperience on ",
+					"publishedSegmentsExperience.ctCollectionId = 0 and ",
+					"publishedSegmentsExperience.groupId = ",
+					"SegmentsExperience.groupId and ",
+					"publishedSegmentsExperience.plid = Layout.classPK and ",
+					"publishedSegmentsExperience.segmentsExperienceKey = ",
+					"SegmentsExperience.segmentsExperienceKey where ",
+					"CTCollection.status = ? and Layout.classNameId = ? and ",
+					"not exists (select 1 from CTEntry where ",
+					"CTEntry.ctCollectionId = ",
+					"SegmentsExperience.ctCollectionId and ",
+					"CTEntry.modelClassNameId = ? and CTEntry.modelClassPK = ",
+					"SegmentsExperience.segmentsExperienceId) and not exists ",
+					"(select 1 from SegmentsExperience ",
+					"productionSegmentsExperience where ",
+					"productionSegmentsExperience.ctCollectionId = 0 and ",
+					"productionSegmentsExperience.groupId = ",
+					"SegmentsExperience.groupId and ",
+					"productionSegmentsExperience.plid = ",
+					"SegmentsExperience.plid and ",
+					"productionSegmentsExperience.segmentsExperienceKey = ",
+					"SegmentsExperience.segmentsExperienceKey)"));
+			PreparedStatement preparedStatement2 = connection.prepareStatement(
+				"select priority from SegmentsExperience where " +
+					"ctCollectionId = 0 and groupId = ? and plid = ?");
+			PreparedStatement preparedStatement3 =
+				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+					connection,
+					"update SegmentsExperience set ctCollectionId = 0, " +
+						"priority = ? where ctCollectionId = ? and " +
+							"segmentsExperienceId = ?")) {
+
+			preparedStatement1.setInt(1, WorkflowConstants.STATUS_APPROVED);
+			preparedStatement1.setLong(
+				2, PortalUtil.getClassNameId(Layout.class));
+			preparedStatement1.setLong(
+				3, PortalUtil.getClassNameId(SegmentsExperience.class));
+
+			try (ResultSet resultSet = preparedStatement1.executeQuery()) {
+				Map<Long, Set<Integer>> plidPriorities = new HashMap<>();
+				Set<String> plidSegmentsExperienceKeys = new HashSet<>();
+
+				while (resultSet.next()) {
+					long plid = resultSet.getLong("plid");
+
+					String plidSegmentsExperienceKey = StringBundler.concat(
+						plid, StringPool.POUND,
+						resultSet.getString("segmentsExperienceKey"));
+
+					if (!plidSegmentsExperienceKeys.add(
+							plidSegmentsExperienceKey)) {
+
+						continue;
+					}
+
+					Set<Integer> priorities = plidPriorities.get(plid);
+
+					if (priorities == null) {
+						priorities = _getPriorities(
+							resultSet.getLong("groupId"), plid,
+							preparedStatement2);
+
+						plidPriorities.put(plid, priorities);
+					}
+
+					int priority = resultSet.getInt("priority");
+
+					if (priorities.contains(priority)) {
+						priority = Collections.min(priorities) - 1;
+					}
+
+					priorities.add(priority);
+
+					preparedStatement3.setInt(1, priority);
+					preparedStatement3.setLong(
+						2, resultSet.getLong("ctCollectionId"));
+					preparedStatement3.setLong(
+						3, resultSet.getLong("segmentsExperienceId"));
+
+					preparedStatement3.addBatch();
+				}
+			}
+
+			preparedStatement3.executeBatch();
+		}
+	}
+
+	private final CTEntryLocalService _ctEntryLocalService;
 
 }
