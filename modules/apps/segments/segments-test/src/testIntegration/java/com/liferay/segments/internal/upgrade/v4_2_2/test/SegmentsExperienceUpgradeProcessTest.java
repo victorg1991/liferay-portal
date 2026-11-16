@@ -462,6 +462,9 @@ public class SegmentsExperienceUpgradeProcessTest {
 			_fragmentEntryLink2 = _updateSegmentsExperienceId(
 				_fragmentEntryLink2,
 				segmentsExperience.getSegmentsExperienceId());
+			_layoutPageTemplateStructureRel2 = _updateSegmentsExperienceId(
+				_layoutPageTemplateStructureRel2,
+				segmentsExperience.getSegmentsExperienceId());
 		}
 
 		_ctCollectionService.publishCTCollection(
@@ -470,7 +473,8 @@ public class SegmentsExperienceUpgradeProcessTest {
 		_multiVMPool.clear();
 
 		_assertSegmentsExperienceId(
-			segmentsExperience.getSegmentsExperienceId(), _fragmentEntryLink2);
+			segmentsExperience.getSegmentsExperienceId(), _fragmentEntryLink2,
+			_layoutPageTemplateStructureRel2);
 
 		Assert.assertNull(
 			_segmentsExperienceLocalService.fetchSegmentsExperience(
@@ -480,7 +484,8 @@ public class SegmentsExperienceUpgradeProcessTest {
 		_runUpgrade();
 
 		_assertSegmentsExperienceId(
-			_draftSegmentsExperienceId2, _fragmentEntryLink2);
+			_draftSegmentsExperienceId2, _fragmentEntryLink2,
+			_layoutPageTemplateStructureRel2);
 	}
 
 	@Test
