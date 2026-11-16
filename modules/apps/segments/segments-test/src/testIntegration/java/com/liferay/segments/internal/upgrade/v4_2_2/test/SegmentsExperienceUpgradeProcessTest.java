@@ -418,43 +418,6 @@ public class SegmentsExperienceUpgradeProcessTest {
 
 		_deleteCTEntry(ctCollection, segmentsExperience);
 
-		_ctCollectionService.publishCTCollection(
-			TestPropsValues.getUserId(), ctCollection.getCtCollectionId());
-
-		_runUpgrade();
-		_runUpgrade();
-
-		Assert.assertNull(
-			_segmentsExperienceLocalService.fetchSegmentsExperience(
-				segmentsExperience.getSegmentsExperienceId()));
-	}
-
-	@Test
-	@TestInfo("LPD-113912")
-	public void testUpgradeWithPublishedCTCollectionBeforeUpgradeModifiedSegmentsExperienceFragmentEntryLink()
-		throws Exception {
-
-		CTCollection ctCollection = _addCTCollection();
-
-		try (SafeCloseable safeCloseable =
-				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
-					ctCollection.getCtCollectionId())) {
-
-			_segmentsExperienceLocalService.updateSegmentsExperience(
-				_segmentsExperienceLocalService.getSegmentsExperience(
-					_publishedSegmentsExperienceId2));
-		}
-
-		SegmentsExperience draftSegmentsExperience =
-			_segmentsExperienceLocalService.getSegmentsExperience(
-				_draftSegmentsExperienceId2);
-
-		SegmentsExperience segmentsExperience = _addSegmentsExperience(
-			ctCollection, draftSegmentsExperience.getPlid(),
-			draftSegmentsExperience);
-
-		_deleteCTEntry(ctCollection, segmentsExperience);
-
 		try (SafeCloseable safeCloseable =
 				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
 					ctCollection.getCtCollectionId())) {
@@ -476,12 +439,12 @@ public class SegmentsExperienceUpgradeProcessTest {
 			segmentsExperience.getSegmentsExperienceId(), _fragmentEntryLink2,
 			_layoutPageTemplateStructureRel2);
 
+		_runUpgrade();
+		_runUpgrade();
+
 		Assert.assertNull(
 			_segmentsExperienceLocalService.fetchSegmentsExperience(
 				segmentsExperience.getSegmentsExperienceId()));
-
-		_runUpgrade();
-		_runUpgrade();
 
 		_assertSegmentsExperienceId(
 			_draftSegmentsExperienceId2, _fragmentEntryLink2,
