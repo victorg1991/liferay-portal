@@ -164,6 +164,10 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 			preparedStatement5.executeBatch();
 		}
 
+		_updateSegmentsExperienceIds(
+			fragmentEntryLinkColumnName,
+			hasFragmentEntryLinkSegmentsExperienceId);
+
 		_addCTEntries();
 	}
 
@@ -345,6 +349,86 @@ public class SegmentsExperienceUpgradeProcess extends UpgradeProcess {
 		sb.append(" = ?)");
 
 		return sb.toString();
+	}
+
+	private void _updateSegmentsExperienceIds(
+			String fragmentEntryLinkColumnName,
+			boolean hasFragmentEntryLinkSegmentsExperienceId)
+		throws Exception {
+
+		try (PreparedStatement preparedStatement1 = connection.prepareStatement(
+				StringBundler.concat(
+					"select SegmentsExperience.segmentsExperienceId as ",
+					"oldSegmentsExperienceId, SegmentsExperience.groupId, ",
+					"SegmentsExperience.plid, ",
+					"productionSegmentsExperience.segmentsExperienceId as ",
+					"newSegmentsExperienceId from SegmentsExperience inner ",
+					"join CTCollection on CTCollection.ctCollectionId = ",
+					"SegmentsExperience.ctCollectionId inner join Layout on ",
+					"Layout.ctCollectionId = 0 and Layout.plid = ",
+					"SegmentsExperience.plid inner join SegmentsExperience ",
+					"productionSegmentsExperience on ",
+					"productionSegmentsExperience.ctCollectionId = 0 and ",
+					"productionSegmentsExperience.groupId = ",
+					"SegmentsExperience.groupId and ",
+					"productionSegmentsExperience.segmentsExperienceKey = ",
+					"SegmentsExperience.segmentsExperienceKey and ",
+					"productionSegmentsExperience.plid = ",
+					"SegmentsExperience.plid where CTCollection.status = ? ",
+					"and Layout.classNameId = ? and not exists (select 1 from ",
+					"CTEntry where CTEntry.ctCollectionId = ",
+					"SegmentsExperience.ctCollectionId and ",
+					"CTEntry.modelClassNameId = ? and CTEntry.modelClassPK = ",
+					"SegmentsExperience.segmentsExperienceId)"));
+			PreparedStatement preparedStatement2 =
+				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+					connection,
+					StringBundler.concat(
+						"update FragmentEntryLink set segmentsExperienceId = ",
+						"? where groupId = ? and segmentsExperienceId = ? and ",
+						fragmentEntryLinkColumnName, " = ?"));
+			PreparedStatement preparedStatement3 =
+				AutoBatchPreparedStatementUtil.concurrentAutoBatch(
+					connection,
+					"update LayoutPageTemplateStructureRel set " +
+						"segmentsExperienceId = ? where segmentsExperienceId " +
+							"= ?")) {
+
+			preparedStatement1.setInt(1, WorkflowConstants.STATUS_APPROVED);
+			preparedStatement1.setLong(
+				2, PortalUtil.getClassNameId(Layout.class));
+			preparedStatement1.setLong(
+				3, PortalUtil.getClassNameId(SegmentsExperience.class));
+
+			try (ResultSet resultSet = preparedStatement1.executeQuery()) {
+				while (resultSet.next()) {
+					long oldSegmentsExperienceId = resultSet.getLong(
+						"oldSegmentsExperienceId");
+					long newSegmentsExperienceId = resultSet.getLong(
+						"newSegmentsExperienceId");
+
+					if (hasFragmentEntryLinkSegmentsExperienceId) {
+						preparedStatement2.setLong(1, newSegmentsExperienceId);
+						preparedStatement2.setLong(
+							2, resultSet.getLong("groupId"));
+						preparedStatement2.setLong(3, oldSegmentsExperienceId);
+						preparedStatement2.setLong(
+							4, resultSet.getLong("plid"));
+
+						preparedStatement2.addBatch();
+					}
+
+					preparedStatement3.setLong(1, newSegmentsExperienceId);
+					preparedStatement3.setLong(2, oldSegmentsExperienceId);
+
+					preparedStatement3.addBatch();
+				}
+			}
+
+			preparedStatement2.executeBatch();
+
+			preparedStatement3.executeBatch();
+		}
 	}
 
 	private void _updateSegmentsExperiences() throws Exception {
