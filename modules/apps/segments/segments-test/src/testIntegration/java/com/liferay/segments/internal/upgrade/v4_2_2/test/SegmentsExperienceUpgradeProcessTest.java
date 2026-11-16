@@ -541,6 +541,60 @@ public class SegmentsExperienceUpgradeProcessTest {
 
 	@Test
 	@TestInfo("LPD-113912")
+	public void testUpgradeWithPublishedCTCollectionBeforeUpgradeModifiedSegmentsExperienceFragmentEntryLink()
+		throws Exception {
+
+		CTCollection ctCollection = _addCTCollection();
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollection.getCtCollectionId())) {
+
+			_segmentsExperienceLocalService.updateSegmentsExperience(
+				_segmentsExperienceLocalService.getSegmentsExperience(
+					_publishedSegmentsExperienceId2));
+		}
+
+		SegmentsExperience draftSegmentsExperience =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				_draftSegmentsExperienceId2);
+
+		SegmentsExperience segmentsExperience = _addSegmentsExperience(
+			ctCollection, draftSegmentsExperience.getPlid(),
+			draftSegmentsExperience);
+
+		_deleteCTEntry(ctCollection, segmentsExperience);
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollection.getCtCollectionId())) {
+
+			_fragmentEntryLink2 = _updateSegmentsExperienceId(
+				_fragmentEntryLink2,
+				segmentsExperience.getSegmentsExperienceId());
+		}
+
+		_ctCollectionService.publishCTCollection(
+			TestPropsValues.getUserId(), ctCollection.getCtCollectionId());
+
+		_multiVMPool.clear();
+
+		_assertSegmentsExperienceId(
+			segmentsExperience.getSegmentsExperienceId(), _fragmentEntryLink2);
+
+		Assert.assertNull(
+			_segmentsExperienceLocalService.fetchSegmentsExperience(
+				segmentsExperience.getSegmentsExperienceId()));
+
+		_runUpgrade();
+		_runUpgrade();
+
+		_assertSegmentsExperienceId(
+			_draftSegmentsExperienceId2, _fragmentEntryLink2);
+	}
+
+	@Test
+	@TestInfo("LPD-113912")
 	public void testUpgradeWithPublishedCTCollectionsBeforeUpgradeModifiedSegmentsExperience()
 		throws Exception {
 
