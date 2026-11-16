@@ -453,6 +453,54 @@ public class SegmentsExperienceUpgradeProcessTest {
 
 	@Test
 	@TestInfo("LPD-113912")
+	public void testUpgradeWithPublishedCTCollectionModifiedSegmentsExperience()
+		throws Exception {
+
+		CTCollection ctCollection = _addCTCollection();
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollection.getCtCollectionId())) {
+
+			_updateSegmentsExperienceIds();
+
+			_segmentsExperienceLocalService.updateSegmentsExperience(
+				_segmentsExperienceLocalService.getSegmentsExperience(
+					_publishedSegmentsExperienceId2));
+		}
+
+		SegmentsExperience draftSegmentsExperience =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				_draftSegmentsExperienceId2);
+
+		SegmentsExperience segmentsExperience = _addSegmentsExperience(
+			ctCollection, draftSegmentsExperience.getPlid(),
+			draftSegmentsExperience);
+
+		_deleteCTEntry(ctCollection, segmentsExperience);
+
+		_runUpgrade();
+
+		_ctCollectionService.publishCTCollection(
+			TestPropsValues.getUserId(), ctCollection.getCtCollectionId());
+
+		_multiVMPool.clear();
+
+		ctCollection = _ctCollectionLocalService.getCTCollection(
+			ctCollection.getCtCollectionId());
+
+		Assert.assertEquals(
+			WorkflowConstants.STATUS_APPROVED, ctCollection.getStatus());
+
+		Assert.assertNull(
+			_segmentsExperienceLocalService.fetchSegmentsExperience(
+				segmentsExperience.getSegmentsExperienceId()));
+
+		_assertDraftSegmentsExperienceIds();
+	}
+
+	@Test
+	@TestInfo("LPD-113912")
 	public void testUpgradeWithPublishedCTCollectionsBeforeUpgradeModifiedSegmentsExperience()
 		throws Exception {
 
