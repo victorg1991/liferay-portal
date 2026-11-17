@@ -380,6 +380,313 @@ public class SegmentsExperienceUpgradeProcessTest {
 	}
 
 	@Test
+	public void testCaseOpenAddedLayoutFrom3_1_1() throws Exception {
+		_db.alterTableAddColumn(
+			_connection, "SegmentsExperience", "segmentsEntryId", "LONG");
+
+		try {
+			CTCollection ctCollection = _addCTCollection();
+
+			Layout layout = null;
+			Layout draftLayout = null;
+			FragmentEntryLink fragmentEntryLink = null;
+			long publishedDefaultSegmentsExperienceId = 0;
+
+			try (SafeCloseable safeCloseable =
+					CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+						ctCollection.getCtCollectionId())) {
+
+				layout = LayoutTestUtil.addTypeContentLayout(_group);
+
+				draftLayout = layout.fetchDraftLayout();
+
+				publishedDefaultSegmentsExperienceId =
+					_segmentsExperienceLocalService.
+						fetchDefaultSegmentsExperienceId(layout.getPlid());
+
+				long draftDefaultSegmentsExperienceId =
+					_segmentsExperienceLocalService.
+						fetchDefaultSegmentsExperienceId(draftLayout.getPlid());
+
+				ServiceContextThreadLocal.pushServiceContext(
+					ServiceContextTestUtil.getServiceContext(
+						_group.getGroupId()));
+
+				try {
+					fragmentEntryLink =
+						ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
+							JSONFactoryUtil.getNullJSON(), draftLayout,
+							draftDefaultSegmentsExperienceId);
+				}
+				finally {
+					ServiceContextThreadLocal.popServiceContext();
+				}
+
+				_executeUpdate(
+					"update FragmentEntryLink set segmentsExperienceId = " +
+						publishedDefaultSegmentsExperienceId +
+							" where segmentsExperienceId = " +
+								draftDefaultSegmentsExperienceId);
+				_executeUpdate(
+					"update LayoutPageTemplateStructureRel set " +
+						"segmentsExperienceId = " +
+							publishedDefaultSegmentsExperienceId +
+								" where segmentsExperienceId = " +
+									draftDefaultSegmentsExperienceId);
+				_executeUpdate(
+					"delete from SegmentsExperience where segmentsExperienceId = " +
+						draftDefaultSegmentsExperienceId);
+				_executeUpdate(
+					"delete from CTEntry where modelClassPK = " +
+						draftDefaultSegmentsExperienceId);
+			}
+
+			_entityCache.clearCache();
+			_multiVMPool.clear();
+
+			for (UpgradeProcess upgradeProcess :
+					UpgradeTestUtil.getUpgradeSteps(
+						_upgradeStepRegistrator, new Version(3, 2, 0))) {
+
+				upgradeProcess.upgrade();
+			}
+
+			_runUpgrade();
+
+			_publishCTCollection(ctCollection);
+
+			long draftDefaultSegmentsExperienceId =
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(draftLayout.getPlid());
+
+			fragmentEntryLink =
+				_fragmentEntryLinkLocalService.getFragmentEntryLink(
+					fragmentEntryLink.getFragmentEntryLinkId());
+
+			Assert.assertEquals(
+				"published default=" + publishedDefaultSegmentsExperienceId,
+				draftDefaultSegmentsExperienceId,
+				fragmentEntryLink.getSegmentsExperienceId());
+			Assert.assertNotEquals(0, draftDefaultSegmentsExperienceId);
+		}
+		finally {
+			_db.alterTableDropColumn(
+				_connection, "SegmentsExperience", "segmentsEntryId");
+		}
+	}
+
+	@Test
+	public void testCaseOpenRenamedWithCopy() throws Exception {
+		String name = RandomTestUtil.randomString();
+
+		CTCollection ctCollection = _addCTCollection();
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollection.getCtCollectionId())) {
+
+			_updateSegmentsExperienceIds();
+
+			SegmentsExperience publishedSegmentsExperience =
+				_segmentsExperienceLocalService.getSegmentsExperience(
+					_publishedSegmentsExperienceId2);
+
+			publishedSegmentsExperience.setName(
+				name, LocaleUtil.getSiteDefault());
+
+			_segmentsExperienceLocalService.updateSegmentsExperience(
+				publishedSegmentsExperience);
+		}
+
+		SegmentsExperience segmentsExperience =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				_draftSegmentsExperienceId2);
+
+		segmentsExperience.setName(name, LocaleUtil.getSiteDefault());
+
+		_deleteCTEntry(
+			ctCollection,
+			_addSegmentsExperience(
+				ctCollection, segmentsExperience.getPlid(),
+				segmentsExperience));
+
+		_runUpgrade();
+
+		_publishCTCollection(ctCollection);
+
+		_assertNames(name);
+	}
+
+	@Test
+	public void testCaseOpenRenamedFrom3_1_1() throws Exception {
+		String name = RandomTestUtil.randomString();
+
+		_db.alterTableAddColumn(
+			_connection, "SegmentsExperience", "segmentsEntryId", "LONG");
+
+		try {
+			CTCollection ctCollection = _addCTCollection();
+
+			try (SafeCloseable safeCloseable =
+					CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+						ctCollection.getCtCollectionId())) {
+
+				_updateSegmentsExperienceIds();
+
+				SegmentsExperience publishedSegmentsExperience =
+					_segmentsExperienceLocalService.getSegmentsExperience(
+						_publishedSegmentsExperienceId2);
+
+				publishedSegmentsExperience.setName(
+					name, LocaleUtil.getSiteDefault());
+
+				_segmentsExperienceLocalService.updateSegmentsExperience(
+					publishedSegmentsExperience);
+			}
+
+			for (UpgradeProcess upgradeProcess :
+					UpgradeTestUtil.getUpgradeSteps(
+						_upgradeStepRegistrator, new Version(3, 2, 0))) {
+
+				upgradeProcess.upgrade();
+			}
+
+			_runUpgrade();
+
+			_publishCTCollection(ctCollection);
+
+			_assertNames(name);
+		}
+		finally {
+			_db.alterTableDropColumn(
+				_connection, "SegmentsExperience", "segmentsEntryId");
+		}
+	}
+
+	@Test
+	public void testCasePublishedBeforeUpgradeRenamed() throws Exception {
+		String name = RandomTestUtil.randomString();
+
+		CTCollection ctCollection = _addCTCollection();
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollection.getCtCollectionId())) {
+
+			SegmentsExperience publishedSegmentsExperience =
+				_segmentsExperienceLocalService.getSegmentsExperience(
+					_publishedSegmentsExperienceId2);
+
+			publishedSegmentsExperience.setName(
+				name, LocaleUtil.getSiteDefault());
+
+			_segmentsExperienceLocalService.updateSegmentsExperience(
+				publishedSegmentsExperience);
+		}
+
+		SegmentsExperience draftSegmentsExperience =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				_draftSegmentsExperienceId2);
+
+		draftSegmentsExperience.setName(name, LocaleUtil.getSiteDefault());
+
+		SegmentsExperience segmentsExperience = _addSegmentsExperience(
+			ctCollection, draftSegmentsExperience.getPlid(),
+			draftSegmentsExperience);
+
+		_deleteCTEntry(ctCollection, segmentsExperience);
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollection.getCtCollectionId())) {
+
+			_fragmentEntryLink2 = _updateSegmentsExperienceId(
+				_fragmentEntryLink2,
+				segmentsExperience.getSegmentsExperienceId());
+		}
+
+		_publishCTCollection(ctCollection);
+
+		_runUpgrade();
+
+		_assertNames(name);
+	}
+
+	@Test
+	public void testCaseOpenDeletedFrom3_1_1() throws Exception {
+		_db.alterTableAddColumn(
+			_connection, "SegmentsExperience", "segmentsEntryId", "LONG");
+
+		try {
+			CTCollection ctCollection = _addCTCollection();
+
+			try (SafeCloseable safeCloseable =
+					CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+						ctCollection.getCtCollectionId())) {
+
+				_segmentsExperienceLocalService.deleteSegmentsExperience(
+					_publishedSegmentsExperienceId2);
+			}
+
+			for (UpgradeProcess upgradeProcess :
+					UpgradeTestUtil.getUpgradeSteps(
+						_upgradeStepRegistrator, new Version(3, 2, 0))) {
+
+				upgradeProcess.upgrade();
+			}
+
+			_runUpgrade();
+
+			_publishCTCollection(ctCollection);
+
+			Assert.assertNull(
+				_segmentsExperienceLocalService.fetchSegmentsExperience(
+					_draftSegmentsExperienceId2));
+			Assert.assertNull(
+				_fragmentEntryLinkLocalService.fetchFragmentEntryLink(
+					_fragmentEntryLink2.getFragmentEntryLinkId()));
+		}
+		finally {
+			_db.alterTableDropColumn(
+				_connection, "SegmentsExperience", "segmentsEntryId");
+		}
+	}
+
+	@Test
+	public void testCaseOpenAddedThenDiscarded() throws Exception {
+		CTCollection ctCollection = _addCTCollection();
+
+		SegmentsExperience segmentsExperience = _addSegmentsExperience(
+			ctCollection);
+
+		_runUpgrade();
+
+		_ctCollectionLocalService.deleteCTCollection(ctCollection);
+
+		_multiVMPool.clear();
+
+		Assert.assertNull(
+			_segmentsExperienceLocalService.fetchSegmentsExperience(
+				segmentsExperience.getSegmentsExperienceId()));
+
+		try (java.sql.PreparedStatement preparedStatement =
+				_connection.prepareStatement(
+					"select count(*) from SegmentsExperience where segmentsExperienceId = ?")) {
+
+			preparedStatement.setLong(
+				1, segmentsExperience.getSegmentsExperienceId());
+
+			try (java.sql.ResultSet resultSet =
+					preparedStatement.executeQuery()) {
+
+				resultSet.next();
+
+				Assert.assertEquals(0, resultSet.getInt(1));
+			}
+		}
+	}
+
+	@Test
 	@TestInfo("LPD-113912")
 	public void testUpgradeWithCTCollectionDraftLayout() throws Exception {
 		CTCollection ctCollection = _addCTCollection();
@@ -849,6 +1156,36 @@ public class SegmentsExperienceUpgradeProcessTest {
 		_assertSegmentsExperienceId(
 			_draftSegmentsExperienceId1, _fragmentEntryLink1,
 			_layoutPageTemplateStructureRel1);
+	}
+
+	private void _assertNames(String name) throws Exception {
+		SegmentsExperience draftSegmentsExperience =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				_draftSegmentsExperienceId2);
+
+		Assert.assertEquals(
+			name, draftSegmentsExperience.getName(LocaleUtil.getSiteDefault()));
+
+		ContentLayoutTestUtil.publishLayout(
+			_layout.fetchDraftLayout(), _layout);
+
+		_multiVMPool.clear();
+
+		SegmentsExperience publishedSegmentsExperience =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				_publishedSegmentsExperienceId2);
+
+		Assert.assertEquals(
+			name,
+			publishedSegmentsExperience.getName(LocaleUtil.getSiteDefault()));
+	}
+
+	private void _executeUpdate(String sql) throws Exception {
+		try (java.sql.PreparedStatement preparedStatement =
+				_connection.prepareStatement(sql)) {
+
+			preparedStatement.executeUpdate();
+		}
 	}
 
 	private CTCollection _addCTCollection() throws Exception {
