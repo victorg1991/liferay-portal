@@ -321,6 +321,66 @@ public class SegmentsExperienceUpgradeProcessTest {
 
 	@Test
 	@TestInfo("LPD-113912")
+	public void testUpgradeWithCTCollectionDeletedSegmentsExperiencePriorities()
+		throws Exception {
+
+		SegmentsExperience publishedSegmentsExperience3 =
+			SegmentsTestUtil.addSegmentsExperience(
+				_group.getGroupId(), _layout.getPlid());
+
+		SegmentsExperience draftSegmentsExperience3 =
+			(SegmentsExperience)publishedSegmentsExperience3.clone();
+
+		Layout draftLayout = _layout.fetchDraftLayout();
+
+		draftSegmentsExperience3.setUuid(PortalUUIDUtil.generate());
+		draftSegmentsExperience3.setExternalReferenceCode(
+			PortalUUIDUtil.generate());
+		draftSegmentsExperience3.setSegmentsExperienceId(
+			RandomTestUtil.nextLong());
+		draftSegmentsExperience3.setPlid(draftLayout.getPlid());
+		draftSegmentsExperience3.setNew(true);
+
+		draftSegmentsExperience3 =
+			_segmentsExperienceLocalService.addSegmentsExperience(
+				draftSegmentsExperience3);
+
+		Assert.assertEquals(
+			publishedSegmentsExperience3.getPriority(),
+			draftSegmentsExperience3.getPriority());
+
+		CTCollection ctCollection = _addCTCollection();
+
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					ctCollection.getCtCollectionId())) {
+
+			_segmentsExperienceLocalService.deleteSegmentsExperience(
+				_publishedSegmentsExperienceId2);
+		}
+
+		_runUpgrade();
+
+		_publishCTCollection(ctCollection);
+
+		Assert.assertNull(
+			_segmentsExperienceLocalService.fetchSegmentsExperience(
+				_draftSegmentsExperienceId2));
+
+		draftSegmentsExperience3 =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				draftSegmentsExperience3.getSegmentsExperienceId());
+		publishedSegmentsExperience3 =
+			_segmentsExperienceLocalService.getSegmentsExperience(
+				publishedSegmentsExperience3.getSegmentsExperienceId());
+
+		Assert.assertEquals(
+			publishedSegmentsExperience3.getPriority(),
+			draftSegmentsExperience3.getPriority());
+	}
+
+	@Test
+	@TestInfo("LPD-113912")
 	public void testUpgradeWithCTCollectionDraftLayout() throws Exception {
 		CTCollection ctCollection = _addCTCollection();
 
