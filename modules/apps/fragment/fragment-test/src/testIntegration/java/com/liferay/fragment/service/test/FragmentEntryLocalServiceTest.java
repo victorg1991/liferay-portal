@@ -13,7 +13,6 @@ import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryGroupRelLocalService;
 import com.liferay.depot.service.DepotEntryLocalService;
-import com.liferay.fragment.configuration.FragmentEntryVersionConfiguration;
 import com.liferay.fragment.configuration.FragmentServiceConfiguration;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.exception.DuplicateFragmentEntryExternalReferenceCodeException;
@@ -21,7 +20,6 @@ import com.liferay.fragment.exception.NoSuchEntryException;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.fragment.test.util.FragmentEntryTestUtil;
@@ -206,8 +204,6 @@ public class FragmentEntryLocalServiceTest {
 		_testUpdateFragmentEntryNameCssHtmlJsConfigurationAndStatus();
 		_testUpdateFragmentEntryNameCssHtmlJsConfigurationPreviewFileEntryIdAndStatus();
 		_testUpdateFragmentEntryPreviewFileEntryId();
-		_testUpdateFragmentEntryVersions();
-		_testUpdateFragmentEntryVersionsWithMaximumVersionsPerEntryDisabled();
 		_testUpdateFragmentEntryWithCacheable();
 		_testUpdateFragmentEntryWithHtmlWithAmpersand();
 		_testUpdateFragmentEntryWithPreviewFileEntryId();
@@ -278,26 +274,6 @@ public class FragmentEntryLocalServiceTest {
 					fragmentEntryLinkId);
 
 			Assert.assertEquals(expectedHtml, fragmentEntryLink.getHtml());
-		}
-	}
-
-	private void _assertUpdateFragmentEntryVersions(
-		FragmentEntry fragmentEntry, String expectedName, int expectedSize) {
-
-		List<FragmentEntryVersion> fragmentEntryVersions =
-			_fragmentEntryLocalService.getVersions(fragmentEntry);
-
-		Assert.assertEquals(
-			fragmentEntryVersions.toString(), expectedSize,
-			fragmentEntryVersions.size());
-
-		if (expectedName != null) {
-			for (FragmentEntryVersion fragmentEntryVersion :
-					fragmentEntryVersions) {
-
-				Assert.assertEquals(
-					expectedName, fragmentEntryVersion.getName());
-			}
 		}
 	}
 
@@ -1142,120 +1118,6 @@ public class FragmentEntryLocalServiceTest {
 
 		Assert.assertEquals(
 			previewFileEntryId + 1, fragmentEntry.getPreviewFileEntryId());
-	}
-
-	private void _testUpdateFragmentEntryVersions() throws Exception {
-		try (CompanyConfigurationTemporarySwapper
-				fragmentEntryVersionConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						TestPropsValues.getCompanyId(),
-						FragmentEntryVersionConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"maximumVersionsPerEntry", 2
-						).build())) {
-
-			FragmentEntry fragmentEntry =
-				FragmentEntryTestUtil.addFragmentEntry(
-					_fragmentCollection.getFragmentCollectionId());
-
-			String name = RandomTestUtil.randomString();
-
-			_updateFragmentEntry(fragmentEntry, name);
-
-			_assertUpdateFragmentEntryVersions(fragmentEntry, null, 2);
-
-			_updateFragmentEntry(fragmentEntry, name);
-
-			_assertUpdateFragmentEntryVersions(fragmentEntry, name, 2);
-
-			try (CompanyConfigurationTemporarySwapper
-					ctSettingsConfigurationTemporarySwapper =
-						new CompanyConfigurationTemporarySwapper(
-							TestPropsValues.getCompanyId(),
-							CTSettingsConfiguration.class.getName(),
-							HashMapDictionaryBuilder.<String, Object>put(
-								"enabled", true
-							).build())) {
-
-				CTCollection ctCollection =
-					_ctCollectionLocalService.addCTCollection(
-						null, TestPropsValues.getCompanyId(),
-						TestPropsValues.getUserId(), 0,
-						RandomTestUtil.randomString(),
-						RandomTestUtil.randomString());
-
-				try (SafeCloseable safeCloseable =
-						CTCollectionThreadLocal.
-							setCTCollectionIdWithSafeCloseable(
-								ctCollection.getCtCollectionId())) {
-
-					String ctCollectionFragmentEntryName =
-						RandomTestUtil.randomString();
-
-					_updateFragmentEntry(
-						fragmentEntry, ctCollectionFragmentEntryName);
-					_updateFragmentEntry(
-						fragmentEntry, ctCollectionFragmentEntryName);
-
-					_assertUpdateFragmentEntryVersions(
-						fragmentEntry, ctCollectionFragmentEntryName, 2);
-				}
-			}
-
-			_assertUpdateFragmentEntryVersions(fragmentEntry, name, 2);
-		}
-	}
-
-	private void _testUpdateFragmentEntryVersionsWithMaximumVersionsPerEntryDisabled()
-		throws Exception {
-
-		try (CompanyConfigurationTemporarySwapper
-				fragmentEntryVersionConfigurationTemporarySwapper =
-					new CompanyConfigurationTemporarySwapper(
-						TestPropsValues.getCompanyId(),
-						FragmentEntryVersionConfiguration.class.getName(),
-						HashMapDictionaryBuilder.<String, Object>put(
-							"maximumVersionsPerEntry", 0
-						).build())) {
-
-			FragmentEntry fragmentEntry =
-				FragmentEntryTestUtil.addFragmentEntry(
-					_fragmentCollection.getFragmentCollectionId());
-
-			_updateFragmentEntry(fragmentEntry, RandomTestUtil.randomString());
-
-			_assertUpdateFragmentEntryVersions(fragmentEntry, null, 2);
-
-			try (CompanyConfigurationTemporarySwapper
-					ctSettingsConfigurationTemporarySwapper =
-						new CompanyConfigurationTemporarySwapper(
-							TestPropsValues.getCompanyId(),
-							CTSettingsConfiguration.class.getName(),
-							HashMapDictionaryBuilder.<String, Object>put(
-								"enabled", true
-							).build())) {
-
-				CTCollection ctCollection =
-					_ctCollectionLocalService.addCTCollection(
-						null, TestPropsValues.getCompanyId(),
-						TestPropsValues.getUserId(), 0,
-						RandomTestUtil.randomString(),
-						RandomTestUtil.randomString());
-
-				try (SafeCloseable safeCloseable =
-						CTCollectionThreadLocal.
-							setCTCollectionIdWithSafeCloseable(
-								ctCollection.getCtCollectionId())) {
-
-					_updateFragmentEntry(
-						fragmentEntry, RandomTestUtil.randomString());
-
-					_assertUpdateFragmentEntryVersions(fragmentEntry, null, 3);
-				}
-			}
-
-			_assertUpdateFragmentEntryVersions(fragmentEntry, null, 2);
-		}
 	}
 
 	private void _testUpdateFragmentEntryWithCacheable() throws Exception {

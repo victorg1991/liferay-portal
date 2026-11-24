@@ -6,7 +6,6 @@
 package com.liferay.fragment.internal.upgrade.v2_6_0;
 
 import com.liferay.fragment.internal.upgrade.v2_6_0.util.FragmentEntryVersionTable;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
@@ -58,7 +57,7 @@ public class FragmentEntryVersionUpgradeProcess extends UpgradeProcess {
 		runSQL(
 			StringBundler.concat(
 				"insert into Counter (name, currentId) select '",
-				FragmentEntryVersion.class.getName(),
+				"com.liferay.fragment.model.FragmentEntryVersion",
 				"', max(fragmentEntryVersionId) from FragmentEntryVersion"));
 	}
 

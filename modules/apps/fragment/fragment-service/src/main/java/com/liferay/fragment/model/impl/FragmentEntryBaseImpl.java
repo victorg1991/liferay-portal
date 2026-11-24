@@ -34,7 +34,15 @@ public abstract class FragmentEntryBaseImpl
 			FragmentEntryLocalServiceUtil.addFragmentEntry(this);
 		}
 		else {
-			FragmentEntryLocalServiceUtil.updateFragmentEntry(this);
+			try {
+				FragmentEntryLocalServiceUtil.updateFragmentEntry(this);
+			}
+			catch (com.liferay.portal.kernel.exception.PortalException
+						portalException) {
+
+				throw new com.liferay.portal.kernel.exception.SystemException(
+					portalException);
+			}
 		}
 	}
 

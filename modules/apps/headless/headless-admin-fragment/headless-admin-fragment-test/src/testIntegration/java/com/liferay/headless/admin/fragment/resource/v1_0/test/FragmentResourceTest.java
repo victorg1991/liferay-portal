@@ -20,7 +20,6 @@ import com.liferay.dynamic.data.mapping.test.util.DDMStructureTestUtil;
 import com.liferay.exportimport.test.util.LazyReferencingTestUtil;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.model.FragmentEntry;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.service.FragmentCollectionLocalService;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
@@ -1689,7 +1688,7 @@ public class FragmentResourceTest extends BaseFragmentResourceTestCase {
 			_fragmentEntryLocalService.
 				fetchFragmentEntryByExternalReferenceCode(
 					postFragment.getExternalReferenceCode(),
-					testGroup.getGroupId(), approved);
+					testGroup.getGroupId());
 
 		fragmentResource.deleteSiteFragment(
 			testGroup.getExternalReferenceCode(),
@@ -1698,11 +1697,6 @@ public class FragmentResourceTest extends BaseFragmentResourceTestCase {
 		Assert.assertNull(
 			_fragmentEntryLocalService.fetchFragmentEntry(
 				fragmentEntry.getFragmentEntryId()));
-
-		List<FragmentEntryVersion> fragmentEntryVersions =
-			_fragmentEntryLocalService.getVersions(fragmentEntry);
-
-		Assert.assertTrue(fragmentEntryVersions.isEmpty());
 	}
 
 	private void _testDeleteSiteFragmentBatchFailedItems() throws Exception {
@@ -1789,8 +1783,8 @@ public class FragmentResourceTest extends BaseFragmentResourceTestCase {
 		FragmentEntry fragmentEntry =
 			_fragmentEntryLocalService.
 				fetchFragmentEntryByExternalReferenceCode(
-					fragment.getExternalReferenceCode(), testGroup.getGroupId(),
-					true);
+					fragment.getExternalReferenceCode(),
+					testGroup.getGroupId());
 
 		fragmentResource.deleteSiteFragment(
 			testGroup.getExternalReferenceCode(),
@@ -1799,11 +1793,6 @@ public class FragmentResourceTest extends BaseFragmentResourceTestCase {
 		Assert.assertNull(
 			_fragmentEntryLocalService.fetchFragmentEntry(
 				fragmentEntry.getFragmentEntryId()));
-
-		List<FragmentEntryVersion> fragmentEntryVersions =
-			_fragmentEntryLocalService.getVersions(fragmentEntry);
-
-		Assert.assertTrue(fragmentEntryVersions.isEmpty());
 	}
 
 	private void _testDeleteSiteFragmentWithoutPermissionsProblemException()
