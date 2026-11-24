@@ -1455,6 +1455,7 @@ public class FragmentEntryLocalServiceImpl
 				draftFragmentEntry.getPrimaryKey()) {
 
 			draftFragmentEntry.setHeadId(-draftFragmentEntry.getPrimaryKey());
+			draftFragmentEntry.setHead(true);
 
 			updatedPublishedFragmentEntry = fragmentEntryPersistence.update(
 				draftFragmentEntry);
