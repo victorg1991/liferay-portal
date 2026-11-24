@@ -68,7 +68,7 @@ public class FragmentEntryCacheModel
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(63);
+		StringBundler sb = new StringBundler(65);
 
 		sb.append("{mvccVersion=");
 		sb.append(mvccVersion);
@@ -78,10 +78,12 @@ public class FragmentEntryCacheModel
 		sb.append(uuid);
 		sb.append(", externalReferenceCode=");
 		sb.append(externalReferenceCode);
-		sb.append(", headId=");
-		sb.append(headId);
 		sb.append(", fragmentEntryId=");
 		sb.append(fragmentEntryId);
+		sb.append(", headId=");
+		sb.append(headId);
+		sb.append(", head=");
+		sb.append(head);
 		sb.append(", groupId=");
 		sb.append(groupId);
 		sb.append(", companyId=");
@@ -158,9 +160,9 @@ public class FragmentEntryCacheModel
 			fragmentEntryImpl.setExternalReferenceCode(externalReferenceCode);
 		}
 
+		fragmentEntryImpl.setFragmentEntryId(fragmentEntryId);
 		fragmentEntryImpl.setHeadId(headId);
 		fragmentEntryImpl.setHead(head);
-		fragmentEntryImpl.setFragmentEntryId(fragmentEntryId);
 		fragmentEntryImpl.setGroupId(groupId);
 		fragmentEntryImpl.setCompanyId(companyId);
 		fragmentEntryImpl.setUserId(userId);
@@ -290,11 +292,11 @@ public class FragmentEntryCacheModel
 		uuid = objectInput.readUTF();
 		externalReferenceCode = objectInput.readUTF();
 
+		fragmentEntryId = objectInput.readLong();
+
 		headId = objectInput.readLong();
 
 		head = objectInput.readBoolean();
-
-		fragmentEntryId = objectInput.readLong();
 
 		groupId = objectInput.readLong();
 
@@ -353,11 +355,11 @@ public class FragmentEntryCacheModel
 			objectOutput.writeUTF(externalReferenceCode);
 		}
 
+		objectOutput.writeLong(fragmentEntryId);
+
 		objectOutput.writeLong(headId);
 
 		objectOutput.writeBoolean(head);
-
-		objectOutput.writeLong(fragmentEntryId);
 
 		objectOutput.writeLong(groupId);
 
@@ -463,9 +465,9 @@ public class FragmentEntryCacheModel
 	public long ctCollectionId;
 	public String uuid;
 	public String externalReferenceCode;
+	public long fragmentEntryId;
 	public long headId;
 	public boolean head;
-	public long fragmentEntryId;
 	public long groupId;
 	public long companyId;
 	public long userId;
@@ -493,4 +495,4 @@ public class FragmentEntryCacheModel
 	public long statusDate;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1192710867
+// LIFERAY-SERVICE-BUILDER-HASH:-469784442

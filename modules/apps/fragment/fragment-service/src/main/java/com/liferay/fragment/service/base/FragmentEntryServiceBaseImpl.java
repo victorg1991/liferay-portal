@@ -8,7 +8,6 @@ package com.liferay.fragment.service.base;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.service.FragmentEntryService;
 import com.liferay.fragment.service.persistence.FragmentEntryPersistence;
-import com.liferay.fragment.service.persistence.FragmentEntryVersionPersistence;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBManagerUtil;
@@ -122,11 +121,8 @@ public abstract class FragmentEntryServiceBaseImpl
 	protected com.liferay.counter.kernel.service.CounterLocalService
 		counterLocalService;
 
-	@Reference
-	protected FragmentEntryVersionPersistence fragmentEntryVersionPersistence;
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		FragmentEntryServiceBaseImpl.class);
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:730551600
+// LIFERAY-SERVICE-BUILDER-HASH:627388373

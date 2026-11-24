@@ -7,7 +7,6 @@ package com.liferay.fragment.service;
 
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.fragment.model.FragmentEntry;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.portal.kernel.change.tracking.CTAware;
@@ -27,8 +26,6 @@ import com.liferay.portal.kernel.service.PersistedModelLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.change.tracking.CTService;
 import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
-import com.liferay.portal.kernel.service.version.VersionService;
-import com.liferay.portal.kernel.service.version.VersionServiceListener;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.transaction.Isolation;
 import com.liferay.portal.kernel.transaction.Propagation;
@@ -59,8 +56,7 @@ import org.osgi.annotation.versioning.ProviderType;
 )
 public interface FragmentEntryLocalService
 	extends BaseLocalService, CTService<FragmentEntry>,
-			PersistedModelLocalService,
-			VersionService<FragmentEntry, FragmentEntryVersion> {
+			PersistedModelLocalService {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -92,42 +88,24 @@ public interface FragmentEntryLocalService
 		throws PortalException;
 
 	@Indexable(type = IndexableType.REINDEX)
-	@Override
-	public FragmentEntry checkout(
-			FragmentEntry publishedFragmentEntry, int version)
-		throws PortalException;
-
-	@Indexable(type = IndexableType.REINDEX)
 	public FragmentEntry copyFragmentEntry(
 			long userId, long groupId, long sourceFragmentEntryId,
 			long fragmentCollectionId, ServiceContext serviceContext)
 		throws PortalException;
 
 	/**
-	 * Creates a new fragment entry. Does not add the fragment entry to the database.
+	 * Creates a new fragment entry with the primary key. Does not add the fragment entry to the database.
 	 *
+	 * @param fragmentEntryId the primary key for the new fragment entry
 	 * @return the new fragment entry
 	 */
-	@Override
 	@Transactional(enabled = false)
-	public FragmentEntry create();
-
 	public FragmentEntry createFragmentEntry(long fragmentEntryId);
 
 	/**
 	 * @throws PortalException
 	 */
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
-		throws PortalException;
-
-	@Indexable(type = IndexableType.DELETE)
-	@Override
-	public FragmentEntry delete(FragmentEntry publishedFragmentEntry)
-		throws PortalException;
-
-	@Indexable(type = IndexableType.DELETE)
-	@Override
-	public FragmentEntry deleteDraft(FragmentEntry draftFragmentEntry)
 		throws PortalException;
 
 	/**
@@ -171,11 +149,6 @@ public interface FragmentEntryLocalService
 	 */
 	@Override
 	public PersistedModel deletePersistedModel(PersistedModel persistedModel)
-		throws PortalException;
-
-	@Override
-	public FragmentEntryVersion deleteVersion(
-			FragmentEntryVersion fragmentEntryVersion)
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -250,14 +223,6 @@ public interface FragmentEntryLocalService
 	public long dynamicQueryCount(
 		DynamicQuery dynamicQuery, Projection projection);
 
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry fetchDraft(FragmentEntry fragmentEntry);
-
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry fetchDraft(long primaryKey);
-
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public FragmentEntry fetchFragmentEntry(long fragmentEntryId);
 
@@ -269,39 +234,21 @@ public interface FragmentEntryLocalService
 	public FragmentEntry fetchFragmentEntryByExternalReferenceCode(
 		String externalReferenceCode, long groupId);
 
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry fetchFragmentEntryByExternalReferenceCode(
-		String externalReferenceCode, long groupId, boolean head);
-
+	/**
+	 * Returns the fragment entry matching the UUID and group.
+	 *
+	 * @param uuid the fragment entry's UUID
+	 * @param groupId the primary key of the group
+	 * @return the matching fragment entry, or <code>null</code> if a matching fragment entry could not be found
+	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public FragmentEntry fetchFragmentEntryByUuidAndGroupId(
 		String uuid, long groupId);
-
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntryVersion fetchLatestVersion(FragmentEntry fragmentEntry);
-
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry fetchPublished(FragmentEntry fragmentEntry);
-
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry fetchPublished(long primaryKey);
 
 	public String generateFragmentEntryKey(long groupId, String name);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
-
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry getDraft(FragmentEntry fragmentEntry)
-		throws PortalException;
-
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry getDraft(long primaryKey) throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ExportActionableDynamicQuery getExportActionableDynamicQuery(
@@ -365,6 +312,27 @@ public interface FragmentEntryLocalService
 		long groupId, long fragmentCollectionId, String name, int start,
 		int end, OrderByComparator<FragmentEntry> orderByComparator);
 
+	/**
+	 * Returns all the fragment entries matching the UUID and company.
+	 *
+	 * @param uuid the UUID of the fragment entries
+	 * @param companyId the primary key of the company
+	 * @return the matching fragment entries, or an empty list if no matches were found
+	 */
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<FragmentEntry> getFragmentEntriesByUuidAndCompanyId(
+		String uuid, long companyId);
+
+	/**
+	 * Returns a range of fragment entries matching the UUID and company.
+	 *
+	 * @param uuid the UUID of the fragment entries
+	 * @param companyId the primary key of the company
+	 * @param start the lower bound of the range of fragment entries
+	 * @param end the upper bound of the range of fragment entries (not inclusive)
+	 * @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	 * @return the range of matching fragment entries, or an empty list if no matches were found
+	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<FragmentEntry> getFragmentEntriesByUuidAndCompanyId(
 		String uuid, long companyId, int start, int end,
@@ -394,9 +362,17 @@ public interface FragmentEntryLocalService
 			String externalReferenceCode, long groupId)
 		throws PortalException;
 
+	/**
+	 * Returns the fragment entry matching the UUID and group.
+	 *
+	 * @param uuid the fragment entry's UUID
+	 * @param groupId the primary key of the group
+	 * @return the matching fragment entry
+	 * @throws PortalException if a matching fragment entry could not be found
+	 */
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntry getFragmentEntryByExternalReferenceCode(
-			String externalReferenceCode, long groupId, boolean head)
+	public FragmentEntry getFragmentEntryByUuidAndGroupId(
+			String uuid, long groupId)
 		throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -426,38 +402,16 @@ public interface FragmentEntryLocalService
 	public String getUniqueFragmentEntryName(
 		long groupId, long fragmentCollectionId, String name);
 
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public FragmentEntryVersion getVersion(
-			FragmentEntry fragmentEntry, int version)
-		throws PortalException;
-
-	@Override
-	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-	public List<FragmentEntryVersion> getVersions(FragmentEntry fragmentEntry);
-
 	@Indexable(type = IndexableType.REINDEX)
 	public FragmentEntry moveFragmentEntry(
 			long fragmentEntryId, long fragmentCollectionId)
 		throws PortalException;
 
 	@Indexable(type = IndexableType.REINDEX)
-	@Override
 	public FragmentEntry publishDraft(FragmentEntry draftFragmentEntry)
 		throws PortalException;
 
-	@Override
-	public void registerListener(
-		VersionServiceListener<FragmentEntry, FragmentEntryVersion>
-			versionServiceListener);
-
-	@Override
-	public void unregisterListener(
-		VersionServiceListener<FragmentEntry, FragmentEntryVersion>
-			versionServiceListener);
-
 	@Indexable(type = IndexableType.REINDEX)
-	@Override
 	public FragmentEntry updateDraft(FragmentEntry draftFragmentEntry)
 		throws PortalException;
 
@@ -468,12 +422,12 @@ public interface FragmentEntryLocalService
 	 * <strong>Important:</strong> Inspect FragmentEntryLocalServiceImpl for overloaded versions of the method. If provided, use these entry points to the API, as the implementation logic may require the additional parameters defined there.
 	 * </p>
 	 *
-	 * @param draftFragmentEntry the fragment entry
+	 * @param fragmentEntry the fragment entry
 	 * @return the fragment entry that was updated
 	 * @throws PortalException
 	 */
 	@Indexable(type = IndexableType.REINDEX)
-	public FragmentEntry updateFragmentEntry(FragmentEntry draftFragmentEntry)
+	public FragmentEntry updateFragmentEntry(FragmentEntry fragmentEntry)
 		throws PortalException;
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -514,4 +468,4 @@ public interface FragmentEntryLocalService
 		throws E;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1402831277
+// LIFERAY-SERVICE-BUILDER-HASH:-849578398

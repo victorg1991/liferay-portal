@@ -13,20 +13,14 @@ create unique index IX_3F7591A1 on FragmentComposition (groupId, fragmentComposi
 create unique index IX_5D7BAE88 on FragmentComposition (groupId, uuid_[$COLUMN_LENGTH:75$], ctCollectionId);
 create index IX_70029354 on FragmentComposition (uuid_[$COLUMN_LENGTH:75$]);
 
-create index IX_DFBAF515 on FragmentEntry (externalReferenceCode[$COLUMN_LENGTH:75$]);
-create index IX_ADC3EFB9 on FragmentEntry (fragmentCollectionId, head);
-create index IX_8B622592 on FragmentEntry (groupId, fragmentCollectionId, head, name[$COLUMN_LENGTH:75$]);
-create index IX_24159CF8 on FragmentEntry (groupId, fragmentCollectionId, head, status, name[$COLUMN_LENGTH:75$]);
-create index IX_C522C3BC on FragmentEntry (groupId, fragmentCollectionId, head, status, type_);
-create index IX_47674E62 on FragmentEntry (groupId, fragmentCollectionId, head, type_);
+create index IX_2095DA5 on FragmentEntry (fragmentCollectionId);
+create unique index IX_3B4DA4D9 on FragmentEntry (groupId, externalReferenceCode[$COLUMN_LENGTH:75$], ctCollectionId);
 create index IX_18F9DFE on FragmentEntry (groupId, fragmentCollectionId, name[$COLUMN_LENGTH:75$]);
 create index IX_BE29E964 on FragmentEntry (groupId, fragmentCollectionId, status, name[$COLUMN_LENGTH:75$]);
 create index IX_6D9804D0 on FragmentEntry (groupId, fragmentCollectionId, status, type_);
 create index IX_96E8E376 on FragmentEntry (groupId, fragmentCollectionId, type_);
-create index IX_7F3F0EB3 on FragmentEntry (groupId, fragmentEntryKey[$COLUMN_LENGTH:75$]);
-create unique index IX_3EEFF605 on FragmentEntry (groupId, head, externalReferenceCode[$COLUMN_LENGTH:75$], ctCollectionId);
-create unique index IX_1676C265 on FragmentEntry (groupId, head, fragmentEntryKey[$COLUMN_LENGTH:75$], ctCollectionId);
-create unique index IX_A420787C on FragmentEntry (groupId, head, uuid_[$COLUMN_LENGTH:75$], ctCollectionId);
+create unique index IX_67941F11 on FragmentEntry (groupId, fragmentEntryKey[$COLUMN_LENGTH:75$], ctCollectionId);
+create unique index IX_AE3E4F50 on FragmentEntry (groupId, uuid_[$COLUMN_LENGTH:75$], ctCollectionId);
 create unique index IX_A7F77355 on FragmentEntry (headId, ctCollectionId);
 create index IX_6E7DE18C on FragmentEntry (uuid_[$COLUMN_LENGTH:75$]);
 
