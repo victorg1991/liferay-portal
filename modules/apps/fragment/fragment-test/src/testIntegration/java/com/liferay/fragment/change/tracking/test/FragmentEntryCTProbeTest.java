@@ -51,6 +51,71 @@ public class FragmentEntryCTProbeTest {
 			PermissionCheckerMethodTestRule.INSTANCE);
 
 	@Test
+	public void testStaging() throws Exception {
+		Group group = GroupTestUtil.addGroup();
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(group.getGroupId());
+
+		com.liferay.portal.kernel.test.util.UserTestUtil.setUser(
+			TestPropsValues.getUser());
+
+		FragmentCollection fragmentCollection =
+			_fragmentCollectionLocalService.addFragmentCollection(
+				null, TestPropsValues.getUserId(), group.getGroupId(),
+				RandomTestUtil.randomString(), StringPool.BLANK,
+				serviceContext);
+
+		FragmentEntry fragmentEntry =
+			_fragmentEntryLocalService.addFragmentEntry(
+				null, TestPropsValues.getUserId(), group.getGroupId(),
+				fragmentCollection.getFragmentCollectionId(), null,
+				RandomTestUtil.randomString(), StringPool.BLANK, "<div>x</div>",
+				StringPool.BLANK, false, null, null, 0, false, false,
+				FragmentConstants.TYPE_COMPONENT, null,
+				WorkflowConstants.STATUS_APPROVED, serviceContext);
+
+		_logRows("STAGING before", fragmentEntry);
+
+		try (com.liferay.portal.test.log.LogCapture logCapture =
+				com.liferay.portal.test.log.LoggerTestUtil.configureLog4JLogger(
+					"com.liferay.exportimport",
+					com.liferay.portal.test.log.LoggerTestUtil.ERROR)) {
+
+			_stagingLocalService.enableLocalStaging(
+				TestPropsValues.getUserId(), group, false, false,
+				serviceContext);
+
+			for (com.liferay.portal.test.log.LogEntry logEntry :
+					logCapture.getLogEntries()) {
+
+				_log("STAGING", "log=" + logEntry.getMessage() + " " + logEntry.getThrowable());
+			}
+		}
+
+		_logRows("STAGING after", fragmentEntry);
+	}
+
+	private void _logRows(String label, FragmentEntry fragmentEntry)
+		throws Exception {
+
+		for (FragmentEntry row :
+				_fragmentEntryLocalService.getFragmentEntriesByUuidAndCompanyId(
+					fragmentEntry.getUuid(), fragmentEntry.getCompanyId())) {
+
+			_log(
+				label,
+				"row id=" + row.getFragmentEntryId() + " group=" +
+					row.getGroupId() + " head=" + row.isHead() + " headId=" +
+						row.getHeadId() + " status=" + row.getStatus());
+		}
+	}
+
+	@Inject
+	private com.liferay.exportimport.kernel.service.StagingLocalService
+		_stagingLocalService;
+
+	@Test
 	public void testDraftDraft() throws Exception {
 		_probe(
 			"DRAFT_DRAFT", WorkflowConstants.STATUS_DRAFT,
