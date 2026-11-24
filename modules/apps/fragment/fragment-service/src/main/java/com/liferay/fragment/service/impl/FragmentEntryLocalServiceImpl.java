@@ -858,7 +858,21 @@ public class FragmentEntryLocalServiceImpl
 			return updatedDraftFragmentEntry;
 		}
 
-		return publishDraft(updatedDraftFragmentEntry);
+		FragmentEntry publishedFragmentEntry = publishDraft(
+			updatedDraftFragmentEntry);
+
+		if (!Objects.equals(
+				fragmentEntry.getExternalReferenceCode(),
+				publishedFragmentEntry.getExternalReferenceCode())) {
+
+			publishedFragmentEntry.setExternalReferenceCode(
+				fragmentEntry.getExternalReferenceCode());
+
+			publishedFragmentEntry = fragmentEntryPersistence.update(
+				publishedFragmentEntry);
+		}
+
+		return publishedFragmentEntry;
 	}
 
 	@Indexable(type = IndexableType.REINDEX)

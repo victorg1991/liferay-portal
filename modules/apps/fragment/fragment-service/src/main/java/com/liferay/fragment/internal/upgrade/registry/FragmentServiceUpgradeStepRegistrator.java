@@ -305,6 +305,16 @@ public class FragmentServiceUpgradeStepRegistrator
 					WorkflowConstants.STATUS_APPROVED,
 					" where head = [$TRUE$] and status != ",
 					WorkflowConstants.STATUS_APPROVED)));
+
+		registry.register(
+			"4.1.1", "5.0.0",
+			new com.liferay.fragment.internal.upgrade.v5_0_0.
+				FragmentEntryUpgradeProcess(),
+			UpgradeProcessFactory.runSQL(
+				"delete from CTEntry where modelClassNameId in (select " +
+					"classNameId from ClassName_ where value = " +
+						"'com.liferay.fragment.model.FragmentEntryVersion')"),
+			UpgradeProcessFactory.dropTables("FragmentEntryVersion"));
 	}
 
 	@Reference
