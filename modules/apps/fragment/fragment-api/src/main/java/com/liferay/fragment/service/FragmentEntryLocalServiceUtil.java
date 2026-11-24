@@ -99,6 +99,18 @@ public class FragmentEntryLocalServiceUtil {
 		return getService().createPersistedModel(primaryKeyObj);
 	}
 
+	public static FragmentEntry delete(FragmentEntry publishedFragmentEntry)
+		throws PortalException {
+
+		return getService().delete(publishedFragmentEntry);
+	}
+
+	public static FragmentEntry deleteDraft(FragmentEntry draftFragmentEntry)
+		throws PortalException {
+
+		return getService().deleteDraft(draftFragmentEntry);
+	}
+
 	/**
 	 * Deletes the fragment entry from the database. Also notifies the appropriate model listeners.
 	 *
@@ -235,6 +247,14 @@ public class FragmentEntryLocalServiceUtil {
 		return getService().dynamicQueryCount(dynamicQuery, projection);
 	}
 
+	public static FragmentEntry fetchDraft(FragmentEntry fragmentEntry) {
+		return getService().fetchDraft(fragmentEntry);
+	}
+
+	public static FragmentEntry fetchDraft(long primaryKey) {
+		return getService().fetchDraft(primaryKey);
+	}
+
 	public static FragmentEntry fetchFragmentEntry(long fragmentEntryId) {
 		return getService().fetchFragmentEntry(fragmentEntryId);
 	}
@@ -265,6 +285,14 @@ public class FragmentEntryLocalServiceUtil {
 		return getService().fetchFragmentEntryByUuidAndGroupId(uuid, groupId);
 	}
 
+	public static FragmentEntry fetchPublished(FragmentEntry fragmentEntry) {
+		return getService().fetchPublished(fragmentEntry);
+	}
+
+	public static FragmentEntry fetchPublished(long primaryKey) {
+		return getService().fetchPublished(primaryKey);
+	}
+
 	public static String generateFragmentEntryKey(long groupId, String name) {
 		return getService().generateFragmentEntryKey(groupId, name);
 	}
@@ -273,6 +301,18 @@ public class FragmentEntryLocalServiceUtil {
 		getActionableDynamicQuery() {
 
 		return getService().getActionableDynamicQuery();
+	}
+
+	public static FragmentEntry getDraft(FragmentEntry fragmentEntry)
+		throws PortalException {
+
+		return getService().getDraft(fragmentEntry);
+	}
+
+	public static FragmentEntry getDraft(long primaryKey)
+		throws PortalException {
+
+		return getService().getDraft(primaryKey);
 	}
 
 	public static com.liferay.portal.kernel.dao.orm.ExportActionableDynamicQuery
@@ -575,4 +615,4 @@ public class FragmentEntryLocalServiceUtil {
 			FragmentEntryLocalService.class);
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1201887145
+// LIFERAY-SERVICE-BUILDER-HASH:-1243777671

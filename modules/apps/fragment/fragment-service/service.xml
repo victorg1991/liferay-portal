@@ -181,9 +181,10 @@
 			<finder-column name="groupId" />
 			<finder-column name="fragmentCollectionId" />
 		</finder>
-		<finder name="G_FEK" return-type="FragmentEntry" unique="true">
+		<finder name="G_FEK_H" return-type="FragmentEntry" unique="true">
 			<finder-column name="groupId" />
 			<finder-column name="fragmentEntryKey" />
+			<finder-column name="head" />
 		</finder>
 		<finder name="G_FCI_LikeN" return-type="Collection">
 			<finder-column name="groupId" />

@@ -337,12 +337,14 @@ public class FragmentEntryPersistenceTest {
 	}
 
 	@Test
-	public void testCountByG_FEK() throws Exception {
-		_persistence.countByG_FEK(RandomTestUtil.nextLong(), "");
+	public void testCountByG_FEK_H() throws Exception {
+		_persistence.countByG_FEK_H(
+			RandomTestUtil.nextLong(), "", RandomTestUtil.randomBoolean());
 
-		_persistence.countByG_FEK(0L, "null");
+		_persistence.countByG_FEK_H(0L, "null", RandomTestUtil.randomBoolean());
 
-		_persistence.countByG_FEK(0L, (String)null);
+		_persistence.countByG_FEK_H(
+			0L, (String)null, RandomTestUtil.randomBoolean());
 	}
 
 	@Test
@@ -730,6 +732,11 @@ public class FragmentEntryPersistenceTest {
 			ReflectionTestUtil.invoke(
 				fragmentEntry, "getColumnOriginalValue",
 				new Class<?>[] {String.class}, "fragmentEntryKey"));
+		Assert.assertEquals(
+			Boolean.valueOf(fragmentEntry.getHead()),
+			ReflectionTestUtil.<Boolean>invoke(
+				fragmentEntry, "getColumnOriginalValue",
+				new Class<?>[] {String.class}, "head"));
 
 		Assert.assertEquals(
 			fragmentEntry.getExternalReferenceCode(),
@@ -819,4 +826,4 @@ public class FragmentEntryPersistenceTest {
 	private ClassLoader _dynamicQueryClassLoader;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1795368742
+// LIFERAY-SERVICE-BUILDER-HASH:1204580732

@@ -797,13 +797,6 @@ public class FragmentEntryWrapper
 	}
 
 	@Override
-	public void populateVersionModel(
-		FragmentEntryVersion fragmentEntryVersion) {
-
-		model.populateVersionModel(fragmentEntryVersion);
-	}
-
-	@Override
 	public void populateZipWriter(
 			com.liferay.portal.kernel.zip.ZipWriter zipWriter, String path)
 		throws Exception {
@@ -1196,4 +1189,4 @@ public class FragmentEntryWrapper
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:504722622
+// LIFERAY-SERVICE-BUILDER-HASH:166812455

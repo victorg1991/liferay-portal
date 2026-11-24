@@ -99,6 +99,20 @@ public class FragmentEntryLocalServiceWrapper
 		return _fragmentEntryLocalService.createPersistedModel(primaryKeyObj);
 	}
 
+	@Override
+	public FragmentEntry delete(FragmentEntry publishedFragmentEntry)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _fragmentEntryLocalService.delete(publishedFragmentEntry);
+	}
+
+	@Override
+	public FragmentEntry deleteDraft(FragmentEntry draftFragmentEntry)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _fragmentEntryLocalService.deleteDraft(draftFragmentEntry);
+	}
+
 	/**
 	 * Deletes the fragment entry from the database. Also notifies the appropriate model listeners.
 	 *
@@ -259,6 +273,16 @@ public class FragmentEntryLocalServiceWrapper
 	}
 
 	@Override
+	public FragmentEntry fetchDraft(FragmentEntry fragmentEntry) {
+		return _fragmentEntryLocalService.fetchDraft(fragmentEntry);
+	}
+
+	@Override
+	public FragmentEntry fetchDraft(long primaryKey) {
+		return _fragmentEntryLocalService.fetchDraft(primaryKey);
+	}
+
+	@Override
 	public FragmentEntry fetchFragmentEntry(long fragmentEntryId) {
 		return _fragmentEntryLocalService.fetchFragmentEntry(fragmentEntryId);
 	}
@@ -296,6 +320,16 @@ public class FragmentEntryLocalServiceWrapper
 	}
 
 	@Override
+	public FragmentEntry fetchPublished(FragmentEntry fragmentEntry) {
+		return _fragmentEntryLocalService.fetchPublished(fragmentEntry);
+	}
+
+	@Override
+	public FragmentEntry fetchPublished(long primaryKey) {
+		return _fragmentEntryLocalService.fetchPublished(primaryKey);
+	}
+
+	@Override
 	public String generateFragmentEntryKey(long groupId, String name) {
 		return _fragmentEntryLocalService.generateFragmentEntryKey(
 			groupId, name);
@@ -306,6 +340,20 @@ public class FragmentEntryLocalServiceWrapper
 		getActionableDynamicQuery() {
 
 		return _fragmentEntryLocalService.getActionableDynamicQuery();
+	}
+
+	@Override
+	public FragmentEntry getDraft(FragmentEntry fragmentEntry)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _fragmentEntryLocalService.getDraft(fragmentEntry);
+	}
+
+	@Override
+	public FragmentEntry getDraft(long primaryKey)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _fragmentEntryLocalService.getDraft(primaryKey);
 	}
 
 	@Override
@@ -687,4 +735,4 @@ public class FragmentEntryLocalServiceWrapper
 	private FragmentEntryLocalService _fragmentEntryLocalService;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1626657082
+// LIFERAY-SERVICE-BUILDER-HASH:-933727734

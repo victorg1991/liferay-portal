@@ -530,58 +530,66 @@ public class FragmentEntryUtil {
 	}
 
 	/**
-	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; or throws a <code>NoSuchEntryException</code> if it could not be found.
+	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63; or throws a <code>NoSuchEntryException</code> if it could not be found.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @return the matching fragment entry
 	 * @throws NoSuchEntryException if a matching fragment entry could not be found
 	 */
-	public static FragmentEntry findByG_FEK(
-			long groupId, String fragmentEntryKey)
+	public static FragmentEntry findByG_FEK_H(
+			long groupId, String fragmentEntryKey, boolean head)
 		throws com.liferay.fragment.exception.NoSuchEntryException {
 
-		return getPersistence().findByG_FEK(groupId, fragmentEntryKey);
+		return getPersistence().findByG_FEK_H(groupId, fragmentEntryKey, head);
 	}
 
 	/**
-	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @param useFinderCache whether to use the finder cache
 	 * @return the matching fragment entry, or <code>null</code> if a matching fragment entry could not be found
 	 */
-	public static FragmentEntry fetchByG_FEK(
-		long groupId, String fragmentEntryKey, boolean useFinderCache) {
+	public static FragmentEntry fetchByG_FEK_H(
+		long groupId, String fragmentEntryKey, boolean head,
+		boolean useFinderCache) {
 
-		return getPersistence().fetchByG_FEK(
-			groupId, fragmentEntryKey, useFinderCache);
+		return getPersistence().fetchByG_FEK_H(
+			groupId, fragmentEntryKey, head, useFinderCache);
 	}
 
 	/**
-	 * Removes the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; from the database.
+	 * Removes the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63; from the database.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @return the fragment entry that was removed
 	 */
-	public static FragmentEntry removeByG_FEK(
-			long groupId, String fragmentEntryKey)
+	public static FragmentEntry removeByG_FEK_H(
+			long groupId, String fragmentEntryKey, boolean head)
 		throws com.liferay.fragment.exception.NoSuchEntryException {
 
-		return getPersistence().removeByG_FEK(groupId, fragmentEntryKey);
+		return getPersistence().removeByG_FEK_H(
+			groupId, fragmentEntryKey, head);
 	}
 
 	/**
-	 * Returns the number of fragment entries where groupId = &#63; and fragmentEntryKey = &#63;.
+	 * Returns the number of fragment entries where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63;.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @return the number of matching fragment entries
 	 */
-	public static int countByG_FEK(long groupId, String fragmentEntryKey) {
-		return getPersistence().countByG_FEK(groupId, fragmentEntryKey);
+	public static int countByG_FEK_H(
+		long groupId, String fragmentEntryKey, boolean head) {
+
+		return getPersistence().countByG_FEK_H(groupId, fragmentEntryKey, head);
 	}
 
 	/**
@@ -1299,16 +1307,17 @@ public class FragmentEntryUtil {
 	}
 
 	/**
-	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
+	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @return the matching fragment entry, or <code>null</code> if a matching fragment entry could not be found
 	 */
-	public static FragmentEntry fetchByG_FEK(
-		long groupId, String fragmentEntryKey) {
+	public static FragmentEntry fetchByG_FEK_H(
+		long groupId, String fragmentEntryKey, boolean head) {
 
-		return getPersistence().fetchByG_FEK(groupId, fragmentEntryKey);
+		return getPersistence().fetchByG_FEK_H(groupId, fragmentEntryKey, head);
 	}
 
 	/**
@@ -1730,4 +1739,4 @@ public class FragmentEntryUtil {
 	private static volatile FragmentEntryPersistence _persistence;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-1262255838
+// LIFERAY-SERVICE-BUILDER-HASH:-1362006022

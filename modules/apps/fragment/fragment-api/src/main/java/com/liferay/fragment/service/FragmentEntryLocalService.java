@@ -108,6 +108,14 @@ public interface FragmentEntryLocalService
 	public PersistedModel createPersistedModel(Serializable primaryKeyObj)
 		throws PortalException;
 
+	@Indexable(type = IndexableType.DELETE)
+	public FragmentEntry delete(FragmentEntry publishedFragmentEntry)
+		throws PortalException;
+
+	@Indexable(type = IndexableType.DELETE)
+	public FragmentEntry deleteDraft(FragmentEntry draftFragmentEntry)
+		throws PortalException;
+
 	/**
 	 * Deletes the fragment entry from the database. Also notifies the appropriate model listeners.
 	 *
@@ -224,6 +232,12 @@ public interface FragmentEntryLocalService
 		DynamicQuery dynamicQuery, Projection projection);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntry fetchDraft(FragmentEntry fragmentEntry);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntry fetchDraft(long primaryKey);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public FragmentEntry fetchFragmentEntry(long fragmentEntryId);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
@@ -245,10 +259,23 @@ public interface FragmentEntryLocalService
 	public FragmentEntry fetchFragmentEntryByUuidAndGroupId(
 		String uuid, long groupId);
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntry fetchPublished(FragmentEntry fragmentEntry);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntry fetchPublished(long primaryKey);
+
 	public String generateFragmentEntryKey(long groupId, String name);
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ActionableDynamicQuery getActionableDynamicQuery();
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntry getDraft(FragmentEntry fragmentEntry)
+		throws PortalException;
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public FragmentEntry getDraft(long primaryKey) throws PortalException;
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public ExportActionableDynamicQuery getExportActionableDynamicQuery(
@@ -468,4 +495,4 @@ public interface FragmentEntryLocalService
 		throws E;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-849578398
+// LIFERAY-SERVICE-BUILDER-HASH:402925381

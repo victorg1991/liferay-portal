@@ -567,68 +567,78 @@ public class FragmentEntryPersistenceImpl
 	}
 
 	private UniquePersistenceFinder<FragmentEntry, NoSuchEntryException>
-		_uniquePersistenceFinderByG_FEK;
+		_uniquePersistenceFinderByG_FEK_H;
 
 	/**
-	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; or throws a <code>NoSuchEntryException</code> if it could not be found.
+	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63; or throws a <code>NoSuchEntryException</code> if it could not be found.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @return the matching fragment entry
 	 * @throws NoSuchEntryException if a matching fragment entry could not be found
 	 */
 	@Override
-	public FragmentEntry findByG_FEK(long groupId, String fragmentEntryKey)
+	public FragmentEntry findByG_FEK_H(
+			long groupId, String fragmentEntryKey, boolean head)
 		throws NoSuchEntryException {
 
-		return _uniquePersistenceFinderByG_FEK.find(
-			finderCache, new Object[] {groupId, fragmentEntryKey});
+		return _uniquePersistenceFinderByG_FEK_H.find(
+			finderCache, new Object[] {groupId, fragmentEntryKey, head});
 	}
 
 	/**
-	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
+	 * Returns the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @param useFinderCache whether to use the finder cache
 	 * @return the matching fragment entry, or <code>null</code> if a matching fragment entry could not be found
 	 */
 	@Override
-	public FragmentEntry fetchByG_FEK(
-		long groupId, String fragmentEntryKey, boolean useFinderCache) {
+	public FragmentEntry fetchByG_FEK_H(
+		long groupId, String fragmentEntryKey, boolean head,
+		boolean useFinderCache) {
 
-		return _uniquePersistenceFinderByG_FEK.fetch(
-			finderCache, new Object[] {groupId, fragmentEntryKey},
+		return _uniquePersistenceFinderByG_FEK_H.fetch(
+			finderCache, new Object[] {groupId, fragmentEntryKey, head},
 			useFinderCache);
 	}
 
 	/**
-	 * Removes the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; from the database.
+	 * Removes the fragment entry where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63; from the database.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @return the fragment entry that was removed
 	 */
 	@Override
-	public FragmentEntry removeByG_FEK(long groupId, String fragmentEntryKey)
+	public FragmentEntry removeByG_FEK_H(
+			long groupId, String fragmentEntryKey, boolean head)
 		throws NoSuchEntryException {
 
-		FragmentEntry fragmentEntry = findByG_FEK(groupId, fragmentEntryKey);
+		FragmentEntry fragmentEntry = findByG_FEK_H(
+			groupId, fragmentEntryKey, head);
 
 		return remove(fragmentEntry);
 	}
 
 	/**
-	 * Returns the number of fragment entries where groupId = &#63; and fragmentEntryKey = &#63;.
+	 * Returns the number of fragment entries where groupId = &#63; and fragmentEntryKey = &#63; and head = &#63;.
 	 *
 	 * @param groupId the group ID
 	 * @param fragmentEntryKey the fragment entry key
+	 * @param head the head
 	 * @return the number of matching fragment entries
 	 */
 	@Override
-	public int countByG_FEK(long groupId, String fragmentEntryKey) {
-		return _uniquePersistenceFinderByG_FEK.count(
-			finderCache, new Object[] {groupId, fragmentEntryKey});
+	public int countByG_FEK_H(
+		long groupId, String fragmentEntryKey, boolean head) {
+
+		return _uniquePersistenceFinderByG_FEK_H.count(
+			finderCache, new Object[] {groupId, fragmentEntryKey, head});
 	}
 
 	private CollectionPersistenceFinder<FragmentEntry, NoSuchEntryException>
@@ -1737,7 +1747,7 @@ public class FragmentEntryPersistenceImpl
 		_uniqueIndexColumnNames.add(new String[] {"headId"});
 
 		_uniqueIndexColumnNames.add(
-			new String[] {"groupId", "fragmentEntryKey"});
+			new String[] {"groupId", "fragmentEntryKey", "head"});
 
 		_uniqueIndexColumnNames.add(
 			new String[] {"externalReferenceCode", "groupId"});
@@ -1887,21 +1897,28 @@ public class FragmentEntryPersistenceImpl
 				FinderColumn.Type.LONG, "=", true, true,
 				FragmentEntry::getFragmentCollectionId));
 
-		_uniquePersistenceFinderByG_FEK = new UniquePersistenceFinder<>(
+		_uniquePersistenceFinderByG_FEK_H = new UniquePersistenceFinder<>(
 			this,
 			createUniqueFinderPath(
-				FINDER_CLASS_NAME_ENTITY, "fetchByG_FEK",
-				new String[] {Long.class.getName(), String.class.getName()},
-				new String[] {"groupId", "fragmentEntryKey"}, 0, 2, false,
-				FragmentEntry::getGroupId,
-				convertNullFunction(FragmentEntry::getFragmentEntryKey)),
+				FINDER_CLASS_NAME_ENTITY, "fetchByG_FEK_H",
+				new String[] {
+					Long.class.getName(), String.class.getName(),
+					Boolean.class.getName()
+				},
+				new String[] {"groupId", "fragmentEntryKey", "head"}, 0, 2,
+				false, FragmentEntry::getGroupId,
+				convertNullFunction(FragmentEntry::getFragmentEntryKey),
+				FragmentEntry::isHead),
 			_SQL_SELECT_FRAGMENTENTRY_WHERE, "",
 			new FinderColumn<>(
 				"fragmentEntry.", "groupId", FinderColumn.Type.LONG, "=", true,
 				true, FragmentEntry::getGroupId),
 			new FinderColumn<>(
 				"fragmentEntry.", "fragmentEntryKey", FinderColumn.Type.STRING,
-				"=", true, true, FragmentEntry::getFragmentEntryKey));
+				"=", true, true, FragmentEntry::getFragmentEntryKey),
+			new FinderColumn<>(
+				"fragmentEntry.", "head", FinderColumn.Type.BOOLEAN, "=", true,
+				true, FragmentEntry::isHead));
 
 		_collectionPersistenceFinderByG_FCI_LikeN =
 			new CollectionPersistenceFinder<>(
@@ -2210,4 +2227,4 @@ public class FragmentEntryPersistenceImpl
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1366055746
+// LIFERAY-SERVICE-BUILDER-HASH:11333584

@@ -11,7 +11,6 @@ import com.liferay.depot.service.DepotEntryGroupRelLocalService;
 import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
-import com.liferay.fragment.configuration.FragmentEntryVersionConfiguration;
 import com.liferay.fragment.configuration.FragmentServiceConfiguration;
 import com.liferay.fragment.constants.FragmentPortletKeys;
 import com.liferay.fragment.exception.DuplicateFragmentEntryKeyException;
@@ -22,7 +21,6 @@ import com.liferay.fragment.model.FragmentCompositionTable;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.model.FragmentEntryTable;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.processor.FragmentEntryProcessorRegistry;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.base.FragmentEntryLocalServiceBaseImpl;
@@ -80,6 +78,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.util.UniqueUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.sql.Types;
@@ -150,7 +149,8 @@ public class FragmentEntryLocalServiceImpl
 			_validateContent(html, configurationJSONObject);
 		}
 
-		FragmentEntry draftFragmentEntry = create();
+		FragmentEntry draftFragmentEntry = createFragmentEntry(
+			counterLocalService.increment());
 
 		draftFragmentEntry.setUuid(serviceContext.getUuid());
 		draftFragmentEntry.setExternalReferenceCode(externalReferenceCode);
@@ -391,16 +391,113 @@ public class FragmentEntryLocalServiceImpl
 			String externalReferenceCode, long groupId)
 		throws PortalException {
 
-		FragmentEntry fragmentEntry =
-			fragmentEntryPersistence.fetchByERC_G_Head(
-				externalReferenceCode, groupId, true);
+		return fragmentEntryLocalService.deleteFragmentEntry(
+			fragmentEntryPersistence.findByERC_G(
+				externalReferenceCode, groupId));
+	}
 
-		if (fragmentEntry == null) {
-			fragmentEntry = fragmentEntryPersistence.findByERC_G_Head(
-				externalReferenceCode, groupId, false);
+	@Indexable(type = IndexableType.DELETE)
+	@Override
+	public FragmentEntry delete(FragmentEntry publishedFragmentEntry)
+		throws PortalException {
+
+		if (!publishedFragmentEntry.isHead()) {
+			throw new IllegalArgumentException(
+				"FragmentEntry is a draft " +
+					publishedFragmentEntry.getPrimaryKey());
 		}
 
-		return fragmentEntryLocalService.deleteFragmentEntry(fragmentEntry);
+		FragmentEntry draftFragmentEntry =
+			fragmentEntryPersistence.fetchByHeadId(
+				publishedFragmentEntry.getPrimaryKey());
+
+		if (draftFragmentEntry != null) {
+			fragmentEntryLocalService.deleteDraft(draftFragmentEntry);
+		}
+
+		return fragmentEntryPersistence.remove(publishedFragmentEntry);
+	}
+
+	@Indexable(type = IndexableType.DELETE)
+	@Override
+	public FragmentEntry deleteDraft(FragmentEntry draftFragmentEntry)
+		throws PortalException {
+
+		if (draftFragmentEntry.isHead()) {
+			throw new IllegalArgumentException(
+				"FragmentEntry is not a draft " +
+					draftFragmentEntry.getPrimaryKey());
+		}
+
+		return fragmentEntryPersistence.remove(draftFragmentEntry);
+	}
+
+	@Override
+	public FragmentEntry fetchDraft(FragmentEntry fragmentEntry) {
+		if (fragmentEntry.isHead()) {
+			return fragmentEntryPersistence.fetchByHeadId(
+				fragmentEntry.getPrimaryKey());
+		}
+
+		return fragmentEntry;
+	}
+
+	@Override
+	public FragmentEntry fetchDraft(long primaryKey) {
+		return fragmentEntryPersistence.fetchByHeadId(primaryKey);
+	}
+
+	@Override
+	public FragmentEntry fetchPublished(FragmentEntry fragmentEntry) {
+		if (fragmentEntry.isHead()) {
+			return fragmentEntry;
+		}
+
+		if (fragmentEntry.getHeadId() == fragmentEntry.getPrimaryKey()) {
+			return null;
+		}
+
+		return fragmentEntryPersistence.fetchByPrimaryKey(
+			fragmentEntry.getHeadId());
+	}
+
+	@Override
+	public FragmentEntry fetchPublished(long primaryKey) {
+		FragmentEntry fragmentEntry =
+			fragmentEntryPersistence.fetchByPrimaryKey(primaryKey);
+
+		if ((fragmentEntry == null) ||
+			(fragmentEntry.getHeadId() == fragmentEntry.getPrimaryKey())) {
+
+			return null;
+		}
+
+		return fragmentEntry;
+	}
+
+	@Override
+	public FragmentEntry getDraft(FragmentEntry fragmentEntry)
+		throws PortalException {
+
+		if (!fragmentEntry.isHead()) {
+			return fragmentEntry;
+		}
+
+		FragmentEntry draftFragmentEntry =
+			fragmentEntryPersistence.fetchByHeadId(
+				fragmentEntry.getPrimaryKey());
+
+		if (draftFragmentEntry == null) {
+			draftFragmentEntry = fragmentEntryLocalService.updateDraft(
+				_createDraft(fragmentEntry));
+		}
+
+		return draftFragmentEntry;
+	}
+
+	@Override
+	public FragmentEntry getDraft(long primaryKey) throws PortalException {
+		return getDraft(fragmentEntryPersistence.findByPrimaryKey(primaryKey));
 	}
 
 	@Override
@@ -416,35 +513,22 @@ public class FragmentEntryLocalServiceImpl
 			return null;
 		}
 
-		FragmentEntry fragmentEntry =
-			fragmentEntryPersistence.fetchByG_FEK_First(
-				groupId, fragmentEntryKey, null);
+		FragmentEntry fragmentEntry = fragmentEntryPersistence.fetchByG_FEK_H(
+			groupId, fragmentEntryKey, true);
 
-		if (fragmentEntry == null) {
-			return null;
-		}
-
-		if (!fragmentEntry.isDraft()) {
+		if (fragmentEntry != null) {
 			return fragmentEntry;
 		}
 
-		return fetchFragmentEntryByUuidAndGroupId(
-			fragmentEntry.getUuid(), groupId);
+		return fragmentEntryPersistence.fetchByG_FEK_H(
+			groupId, fragmentEntryKey, false);
 	}
 
 	@Override
 	public FragmentEntry fetchFragmentEntryByUuidAndGroupId(
 		String uuid, long groupId) {
 
-		FragmentEntry fragmentEntry =
-			fragmentEntryPersistence.fetchByUUID_G_Head(uuid, groupId, true);
-
-		if (fragmentEntry != null) {
-			return fragmentEntry;
-		}
-
-		return fragmentEntryPersistence.fetchByUUID_G_Head(
-			uuid, groupId, false);
+		return fragmentEntryPersistence.fetchByUUID_G(uuid, groupId);
 	}
 
 	@Override
@@ -735,9 +819,15 @@ public class FragmentEntryLocalServiceImpl
 	public FragmentEntry updateDraft(FragmentEntry draftFragmentEntry)
 		throws PortalException {
 
+		if (draftFragmentEntry.isHead()) {
+			throw new IllegalArgumentException(
+				"Can only update draft entries " +
+					draftFragmentEntry.getPrimaryKey());
+		}
+
 		draftFragmentEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
 
-		return super.updateDraft(draftFragmentEntry);
+		return fragmentEntryPersistence.update(draftFragmentEntry);
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -1010,36 +1100,59 @@ public class FragmentEntryLocalServiceImpl
 		}
 	}
 
-	private void _deleteExcessFragmentEntryVersions(FragmentEntry fragmentEntry)
-		throws PortalException {
+	private void _copyFragmentEntry(
+		FragmentEntry sourceFragmentEntry, FragmentEntry targetFragmentEntry) {
 
-		FragmentEntryVersionConfiguration fragmentEntryVersionConfiguration =
-			_configurationProvider.getCompanyConfiguration(
-				FragmentEntryVersionConfiguration.class,
-				fragmentEntry.getCompanyId());
+		targetFragmentEntry.setUserId(sourceFragmentEntry.getUserId());
+		targetFragmentEntry.setUserName(sourceFragmentEntry.getUserName());
+		targetFragmentEntry.setModifiedDate(
+			sourceFragmentEntry.getModifiedDate());
+		targetFragmentEntry.setFragmentCollectionId(
+			sourceFragmentEntry.getFragmentCollectionId());
+		targetFragmentEntry.setFragmentEntryKey(
+			sourceFragmentEntry.getFragmentEntryKey());
+		targetFragmentEntry.setName(sourceFragmentEntry.getName());
+		targetFragmentEntry.setCss(sourceFragmentEntry.getCss());
+		targetFragmentEntry.setHtml(sourceFragmentEntry.getHtml());
+		targetFragmentEntry.setJs(sourceFragmentEntry.getJs());
+		targetFragmentEntry.setCacheable(sourceFragmentEntry.isCacheable());
+		targetFragmentEntry.setConfiguration(
+			sourceFragmentEntry.getConfiguration());
+		targetFragmentEntry.setIcon(sourceFragmentEntry.getIcon());
+		targetFragmentEntry.setPreviewFileEntryId(
+			sourceFragmentEntry.getPreviewFileEntryId());
+		targetFragmentEntry.setMarketplace(sourceFragmentEntry.isMarketplace());
+		targetFragmentEntry.setReadOnly(sourceFragmentEntry.isReadOnly());
+		targetFragmentEntry.setType(sourceFragmentEntry.getType());
+		targetFragmentEntry.setTypeOptions(
+			sourceFragmentEntry.getTypeOptions());
+		targetFragmentEntry.setLastPublishDate(
+			sourceFragmentEntry.getLastPublishDate());
+		targetFragmentEntry.setStatus(sourceFragmentEntry.getStatus());
+		targetFragmentEntry.setStatusByUserId(
+			sourceFragmentEntry.getStatusByUserId());
+		targetFragmentEntry.setStatusByUserName(
+			sourceFragmentEntry.getStatusByUserName());
+		targetFragmentEntry.setStatusDate(sourceFragmentEntry.getStatusDate());
+	}
 
-		int maximumVersionsPerEntry =
-			fragmentEntryVersionConfiguration.maximumVersionsPerEntry();
+	private FragmentEntry _createDraft(FragmentEntry headFragmentEntry) {
+		FragmentEntry draftFragmentEntry = createFragmentEntry(
+			counterLocalService.increment());
 
-		if (maximumVersionsPerEntry <= 0) {
-			return;
-		}
+		draftFragmentEntry.setCtCollectionId(
+			headFragmentEntry.getCtCollectionId());
+		draftFragmentEntry.setUuid(PortalUUIDUtil.generate());
+		draftFragmentEntry.setHeadId(headFragmentEntry.getPrimaryKey());
+		draftFragmentEntry.setGroupId(headFragmentEntry.getGroupId());
+		draftFragmentEntry.setCompanyId(headFragmentEntry.getCompanyId());
+		draftFragmentEntry.setCreateDate(headFragmentEntry.getCreateDate());
 
-		int count = fragmentEntryVersionPersistence.countByFragmentEntryId(
-			fragmentEntry.getFragmentEntryId());
+		_copyFragmentEntry(headFragmentEntry, draftFragmentEntry);
 
-		if (count <= maximumVersionsPerEntry) {
-			return;
-		}
+		draftFragmentEntry.setStatus(WorkflowConstants.STATUS_DRAFT);
 
-		List<FragmentEntryVersion> fragmentEntryVersions = getVersions(
-			fragmentEntry);
-
-		for (int i = maximumVersionsPerEntry; i < fragmentEntryVersions.size();
-			 i++) {
-
-			deleteVersion(fragmentEntryVersions.get(i));
-		}
+		return draftFragmentEntry;
 	}
 
 	private DepotEntry _fetchGroupDepotEntry(Group group) {
@@ -1336,10 +1449,28 @@ public class FragmentEntryLocalServiceImpl
 
 		draftFragmentEntry.setStatus(WorkflowConstants.STATUS_APPROVED);
 
-		FragmentEntry updatedPublishedFragmentEntry = super.publishDraft(
-			draftFragmentEntry);
+		FragmentEntry updatedPublishedFragmentEntry = null;
 
-		_deleteExcessFragmentEntryVersions(updatedPublishedFragmentEntry);
+		if (draftFragmentEntry.getHeadId() ==
+				draftFragmentEntry.getPrimaryKey()) {
+
+			draftFragmentEntry.setHeadId(-draftFragmentEntry.getPrimaryKey());
+
+			updatedPublishedFragmentEntry = fragmentEntryPersistence.update(
+				draftFragmentEntry);
+		}
+		else {
+			FragmentEntry headFragmentEntry =
+				fragmentEntryPersistence.findByPrimaryKey(
+					draftFragmentEntry.getHeadId());
+
+			_copyFragmentEntry(draftFragmentEntry, headFragmentEntry);
+
+			updatedPublishedFragmentEntry = fragmentEntryPersistence.update(
+				headFragmentEntry);
+
+			fragmentEntryLocalService.deleteDraft(draftFragmentEntry);
+		}
 
 		FragmentServiceConfiguration fragmentServiceConfiguration =
 			_configurationProvider.getCompanyConfiguration(
