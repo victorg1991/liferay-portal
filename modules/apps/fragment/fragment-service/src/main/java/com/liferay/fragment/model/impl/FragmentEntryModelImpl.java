@@ -10,7 +10,6 @@ import com.liferay.expando.kernel.util.ExpandoBridgeFactoryUtil;
 import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryModel;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.bean.AutoEscapeBeanHandler;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -68,8 +67,8 @@ public class FragmentEntryModelImpl
 	public static final Object[][] TABLE_COLUMNS = {
 		{"mvccVersion", Types.BIGINT}, {"ctCollectionId", Types.BIGINT},
 		{"uuid_", Types.VARCHAR}, {"externalReferenceCode", Types.VARCHAR},
-		{"headId", Types.BIGINT}, {"head", Types.BOOLEAN},
-		{"fragmentEntryId", Types.BIGINT}, {"groupId", Types.BIGINT},
+		{"fragmentEntryId", Types.BIGINT}, {"headId", Types.BIGINT},
+		{"head", Types.BOOLEAN}, {"groupId", Types.BIGINT},
 		{"companyId", Types.BIGINT}, {"userId", Types.BIGINT},
 		{"userName", Types.VARCHAR}, {"createDate", Types.TIMESTAMP},
 		{"modifiedDate", Types.TIMESTAMP},
@@ -93,9 +92,9 @@ public class FragmentEntryModelImpl
 		TABLE_COLUMNS_MAP.put("ctCollectionId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("uuid_", Types.VARCHAR);
 		TABLE_COLUMNS_MAP.put("externalReferenceCode", Types.VARCHAR);
+		TABLE_COLUMNS_MAP.put("fragmentEntryId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("headId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("head", Types.BOOLEAN);
-		TABLE_COLUMNS_MAP.put("fragmentEntryId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("groupId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("companyId", Types.BIGINT);
 		TABLE_COLUMNS_MAP.put("userId", Types.BIGINT);
@@ -124,7 +123,7 @@ public class FragmentEntryModelImpl
 	}
 
 	public static final String TABLE_SQL_CREATE =
-		"create table FragmentEntry (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,externalReferenceCode VARCHAR(75) null,headId LONG,head BOOLEAN,fragmentEntryId LONG not null,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,fragmentCollectionId LONG,fragmentEntryKey VARCHAR(75) null,name VARCHAR(75) null,css TEXT null,html TEXT null,js TEXT null,cacheable BOOLEAN,configuration TEXT null,icon VARCHAR(75) null,previewFileEntryId LONG,marketplace BOOLEAN,readOnly BOOLEAN,type_ INTEGER,typeOptions TEXT null,lastPublishDate DATE null,status INTEGER,statusByUserId LONG,statusByUserName VARCHAR(75) null,statusDate DATE null,primary key (fragmentEntryId, ctCollectionId))";
+		"create table FragmentEntry (mvccVersion LONG default 0 not null,ctCollectionId LONG default 0 not null,uuid_ VARCHAR(75) null,externalReferenceCode VARCHAR(75) null,fragmentEntryId LONG not null,headId LONG,head BOOLEAN,groupId LONG,companyId LONG,userId LONG,userName VARCHAR(75) null,createDate DATE null,modifiedDate DATE null,fragmentCollectionId LONG,fragmentEntryKey VARCHAR(75) null,name VARCHAR(75) null,css TEXT null,html TEXT null,js TEXT null,cacheable BOOLEAN,configuration TEXT null,icon VARCHAR(75) null,previewFileEntryId LONG,marketplace BOOLEAN,readOnly BOOLEAN,type_ INTEGER,typeOptions TEXT null,lastPublishDate DATE null,status INTEGER,statusByUserId LONG,statusByUserName VARCHAR(75) null,statusDate DATE null,primary key (fragmentEntryId, ctCollectionId))";
 
 	public static final String TABLE_SQL_DROP = "drop table FragmentEntry";
 
@@ -326,9 +325,10 @@ public class FragmentEntryModelImpl
 			attributeGetterFunctions.put(
 				"externalReferenceCode",
 				FragmentEntry::getExternalReferenceCode);
-			attributeGetterFunctions.put("headId", FragmentEntry::getHeadId);
 			attributeGetterFunctions.put(
 				"fragmentEntryId", FragmentEntry::getFragmentEntryId);
+			attributeGetterFunctions.put("headId", FragmentEntry::getHeadId);
+			attributeGetterFunctions.put("head", FragmentEntry::getHead);
 			attributeGetterFunctions.put("groupId", FragmentEntry::getGroupId);
 			attributeGetterFunctions.put(
 				"companyId", FragmentEntry::getCompanyId);
@@ -402,12 +402,15 @@ public class FragmentEntryModelImpl
 				(BiConsumer<FragmentEntry, String>)
 					FragmentEntry::setExternalReferenceCode);
 			attributeSetterBiConsumers.put(
-				"headId",
-				(BiConsumer<FragmentEntry, Long>)FragmentEntry::setHeadId);
-			attributeSetterBiConsumers.put(
 				"fragmentEntryId",
 				(BiConsumer<FragmentEntry, Long>)
 					FragmentEntry::setFragmentEntryId);
+			attributeSetterBiConsumers.put(
+				"headId",
+				(BiConsumer<FragmentEntry, Long>)FragmentEntry::setHeadId);
+			attributeSetterBiConsumers.put(
+				"head",
+				(BiConsumer<FragmentEntry, Boolean>)FragmentEntry::setHead);
 			attributeSetterBiConsumers.put(
 				"groupId",
 				(BiConsumer<FragmentEntry, Long>)FragmentEntry::setGroupId);
@@ -500,41 +503,6 @@ public class FragmentEntryModelImpl
 
 	}
 
-	@Override
-	public void populateVersionModel(
-		FragmentEntryVersion fragmentEntryVersion) {
-
-		fragmentEntryVersion.setCtCollectionId(getCtCollectionId());
-		fragmentEntryVersion.setUuid(getUuid());
-		fragmentEntryVersion.setExternalReferenceCode(
-			getExternalReferenceCode());
-		fragmentEntryVersion.setGroupId(getGroupId());
-		fragmentEntryVersion.setCompanyId(getCompanyId());
-		fragmentEntryVersion.setUserId(getUserId());
-		fragmentEntryVersion.setUserName(getUserName());
-		fragmentEntryVersion.setCreateDate(getCreateDate());
-		fragmentEntryVersion.setModifiedDate(getModifiedDate());
-		fragmentEntryVersion.setFragmentCollectionId(getFragmentCollectionId());
-		fragmentEntryVersion.setFragmentEntryKey(getFragmentEntryKey());
-		fragmentEntryVersion.setName(getName());
-		fragmentEntryVersion.setCss(getCss());
-		fragmentEntryVersion.setHtml(getHtml());
-		fragmentEntryVersion.setJs(getJs());
-		fragmentEntryVersion.setCacheable(getCacheable());
-		fragmentEntryVersion.setConfiguration(getConfiguration());
-		fragmentEntryVersion.setIcon(getIcon());
-		fragmentEntryVersion.setPreviewFileEntryId(getPreviewFileEntryId());
-		fragmentEntryVersion.setMarketplace(getMarketplace());
-		fragmentEntryVersion.setReadOnly(getReadOnly());
-		fragmentEntryVersion.setType(getType());
-		fragmentEntryVersion.setTypeOptions(getTypeOptions());
-		fragmentEntryVersion.setLastPublishDate(getLastPublishDate());
-		fragmentEntryVersion.setStatus(getStatus());
-		fragmentEntryVersion.setStatusByUserId(getStatusByUserId());
-		fragmentEntryVersion.setStatusByUserName(getStatusByUserName());
-		fragmentEntryVersion.setStatusDate(getStatusDate());
-	}
-
 	@JSON
 	@Override
 	public long getMvccVersion() {
@@ -625,6 +593,21 @@ public class FragmentEntryModelImpl
 
 	@JSON
 	@Override
+	public long getFragmentEntryId() {
+		return _fragmentEntryId;
+	}
+
+	@Override
+	public void setFragmentEntryId(long fragmentEntryId) {
+		if (_columnOriginalValues == Collections.EMPTY_MAP) {
+			_setColumnOriginalValues();
+		}
+
+		_fragmentEntryId = fragmentEntryId;
+	}
+
+	@JSON
+	@Override
 	public long getHeadId() {
 		return _headId;
 	}
@@ -633,13 +616,6 @@ public class FragmentEntryModelImpl
 	public void setHeadId(long headId) {
 		if (_columnOriginalValues == Collections.EMPTY_MAP) {
 			_setColumnOriginalValues();
-		}
-
-		if (headId >= 0) {
-			setHead(false);
-		}
-		else {
-			setHead(true);
 		}
 
 		_headId = headId;
@@ -654,16 +630,19 @@ public class FragmentEntryModelImpl
 		return GetterUtil.getLong(this.<Long>getColumnOriginalValue("headId"));
 	}
 
-	@JSON(include = false)
+	@JSON
+	@Override
 	public boolean getHead() {
 		return _head;
 	}
 
+	@JSON
 	@Override
 	public boolean isHead() {
 		return _head;
 	}
 
+	@Override
 	public void setHead(boolean head) {
 		if (_columnOriginalValues == Collections.EMPTY_MAP) {
 			_setColumnOriginalValues();
@@ -680,21 +659,6 @@ public class FragmentEntryModelImpl
 	public boolean getOriginalHead() {
 		return GetterUtil.getBoolean(
 			this.<Boolean>getColumnOriginalValue("head"));
-	}
-
-	@JSON
-	@Override
-	public long getFragmentEntryId() {
-		return _fragmentEntryId;
-	}
-
-	@Override
-	public void setFragmentEntryId(long fragmentEntryId) {
-		if (_columnOriginalValues == Collections.EMPTY_MAP) {
-			_setColumnOriginalValues();
-		}
-
-		_fragmentEntryId = fragmentEntryId;
 	}
 
 	@JSON
@@ -1391,8 +1355,9 @@ public class FragmentEntryModelImpl
 		fragmentEntryImpl.setCtCollectionId(getCtCollectionId());
 		fragmentEntryImpl.setUuid(getUuid());
 		fragmentEntryImpl.setExternalReferenceCode(getExternalReferenceCode());
-		fragmentEntryImpl.setHeadId(getHeadId());
 		fragmentEntryImpl.setFragmentEntryId(getFragmentEntryId());
+		fragmentEntryImpl.setHeadId(getHeadId());
+		fragmentEntryImpl.setHead(isHead());
 		fragmentEntryImpl.setGroupId(getGroupId());
 		fragmentEntryImpl.setCompanyId(getCompanyId());
 		fragmentEntryImpl.setUserId(getUserId());
@@ -1435,10 +1400,11 @@ public class FragmentEntryModelImpl
 		fragmentEntryImpl.setUuid(this.<String>getColumnOriginalValue("uuid_"));
 		fragmentEntryImpl.setExternalReferenceCode(
 			this.<String>getColumnOriginalValue("externalReferenceCode"));
-		fragmentEntryImpl.setHeadId(
-			this.<Long>getColumnOriginalValue("headId"));
 		fragmentEntryImpl.setFragmentEntryId(
 			this.<Long>getColumnOriginalValue("fragmentEntryId"));
+		fragmentEntryImpl.setHeadId(
+			this.<Long>getColumnOriginalValue("headId"));
+		fragmentEntryImpl.setHead(this.<Boolean>getColumnOriginalValue("head"));
 		fragmentEntryImpl.setGroupId(
 			this.<Long>getColumnOriginalValue("groupId"));
 		fragmentEntryImpl.setCompanyId(
@@ -1584,11 +1550,11 @@ public class FragmentEntryModelImpl
 			fragmentEntryCacheModel.externalReferenceCode = null;
 		}
 
+		fragmentEntryCacheModel.fragmentEntryId = getFragmentEntryId();
+
 		fragmentEntryCacheModel.headId = getHeadId();
 
 		fragmentEntryCacheModel.head = isHead();
-
-		fragmentEntryCacheModel.fragmentEntryId = getFragmentEntryId();
 
 		fragmentEntryCacheModel.groupId = getGroupId();
 
@@ -1794,9 +1760,9 @@ public class FragmentEntryModelImpl
 	private long _ctCollectionId;
 	private String _uuid;
 	private String _externalReferenceCode;
+	private long _fragmentEntryId;
 	private long _headId;
 	private boolean _head;
-	private long _fragmentEntryId;
 	private long _groupId;
 	private long _companyId;
 	private long _userId;
@@ -1825,10 +1791,6 @@ public class FragmentEntryModelImpl
 	private Date _statusDate;
 
 	public <T> T getColumnValue(String columnName) {
-		if (columnName.equals("head")) {
-			return (T)(Object)getHead();
-		}
-
 		columnName = _attributeNames.getOrDefault(columnName, columnName);
 
 		Function<FragmentEntry, Object> function =
@@ -1863,9 +1825,9 @@ public class FragmentEntryModelImpl
 		_columnOriginalValues.put("uuid_", _uuid);
 		_columnOriginalValues.put(
 			"externalReferenceCode", _externalReferenceCode);
+		_columnOriginalValues.put("fragmentEntryId", _fragmentEntryId);
 		_columnOriginalValues.put("headId", _headId);
 		_columnOriginalValues.put("head", _head);
-		_columnOriginalValues.put("fragmentEntryId", _fragmentEntryId);
 		_columnOriginalValues.put("groupId", _groupId);
 		_columnOriginalValues.put("companyId", _companyId);
 		_columnOriginalValues.put("userId", _userId);
@@ -1924,11 +1886,11 @@ public class FragmentEntryModelImpl
 
 		columnBitmasks.put("externalReferenceCode", 8L);
 
-		columnBitmasks.put("headId", 16L);
+		columnBitmasks.put("fragmentEntryId", 16L);
 
-		columnBitmasks.put("head", 32L);
+		columnBitmasks.put("headId", 32L);
 
-		columnBitmasks.put("fragmentEntryId", 64L);
+		columnBitmasks.put("head", 64L);
 
 		columnBitmasks.put("groupId", 128L);
 
@@ -1987,4 +1949,4 @@ public class FragmentEntryModelImpl
 	private FragmentEntry _escapedModel;
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:1207162075
+// LIFERAY-SERVICE-BUILDER-HASH:1896862246

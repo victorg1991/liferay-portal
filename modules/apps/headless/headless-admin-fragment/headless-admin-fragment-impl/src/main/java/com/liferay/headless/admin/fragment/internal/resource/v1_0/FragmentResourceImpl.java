@@ -111,7 +111,7 @@ public class FragmentResourceImpl extends BaseFragmentResourceImpl {
 			FragmentEntry draftFragmentEntry =
 				_fragmentEntryLocalService.
 					fetchFragmentEntryByExternalReferenceCode(
-						fragmentExternalReferenceCode, groupId, false);
+						fragmentExternalReferenceCode, groupId);
 
 			if (draftFragmentEntry == null) {
 				throw noSuchModelException;
@@ -216,7 +216,7 @@ public class FragmentResourceImpl extends BaseFragmentResourceImpl {
 			FragmentEntry draftFragmentEntry =
 				_fragmentEntryLocalService.
 					fetchFragmentEntryByExternalReferenceCode(
-						fragmentExternalReferenceCode, groupId, false);
+						fragmentExternalReferenceCode, groupId);
 
 			if (draftFragmentEntry != null) {
 				return _updateFragmentEntry(

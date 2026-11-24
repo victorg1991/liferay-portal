@@ -13,7 +13,6 @@ import com.liferay.change.tracking.service.CTProcessLocalService;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.model.FragmentEntry;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.service.FragmentCollectionService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.fragment.service.FragmentEntryService;
@@ -99,11 +98,6 @@ public class BrowserSnifferFragmentEntryTemplateUpgradeProcessTest {
 
 		_ctProcessLocalService.addCTProcess(
 			TestPropsValues.getUserId(), _ctCollection.getCtCollectionId());
-
-		FragmentEntryVersion fragmentEntryVersion =
-			_fragmentEntryLocalService.fetchLatestVersion(_fragmentEntry);
-
-		Assert.assertEquals(2, fragmentEntryVersion.getVersion());
 
 		_runTemplateUpgrade();
 

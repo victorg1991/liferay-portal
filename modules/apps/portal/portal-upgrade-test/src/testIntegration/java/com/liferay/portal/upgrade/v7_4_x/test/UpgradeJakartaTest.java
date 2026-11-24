@@ -22,7 +22,6 @@ import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.service.FragmentCollectionLocalServiceUtil;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
@@ -447,38 +446,6 @@ public class UpgradeJakartaTest {
 
 		_fragmentEntryLinkLocalService.deleteFragmentEntryLink(
 			fragmentEntryLink);
-
-		_fragmentEntryLocalService.deleteFragmentEntry(fragmentEntry);
-	}
-
-	@Test
-	@TestInfo("LPD-52638")
-	public void testUpgradeFragmentEntryVersion() throws Exception {
-		FragmentEntry fragmentEntry = _addFragmentEntry();
-
-		fragmentEntry.setCss(RandomTestUtil.randomString());
-
-		fragmentEntry = _fragmentEntryLocalService.updateFragmentEntry(
-			fragmentEntry);
-
-		_upgradeProcess.upgrade();
-
-		_multiVMPool.clear();
-
-		List<FragmentEntryVersion> fragmentEntryVersions =
-			_fragmentEntryLocalService.getVersions(fragmentEntry);
-
-		Assert.assertFalse(fragmentEntryVersions.isEmpty());
-
-		for (FragmentEntryVersion updatedFragmentEntryVersion :
-				fragmentEntryVersions) {
-
-			Assert.assertEquals(
-				_JAKARTA_CONFIGURATION,
-				updatedFragmentEntryVersion.getConfiguration());
-			Assert.assertEquals(
-				_JAKARTA_HTML, updatedFragmentEntryVersion.getHtml());
-		}
 
 		_fragmentEntryLocalService.deleteFragmentEntry(fragmentEntry);
 	}

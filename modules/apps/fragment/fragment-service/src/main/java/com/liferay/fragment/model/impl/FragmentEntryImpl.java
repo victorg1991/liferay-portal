@@ -9,7 +9,6 @@ import com.liferay.document.library.util.DLURLHelperUtil;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.constants.FragmentExportImportConstants;
 import com.liferay.fragment.model.FragmentEntry;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.service.FragmentEntryLinkLocalServiceUtil;
 import com.liferay.fragment.service.FragmentEntryLocalServiceUtil;
 import com.liferay.petra.string.StringPool;
@@ -139,15 +138,6 @@ public class FragmentEntryImpl extends FragmentEntryBaseImpl {
 		}
 
 		return false;
-	}
-
-	@Override
-	public void populateVersionModel(
-		FragmentEntryVersion fragmentEntryVersion) {
-
-		super.populateVersionModel(fragmentEntryVersion);
-
-		fragmentEntryVersion.setStatus(super.getStatus());
 	}
 
 	@Override

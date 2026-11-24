@@ -40,8 +40,9 @@ public class FragmentEntryWrapper
 		attributes.put("ctCollectionId", getCtCollectionId());
 		attributes.put("uuid", getUuid());
 		attributes.put("externalReferenceCode", getExternalReferenceCode());
-		attributes.put("headId", getHeadId());
 		attributes.put("fragmentEntryId", getFragmentEntryId());
+		attributes.put("headId", getHeadId());
+		attributes.put("head", isHead());
 		attributes.put("groupId", getGroupId());
 		attributes.put("companyId", getCompanyId());
 		attributes.put("userId", getUserId());
@@ -98,16 +99,22 @@ public class FragmentEntryWrapper
 			setExternalReferenceCode(externalReferenceCode);
 		}
 
+		Long fragmentEntryId = (Long)attributes.get("fragmentEntryId");
+
+		if (fragmentEntryId != null) {
+			setFragmentEntryId(fragmentEntryId);
+		}
+
 		Long headId = (Long)attributes.get("headId");
 
 		if (headId != null) {
 			setHeadId(headId);
 		}
 
-		Long fragmentEntryId = (Long)attributes.get("fragmentEntryId");
+		Boolean head = (Boolean)attributes.get("head");
 
-		if (fragmentEntryId != null) {
-			setFragmentEntryId(fragmentEntryId);
+		if (head != null) {
+			setHead(head);
 		}
 
 		Long groupId = (Long)attributes.get("groupId");
@@ -385,6 +392,16 @@ public class FragmentEntryWrapper
 	@Override
 	public long getGroupId() {
 		return model.getGroupId();
+	}
+
+	/**
+	 * Returns the head of this fragment entry.
+	 *
+	 * @return the head of this fragment entry
+	 */
+	@Override
+	public boolean getHead() {
+		return model.getHead();
 	}
 
 	/**
@@ -685,6 +702,16 @@ public class FragmentEntryWrapper
 	}
 
 	/**
+	 * Returns <code>true</code> if this fragment entry is head.
+	 *
+	 * @return <code>true</code> if this fragment entry is head; <code>false</code> otherwise
+	 */
+	@Override
+	public boolean isHead() {
+		return model.isHead();
+	}
+
+	/**
 	 * Returns <code>true</code> if this fragment entry is inactive.
 	 *
 	 * @return <code>true</code> if this fragment entry is inactive; <code>false</code> otherwise
@@ -767,13 +794,6 @@ public class FragmentEntryWrapper
 	@Override
 	public void persist() {
 		model.persist();
-	}
-
-	@Override
-	public void populateVersionModel(
-		FragmentEntryVersion fragmentEntryVersion) {
-
-		model.populateVersionModel(fragmentEntryVersion);
 	}
 
 	@Override
@@ -892,6 +912,16 @@ public class FragmentEntryWrapper
 	@Override
 	public void setGroupId(long groupId) {
 		model.setGroupId(groupId);
+	}
+
+	/**
+	 * Sets whether this fragment entry is head.
+	 *
+	 * @param head the head of this fragment entry
+	 */
+	@Override
+	public void setHead(boolean head) {
+		model.setHead(head);
 	}
 
 	/**
@@ -1154,14 +1184,9 @@ public class FragmentEntryWrapper
 	}
 
 	@Override
-	public boolean isHead() {
-		return model.isHead();
-	}
-
-	@Override
 	protected FragmentEntryWrapper wrap(FragmentEntry fragmentEntry) {
 		return new FragmentEntryWrapper(fragmentEntry);
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:138963817
+// LIFERAY-SERVICE-BUILDER-HASH:166812455

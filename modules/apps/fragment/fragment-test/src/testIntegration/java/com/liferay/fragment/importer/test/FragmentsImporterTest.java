@@ -18,7 +18,6 @@ import com.liferay.fragment.importer.FragmentsImporterResultEntry;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.model.FragmentEntry;
 import com.liferay.fragment.model.FragmentEntryLink;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.service.FragmentCollectionLocalService;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
@@ -666,9 +665,6 @@ public class FragmentsImporterTest {
 
 			Assert.assertNotEquals(0, fragmentEntry.getPreviewFileEntryId());
 
-			List<FragmentEntryVersion> fragmentEntryVersions =
-				_fragmentEntryLocalService.getVersions(fragmentEntry);
-
 			_fragmentsImporter.importFragmentEntries(
 				_user.getUserId(), _group.getGroupId(), 0, zipFile,
 				FragmentsImportStrategy.OVERWRITE, false);
@@ -680,14 +676,6 @@ public class FragmentsImporterTest {
 			Assert.assertEquals(
 				fragmentEntry.getPreviewFileEntryId(),
 				reimportedFragmentEntry.getPreviewFileEntryId());
-
-			List<FragmentEntryVersion> reimportedFragmentEntryVersions =
-				_fragmentEntryLocalService.getVersions(reimportedFragmentEntry);
-
-			Assert.assertEquals(
-				reimportedFragmentEntryVersions.toString(),
-				fragmentEntryVersions.size(),
-				reimportedFragmentEntryVersions.size());
 		}
 		finally {
 			FileUtil.delete(zipFile);

@@ -9,7 +9,6 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.model.FragmentComposition;
 import com.liferay.fragment.model.FragmentEntry;
-import com.liferay.fragment.model.FragmentEntryVersion;
 import com.liferay.fragment.service.FragmentCompositionService;
 import com.liferay.fragment.service.FragmentEntryLocalService;
 import com.liferay.fragment.test.util.FragmentEntryTestUtil;
@@ -63,17 +62,6 @@ public class FragmentServiceExternalReferenceCodeUpgradeProcessTest
 					RandomTestUtil.randomString())
 			};
 		}
-		else if (tableName.equals("FragmentEntryVersion")) {
-			FragmentEntry fragmentEntry =
-				FragmentEntryTestUtil.addFragmentEntry(
-					fragmentCollection.getFragmentCollectionId(),
-					RandomTestUtil.randomString());
-
-			return new ExternalReferenceCodeModel[] {
-				_fragmentEntryLocalService.fetchLatestVersion(fragmentEntry)
-			};
-		}
-
 		return null;
 	}
 
@@ -97,17 +85,6 @@ public class FragmentServiceExternalReferenceCodeUpgradeProcessTest
 			return _fragmentEntryLocalService.fetchFragmentEntry(
 				fragmentEntry.getFragmentEntryId());
 		}
-		else if (tableName.equals("FragmentEntryVersion")) {
-			FragmentEntryVersion fragmentEntryVersion =
-				(FragmentEntryVersion)externalReferenceCodeModel;
-
-			FragmentEntry fragmentEntry =
-				_fragmentEntryLocalService.fetchFragmentEntry(
-					fragmentEntryVersion.getFragmentEntryId());
-
-			return _fragmentEntryLocalService.fetchLatestVersion(fragmentEntry);
-		}
-
 		return null;
 	}
 
@@ -116,13 +93,6 @@ public class FragmentServiceExternalReferenceCodeUpgradeProcessTest
 		ExternalReferenceCodeModel externalReferenceCodeModel,
 		String tableName) {
 
-		if (tableName.equals("FragmentEntryVersion")) {
-			FragmentEntryVersion fragmentEntryVersion =
-				(FragmentEntryVersion)externalReferenceCodeModel;
-
-			return fragmentEntryVersion.getUuid();
-		}
-
 		return super.getExternalReferenceCode(
 			externalReferenceCodeModel, tableName);
 	}
@@ -130,7 +100,7 @@ public class FragmentServiceExternalReferenceCodeUpgradeProcessTest
 	@Override
 	protected String[] getTableNames() {
 		return new String[] {
-			"FragmentComposition", "FragmentEntry", "FragmentEntryVersion"
+			"FragmentComposition", "FragmentEntry"
 		};
 	}
 

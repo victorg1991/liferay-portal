@@ -887,10 +887,10 @@ public class FragmentEntryLinkLocalServiceImpl
 
 			if (fragmentEntryGroupId != null) {
 				FragmentEntry fragmentEntry =
-					_fragmentEntryPersistence.fetchByERC_G_Head(
-						fragmentEntryERC, fragmentEntryGroupId, true);
+					_fragmentEntryPersistence.fetchByERC_G(
+						fragmentEntryERC, fragmentEntryGroupId);
 
-				if (fragmentEntry != null) {
+				if ((fragmentEntry != null) && fragmentEntry.isHead()) {
 					return fragmentEntry;
 				}
 			}

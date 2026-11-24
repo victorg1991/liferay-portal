@@ -121,11 +121,13 @@
 			<finder-column name="status" />
 		</finder>
 	</entity>
-	<entity external-reference-code="group" local-service="true" name="FragmentEntry" remote-service="true" uuid="true" versioned="true">
+	<entity external-reference-code="group" local-service="true" name="FragmentEntry" remote-service="true" uuid="true">
 
 		<!-- PK fields -->
 
 		<column name="fragmentEntryId" primary="true" type="long" />
+		<column name="headId" type="long" />
+		<column name="head" type="boolean" />
 
 		<!-- Group instance -->
 
@@ -169,6 +171,9 @@
 
 		<!-- Finder methods -->
 
+		<finder name="HeadId" return-type="FragmentEntry" unique="true">
+			<finder-column name="headId" />
+		</finder>
 		<finder name="FragmentCollectionId" return-type="Collection">
 			<finder-column name="fragmentCollectionId" />
 		</finder>
@@ -176,9 +181,10 @@
 			<finder-column name="groupId" />
 			<finder-column name="fragmentCollectionId" />
 		</finder>
-		<finder name="G_FEK" return-type="FragmentEntry" unique="true">
+		<finder name="G_FEK_H" return-type="FragmentEntry" unique="true">
 			<finder-column name="groupId" />
 			<finder-column name="fragmentEntryKey" />
+			<finder-column name="head" />
 		</finder>
 		<finder name="G_FCI_LikeN" return-type="Collection">
 			<finder-column name="groupId" />

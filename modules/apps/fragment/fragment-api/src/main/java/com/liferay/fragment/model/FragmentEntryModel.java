@@ -13,7 +13,6 @@ import com.liferay.portal.kernel.model.ShardedModel;
 import com.liferay.portal.kernel.model.StagedGroupedModel;
 import com.liferay.portal.kernel.model.WorkflowedModel;
 import com.liferay.portal.kernel.model.change.tracking.CTModel;
-import com.liferay.portal.kernel.model.version.VersionedModel;
 
 import java.util.Date;
 
@@ -34,8 +33,7 @@ import org.osgi.annotation.versioning.ProviderType;
 public interface FragmentEntryModel
 	extends BaseModel<FragmentEntry>, CTModel<FragmentEntry>,
 			ExternalReferenceCodeModel, MVCCModel, ShardedModel,
-			StagedGroupedModel, VersionedModel<FragmentEntryVersion>,
-			WorkflowedModel {
+			StagedGroupedModel, WorkflowedModel {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -126,22 +124,6 @@ public interface FragmentEntryModel
 	public void setExternalReferenceCode(String externalReferenceCode);
 
 	/**
-	 * Returns the head ID of this fragment entry.
-	 *
-	 * @return the head ID of this fragment entry
-	 */
-	@Override
-	public long getHeadId();
-
-	/**
-	 * Sets the head ID of this fragment entry.
-	 *
-	 * @param headId the head ID of this fragment entry
-	 */
-	@Override
-	public void setHeadId(long headId);
-
-	/**
 	 * Returns the fragment entry ID of this fragment entry.
 	 *
 	 * @return the fragment entry ID of this fragment entry
@@ -154,6 +136,41 @@ public interface FragmentEntryModel
 	 * @param fragmentEntryId the fragment entry ID of this fragment entry
 	 */
 	public void setFragmentEntryId(long fragmentEntryId);
+
+	/**
+	 * Returns the head ID of this fragment entry.
+	 *
+	 * @return the head ID of this fragment entry
+	 */
+	public long getHeadId();
+
+	/**
+	 * Sets the head ID of this fragment entry.
+	 *
+	 * @param headId the head ID of this fragment entry
+	 */
+	public void setHeadId(long headId);
+
+	/**
+	 * Returns the head of this fragment entry.
+	 *
+	 * @return the head of this fragment entry
+	 */
+	public boolean getHead();
+
+	/**
+	 * Returns <code>true</code> if this fragment entry is head.
+	 *
+	 * @return <code>true</code> if this fragment entry is head; <code>false</code> otherwise
+	 */
+	public boolean isHead();
+
+	/**
+	 * Sets whether this fragment entry is head.
+	 *
+	 * @param head the head of this fragment entry
+	 */
+	public void setHead(boolean head);
 
 	/**
 	 * Returns the group ID of this fragment entry.
@@ -662,4 +679,4 @@ public interface FragmentEntryModel
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:645428652
+// LIFERAY-SERVICE-BUILDER-HASH:-600993413

@@ -34,13 +34,13 @@ public class FragmentEntryTable extends BaseTable<FragmentEntryTable> {
 		createColumn(
 			"externalReferenceCode", String.class, Types.VARCHAR,
 			Column.FLAG_DEFAULT);
+	public final Column<FragmentEntryTable, Long> fragmentEntryId =
+		createColumn(
+			"fragmentEntryId", Long.class, Types.BIGINT, Column.FLAG_PRIMARY);
 	public final Column<FragmentEntryTable, Long> headId = createColumn(
 		"headId", Long.class, Types.BIGINT, Column.FLAG_DEFAULT);
 	public final Column<FragmentEntryTable, Boolean> head = createColumn(
 		"head", Boolean.class, Types.BOOLEAN, Column.FLAG_DEFAULT);
-	public final Column<FragmentEntryTable, Long> fragmentEntryId =
-		createColumn(
-			"fragmentEntryId", Long.class, Types.BIGINT, Column.FLAG_PRIMARY);
 	public final Column<FragmentEntryTable, Long> groupId = createColumn(
 		"groupId", Long.class, Types.BIGINT, Column.FLAG_DEFAULT);
 	public final Column<FragmentEntryTable, Long> companyId = createColumn(
@@ -107,4 +107,4 @@ public class FragmentEntryTable extends BaseTable<FragmentEntryTable> {
 	}
 
 }
-// LIFERAY-SERVICE-BUILDER-HASH:-1922561856
+// LIFERAY-SERVICE-BUILDER-HASH:-193144514

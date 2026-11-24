@@ -480,8 +480,8 @@ public class FragmentEntryServiceImpl extends FragmentEntryServiceBaseImpl {
 			getPermissionChecker(), groupId,
 			FragmentActionKeys.MANAGE_FRAGMENT_ENTRIES);
 
-		return fragmentEntryPersistence.findByERC_G_Head(
-			externalReferenceCode, groupId, true);
+		return fragmentEntryPersistence.findByERC_G(
+			externalReferenceCode, groupId);
 	}
 
 	@Override
